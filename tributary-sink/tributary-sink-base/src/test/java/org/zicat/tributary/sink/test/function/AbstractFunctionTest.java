@@ -1,0 +1,117 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.zicat.tributary.sink.test.function;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.sink.function.AbstractFunction;
+import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.function.ContextBuilder;
+
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/** AbstractFunctionTest. */
+public class AbstractFunctionTest {
+
+    final int fullMill = 10;
+    final RecordsOffset startRecordsOffset = RecordsOffset.startRecordOffset();
+
+    @Test
+    public void testCommittable() {
+
+        final MockClock clock = new MockClock();
+        clock.setCurrentTimeMillis(0);
+        final MockFunction function = createFunction(clock);
+        Assert.assertFalse(function.committable());
+
+        clock.setCurrentTimeMillis(fullMill);
+        Assert.assertTrue(function.committable());
+        Assert.assertFalse(function.committable());
+
+        clock.setCurrentTimeMillis(fullMill * 2);
+        Assert.assertTrue(function.committable());
+        Assert.assertFalse(function.committable());
+
+        IOUtils.closeQuietly(function);
+    }
+
+    @Test
+    public void testFlush() {
+
+        final MockClock clock = new MockClock();
+        clock.setCurrentTimeMillis(0);
+        final MockFunction function = createFunction(clock);
+        final AtomicBoolean callback = new AtomicBoolean();
+        function.flush(
+                startRecordsOffset.skipNextSegmentHead(),
+                () -> {
+                    callback.set(true);
+                    return callback.get();
+                });
+        Assert.assertFalse(callback.get());
+        clock.setCurrentTimeMillis(fullMill);
+        function.flush(
+                startRecordsOffset.skipNextSegmentHead(),
+                () -> {
+                    callback.set(true);
+                    return callback.get();
+                });
+        Assert.assertTrue(callback.get());
+    }
+
+    /**
+     * create function by clock.
+     *
+     * @param clock clock
+     * @return MockProcessFunction
+     */
+    private MockFunction createFunction(MockClock clock) {
+        final MockFunction function = new MockFunction();
+
+        final ContextBuilder builder =
+                ContextBuilder.newBuilder()
+                        .startRecordsOffset(startRecordsOffset)
+                        .groupId("g1")
+                        .partitionId(1);
+        builder.addCustomProperty(AbstractFunction.CLOCK, clock);
+        builder.addCustomProperty(AbstractFunction.FLUSH_MILL, fullMill);
+        final Context context = builder.build();
+        clock.setCurrentTimeMillis(0);
+        function.open(context);
+        return function;
+    }
+
+    /** MockProcessFunction. */
+    private static class MockFunction extends AbstractFunction {
+
+        @Override
+        public boolean committable() {
+            return super.committable();
+        }
+
+        @Override
+        public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
+
+        @Override
+        public void close() {}
+    }
+}
