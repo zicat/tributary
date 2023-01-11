@@ -63,6 +63,16 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
     }
 
     /**
+     * set kafka data.
+     *
+     * @param broker broker
+     * @param producerRecord producerRecord
+     */
+    protected void sendKafka(String broker, ProducerRecord<byte[], byte[]> producerRecord) {
+        sendKafka(broker, producerRecord, null);
+    }
+
+    /**
      * create producer.
      *
      * @param broker broker.

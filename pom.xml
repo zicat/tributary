@@ -11,9 +11,6 @@
     <modules>
         <module>tributary-queue</module>
         <module>tributary-sink</module>
-        <module>tributary-sink/tributary-sink-kafka</module>
-        <module>tributary-sink/tributary-sink-hdfs</module>
-        <module>tributary-sink/tributary-sink-authentication</module>
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>

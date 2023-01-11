@@ -46,11 +46,12 @@ public class AbstractKafkaFunctionTest {
                 new AbstractKafkaFunction() {
                     @Override
                     public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+                        int count = 0;
                         while (iterator.hasNext()) {
                             sendKafka(
-                                    "broker_test",
-                                    new ProducerRecord<>("topic_test", iterator.next()),
-                                    null);
+                                    "broker_test" + count % 10,
+                                    new ProducerRecord<>("topic_test", iterator.next()));
+                            count++;
                         }
                         flush(recordsOffset);
                     }
