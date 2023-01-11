@@ -24,10 +24,18 @@ import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.chrono.ISOChronology;
 
-/** SystemClock. */
+/** SystemClock. default time zone is utc */
 public class SystemClock implements Clock {
 
-    private static final ISOChronology DEFAULT_UTC = ISOChronology.getInstance(DateTimeZone.UTC);
+    private final ISOChronology isoChronology;
+
+    public SystemClock(DateTimeZone timeZone) {
+        this.isoChronology = ISOChronology.getInstance(timeZone);
+    }
+
+    public SystemClock() {
+        this(DateTimeZone.UTC);
+    }
 
     @Override
     public long currentTimeMillis() {
@@ -36,19 +44,19 @@ public class SystemClock implements Clock {
 
     @Override
     public String today(String format) {
-        return new LocalDate(DateTimeUtils.currentTimeMillis(), DEFAULT_UTC).toString(format);
+        return new LocalDate(DateTimeUtils.currentTimeMillis(), isoChronology).toString(format);
     }
 
     @Override
     public String tomorrow(String format) {
-        return new LocalDate(DateTimeUtils.currentTimeMillis(), DEFAULT_UTC)
+        return new LocalDate(DateTimeUtils.currentTimeMillis(), isoChronology)
                 .plusDays(1)
                 .toString(format);
     }
 
     @Override
     public int secondFromToday() {
-        return new LocalDateTime(DateTimeUtils.currentTimeMillis(), DEFAULT_UTC).getMillisOfDay()
+        return new LocalDateTime(DateTimeUtils.currentTimeMillis(), isoChronology).getMillisOfDay()
                 / 1000;
     }
 }

@@ -22,7 +22,7 @@ package org.zicat.tributary.sink.function;
 public interface Clock {
 
     /**
-     * get current time millis.
+     * get current time millis, linux time ignore timezone.
      *
      * @return millis
      */

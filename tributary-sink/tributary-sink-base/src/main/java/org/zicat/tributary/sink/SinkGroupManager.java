@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.sink;
 
-import lombok.extern.slf4j.Slf4j;
 import org.zicat.tributary.queue.LogQueue;
 import org.zicat.tributary.queue.utils.IOUtils;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
@@ -34,8 +33,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.*;
 
-/** 消费组模型，一个groupId对应一个SinkGroupManager . */
-@Slf4j
+/**
+ * One SinkGroupManager Instance maintain a group consumer one {@link LogQueue} with {@link
+ * SinkGroupConfig}.
+ */
 public class SinkGroupManager implements Closeable {
 
     private final String groupId;

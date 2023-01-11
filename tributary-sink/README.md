@@ -59,7 +59,7 @@ FunctionFactory基于[Java SPI](https://www.journaldev.com/31602/java-spi-servic
 
 - [Tributary-Sink-HDFS](tributary-sink-hdfs) 提供Sink HDFS能力。
 
-- [Tributary-Sink-HBase](tributary-sink-hbase) 提供Sink HDFS能力。
+- [Tributary-Sink-HBase](tributary-sink-hbase) 提供Sink HBase能力。
 
 ## 其他特性
 
@@ -67,11 +67,11 @@ FunctionFactory基于[Java SPI](https://www.journaldev.com/31602/java-spi-servic
    可以实现[Trigger](tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java)
    接口，设置idle时间并当idle时进行回调。
 
-2. 配置参数maxRetainPerPartition
+2. 配置参数maxRetainPerPartitionBytes
 
-   设置每个分区最多保留多少数据文件，该特性应对下游长时间故障导致磁盘空间不足的问题，当然配置触发时，会导致数据丢失，用户根据实际业务场景进行配置。
+   设置每个分区最多保留多少数据，该特性应对下游长时间故障导致磁盘空间不足的问题，配置触发时，会导致文件队列中没有被消费的数据丢失，用户根据实际业务场景和磁盘空间大小进行配置。
+   注：参数单位是字节，考虑到文件队列不同分区可能配置不同的磁盘，所以该参数针对的是单个分区的配置。
 
 ## 整体Demo
 
-可参考测试用例[PartitionHandlerTest](tributary-sink-base/src/test/java/org/zicat/tributary/sink/test/handler/PartitionHandlerTest.java)
-。
+可参考测试用例[PartitionHandlerTest](tributary-sink-base/src/test/java/org/zicat/tributary/sink/test/handler/PartitionHandlerTest.java)。
