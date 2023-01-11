@@ -20,7 +20,7 @@ package org.zicat.tributary.queue.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.queue.BufferRecordsResultSet;
+import org.zicat.tributary.queue.BufferRecordsOffset;
 import org.zicat.tributary.queue.CompressionType;
 
 import java.io.IOException;
@@ -40,33 +40,45 @@ import static org.zicat.tributary.queue.utils.IOUtils.readFully;
 public final class FileBufferReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileBufferReader.class);
-    private final BufferRecordsResultSet resultSet;
-    private final long readableOffset;
+    private final BufferRecordsOffset buffer;
+    private final long legalOffset;
 
-    private FileBufferReader(BufferRecordsResultSet resultSet) {
-        this.resultSet = resultSet;
-        this.readableOffset =
-                resultSet.offset() < SEGMENT_HEAD_SIZE ? SEGMENT_HEAD_SIZE : resultSet.offset();
+    private FileBufferReader(BufferRecordsOffset buffer) {
+        this.buffer = buffer;
+        this.legalOffset =
+                buffer.offset() < SEGMENT_HEAD_SIZE ? SEGMENT_HEAD_SIZE : buffer.offset();
     }
 
     /**
      * cast bufferReader as FileBufferReader.
      *
-     * @param bufferRecordsResultSet bufferReader
+     * @param bufferRecordsOffset bufferReader
      * @return FileBufferReader
      */
-    public static FileBufferReader from(BufferRecordsResultSet bufferRecordsResultSet) {
-        return new FileBufferReader(bufferRecordsResultSet);
+    public static FileBufferReader from(BufferRecordsOffset bufferRecordsOffset) {
+        return new FileBufferReader(bufferRecordsOffset);
     }
 
     /**
      * check readable on position.
      *
-     * @param maxPosition maxPosition
+     * @param position position
      * @return boolean
      */
-    public final boolean readable(long maxPosition) {
-        return readableOffset < maxPosition;
+    public final boolean reach(long position) {
+        return legalOffset >= position;
+    }
+
+    /**
+     * create empty BufferRecordsOffset.
+     *
+     * @param newOffset newOffset
+     * @param newHeadBuf newHeadBuf
+     * @return BufferRecordsOffset
+     */
+    private BufferRecordsOffset empty(long newOffset, ByteBuffer newHeadBuf) {
+        return new BufferRecordsOffset(
+                buffer.segmentId(), newOffset, newHeadBuf, buffer.bodyBuf(), buffer.resultBuf(), 0);
     }
 
     /**
@@ -77,12 +89,12 @@ public final class FileBufferReader {
      * @return new block file offset.
      * @throws IOException IOException
      */
-    public final BufferRecordsResultSet readChannel(
+    public final BufferRecordsOffset readChannel(
             FileChannel fileChannel, CompressionType compressionType, long limitOffset)
             throws IOException {
 
-        long nextOffset = readableOffset;
-        final ByteBuffer headBuf = reAllocate(resultSet.headBuf(), BLOCK_HEAD_SIZE);
+        long nextOffset = legalOffset;
+        final ByteBuffer headBuf = reAllocate(buffer.headBuf(), BLOCK_HEAD_SIZE);
         readFully(fileChannel, headBuf, nextOffset).flip();
         nextOffset += headBuf.remaining();
 
@@ -91,51 +103,32 @@ public final class FileBufferReader {
                     "read block head over limit, next offset {}, limit offset {}",
                     nextOffset,
                     limitOffset);
-            return createSkippedRecordsResultSet(limitOffset, headBuf);
+            return empty(limitOffset, headBuf);
         }
 
         final int limit = headBuf.getInt();
         if (limit <= 0) {
             LOG.warn("data length is less than 0, real value {}", limit);
-            return createSkippedRecordsResultSet(limitOffset, headBuf);
+            return empty(limitOffset, headBuf);
         }
         if (limit + nextOffset > limitOffset) {
             LOG.warn(
                     "read block body over limit, next offset {}, limit offset {}",
                     limit + nextOffset,
                     limitOffset);
-            return createSkippedRecordsResultSet(limitOffset, headBuf);
+            return empty(limitOffset, headBuf);
         }
 
-        final ByteBuffer bodyBuf = reAllocate(resultSet.bodyBuf(), limit << 1, limit);
+        final ByteBuffer bodyBuf = reAllocate(buffer.bodyBuf(), limit << 1, limit);
         readFully(fileChannel, bodyBuf, nextOffset).flip();
         nextOffset += bodyBuf.remaining();
-
-        final ByteBuffer resultBuf = compressionType.decompression(bodyBuf, resultSet.resultBuf());
-        return new BufferRecordsResultSet(
-                resultSet.segmentId(),
+        final ByteBuffer resultBuf = compressionType.decompression(bodyBuf, buffer.resultBuf());
+        return new BufferRecordsOffset(
+                buffer.segmentId(),
                 nextOffset,
                 headBuf,
                 bodyBuf,
                 resultBuf,
                 limit + BLOCK_HEAD_SIZE);
-    }
-
-    /**
-     * create skipped records result set with empty data.
-     *
-     * @param newOffset newOffset
-     * @param newHeadBuf newHeadBuf
-     * @return BufferRecordsResultSet
-     */
-    private BufferRecordsResultSet createSkippedRecordsResultSet(
-            long newOffset, ByteBuffer newHeadBuf) {
-        return new BufferRecordsResultSet(
-                resultSet.segmentId(),
-                newOffset,
-                newHeadBuf,
-                resultSet.bodyBuf(),
-                resultSet.resultBuf(),
-                0);
     }
 }

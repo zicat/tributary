@@ -18,7 +18,10 @@
 
 package org.zicat.tributary.queue.file;
 
-import org.zicat.tributary.queue.*;
+import org.zicat.tributary.queue.BufferRecordsOffset;
+import org.zicat.tributary.queue.BufferWriter;
+import org.zicat.tributary.queue.CompressionType;
+import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.queue.utils.IOUtils;
 import org.zicat.tributary.queue.utils.TributaryQueueException;
 
@@ -141,40 +144,43 @@ public final class LogSegment implements Closeable, Comparable<LogSegment> {
     /**
      * blocking read data from file channel.
      *
-     * @param recordsOffset offset in file
+     * @param bufferRecordsOffset offset in file
      * @param time block time
      * @param unit time unit
      * @return return null if eof or timeout, else return data
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    public RecordsResultSet readBlock(RecordsOffset recordsOffset, long time, TimeUnit unit)
+    public BufferRecordsOffset readBlock(
+            BufferRecordsOffset bufferRecordsOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
 
         checkOpen();
 
-        if (!matchSegment(recordsOffset)) {
+        if (!matchSegment(bufferRecordsOffset)) {
             throw new IllegalStateException(
-                    "segment match fail, want " + recordsOffset.segmentId() + " real " + fileId());
+                    "segment match fail, want "
+                            + bufferRecordsOffset.segmentId()
+                            + " real "
+                            + fileId());
         }
 
-        final BufferRecordsResultSet resultSet = BufferRecordsResultSet.cast(recordsOffset);
-        final FileBufferReader fileBufferReader = FileBufferReader.from(resultSet);
+        final FileBufferReader fileBufferReader = FileBufferReader.from(bufferRecordsOffset);
         final long readablePosition = readablePosition();
-        if (fileBufferReader.readable(readablePosition)) {
+        if (!fileBufferReader.reach(readablePosition)) {
             return fileBufferReader.readChannel(fileChannel, compressionType, readablePosition);
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (!fileBufferReader.readable(readablePosition()) && !finished.get()) {
+            if (fileBufferReader.reach(readablePosition()) && !finished.get()) {
                 if (time == 0) {
                     readable.await();
                 } else if (!readable.await(time, unit)) {
-                    return resultSet.empty();
+                    return bufferRecordsOffset.reset();
                 }
-            } else if (!fileBufferReader.readable(readablePosition())) {
-                return resultSet.empty();
+            } else if (fileBufferReader.reach(readablePosition())) {
+                return bufferRecordsOffset.reset();
             }
         } finally {
             lock.unlock();
@@ -355,7 +361,7 @@ public final class LogSegment implements Closeable, Comparable<LogSegment> {
      *
      * @return string
      */
-    public String filePath() {
+    public final String filePath() {
         return file.getPath();
     }
 
@@ -364,7 +370,7 @@ public final class LogSegment implements Closeable, Comparable<LogSegment> {
      *
      * @return CompressionType
      */
-    public CompressionType compressionType() {
+    public final CompressionType compressionType() {
         return compressionType;
     }
 
@@ -373,7 +379,7 @@ public final class LogSegment implements Closeable, Comparable<LogSegment> {
      *
      * @return reusableBuffer
      */
-    public int blockSize() {
+    public final int blockSize() {
         return writer.capacity();
     }
 }

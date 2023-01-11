@@ -55,5 +55,7 @@ public interface RecordsResultSet extends Iterator<byte[]> {
      *
      * @return boolean
      */
-    boolean isEmpty();
+    default boolean isEmpty() {
+        return readBytes() == 0;
+    }
 }

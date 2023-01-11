@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>All methods in LogQueue are @ThreadSafe.
  */
-public interface LogQueue extends Closeable, LogQueueMeta {
+public interface LogQueue extends Closeable, LogQueueMeta, GroupManager {
 
     /**
      * append record to queue.
@@ -91,25 +91,6 @@ public interface LogQueue extends Closeable, LogQueueMeta {
             throws IOException, InterruptedException {
         return poll(partition, recordsOffset, 0, TimeUnit.MILLISECONDS);
     }
-
-    /**
-     * get current records offset by group id & partition.
-     *
-     * @param groupId groupId
-     * @param partition partition
-     * @return RecordsOffset
-     */
-    RecordsOffset getRecordsOffset(String groupId, int partition);
-
-    /**
-     * commit records offset.
-     *
-     * @param groupId groupId
-     * @param partition partition
-     * @param recordsOffset recordsOffset
-     * @throws IOException IOException
-     */
-    void commit(String groupId, int partition, RecordsOffset recordsOffset) throws IOException;
 
     /** flush block data and page cache data to disk. */
     void flush() throws IOException;

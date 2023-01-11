@@ -60,7 +60,7 @@ import static org.zicat.tributary.queue.utils.Functions.loopCloseableFunction;
  * clean up expired segments(all group ids has commit the offset over this segments) async, see
  * {@link FileLogQueue#cleanUpThread}
  */
-public class FileLogQueue implements LogQueue, Closeable {
+public class FileLogQueue implements OnePartitionLogQueue, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileLogQueue.class);
     private final ReentrantLock lock = new ReentrantLock();
@@ -69,7 +69,7 @@ public class FileLogQueue implements LogQueue, Closeable {
     protected final File dir;
     protected final Long segmentSize;
     protected final CompressionType compressionType;
-    protected final GroupManager groupManager;
+    protected final OnePartitionGroupManager groupManager;
     private volatile LogSegment lastSegment;
     private final AtomicBoolean closed = new AtomicBoolean();
     private long flushPeriodMill;
@@ -85,7 +85,7 @@ public class FileLogQueue implements LogQueue, Closeable {
 
     protected FileLogQueue(
             String topic,
-            GroupManager groupManager,
+            OnePartitionGroupManager groupManager,
             File dir,
             Integer blockSize,
             Long segmentSize,
@@ -166,18 +166,14 @@ public class FileLogQueue implements LogQueue, Closeable {
         return logSegment;
     }
 
-    @Override
-    public void append(int partition, byte[] record, int offset, int length) throws IOException {
-        append(record, offset, length);
-    }
-
     /**
      * append record data without partition.
      *
      * @param record record
      * @throws IOException IOException
      */
-    private void append(byte[] record, int offset, int length) throws IOException {
+    @Override
+    public void append(byte[] record, int offset, int length) throws IOException {
 
         final LogSegment segment = this.lastSegment;
         if (segment.append(record, offset, length)) {
@@ -214,12 +210,12 @@ public class FileLogQueue implements LogQueue, Closeable {
     }
 
     @Override
-    public long lag(int partition, RecordsOffset recordsOffset) {
+    public long lag(RecordsOffset recordsOffset) {
         return lastSegment.lag(recordsOffset);
     }
 
     @Override
-    public long lastSegmentId(int partition) {
+    public long lastSegmentId() {
         return lastSegment.fileId();
     }
 
@@ -239,8 +235,7 @@ public class FileLogQueue implements LogQueue, Closeable {
     }
 
     @Override
-    public RecordsResultSet poll(
-            int partition, RecordsOffset recordsOffset, long time, TimeUnit unit)
+    public RecordsResultSet poll(RecordsOffset recordsOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
         final RecordsResultSet resultSet = read(recordsOffset, time, unit);
         readBytes.addAndGet(resultSet.readBytes());
@@ -248,14 +243,18 @@ public class FileLogQueue implements LogQueue, Closeable {
     }
 
     @Override
-    public RecordsOffset getRecordsOffset(String groupId, int partition) {
+    public RecordsOffset getRecordsOffset(String groupId) {
         return groupManager.getRecordsOffset(groupId);
     }
 
     @Override
-    public void commit(String groupId, int partition, RecordsOffset recordsOffset)
-            throws IOException {
+    public void commit(String groupId, RecordsOffset recordsOffset) throws IOException {
         groupManager.commit(groupId, recordsOffset);
+    }
+
+    @Override
+    public RecordsOffset getMinRecordsOffset() {
+        return groupManager.getMinRecordsOffset();
     }
 
     /**
@@ -272,7 +271,7 @@ public class FileLogQueue implements LogQueue, Closeable {
             throws IOException, InterruptedException {
 
         final LogSegment lastSegment = this.lastSegment;
-        final RecordsOffset recordsOffset = formatRecordOffset(originalRecordsOffset);
+        final BufferRecordsOffset recordsOffset = cast(originalRecordsOffset);
         final LogSegment segment =
                 lastSegment.matchSegment(recordsOffset)
                         ? lastSegment
@@ -282,9 +281,10 @@ public class FileLogQueue implements LogQueue, Closeable {
                     "segment not found segment id = " + recordsOffset.segmentId());
         }
         // try read it first
-        final RecordsResultSet resultSet = segment.readBlock(recordsOffset, time, unit);
-        if (!segment.isFinish() || !resultSet.isEmpty()) {
-            return resultSet;
+        final RecordsResultSet recordsResultSet =
+                segment.readBlock(recordsOffset, time, unit).toResultSet();
+        if (!segment.isFinish() || !recordsResultSet.isEmpty()) {
+            return recordsResultSet;
         }
 
         // searchSegment is full
@@ -296,7 +296,7 @@ public class FileLogQueue implements LogQueue, Closeable {
                 if (time == 0) {
                     newSegmentCondition.await();
                 } else if (!newSegmentCondition.await(time, unit)) {
-                    return BufferRecordsResultSet.cast(recordsOffset).empty();
+                    return recordsOffset.reset().toResultSet();
                 }
             }
         } finally {
@@ -311,11 +311,11 @@ public class FileLogQueue implements LogQueue, Closeable {
      * @param recordsOffset recordsOffset
      * @return BufferReader
      */
-    protected RecordsOffset formatRecordOffset(RecordsOffset recordsOffset) {
+    protected BufferRecordsOffset cast(RecordsOffset recordsOffset) {
         if (recordsOffset == null) {
-            return BufferRecordsResultSet.cast(lastSegment.fileId());
+            return BufferRecordsOffset.cast(lastSegment.fileId());
         }
-        final BufferRecordsResultSet newRecordOffset = BufferRecordsResultSet.cast(recordsOffset);
+        final BufferRecordsOffset newRecordOffset = BufferRecordsOffset.cast(recordsOffset);
         return recordsOffset.segmentId() < 0 || recordsOffset.segmentId() > lastSegment.fileId()
                 ? newRecordOffset.skip2TargetHead(lastSegment.fileId())
                 : newRecordOffset;
@@ -406,11 +406,6 @@ public class FileLogQueue implements LogQueue, Closeable {
     @Override
     public String topic() {
         return topic;
-    }
-
-    @Override
-    public int partition() {
-        return 1;
     }
 
     @Override

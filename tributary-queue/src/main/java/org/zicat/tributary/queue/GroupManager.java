@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.queue.file;
-
-import org.zicat.tributary.queue.RecordsOffset;
+package org.zicat.tributary.queue;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -27,25 +25,36 @@ import java.io.IOException;
 public interface GroupManager extends Closeable {
 
     /**
-     * commit groupId offset.
+     * get topic.
      *
-     * @param groupId groupId
-     * @param recordsOffset recordsOffset
+     * @return topic
      */
-    void commit(String groupId, RecordsOffset recordsOffset) throws IOException;
+    String topic();
 
     /**
-     * get Consumer RecordsOffset.
+     * get current records offset by group id & partition.
      *
      * @param groupId groupId
-     * @return RecordsOffset.
-     */
-    RecordsOffset getRecordsOffset(String groupId);
-
-    /**
-     * get min records Offset.
-     *
+     * @param partition partition
      * @return RecordsOffset
      */
-    RecordsOffset getMinRecordsOffset();
+    RecordsOffset getRecordsOffset(String groupId, int partition);
+
+    /**
+     * commit records offset.
+     *
+     * @param groupId groupId
+     * @param partition partition
+     * @param recordsOffset recordsOffset
+     * @throws IOException IOException
+     */
+    void commit(String groupId, int partition, RecordsOffset recordsOffset) throws IOException;
+
+    /**
+     * get min records Offset of this partition.
+     *
+     * @param partition partition
+     * @return RecordsOffset
+     */
+    RecordsOffset getMinRecordsOffset(int partition);
 }

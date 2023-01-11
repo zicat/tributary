@@ -113,42 +113,47 @@ public class BufferRecordsResultSetWriterTest {
         fileChannel.force(false);
 
         // test buffer reader
-        BufferRecordsResultSet bufferRecordsResultSet =
-                BufferRecordsResultSet.cast(new RecordsOffset(0, 0));
+        BufferRecordsOffset bufferRecordsResultSet =
+                BufferRecordsOffset.cast(new RecordsOffset(0, 0));
         FileBufferReader fileBufferReader = FileBufferReader.from(bufferRecordsResultSet);
-        Assert.assertFalse(fileBufferReader.readable(2));
-        Assert.assertTrue(fileBufferReader.readable(10));
+        Assert.assertTrue(fileBufferReader.reach(2));
+        Assert.assertFalse(fileBufferReader.reach(10));
 
         RecordsResultSet resultSet =
-                fileBufferReader.readChannel(
-                        fileChannel, CompressionType.SNAPPY, fileChannel.position());
+                fileBufferReader
+                        .readChannel(fileChannel, CompressionType.SNAPPY, fileChannel.position())
+                        .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
-        bufferRecordsResultSet = BufferRecordsResultSet.cast(resultSet.nexRecordsOffset());
+        bufferRecordsResultSet = BufferRecordsOffset.cast(resultSet.nexRecordsOffset());
         fileBufferReader = FileBufferReader.from(bufferRecordsResultSet);
         Assert.assertSame(bufferRecordsResultSet, resultSet.nexRecordsOffset());
         resultSet =
-                fileBufferReader.readChannel(
-                        fileChannel, CompressionType.SNAPPY, fileChannel.position());
+                fileBufferReader
+                        .readChannel(fileChannel, CompressionType.SNAPPY, fileChannel.position())
+                        .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
-        bufferRecordsResultSet = BufferRecordsResultSet.cast(resultSet.nexRecordsOffset());
+        bufferRecordsResultSet = BufferRecordsOffset.cast(resultSet.nexRecordsOffset());
         fileBufferReader = FileBufferReader.from(bufferRecordsResultSet);
         resultSet =
-                fileBufferReader.readChannel(
-                        fileChannel, CompressionType.SNAPPY, fileChannel.position());
+                fileBufferReader
+                        .readChannel(fileChannel, CompressionType.SNAPPY, fileChannel.position())
+                        .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
         // test over flow.
         resultSet =
-                fileBufferReader.readChannel(
-                        fileChannel, CompressionType.SNAPPY, fileChannel.position() - 1);
+                fileBufferReader
+                        .readChannel(
+                                fileChannel, CompressionType.SNAPPY, fileChannel.position() - 1)
+                        .toResultSet();
         Assert.assertFalse(resultSet.hasNext());
 
         BufferWriter writer4 = writer.reAllocate(6);
@@ -162,10 +167,11 @@ public class BufferRecordsResultSetWriterTest {
                         .skip2Target(
                                 resultSet.nexRecordsOffset().segmentId(),
                                 resultSet.nexRecordsOffset().offset() + 1);
-        fileBufferReader = FileBufferReader.from(BufferRecordsResultSet.cast(newOffset));
+        fileBufferReader = FileBufferReader.from(BufferRecordsOffset.cast(newOffset));
         resultSet =
-                fileBufferReader.readChannel(
-                        fileChannel, CompressionType.SNAPPY, fileChannel.position());
+                fileBufferReader
+                        .readChannel(fileChannel, CompressionType.SNAPPY, fileChannel.position())
+                        .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
@@ -178,10 +184,11 @@ public class BufferRecordsResultSetWriterTest {
         fileChannel.force(false);
 
         fileBufferReader =
-                FileBufferReader.from(BufferRecordsResultSet.cast(resultSet.nexRecordsOffset()));
+                FileBufferReader.from(BufferRecordsOffset.cast(resultSet.nexRecordsOffset()));
         resultSet =
-                fileBufferReader.readChannel(
-                        fileChannel, CompressionType.SNAPPY, fileChannel.position());
+                fileBufferReader
+                        .readChannel(fileChannel, CompressionType.SNAPPY, fileChannel.position())
+                        .toResultSet();
         Assert.assertFalse(resultSet.hasNext());
 
         writer4 = writer.reAllocate(6);
@@ -190,10 +197,11 @@ public class BufferRecordsResultSetWriterTest {
         fileChannel.force(false);
 
         fileBufferReader =
-                FileBufferReader.from(BufferRecordsResultSet.cast(resultSet.nexRecordsOffset()));
+                FileBufferReader.from(BufferRecordsOffset.cast(resultSet.nexRecordsOffset()));
         resultSet =
-                fileBufferReader.readChannel(
-                        fileChannel, CompressionType.SNAPPY, fileChannel.position());
+                fileBufferReader
+                        .readChannel(fileChannel, CompressionType.SNAPPY, fileChannel.position())
+                        .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());

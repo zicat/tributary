@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.queue.file;
 
+import org.zicat.tributary.queue.OnePartitionGroupManager;
+
 import java.io.File;
 
 import static org.zicat.tributary.queue.utils.IOUtils.makeDir;
@@ -38,7 +40,7 @@ public class FileLogQueueBuilder extends LogQueueBuilder {
      * @param groupManager groupManager
      * @return FileLogQueue
      */
-    public FileLogQueue build(GroupManager groupManager) {
+    public FileLogQueue build(OnePartitionGroupManager groupManager) {
         if (dir == null) {
             throw new IllegalStateException("dir is null");
         }

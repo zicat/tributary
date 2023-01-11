@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** MockLogQueue. */
+/** MockV2LogQueue. */
 public class MockLogQueue implements LogQueue {
 
     private final List<Element> elements = new ArrayList<>();
@@ -88,8 +88,9 @@ public class MockLogQueue implements LogQueue {
                 VIntUtil.putVInt(dataBuffer, element.length);
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
-                return new BufferRecordsResultSet(
-                        searchSegmentId, readBytes, dataBuffer, readBytes);
+                return new RecordsResultSetImpl(
+                        new BufferRecordsOffset(
+                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes));
             }
         }
         if (!hasWait) {
@@ -107,25 +108,38 @@ public class MockLogQueue implements LogQueue {
                 VIntUtil.putVInt(dataBuffer, element.length);
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
-                return new BufferRecordsResultSet(
-                        searchSegmentId, readBytes, dataBuffer, readBytes);
+                return new RecordsResultSetImpl(
+                        new BufferRecordsOffset(
+                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes));
             }
         }
-        return BufferRecordsResultSet.cast(logOffset).empty();
+        return new RecordsResultSetImpl(BufferRecordsOffset.cast(logOffset).reset());
     }
 
     @Override
-    public synchronized BufferRecordsResultSet getRecordsOffset(String groupId, int partition) {
+    public synchronized RecordsOffset getRecordsOffset(String groupId, int partition) {
         GroupPartition groupPartition = new GroupPartition(groupId, partition);
         RecordsOffset recordsOffset =
                 groupManager.computeIfAbsent(
                         groupPartition, k -> RecordsOffset.startRecordOffset());
-        return BufferRecordsResultSet.cast(recordsOffset);
+        return BufferRecordsOffset.cast(recordsOffset);
     }
 
     @Override
     public synchronized void commit(String groupId, int partition, RecordsOffset recordsOffset) {
         groupManager.put(new GroupPartition(groupId, partition), recordsOffset);
+    }
+
+    @Override
+    public RecordsOffset getMinRecordsOffset(int partition) {
+        RecordsOffset min = null;
+        for (Map.Entry<GroupPartition, RecordsOffset> entry : groupManager.entrySet()) {
+            if (entry.getKey().partition != partition) {
+                continue;
+            }
+            min = min == null ? entry.getValue() : RecordsOffset.min(min, entry.getValue());
+        }
+        return min;
     }
 
     @Override

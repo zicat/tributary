@@ -22,7 +22,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.queue.BufferRecordsResultSet;
+import org.zicat.tributary.queue.BufferRecordsOffset;
 import org.zicat.tributary.queue.BufferWriter;
 import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.queue.RecordsResultSet;
@@ -91,13 +91,15 @@ public class LogSegmentTest {
                             result.add(createStringByLength(6));
                             result.add(createStringByLength(20));
 
-                            RecordsOffset recordsOffset = new RecordsOffset(fileId, 0);
+                            BufferRecordsOffset recordsOffset =
+                                    BufferRecordsOffset.cast(new RecordsOffset(fileId, 0));
                             while (!result.isEmpty()) {
                                 RecordsResultSet resultSet;
                                 try {
                                     resultSet =
                                             segment.readBlock(
-                                                    recordsOffset, 1, TimeUnit.MILLISECONDS);
+                                                            recordsOffset, 1, TimeUnit.MILLISECONDS)
+                                                    .toResultSet();
                                     Assert.assertTrue(resultSet.hasNext());
                                     while (resultSet.hasNext()) {
                                         byte[] bs = resultSet.next();
@@ -105,7 +107,8 @@ public class LogSegmentTest {
                                                 result.remove(
                                                         new String(bs, StandardCharsets.UTF_8)));
                                     }
-                                    recordsOffset = resultSet.nexRecordsOffset();
+                                    recordsOffset =
+                                            BufferRecordsOffset.cast(resultSet.nexRecordsOffset());
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
@@ -139,10 +142,10 @@ public class LogSegmentTest {
         result.add(createStringByLength(20));
         int i = 0;
 
-        final BufferRecordsResultSet bufferRecordsResultSet = BufferRecordsResultSet.cast(fileId);
+        final BufferRecordsOffset bufferRecordsOffset = BufferRecordsOffset.cast(fileId);
 
         RecordsResultSet resultSet =
-                segment.readBlock(bufferRecordsResultSet, 1, TimeUnit.MILLISECONDS);
+                segment.readBlock(bufferRecordsOffset, 1, TimeUnit.MILLISECONDS).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         while (resultSet.hasNext()) {
             byte[] bs = resultSet.next();
@@ -150,7 +153,12 @@ public class LogSegmentTest {
             i++;
         }
 
-        resultSet = segment.readBlock(resultSet.nexRecordsOffset(), 1, TimeUnit.MILLISECONDS);
+        resultSet =
+                segment.readBlock(
+                                BufferRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                1,
+                                TimeUnit.MILLISECONDS)
+                        .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         while (resultSet.hasNext()) {
             byte[] bs = resultSet.next();
@@ -158,7 +166,12 @@ public class LogSegmentTest {
             i++;
         }
 
-        resultSet = segment.readBlock(resultSet.nexRecordsOffset(), 1, TimeUnit.MILLISECONDS);
+        resultSet =
+                segment.readBlock(
+                                BufferRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                1,
+                                TimeUnit.MILLISECONDS)
+                        .toResultSet();
         Assert.assertFalse(resultSet.hasNext());
 
         IOUtils.closeQuietly(segment);

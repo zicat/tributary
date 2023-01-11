@@ -20,6 +20,7 @@ package org.zicat.tributary.queue.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.queue.OnePartitionGroupManager;
 import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.queue.utils.IOUtils;
 import org.zicat.tributary.queue.utils.TributaryQueueRuntimeException;
@@ -50,7 +51,7 @@ import static org.zicat.tributary.queue.utils.IOUtils.*;
  *
  * <p>file content: 8 Bytes(Long, segmentId) + 8 Bytes(Long, segmentId).
  */
-public class FileGroupManager implements GroupManager {
+public class FileGroupManager implements OnePartitionGroupManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
 
@@ -63,9 +64,11 @@ public class FileGroupManager implements GroupManager {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(16);
     private final String filePrefix;
+    private final String topic;
 
     public FileGroupManager(File dir, String topic, List<String> groupIds) {
         this.dir = dir;
+        this.topic = topic;
         this.filePrefix = realPrefix(topic, FILE_PREFIX);
         loadCache(groupIds);
     }
@@ -200,6 +203,11 @@ public class FileGroupManager implements GroupManager {
         } catch (Throwable e) {
             LOG.warn("flush error", e);
         }
+    }
+
+    @Override
+    public String topic() {
+        return topic;
     }
 
     @Override

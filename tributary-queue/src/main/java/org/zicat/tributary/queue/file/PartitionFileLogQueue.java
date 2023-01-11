@@ -138,7 +138,7 @@ public class PartitionFileLogQueue implements LogQueue, Closeable {
     @Override
     public void append(int partition, byte[] record, int offset, int length) throws IOException {
         final FileLogQueue queue = getPartitionQueue(partition);
-        queue.append(partition, record, offset, length);
+        queue.append(record, offset, length);
     }
 
     @Override
@@ -146,32 +146,38 @@ public class PartitionFileLogQueue implements LogQueue, Closeable {
             int partition, RecordsOffset recordsOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
         final FileLogQueue queue = getPartitionQueue(partition);
-        return queue.poll(partition, recordsOffset, time, unit);
+        return queue.poll(recordsOffset, time, unit);
     }
 
     @Override
     public RecordsOffset getRecordsOffset(String groupId, int partition) {
         final FileLogQueue queue = getPartitionQueue(partition);
-        return queue.getRecordsOffset(groupId, partition);
+        return queue.getRecordsOffset(groupId);
     }
 
     @Override
     public void commit(String groupId, int partition, RecordsOffset recordsOffset)
             throws IOException {
         final FileLogQueue queue = getPartitionQueue(partition);
-        queue.commit(groupId, partition, recordsOffset);
+        queue.commit(groupId, recordsOffset);
+    }
+
+    @Override
+    public RecordsOffset getMinRecordsOffset(int partition) {
+        final FileLogQueue queue = getPartitionQueue(partition);
+        return queue.getMinRecordsOffset();
     }
 
     @Override
     public long lag(int partition, RecordsOffset recordsOffset) {
         final FileLogQueue queue = getPartitionQueue(partition);
-        return queue.lag(partition, recordsOffset);
+        return queue.lag(recordsOffset);
     }
 
     @Override
     public long lastSegmentId(int partition) {
         final FileLogQueue queue = getPartitionQueue(partition);
-        return queue.lastSegmentId(partition);
+        return queue.lastSegmentId();
     }
 
     /**
