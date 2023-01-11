@@ -28,6 +28,11 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.*;
 
 /** 消费组模型，一个groupId对应一个SinkGroupManager . */
 @Slf4j
@@ -37,6 +42,7 @@ public class SinkGroupManager implements Closeable {
     private final LogQueue logQueue;
     private final SinkGroupConfig sinkGroupConfig;
     private final List<AbstractPartitionHandler> handlers = new ArrayList<>();
+    private ScheduledExecutorService service;
 
     public SinkGroupManager(String groupId, LogQueue logQueue, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
@@ -59,6 +65,24 @@ public class SinkGroupManager implements Closeable {
         }
         handlers.forEach(AbstractPartitionHandler::open);
         handlers.forEach(Thread::start);
+        supportMaxRetainSize();
+    }
+
+    /** support max retain size. */
+    private void supportMaxRetainSize() {
+        final Long maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
+        if (maxRetainSize != null) {
+            final long periodMill =
+                    sinkGroupConfig.getCustomProperty(
+                            KEY_RETAIN_SIZE_CHECK_PERIOD_MILLI,
+                            DEFAULT_RETAIN_SIZE_CHECK_PERIOD_MILLI);
+            service = Executors.newSingleThreadScheduledExecutor();
+            service.scheduleAtFixedRate(
+                    () -> handlers.forEach(AbstractPartitionHandler::commit),
+                    periodMill,
+                    periodMill,
+                    TimeUnit.MILLISECONDS);
+        }
     }
 
     /**
@@ -72,7 +96,13 @@ public class SinkGroupManager implements Closeable {
 
     @Override
     public void close() {
-        handlers.forEach(IOUtils::closeQuietly);
+        try {
+            if (service != null) {
+                service.shutdown();
+            }
+        } finally {
+            handlers.forEach(IOUtils::closeQuietly);
+        }
     }
 
     /**

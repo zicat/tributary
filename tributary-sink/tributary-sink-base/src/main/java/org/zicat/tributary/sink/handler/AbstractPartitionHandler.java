@@ -48,12 +48,16 @@ import static org.zicat.tributary.sink.utils.Threads.sleepQuietly;
 public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPartitionHandler.class);
-    public static final String KEY_MAX_RETAIN_SIZE = "maxRetainPerPartition";
+    public static final String KEY_MAX_RETAIN_SIZE = "maxRetainPerPartitionBytes";
+    public static final String KEY_RETAIN_SIZE_CHECK_PERIOD_MILLI =
+            "retainPerPartitionCheckPeriodMilli";
+    public static final int DEFAULT_RETAIN_SIZE_CHECK_PERIOD_MILLI = 30 * 1000;
+    private static final long DEFAULT_MIN_WAIT_TIME = 500;
 
     protected final Long maxRetainSize;
     protected final Clock clock;
 
-    private RecordsOffset fetchOffset;
+    private volatile RecordsOffset fetchOffset;
     private RecordsOffset commitOffsetWaterMark;
     private long preTriggerMillis;
 
@@ -63,7 +67,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         super(groupId, logQueue, partitionId, sinkGroupConfig);
         this.commitOffsetWaterMark = startOffset;
         this.fetchOffset = startOffset;
-        this.maxRetainSize = parseMaxRetainSize();
+        this.maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
         this.clock = sinkGroupConfig.getOrCreateDefaultClock();
         this.preTriggerMillis = clock.currentTimeMillis();
     }
@@ -74,7 +78,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         while (true) {
             try {
                 final long idleTimeMillis = idleTimeMillis();
-                final RecordsResultSet result = poll(partitionId, fetchOffset, idleTimeMillis);
+                final RecordsResultSet result = poll(partitionId, idleTimeMillis);
                 if (closed.get() && result.isEmpty()) {
                     break;
                 }
@@ -85,17 +89,33 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                 } else {
                     processIdleTrigger(idleTimeMillis);
                 }
-                fetchOffset = nextFetchOffset(nextOffset);
+                fetchOffset = nextOffset;
             } catch (Throwable e) {
                 LOG.error("poll data failed.", e);
                 if (closed.get()) {
                     break;
                 }
-                fetchOffset = rollbackFetchOffset(fetchOffset);
+                fetchOffset = rollbackFetchOffset();
                 // protect while true cause cpu high
                 sleepQuietly(DEFAULT_WAIT_TIME_MILLIS);
             }
         }
+    }
+
+    /**
+     * sync poll.
+     *
+     * @param partitionId partitionId
+     * @param idleTimeMillis idleTimeMillis
+     * @return RecordsResultSet
+     * @throws IOException IOException
+     * @throws InterruptedException InterruptedException
+     */
+    private synchronized RecordsResultSet poll(int partitionId, long idleTimeMillis)
+            throws IOException, InterruptedException {
+        checkFetchOffset();
+        return super.poll(
+                partitionId, fetchOffset, Math.min(DEFAULT_MIN_WAIT_TIME, idleTimeMillis));
     }
 
     /**
@@ -119,31 +139,35 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         }
     }
 
-    /**
-     * skip to commit offset watermark is file id less than it.
-     *
-     * @param nextOffset nextOffset
-     * @return RecordsOffset
-     */
-    private RecordsOffset nextFetchOffset(RecordsOffset nextOffset) {
-        return RecordsOffset.max(nextOffset, commitOffsetWaterMark);
+    /** commit. */
+    public synchronized void commit() {
+        updateCommitOffsetWaterMark();
+        commit(commitOffsetWaterMark);
+    }
+
+    /** update commit offset watermark. */
+    private void updateCommitOffsetWaterMark() {
+        commitOffsetWaterMark = RecordsOffset.max(committableOffset(), commitOffsetWaterMark);
+        skipCommitOffsetWaterMarkByMaxRetainSize();
+        checkFetchOffset();
     }
 
     /**
      * rollback fetch offset.
      *
-     * @param fetchOffset fetchOffset
      * @return RecordsOffset
      */
-    private RecordsOffset rollbackFetchOffset(RecordsOffset fetchOffset) {
+    private RecordsOffset rollbackFetchOffset() {
+        commit();
         return fetchOffset.skip2Target(commitOffsetWaterMark);
     }
 
-    /** commit. */
-    private void commit() {
-        commitOffsetWaterMark = RecordsOffset.max(committableOffset(), commitOffsetWaterMark);
-        skipCommitOffsetWaterMarkByMaxRetainSize();
-        commit(commitOffsetWaterMark);
+    /** check fetch offset. fetch offset must over commit offset watermark. */
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
+    private void checkFetchOffset() {
+        if (fetchOffset.compareTo(commitOffsetWaterMark) < 0) {
+            fetchOffset = fetchOffset.skip2Target(commitOffsetWaterMark);
+        }
     }
 
     /** skip commit offset watermark by max retain size. */
@@ -182,9 +206,10 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     /**
      * parse max retain size.
      *
+     * @param sinkGroupConfig sinkGroupConfig
      * @return value
      */
-    private Long parseMaxRetainSize() {
+    public static Long parseMaxRetainSize(SinkGroupConfig sinkGroupConfig) {
         final Object maxRetainSize = sinkGroupConfig.getCustomProperty(KEY_MAX_RETAIN_SIZE);
         if (maxRetainSize != null) {
             LOG.info("param {} value = {}", KEY_MAX_RETAIN_SIZE, maxRetainSize);

@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.handler;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -120,7 +121,7 @@ public class DisruptorPartitionHandler extends AbstractPartitionHandler {
                 formatCap(sinkGroupConfig.getCustomProperty(KEY_BUFFER_SIZE, workNumber * 3)),
                 Threads.createThreadFactoryByName(threadName() + "-", true),
                 ProducerType.SINGLE,
-                new BlockingWaitStrategy());
+                new TimeoutBlockingWaitStrategy(30, TimeUnit.SECONDS));
     }
 
     @Override
@@ -224,13 +225,13 @@ public class DisruptorPartitionHandler extends AbstractPartitionHandler {
         @Override
         public void onEvent(Block block) {
             if (Objects.nonNull(block) && block.getIterator() != null) {
-                try {
-                    synchronized (this) {
+                synchronized (this) {
+                    try {
                         function.process(block.offset, block.getIterator());
-                    }
-                } catch (Throwable e) {
-                    if (!error.compareAndSet(null, e)) {
-                        LOG.error("process function error", e);
+                    } catch (Throwable e) {
+                        if (!error.compareAndSet(null, e)) {
+                            LOG.error("process function error", e);
+                        }
                     }
                 }
             }

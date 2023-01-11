@@ -40,12 +40,12 @@ import static org.zicat.tributary.sink.utils.Threads.joinQuietly;
 public abstract class PartitionHandler extends Thread implements Closeable, Trigger {
 
     private static final Logger LOG = LoggerFactory.getLogger(PartitionHandler.class);
-    protected static final long DEFAULT_WAIT_TIME_MILLIS = 1000;
+    protected static final long DEFAULT_WAIT_TIME_MILLIS = 5000;
 
     protected final String groupId;
     protected final LogQueue logQueue;
     protected final Integer partitionId;
-    protected final FunctionFactory functionFactory;
+    protected final FunctionFactory processFactory;
     protected final SinkGroupConfig sinkGroupConfig;
     protected final RecordsOffset startOffset;
     protected final AtomicBoolean closed;
@@ -56,10 +56,25 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.logQueue = logQueue;
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
-        this.functionFactory = findProcessFactory(sinkGroupConfig);
-        this.startOffset = logQueue.getRecordsOffset(groupId, partitionId);
+        this.processFactory = findProcessFactory(sinkGroupConfig);
+        this.startOffset = getRecordsOffset(groupId, logQueue, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
+    }
+
+    /**
+     * get records offset.
+     *
+     * @param groupId groupId
+     * @param logQueue logQueue
+     * @param partitionId partitionId
+     * @return RecordsOffset
+     */
+    private RecordsOffset getRecordsOffset(String groupId, LogQueue logQueue, int partitionId) {
+        final RecordsOffset recordsOffset = logQueue.getRecordsOffset(groupId, partitionId);
+        return recordsOffset.segmentId() == -1
+                ? recordsOffset.skip2TargetHead(logQueue.lastSegmentId(partitionId))
+                : recordsOffset;
     }
 
     /** open sink handler. */
@@ -155,7 +170,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * @return ProcessFunction
      */
     protected final AbstractFunction createFunction(String id) {
-        final Function function = functionFactory.createFunction();
+        final Function function = processFactory.createFunction();
         try {
             if (!(function instanceof AbstractFunction)) {
                 throw new IllegalStateException(
