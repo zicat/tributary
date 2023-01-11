@@ -16,6 +16,7 @@
         <module>tributary-sink-kafka</module>
         <module>tributary-sink-hdfs</module>
         <module>tributary-sink-authentication</module>
+        <module>tributary-sink-hbase</module>
     </modules>
 
 

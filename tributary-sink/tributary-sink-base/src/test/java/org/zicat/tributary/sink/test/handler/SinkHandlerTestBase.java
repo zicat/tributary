@@ -53,7 +53,7 @@ public class SinkHandlerTestBase {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentify(handlerIdentify)
-                        .processFunctionIdentify(AssertFunctionFactory.IDENTIFY);
+                        .functionIdentify(AssertFunctionFactory.IDENTIFY);
         builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         final SinkGroupManager sinkManager =

@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.queue.utils;
 
-/** DispatcherQueueRuntimeException. */
+/** TributaryQueueRuntimeException. */
 public class TributaryQueueRuntimeException extends RuntimeException {
 
     public TributaryQueueRuntimeException(String message) {

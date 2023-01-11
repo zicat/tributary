@@ -37,7 +37,7 @@ public class SinkGroupConfigTest {
         final SinkGroupConfigBuilder builder = new SinkGroupConfigBuilder();
         final Map<String, Object> mapValue = new HashMap<>();
         mapValue.put("m_1", "m_v_1");
-        builder.processFunctionIdentify(AssertFunctionFactory.IDENTIFY)
+        builder.functionIdentify(AssertFunctionFactory.IDENTIFY)
                 .handlerIdentify(SimplePartitionHandlerFactory.IDENTIFY);
         builder.addCustomProperty("aa", "bb")
                 .addCustomPropertyIfContainKey("aa", "cc", "dd")
@@ -49,8 +49,7 @@ public class SinkGroupConfigTest {
         final SinkGroupConfig sinkGroupConfig = builder.build();
         Assert.assertEquals(
                 SimplePartitionHandlerFactory.IDENTIFY, sinkGroupConfig.handlerIdentify());
-        Assert.assertEquals(
-                AssertFunctionFactory.IDENTIFY, sinkGroupConfig.processFunctionIdentify());
+        Assert.assertEquals(AssertFunctionFactory.IDENTIFY, sinkGroupConfig.functionIdentify());
         Assert.assertEquals("bb", sinkGroupConfig.getCustomProperty("aa"));
         Assert.assertEquals("dd", sinkGroupConfig.getCustomProperty("cc"));
         Assert.assertNull(sinkGroupConfig.getCustomProperty("ee"));

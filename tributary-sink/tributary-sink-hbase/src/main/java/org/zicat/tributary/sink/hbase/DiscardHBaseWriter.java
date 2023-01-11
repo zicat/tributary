@@ -16,18 +16,26 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.queue.utils;
+package org.zicat.tributary.sink.hbase;
 
-import java.io.IOException;
+import org.apache.hadoop.hbase.client.BufferedMutator;
+import org.apache.hadoop.hbase.client.Mutation;
+import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 
-/** TributaryQueueException. */
-public class TributaryQueueException extends IOException {
-
-    public TributaryQueueException(String message) {
-        super(message);
+/** DiscardHBaseWriter. */
+public class DiscardHBaseWriter implements HBaseWriter {
+    @Override
+    public boolean appendData(Mutation mutation) {
+        return false;
     }
 
-    public TributaryQueueException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    @Override
+    public void flush() {}
+
+    @Override
+    public void close() {}
+
+    @Override
+    public void onException(
+            RetriesExhaustedWithDetailsException exception, BufferedMutator mutator) {}
 }

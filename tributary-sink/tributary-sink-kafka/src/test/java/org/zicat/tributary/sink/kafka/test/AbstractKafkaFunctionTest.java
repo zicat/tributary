@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 
-/** KafkaProcessFunctionTest. */
+/** AbstractKafkaFunctionTest. */
 public class AbstractKafkaFunctionTest {
 
     final MockProducer<byte[], byte[]> producer = new MockProducer<>();

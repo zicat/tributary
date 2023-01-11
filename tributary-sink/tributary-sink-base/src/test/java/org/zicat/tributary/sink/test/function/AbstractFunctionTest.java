@@ -84,7 +84,7 @@ public class AbstractFunctionTest {
      * create function by clock.
      *
      * @param clock clock
-     * @return MockProcessFunction
+     * @return MockFunction
      */
     private MockFunction createFunction(MockClock clock) {
         final MockFunction function = new MockFunction();
@@ -102,7 +102,7 @@ public class AbstractFunctionTest {
         return function;
     }
 
-    /** MockProcessFunction. */
+    /** MockFunction. */
     private static class MockFunction extends AbstractFunction {
 
         @Override

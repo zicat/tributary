@@ -7,7 +7,7 @@ Tributary-Sink-Kafka基于[Tributary-Sink-Base](../README.md)提供Sink Kafka能
 
 主要功能包括：
 
-- 基于AbstractProcessFunction初始化Kafka依赖参数。
+- 基于AbstractFunction初始化Kafka依赖参数。
 
 - 提供创建Kafka Producer功能。
 

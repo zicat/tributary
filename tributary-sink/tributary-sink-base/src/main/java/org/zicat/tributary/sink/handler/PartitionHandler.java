@@ -45,7 +45,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     protected final String groupId;
     protected final LogQueue logQueue;
     protected final Integer partitionId;
-    protected final FunctionFactory processFactory;
+    protected final FunctionFactory functionFactory;
     protected final SinkGroupConfig sinkGroupConfig;
     protected final RecordsOffset startOffset;
     protected final AtomicBoolean closed;
@@ -56,7 +56,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.logQueue = logQueue;
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
-        this.processFactory = findProcessFactory(sinkGroupConfig);
+        this.functionFactory = findFunctionFactory(sinkGroupConfig);
         this.startOffset = getRecordsOffset(groupId, logQueue, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
@@ -144,8 +144,8 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * @param sinkGroupConfig sinkGroupConfig
      * @return SinkHandlerFactory
      */
-    private static FunctionFactory findProcessFactory(SinkGroupConfig sinkGroupConfig) {
-        final String identify = sinkGroupConfig.processFunctionIdentify();
+    private static FunctionFactory findFunctionFactory(SinkGroupConfig sinkGroupConfig) {
+        final String identify = sinkGroupConfig.functionIdentify();
         final ServiceLoader<FunctionFactory> loader = ServiceLoader.load(FunctionFactory.class);
         for (FunctionFactory functionFactory : loader) {
             if (identify.equals(functionFactory.identify())) {
@@ -165,12 +165,12 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     }
 
     /**
-     * create process function.
+     * create function.
      *
-     * @return ProcessFunction
+     * @return AbstractFunction
      */
     protected final AbstractFunction createFunction(String id) {
-        final Function function = processFactory.createFunction();
+        final Function function = functionFactory.createFunction();
         try {
             if (!(function instanceof AbstractFunction)) {
                 throw new IllegalStateException(
@@ -190,7 +190,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
             return (AbstractFunction) function;
         } catch (Exception e) {
             IOUtils.closeQuietly(function);
-            throw new IllegalStateException("open process function fail", e);
+            throw new IllegalStateException("open function fail", e);
         }
     }
 

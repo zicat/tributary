@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-/** KafkaProcessFunction. */
+/** AbstractKafkaFunction. */
 public abstract class AbstractKafkaFunction extends AbstractFunction {
 
     public static final String KAFKA_KEY_PREFIX = "kafka.";

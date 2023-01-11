@@ -24,7 +24,7 @@ import org.zicat.tributary.sink.handler.factory.SimplePartitionHandlerFactory;
 public class SinkGroupConfigBuilder extends CustomConfigBuilder {
 
     private String handlerIdentify = SimplePartitionHandlerFactory.IDENTIFY;
-    private String processFunctionIdentify;
+    private String functionIdentify;
 
     /** @return builder */
     public static SinkGroupConfigBuilder newBuilder() {
@@ -32,16 +32,16 @@ public class SinkGroupConfigBuilder extends CustomConfigBuilder {
     }
 
     /**
-     * set processFunctionIdentify.
+     * set functionIdentify.
      *
-     * @param processFunctionIdentify processFunctionIdentify
+     * @param functionIdentify functionIdentify
      * @return SinkGroupConfigBuilder
      */
-    public SinkGroupConfigBuilder processFunctionIdentify(String processFunctionIdentify) {
-        if (processFunctionIdentify == null) {
-            throw new IllegalArgumentException("processFunctionIdentify is null");
+    public SinkGroupConfigBuilder functionIdentify(String functionIdentify) {
+        if (functionIdentify == null) {
+            throw new IllegalArgumentException("functionIdentify is null");
         }
-        this.processFunctionIdentify = processFunctionIdentify;
+        this.functionIdentify = functionIdentify;
         return this;
     }
 
@@ -65,9 +65,9 @@ public class SinkGroupConfigBuilder extends CustomConfigBuilder {
      * @return SinkGroupConfig
      */
     public SinkGroupConfig build() {
-        if (processFunctionIdentify == null) {
-            throw new IllegalStateException("process function identify must not null");
+        if (functionIdentify == null) {
+            throw new IllegalStateException("function identify must not null");
         }
-        return new SinkGroupConfig(handlerIdentify, processFunctionIdentify, customConfig);
+        return new SinkGroupConfig(handlerIdentify, functionIdentify, customConfig);
     }
 }

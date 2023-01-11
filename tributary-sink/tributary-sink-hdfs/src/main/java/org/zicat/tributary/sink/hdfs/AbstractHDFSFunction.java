@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** AbstractHdfsProcessFunction. */
+/** AbstractHDFSFunction. */
 public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHDFSFunction.class);

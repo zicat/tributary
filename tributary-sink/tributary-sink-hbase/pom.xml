@@ -9,36 +9,35 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tributary-sink-base</artifactId>
+    <artifactId>tributary-sink-hbase</artifactId>
+
     <dependencies>
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>2.9.9</version>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-common</artifactId>
+            <version>${hbase-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-client</artifactId>
+            <version>${hbase-version}</version>
         </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>tributary-queue</artifactId>
+            <artifactId>tributary-sink-base</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.zicat</groupId>
-            <artifactId>tributary-queue</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>3.7.7</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-            <version>3.4.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.30</version>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>1.9.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

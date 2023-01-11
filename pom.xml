@@ -14,6 +14,7 @@
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>
+        <hbase-version>2.2.5</hbase-version>
     </properties>
     <build>
         <plugins>
@@ -52,6 +53,18 @@
                     <logViolationsToConsole>true</logViolationsToConsole>
                     <failOnViolation>true</failOnViolation>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

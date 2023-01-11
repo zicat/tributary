@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.BASE_SINK_PATH;
 
-/** AbstractHDFSProcessFunctionTest. */
+/** AbstractHDFSFunctionTest. */
 public class AbstractHDFSFunctionTest {
 
     final String bucketPath = "/tmp/ab_hdfs_f";

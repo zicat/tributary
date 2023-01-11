@@ -40,11 +40,10 @@ DisruptorPartitionHandler会根据设置的线程数派生对应数量的线程�
 
 FunctionFactory基于[Java SPI](https://www.journaldev.com/31602/java-spi-service-provider-interface-and-serviceloader)
 进行依赖注入，用户根据实际需求拓展，
-如：[DummyFunctionFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/DummyFunctionFactory.java)
-。
+如：[DummyFunctionFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/DummyFunctionFactory.java)。
 
-完成ProcessFactory开发后，在resources下创建META-INF.services目录，创建[org.zicat.tributary.sink.function.FunctionFactory](tributary-sink-base/src/main/resources/META-INF/services/org.zicat.tributary.sink.function.FunctionFactory)
-文件，并将开发的ProcessorFactory写入文件。
+完成FunctionFactory开发后，在resources下创建META-INF.services目录，创建[org.zicat.tributary.sink.function.FunctionFactory](tributary-sink-base/src/main/resources/META-INF/services/org.zicat.tributary.sink.function.FunctionFactory)
+文件，并将开发的FunctionFactory写入文件。
 
 ### Function
 
@@ -59,6 +58,8 @@ FunctionFactory基于[Java SPI](https://www.journaldev.com/31602/java-spi-servic
 - [Tributary-Sink-Kafka](tributary-sink-kafka) 提供Sink Kafka能力。
 
 - [Tributary-Sink-HDFS](tributary-sink-hdfs) 提供Sink HDFS能力。
+
+- [Tributary-Sink-HBase](tributary-sink-hbase) 提供Sink HDFS能力。
 
 ## 其他特性
 

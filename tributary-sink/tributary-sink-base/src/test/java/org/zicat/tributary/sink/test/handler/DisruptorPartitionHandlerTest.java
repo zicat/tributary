@@ -36,7 +36,7 @@ public class DisruptorPartitionHandlerTest {
     @Test
     public void testThreadCount() {
         final SinkGroupConfigBuilder builder =
-                SinkGroupConfigBuilder.newBuilder().processFunctionIdentify("dummy");
+                SinkGroupConfigBuilder.newBuilder().functionIdentify("dummy");
         int threads = 0;
         builder.addCustomProperty(KEY_THREADS, threads);
         DisruptorPartitionHandler handler =
@@ -59,7 +59,7 @@ public class DisruptorPartitionHandlerTest {
     @Test
     public void testFunctionId() {
         final SinkGroupConfigBuilder builder =
-                SinkGroupConfigBuilder.newBuilder().processFunctionIdentify("dummy");
+                SinkGroupConfigBuilder.newBuilder().functionIdentify("dummy");
         final int threads = 4;
         builder.addCustomProperty(KEY_THREADS, threads);
         DisruptorPartitionHandler handler =
