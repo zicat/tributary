@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zicat.tributary.sink.function.Context.CLOCK;
+
 /** FunctionTest. */
 public class FunctionTest {
 
@@ -93,7 +95,7 @@ public class FunctionTest {
                         .groupId("g1")
                         .partitionId(1);
         MockClock clock = new MockClock();
-        builder.addCustomProperty(AbstractFunction.CLOCK, clock);
+        builder.addCustomProperty(CLOCK, clock);
         builder.addCustomProperty(AbstractFunction.FLUSH_MILL, 10000);
         clock.setCurrentTimeMillis(0);
 

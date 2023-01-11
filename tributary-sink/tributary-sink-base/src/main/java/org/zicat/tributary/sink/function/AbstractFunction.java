@@ -24,7 +24,6 @@ import org.zicat.tributary.queue.RecordsOffset;
 public abstract class AbstractFunction implements Function {
 
     public static final String FLUSH_MILL = "flushMill";
-    public static final String CLOCK = "clock";
 
     protected Context context;
     protected Clock clock;
@@ -38,8 +37,7 @@ public abstract class AbstractFunction implements Function {
         this.context = context;
         this.committableOffset = context.startRecordsOffset();
         this.flushMill = context.getCustomProperty(FLUSH_MILL, 60000);
-        final Object clock = context.getCustomProperty(CLOCK);
-        this.clock = clock instanceof Clock ? (Clock) clock : new SystemClock();
+        this.clock = context.getOrCreateDefaultClock();
     }
 
     @Override

@@ -18,11 +18,16 @@
 
 package org.zicat.tributary.sink.function;
 
+import org.joda.time.DateTimeUtils;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
+import org.joda.time.chrono.ISOChronology;
 
 /** SystemClock. */
 public class SystemClock implements Clock {
+
+    private static final ISOChronology DEFAULT_UTC = ISOChronology.getInstance(DateTimeZone.UTC);
 
     @Override
     public long currentTimeMillis() {
@@ -31,16 +36,19 @@ public class SystemClock implements Clock {
 
     @Override
     public String today(String format) {
-        return LocalDate.now().toString(format);
+        return new LocalDate(DateTimeUtils.currentTimeMillis(), DEFAULT_UTC).toString(format);
     }
 
     @Override
     public String tomorrow(String format) {
-        return LocalDate.now().plusDays(1).toString(format);
+        return new LocalDate(DateTimeUtils.currentTimeMillis(), DEFAULT_UTC)
+                .plusDays(1)
+                .toString(format);
     }
 
     @Override
     public int secondFromToday() {
-        return LocalDateTime.now().getMillisOfDay() / 1000;
+        return new LocalDateTime(DateTimeUtils.currentTimeMillis(), DEFAULT_UTC).getMillisOfDay()
+                / 1000;
     }
 }

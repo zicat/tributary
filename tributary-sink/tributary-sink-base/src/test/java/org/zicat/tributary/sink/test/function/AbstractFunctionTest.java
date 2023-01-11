@@ -29,6 +29,8 @@ import org.zicat.tributary.sink.function.ContextBuilder;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zicat.tributary.sink.function.Context.CLOCK;
+
 /** AbstractFunctionTest. */
 public class AbstractFunctionTest {
 
@@ -92,7 +94,7 @@ public class AbstractFunctionTest {
                         .startRecordsOffset(startRecordsOffset)
                         .groupId("g1")
                         .partitionId(1);
-        builder.addCustomProperty(AbstractFunction.CLOCK, clock);
+        builder.addCustomProperty(CLOCK, clock);
         builder.addCustomProperty(AbstractFunction.FLUSH_MILL, fullMill);
         final Context context = builder.build();
         clock.setCurrentTimeMillis(0);

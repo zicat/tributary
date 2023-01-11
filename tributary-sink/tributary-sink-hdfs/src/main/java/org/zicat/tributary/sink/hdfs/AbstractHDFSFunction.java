@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 
 /** AbstractHdfsProcessFunction. */
 public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
@@ -51,7 +50,6 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     public static final long DEFAULT_ROLL_SIZE = 1024 * 1024 * 256L;
     public static final int DEFAULT_MAX_RETRIES = 3;
 
-    protected ExecutorService callTimeoutPool;
     protected PrivilegedExecutor privilegedExecutor;
     protected String basePath;
     protected long rollSize;
@@ -161,7 +159,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         for (Map.Entry<String, BucketWriter<P>> entry : sfWriters.entrySet()) {
             final String bucketPath = entry.getKey();
             final BucketWriter<P> writer = entry.getValue();

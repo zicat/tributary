@@ -20,6 +20,8 @@ package org.zicat.tributary.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.sink.function.Clock;
+import org.zicat.tributary.sink.function.SystemClock;
 
 import java.util.Collections;
 import java.util.Map;
@@ -28,11 +30,17 @@ import java.util.Properties;
 /** Config. */
 public class Config {
 
+    public static final String CLOCK = "clock";
     protected static final Logger LOG = LoggerFactory.getLogger(Config.class);
     protected final Map<String, Object> customConfig;
 
     protected Config(Map<String, Object> customConfig) {
         this.customConfig = Collections.unmodifiableMap(customConfig);
+    }
+
+    public Clock getOrCreateDefaultClock() {
+        final Object clock = getCustomProperty(CLOCK);
+        return clock instanceof Clock ? (Clock) clock : new SystemClock();
     }
 
     /**

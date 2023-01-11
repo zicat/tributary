@@ -24,6 +24,7 @@ import org.zicat.tributary.queue.LogQueue;
 import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.queue.RecordsResultSet;
 import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
@@ -50,6 +51,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     public static final String KEY_MAX_RETAIN_SIZE = "maxRetainPerPartition";
 
     protected final Long maxRetainSize;
+    protected final Clock clock;
 
     private RecordsOffset fetchOffset;
     private RecordsOffset commitOffsetWaterMark;
@@ -62,7 +64,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         this.commitOffsetWaterMark = startOffset;
         this.fetchOffset = startOffset;
         this.maxRetainSize = parseMaxRetainSize();
-        this.preTriggerMillis = System.currentTimeMillis();
+        this.clock = sinkGroupConfig.getOrCreateDefaultClock();
+        this.preTriggerMillis = clock.currentTimeMillis();
     }
 
     @Override
@@ -104,7 +107,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         if (idleTimeMillis <= 0) {
             return;
         }
-        final long current = System.currentTimeMillis();
+        final long current = clock.currentTimeMillis();
         if (current - preTriggerMillis <= idleTimeMillis) {
             return;
         }
