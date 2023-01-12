@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.sink.authentication.*;
 
 import java.io.File;
@@ -44,10 +45,7 @@ public class DispatcherAuthenticatorTest {
 
     @BeforeClass
     public static void startMiniKdc() throws Exception {
-        workDir =
-                new File(
-                        System.getProperty("test.dir", "target"),
-                        DispatcherAuthenticatorTest.class.getSimpleName());
+        workDir = FileUtils.createTmpDir("test_mini_kdc");
         flumeKeytab = new File(workDir, "flume.keytab");
         aliceKeytab = new File(workDir, "alice.keytab");
         Properties conf = MiniKdc.createConf();

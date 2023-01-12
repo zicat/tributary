@@ -32,6 +32,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
 
     public static final String KEY_IDLE_MILLIS = "idleTriggerMillis";
     public static final int DEFAULT_IDLE_MILLIS = 30 * 1000;
+
+    private static final String DATE_FORMAT = "yyyyMMdd_HH";
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
                     .name("hdfs_sink_counter")
@@ -45,7 +47,6 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
                     .labelNames("host", "groupId", "threadName")
                     .register();
 
-    private static final String DATE_FORMAT = "yyyyMMdd_HH";
     protected int idleTriggerMillis;
     protected String timeBucket = null;
     protected RecordsOffset lastRecordsOffset;

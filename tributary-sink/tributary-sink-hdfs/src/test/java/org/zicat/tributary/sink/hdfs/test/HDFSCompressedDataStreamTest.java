@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.queue.utils.IOUtils;
 import org.zicat.tributary.sink.hdfs.HDFSCompressedDataStream;
 
@@ -43,17 +44,18 @@ public class HDFSCompressedDataStreamTest {
 
     private static final Logger logger =
             LoggerFactory.getLogger(HDFSCompressedDataStreamTest.class);
+    private final File dir = FileUtils.createTmpDir("hdfs_compressed_data_stream_test");
 
     @Before
     @After
     public void after() {
-        IOUtils.deleteDir(new File("/tmp/compression_test"));
+        IOUtils.deleteDir(dir);
     }
 
     @Test
     public void testSnappy() throws Exception {
 
-        File file = new File("/tmp/compression_test/foo2.gz");
+        File file = new File(dir, "foo2.gz");
 
         String fileURI = file.getAbsoluteFile().toURI().toString();
         logger.info("File URI: {}", fileURI);

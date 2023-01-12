@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zicat.tributary.queue.*;
 import org.zicat.tributary.queue.file.FileBufferReader;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.queue.utils.IOUtils;
 
 import java.io.File;
@@ -40,7 +41,7 @@ import static org.zicat.tributary.queue.utils.VIntUtil.putVInt;
 public class BufferRecordsResultSetWriterTest {
 
     FileChannel fileChannel;
-    File dir = new File("/tmp/buffer_reader_writer");
+    File dir = FileUtils.createTmpDir("buffer_records_result_set_writer_test");
     File file = new File(dir, "foo.log");
 
     @Before

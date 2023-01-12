@@ -76,7 +76,7 @@ public class SinkManagerTest {
 
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
-                        .handlerIdentify("simple")
+                        .handlerIdentify("direct")
                         .functionIdentify("assertCount");
         builder.addCustomProperty(AssertCountFunction.KEY_ASSERT_COUNT, dataSize);
         final SinkGroupConfig sinkGroupConfig = builder.build();

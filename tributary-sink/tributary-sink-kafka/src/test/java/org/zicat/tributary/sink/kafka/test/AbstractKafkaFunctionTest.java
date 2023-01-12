@@ -65,7 +65,7 @@ public class AbstractKafkaFunctionTest {
                 ContextBuilder.newBuilder()
                         .partitionId(0)
                         .startRecordsOffset(new RecordsOffset(1, 1));
-        builder.addCustomProperty(AbstractKafkaFunction.FLUSH_MILL, "0");
+        builder.addCustomProperty(AbstractKafkaFunction.KEY_FLUSH_MILL, "0");
         final Context config = builder.build();
         function.open(config);
     }

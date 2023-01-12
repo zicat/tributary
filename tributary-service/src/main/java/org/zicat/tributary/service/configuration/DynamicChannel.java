@@ -35,6 +35,7 @@ import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
+import org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory;
 import org.zicat.tributary.sink.utils.HostUtils;
 
 import javax.annotation.PostConstruct;
@@ -53,21 +54,41 @@ import java.util.stream.Collectors;
 public class DynamicChannel implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DynamicChannel.class);
-    private static final String KEY_FILE_DIRS = "dirs";
-    private static final String KEY_FILE_BLOCK_SIZE = "blockSize";
-    private static final String KEY_FILE_SEGMENT_SIZE = "segmentSize";
-    private static final String KEY_FILE_CLEAN_UP_PERIOD_SECOND = "cleanUpPeriodSecond";
-    private static final String KEY_FILE_FLUSH_PERIOD_MILLS = "flushPeriodMills";
-    private static final String KEY_FILE_FLUSH_FORCE = "flushForce";
-    private static final String KEY_FILE_COMPRESSION = "compression";
-    private static final String KEY_FILE_FLUSH_PAGE_CACHE_SIZE = "flushPageCacheSize";
     private static final String SPLIT_STR = ",";
+
+    private static final String KEY_FILE_DIRS = "dirs";
+
+    private static final String KEY_FILE_BLOCK_SIZE = "blockSize";
+    private static final String DEFAULT_FILE_BLOCK_SIZE = String.valueOf(32 * 1024);
+
+    private static final String KEY_FILE_SEGMENT_SIZE = "segmentSize";
+    private static final String DEFAULT_FILE_SEGMENT_SIZE =
+            String.valueOf(4L * 1024L * 1024L * 1024L);
+
+    private static final String KEY_FILE_CLEAN_UP_PERIOD_SECOND = "cleanUpPeriodSecond";
+    private static final String DEFAULT_FILE_CLEAN_UP_PERIOD_SECOND = String.valueOf(60);
+
+    private static final String KEY_FILE_FLUSH_PERIOD_MILLS = "flushPeriodMills";
+    private static final String DEFAULT_FILE_FLUSH_PERIOD_MILLS = String.valueOf(500);
+
+    private static final String KEY_FILE_FLUSH_FORCE = "flushForce";
+    private static final String DEFAULT_FILE_FLUSH_FORCE = "false";
+
+    private static final String KEY_FILE_COMPRESSION = "compression";
+    private static final String DEFAULT_FILE_COMPRESSION = "none";
+
+    private static final String KEY_FILE_FLUSH_PAGE_CACHE_SIZE = "flushPageCacheSize";
+    private static final String DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE =
+            String.valueOf(1024L * 1024L * 32L);
+
+    private static final String KEY_SINK_HANDLER_IDENTIFY = "partitionHandlerIdentify";
+    private static final String DEFAULT_SINK_HANDLER_IDENTIFY =
+            DirectPartitionHandlerFactory.IDENTIFY;
 
     private static final String KEY_SINK_GROUP_IDS = "groupIds";
     private static final String KEY_SINK_TOPIC = "topic";
-    private static final String KEY_SINK_HANDLER_IDENTIFY = "partitionHandlerIdentify";
-    private static final String VALUE_SINK_HANDLER_IDENTIFY_DEFAULT = "simple";
     private static final String KEY_SINK_FUNCTION_IDENTIFY = "functionIdentify";
+
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     final List<String> topics = new ArrayList<>();
@@ -236,8 +257,7 @@ public class DynamicChannel implements Closeable {
     private SinkGroupConfigBuilder createSinkGroupConfigBuilderByGroupId(String groupId) {
 
         final String sinkHandlerIdentify =
-                dynamicSinkValue(
-                        groupId, KEY_SINK_HANDLER_IDENTIFY, VALUE_SINK_HANDLER_IDENTIFY_DEFAULT);
+                dynamicSinkValue(groupId, KEY_SINK_HANDLER_IDENTIFY, DEFAULT_SINK_HANDLER_IDENTIFY);
         final String functionIdentify = dynamicSinkValue(groupId, KEY_SINK_FUNCTION_IDENTIFY, null);
         final SinkGroupConfigBuilder configBuilder =
                 SinkGroupConfigBuilder.newBuilder()
@@ -269,11 +289,15 @@ public class DynamicChannel implements Closeable {
 
             final SinkGroupConfigBuilder sinkGroupConfigBuilder = entry.getValue();
             final String maxRetainPerPartition =
-                    dynamicSinkValue(groupId, AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE, "");
+                    dynamicSinkValue(
+                            groupId,
+                            AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
+                            AbstractPartitionHandler.DEFAULT_MAX_RETAIN_SIZE);
             sinkGroupConfigBuilder.addCustomProperty(
                     AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
                     maxRetainPerPartition.isEmpty() ? null : Long.parseLong(maxRetainPerPartition));
-            sinkGroupConfigBuilder.addCustomProperty(AbstractFunction.METRICS_HOST, metricsHost);
+            sinkGroupConfigBuilder.addCustomProperty(
+                    AbstractFunction.KEY_METRICS_HOST, metricsHost);
 
             final SinkGroupConfig sinkGroupConfig = sinkGroupConfigBuilder.build();
             final SinkGroupManager sinkGroupManager =
@@ -300,28 +324,34 @@ public class DynamicChannel implements Closeable {
                 Arrays.asList(dynamicFileValue(topic, KEY_FILE_DIRS, null).split(SPLIT_STR));
         final int blockSize =
                 Integer.parseInt(
-                        dynamicFileValue(topic, KEY_FILE_BLOCK_SIZE, String.valueOf(32 * 1024)));
+                        dynamicFileValue(topic, KEY_FILE_BLOCK_SIZE, DEFAULT_FILE_BLOCK_SIZE));
         final long segmentSize =
                 Long.parseLong(
-                        dynamicFileValue(
-                                topic,
-                                KEY_FILE_SEGMENT_SIZE,
-                                String.valueOf(4L * 1024L * 1024L * 1024L)));
+                        dynamicFileValue(topic, KEY_FILE_SEGMENT_SIZE, DEFAULT_FILE_SEGMENT_SIZE));
         final int cleanUpPeriodSecond =
                 Integer.parseInt(
                         dynamicFileValue(
-                                topic, KEY_FILE_CLEAN_UP_PERIOD_SECOND, String.valueOf(60)));
+                                topic,
+                                KEY_FILE_CLEAN_UP_PERIOD_SECOND,
+                                DEFAULT_FILE_CLEAN_UP_PERIOD_SECOND));
         final int flushPeriodMills =
                 Integer.parseInt(
-                        dynamicFileValue(topic, KEY_FILE_FLUSH_PERIOD_MILLS, String.valueOf(500)));
+                        dynamicFileValue(
+                                topic,
+                                KEY_FILE_FLUSH_PERIOD_MILLS,
+                                DEFAULT_FILE_FLUSH_PERIOD_MILLS));
         final long flushPageCacheSize =
                 Long.parseLong(
                         dynamicFileValue(
-                                topic, KEY_FILE_SEGMENT_SIZE, String.valueOf(1024L * 1024L * 32L)));
-        final String compression = dynamicFileValue(topic, KEY_FILE_COMPRESSION, "none");
+                                topic,
+                                KEY_FILE_FLUSH_PAGE_CACHE_SIZE,
+                                DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE));
+        final String compression =
+                dynamicFileValue(topic, KEY_FILE_COMPRESSION, DEFAULT_FILE_COMPRESSION);
 
         final boolean flushForce =
-                Boolean.parseBoolean(dynamicFileValue(topic, KEY_FILE_FLUSH_FORCE, "false"));
+                Boolean.parseBoolean(
+                        dynamicFileValue(topic, KEY_FILE_FLUSH_FORCE, DEFAULT_FILE_FLUSH_FORCE));
 
         final PartitionFileLogQueueBuilder logQueueBuilder =
                 PartitionFileLogQueueBuilder.newBuilder()

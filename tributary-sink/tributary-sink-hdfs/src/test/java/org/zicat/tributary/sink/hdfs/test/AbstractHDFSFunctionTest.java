@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.queue.utils.IOUtils;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -43,12 +44,13 @@ import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.BASE_SINK_PATH;
 /** AbstractHDFSFunctionTest. */
 public class AbstractHDFSFunctionTest {
 
-    final String bucketPath = "/tmp/ab_hdfs_f";
+    final File dir = FileUtils.createTmpDir("abstract_hdfs_function_test");
+    final String bucketPath = dir.getPath();
 
     @Before
     @After
     public void cleanup() {
-        IOUtils.deleteDir(new File(bucketPath));
+        IOUtils.deleteDir(dir);
     }
 
     @Test

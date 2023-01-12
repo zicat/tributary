@@ -30,6 +30,7 @@ import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.queue.RecordsResultSet;
 import org.zicat.tributary.queue.file.PartitionFileLogQueue;
 import org.zicat.tributary.queue.file.PartitionFileLogQueueBuilder;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.queue.utils.IOUtils;
 
 import java.io.File;
@@ -48,10 +49,11 @@ import java.util.stream.Collectors;
 public class FileLogQueueTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileLogQueueTest.class);
+    private static final File PARENT_DIR = FileUtils.createTmpDir("file_log_queue_test");
 
     @Test
     public void testEmptySegment() throws IOException, InterruptedException {
-        final String dir = "/tmp/test/test_log_empty/partition-";
+        final String dir = new File(PARENT_DIR, "test_empty_segment/partition-").getPath();
         final int blockSize = 28;
         final long segmentSize = 56;
         final String groupId = "group_1";
@@ -117,7 +119,7 @@ public class FileLogQueueTest {
     public void testCleanUp()
             throws IOException, InterruptedException, NoSuchMethodException,
                     InvocationTargetException, IllegalAccessException {
-        final String dir = "/tmp/test/test_log_2333/partition-";
+        final String dir = new File(PARENT_DIR, "test_clean_up/partition-").getPath();
         final int blockSize = 28;
         final long segmentSize = 56;
         final String groupId = "group_1";
@@ -155,7 +157,7 @@ public class FileLogQueueTest {
 
     @Test
     public void testDataCorrection() throws IOException, InterruptedException {
-        final String dir = "/tmp/test/test_log_21/partition-";
+        final String dir = new File(PARENT_DIR, "test_data_correction/partition-").getPath();
         final int blockSize = 28;
         final long segmentSize = 1024L * 512L;
         final String groupId = "group_1";
@@ -190,7 +192,7 @@ public class FileLogQueueTest {
 
     @Test
     public void testSmallSegmentSize() throws IOException {
-        final String dir = "/tmp/test/test_log_5/partition-";
+        final String dir = new File(PARENT_DIR, "test_small_segment_size/partition-").getPath();
         final int partitionCount = 1;
         final long dataSize = 500001;
         final int sinkGroups = 2;
@@ -212,7 +214,8 @@ public class FileLogQueueTest {
 
     @Test
     public void testPartitionAndSinkGroups() throws IOException {
-        final String dir = "/tmp/test/test_log_3/partition-";
+        final String dir =
+                new File(PARENT_DIR, "test_partition_and_sink_groups/partition-").getPath();
         final int partitionCount = 3;
         final long dataSize = 500000;
         final int sinkGroups = 4;
@@ -234,7 +237,7 @@ public class FileLogQueueTest {
 
     @Test
     public void testTake() throws IOException {
-        final String dir = "/tmp/test/test_log_4/partition-";
+        final String dir = new File(PARENT_DIR, "test_take/partition-").getPath();
         final int partitionCount = 1;
         final long dataSize = 1000000;
         final int blockSize = 32 * 1024;
@@ -309,7 +312,8 @@ public class FileLogQueueTest {
     @Test
     public void testOnePartitionMultiWriter() throws IOException {
         for (int j = 0; j < 10; j++) {
-            final String dir = "/tmp/test/test_log_6/partition-";
+            final String dir =
+                    new File(PARENT_DIR, "test_one_partition_multi_writer/partition-").getPath();
             final int blockSize = 32 * 1024;
             final long segmentSize = 1024L * 1024L * 51;
             final int partitionCount = 1;
@@ -463,7 +467,7 @@ public class FileLogQueueTest {
 
     @BeforeClass
     public static void beforeTest() {
-        IOUtils.deleteDir(new File("/tmp/test"));
+        IOUtils.deleteDir(PARENT_DIR);
     }
 
     public static void join(Thread t) {

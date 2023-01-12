@@ -36,15 +36,13 @@ public class IOUtilsTest {
 
     @Test
     public void testMkDirDeleteDir() {
-        final File dir = new File("/tmp/io_utils_test/");
+        final File dir = FileUtils.createTmpDir("test_mk_dir_delete_dir");
         IOUtils.deleteDir(dir);
-
         final File childDir = new File(dir, "cc");
         final File ccDir = new File(childDir, "c2");
         Assert.assertTrue(IOUtils.makeDir(ccDir));
         Assert.assertTrue(IOUtils.makeDir(childDir));
         Assert.assertTrue(IOUtils.deleteDir(ccDir));
-
         Assert.assertTrue(IOUtils.deleteDir(dir));
     }
 
@@ -73,8 +71,8 @@ public class IOUtilsTest {
 
     @Test
     public void testReadWriteChannel() throws IOException {
-
-        final File file = new File("/tmp/aa.txt");
+        final File dir = FileUtils.createTmpDir("test_read_writer_channel");
+        final File file = new File(dir, "aa.txt");
         if (file.exists() && !file.delete()) {
             throw new IOException("file delete fail " + file.getPath());
         }

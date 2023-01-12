@@ -39,7 +39,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.zicat.tributary.sink.function.AbstractFunction.FLUSH_MILL;
+import static org.zicat.tributary.sink.function.AbstractFunction.KEY_FLUSH_MILL;
 
 /** AbstractHBaseFunctionTest. */
 public class AbstractHBaseFunctionTest {
@@ -233,7 +233,7 @@ public class AbstractHBaseFunctionTest {
                         .topic("t1")
                         .startRecordsOffset(new RecordsOffset(1, 1));
         // always flush
-        contextBuilder.addCustomProperty(FLUSH_MILL, 0);
+        contextBuilder.addCustomProperty(KEY_FLUSH_MILL, 0);
         function.open(contextBuilder.build());
         final RecordsOffset flushRecordOffset = new RecordsOffset(1, 5);
         Assert.assertTrue(function.flush(flushRecordOffset));

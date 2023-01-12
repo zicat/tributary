@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.zicat.tributary.queue.LogQueue;
 import org.zicat.tributary.queue.file.FileLogQueueBuilder;
 import org.zicat.tributary.queue.file.PartitionFileLogQueueBuilder;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,19 +38,19 @@ import static org.zicat.tributary.queue.utils.IOUtils.makeDir;
 /** FileLogQueueBuilderTest. */
 public class FileLogQueueBuilderTest {
 
-    private static final File dir = new File("/tmp/file_log_queue_builder/");
+    private static final File DIR = FileUtils.createTmpDir("file_log_queue_builder_test");
 
     @BeforeClass
     public static void before() throws IOException {
-        deleteDir(dir);
-        if (!makeDir(dir)) {
-            throw new IOException("create dir fail, " + dir.getPath());
+        deleteDir(DIR);
+        if (!makeDir(DIR)) {
+            throw new IOException("create dir fail, " + DIR.getPath());
         }
     }
 
     @AfterClass
     public static void after() {
-        deleteDir(dir);
+        deleteDir(DIR);
     }
 
     @Test
@@ -61,7 +62,7 @@ public class FileLogQueueBuilderTest {
         } catch (Exception e) {
             Assert.assertTrue(true);
         }
-        builder = new FileLogQueueBuilder().dir(dir);
+        builder = new FileLogQueueBuilder().dir(DIR);
         try {
             builder.build();
             Assert.fail();
@@ -69,7 +70,7 @@ public class FileLogQueueBuilderTest {
             Assert.assertTrue(true);
         }
 
-        builder = new FileLogQueueBuilder().dir(dir);
+        builder = new FileLogQueueBuilder().dir(DIR);
         builder.consumerGroups(Arrays.asList("1", "2"))
                 .blockSize(100)
                 .segmentSize(10000L)
@@ -81,7 +82,7 @@ public class FileLogQueueBuilderTest {
     @Test
     public void testPartitionFileLogQueue() {
         PartitionFileLogQueueBuilder builder = new PartitionFileLogQueueBuilder();
-        builder.dirs(Collections.singletonList(dir));
+        builder.dirs(Collections.singletonList(DIR));
         builder.consumerGroups(Arrays.asList("3", "2"))
                 .blockSize(200)
                 .segmentSize(3000L)

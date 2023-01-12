@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.queue.file.FileGroupManager;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.queue.utils.IOUtils;
 
 import java.io.File;
@@ -37,7 +38,8 @@ import static org.zicat.tributary.queue.utils.IOUtils.makeDir;
 /** FileGroupManagerTest. */
 public class FileGroupManagerTest {
 
-    private static final File dir = new File("/tmp/group_id_manager/");
+    private static final File DIR = FileUtils.createTmpDir("file_group_manager_test");
+
     private static final String topic = "topic_1";
 
     @Test
@@ -46,7 +48,7 @@ public class FileGroupManagerTest {
         // test new group ids
         final Random random = new Random();
         final List<String> groupIds = Arrays.asList("g1", "g2", "g3");
-        final FileGroupManager manager = new FileGroupManager(dir, topic, groupIds);
+        final FileGroupManager manager = new FileGroupManager(DIR, topic, groupIds);
         final Map<String, RecordsOffset> cache = new HashMap<>();
         Assert.assertEquals(createNewGroupRecordsOffset(), manager.getMinRecordsOffset());
 
@@ -68,7 +70,7 @@ public class FileGroupManagerTest {
 
         // test exist group id and new ids
         final List<String> groupIds2 = Arrays.asList("g2", "g3", "g4");
-        final FileGroupManager manager2 = new FileGroupManager(dir, topic, groupIds2);
+        final FileGroupManager manager2 = new FileGroupManager(DIR, topic, groupIds2);
         Assert.assertEquals(createNewGroupRecordsOffset(), manager2.getMinRecordsOffset());
 
         for (String group : groupIds2) {
@@ -103,7 +105,7 @@ public class FileGroupManagerTest {
         // test single exist groups
         final String singleGroup = "g2";
         final List<String> groupIds3 = Collections.singletonList(singleGroup);
-        final FileGroupManager manager3 = new FileGroupManager(dir, topic, groupIds3);
+        final FileGroupManager manager3 = new FileGroupManager(DIR, topic, groupIds3);
         Assert.assertEquals(cache.get(singleGroup), manager3.getMinRecordsOffset());
         Assert.assertEquals(cache.get(singleGroup), manager3.getRecordsOffset(singleGroup));
         manager3.commit(singleGroup, cache.get(singleGroup).skipNextSegmentHead());
@@ -125,7 +127,7 @@ public class FileGroupManagerTest {
         IOUtils.closeQuietly(manager3);
 
         // test new topics
-        final FileGroupManager manager4 = new FileGroupManager(dir, topic + "_new", groupIds);
+        final FileGroupManager manager4 = new FileGroupManager(DIR, topic + "_new", groupIds);
         Assert.assertEquals(createNewGroupRecordsOffset(), manager4.getMinRecordsOffset());
         for (String group : groupIds) {
             RecordsOffset recordsOffset = manager4.getRecordsOffset(group);
@@ -147,7 +149,7 @@ public class FileGroupManagerTest {
         final String groupId4 = "g444";
         final String topic = "t1";
         final FileGroupManager manager =
-                new FileGroupManager(dir, topic, Collections.singletonList(groupId4));
+                new FileGroupManager(DIR, topic, Collections.singletonList(groupId4));
         final String fileName = manager.createFileNameByGroupId("g444");
         Assert.assertTrue(manager.isGroupIndexFile(fileName));
         Assert.assertEquals(groupId4, manager.groupIdByFileName(fileName));
@@ -156,14 +158,14 @@ public class FileGroupManagerTest {
 
     @BeforeClass
     public static void before() throws IOException {
-        deleteDir(dir);
-        if (!makeDir(dir)) {
-            throw new IOException("create dir fail, " + dir.getPath());
+        deleteDir(DIR);
+        if (!makeDir(DIR)) {
+            throw new IOException("create dir fail, " + DIR.getPath());
         }
     }
 
     @AfterClass
     public static void after() {
-        deleteDir(dir);
+        deleteDir(DIR);
     }
 }

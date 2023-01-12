@@ -50,7 +50,7 @@ public class FunctionTest {
                         .startRecordsOffset(recordsOffset)
                         .partitionId(1)
                         .groupId("g1");
-        builder.addCustomProperty(AbstractFunction.FLUSH_MILL, 0);
+        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, 0);
         final Context context = builder.build();
         function.open(context);
         Assert.assertEquals(function.committableOffset(), recordsOffset);
@@ -74,7 +74,7 @@ public class FunctionTest {
                         .startRecordsOffset(recordsOffset)
                         .groupId("g1")
                         .partitionId(1);
-        builder.addCustomProperty(AbstractFunction.FLUSH_MILL, 0);
+        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, 0);
         final Context context = builder.build();
         function.open(context);
 
@@ -96,7 +96,7 @@ public class FunctionTest {
                         .partitionId(1);
         MockClock clock = new MockClock();
         builder.addCustomProperty(CLOCK, clock);
-        builder.addCustomProperty(AbstractFunction.FLUSH_MILL, 10000);
+        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, 10000);
         clock.setCurrentTimeMillis(0);
 
         final Context context = builder.build();

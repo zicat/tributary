@@ -49,9 +49,12 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPartitionHandler.class);
     public static final String KEY_MAX_RETAIN_SIZE = "maxRetainPerPartitionBytes";
+    public static final String DEFAULT_MAX_RETAIN_SIZE = "";
+
     public static final String KEY_RETAIN_SIZE_CHECK_PERIOD_MILLI =
             "retainPerPartitionCheckPeriodMilli";
     public static final int DEFAULT_RETAIN_SIZE_CHECK_PERIOD_MILLI = 30 * 1000;
+
     private static final long DEFAULT_MIN_WAIT_TIME = 500;
 
     protected final Long maxRetainSize;

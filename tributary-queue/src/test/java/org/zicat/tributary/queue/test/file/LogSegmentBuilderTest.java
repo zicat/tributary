@@ -26,6 +26,7 @@ import org.zicat.tributary.queue.BufferWriter;
 import org.zicat.tributary.queue.CompressionType;
 import org.zicat.tributary.queue.file.LogSegment;
 import org.zicat.tributary.queue.file.LogSegmentBuilder;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.queue.utils.IOUtils;
 
 import java.io.File;
@@ -37,14 +38,14 @@ import static org.zicat.tributary.queue.utils.IOUtils.makeDir;
 /** LogSegmentBuilderTest. */
 public class LogSegmentBuilderTest {
 
-    private static final File dir = new File("/tmp/segment_build_test/");
+    private static final File DIR = FileUtils.createTmpDir("log_segment_builder_test");
 
     @Test
     public void test() {
 
         final LogSegmentBuilder builder = new LogSegmentBuilder();
         try {
-            builder.segmentSize(1025L).fileId(1).dir(dir).build(new BufferWriter(1024));
+            builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BufferWriter(1024));
             Assert.fail();
         } catch (RuntimeException e) {
             Assert.assertTrue(true);
@@ -65,14 +66,14 @@ public class LogSegmentBuilderTest {
 
     @BeforeClass
     public static void before() throws IOException {
-        deleteDir(dir);
-        if (!makeDir(dir)) {
-            throw new IOException("create dir fail, " + dir.getPath());
+        deleteDir(DIR);
+        if (!makeDir(DIR)) {
+            throw new IOException("create dir fail, " + DIR.getPath());
         }
     }
 
     @AfterClass
     public static void after() {
-        deleteDir(dir);
+        deleteDir(DIR);
     }
 }

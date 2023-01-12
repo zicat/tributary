@@ -37,17 +37,20 @@ import java.util.UUID;
 public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHDFSFunction.class);
+
     public static final String DIRECTORY_DELIMITER = System.getProperty("file.separator");
-
-    public static final String KEYTAB = "keytab";
-    public static final String PRINCIPLE = "principle";
-
     public static final String BASE_SINK_PATH = "sinkPath";
-    public static final String ROLL_SIZE = "roll.size";
-    public static final String MAX_RETRIES = "maxRetries";
 
-    public static final String DEFAULT_BASE_SINK_PATH = "/tmp/test/cache";
+    public static final String KEY_KEYTAB = "keytab";
+    public static final String DEFAULT_KEYTAB = null;
+
+    public static final String KEY_PRINCIPLE = "principle";
+    public static final String DEFAULT_PRINCIPLE = null;
+
+    public static final String KEY_ROLL_SIZE = "roll.size";
     public static final long DEFAULT_ROLL_SIZE = 1024 * 1024 * 256L;
+
+    public static final String KEY_MAX_RETRIES = "maxRetries";
     public static final int DEFAULT_MAX_RETRIES = 3;
 
     protected PrivilegedExecutor privilegedExecutor;
@@ -63,18 +66,17 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
 
         super.open(context);
         this.snappyCodec.setConf(new Configuration());
-        final String basePath =
-                context.getCustomProperty(BASE_SINK_PATH, DEFAULT_BASE_SINK_PATH).trim();
+        final String basePath = context.getCustomProperty(BASE_SINK_PATH).toString().trim();
         this.basePath =
                 basePath.endsWith(DIRECTORY_DELIMITER)
                         ? basePath.substring(0, basePath.length() - 1)
                         : basePath;
         this.privilegedExecutor =
                 DispatcherAuthenticationUtil.getAuthenticator(
-                        context.getCustomProperty(PRINCIPLE, null),
-                        context.getCustomProperty(KEYTAB, null));
-        this.rollSize = context.getCustomProperty(ROLL_SIZE, DEFAULT_ROLL_SIZE);
-        this.maxRetry = context.getCustomProperty(MAX_RETRIES, DEFAULT_MAX_RETRIES);
+                        context.getCustomProperty(KEY_PRINCIPLE, DEFAULT_KEYTAB),
+                        context.getCustomProperty(KEY_KEYTAB, DEFAULT_PRINCIPLE));
+        this.rollSize = context.getCustomProperty(KEY_ROLL_SIZE, DEFAULT_ROLL_SIZE);
+        this.maxRetry = context.getCustomProperty(KEY_MAX_RETRIES, DEFAULT_MAX_RETRIES);
         this.prefixFileName = prefixFileNameInBucket();
     }
 

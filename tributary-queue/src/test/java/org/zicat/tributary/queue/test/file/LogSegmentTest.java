@@ -28,6 +28,7 @@ import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.queue.RecordsResultSet;
 import org.zicat.tributary.queue.file.LogSegment;
 import org.zicat.tributary.queue.file.LogSegmentBuilder;
+import org.zicat.tributary.queue.test.utils.FileUtils;
 import org.zicat.tributary.queue.utils.IOUtils;
 
 import java.io.File;
@@ -43,11 +44,11 @@ import static org.zicat.tributary.queue.utils.IOUtils.makeDir;
 /** LogSegment. */
 public class LogSegmentTest {
 
-    private static final File dir = new File("/tmp/segment_test/");
+    private static final File DIR = FileUtils.createTmpDir("log_segment_test");
 
     @Test
     public void testAppend() throws IOException {
-        final File childDir = new File(dir, "test_append");
+        final File childDir = new File(DIR, "test_append");
         makeDir(childDir);
         final LogSegmentBuilder builder = new LogSegmentBuilder();
         final LogSegment segment =
@@ -67,7 +68,7 @@ public class LogSegmentTest {
 
     @Test
     public void testMultiThread() throws InterruptedException, IOException {
-        final File childDir = new File(dir, "test_multi_thread");
+        final File childDir = new File(DIR, "test_multi_thread");
         makeDir(childDir);
         final LogSegmentBuilder builder = new LogSegmentBuilder();
         final int fileId = 1;
@@ -124,7 +125,7 @@ public class LogSegmentTest {
 
     @Test
     public void testRead() throws IOException, InterruptedException {
-        final File childDir = new File(dir, "test_read");
+        final File childDir = new File(DIR, "test_read");
         makeDir(childDir);
         final LogSegmentBuilder builder = new LogSegmentBuilder();
         final int fileId = 1;
@@ -206,14 +207,14 @@ public class LogSegmentTest {
 
     @BeforeClass
     public static void before() throws IOException {
-        deleteDir(dir);
-        if (!makeDir(dir)) {
-            throw new IOException("create dir fail, " + dir.getPath());
+        deleteDir(DIR);
+        if (!makeDir(DIR)) {
+            throw new IOException("create dir fail, " + DIR.getPath());
         }
     }
 
     @AfterClass
     public static void after() {
-        deleteDir(dir);
+        deleteDir(DIR);
     }
 }

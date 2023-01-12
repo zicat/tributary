@@ -95,7 +95,7 @@ public class AbstractFunctionTest {
                         .groupId("g1")
                         .partitionId(1);
         builder.addCustomProperty(CLOCK, clock);
-        builder.addCustomProperty(AbstractFunction.FLUSH_MILL, fullMill);
+        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, fullMill);
         final Context context = builder.build();
         clock.setCurrentTimeMillis(0);
         function.open(context);
