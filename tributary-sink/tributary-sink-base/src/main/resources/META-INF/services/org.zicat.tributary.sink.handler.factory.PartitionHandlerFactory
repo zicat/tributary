@@ -1,2 +1,2 @@
-org.zicat.tributary.sink.handler.factory.SimplePartitionHandlerFactory
-org.zicat.tributary.sink.handler.factory.DisruptorPartitionHandlerFactory
+org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory
+org.zicat.tributary.sink.handler.factory.MultiThreadPartitionHandlerFactory

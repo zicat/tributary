@@ -11,6 +11,7 @@
     <modules>
         <module>tributary-queue</module>
         <module>tributary-sink</module>
+        <module>tributary-service</module>
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>

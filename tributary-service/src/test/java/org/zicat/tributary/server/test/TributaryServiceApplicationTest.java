@@ -16,26 +16,14 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.handler.factory;
+package org.zicat.tributary.server.test;
 
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
-import org.zicat.tributary.sink.handler.SimplePartitionHandler;
+import org.zicat.tributary.service.TributaryServiceApplication;
 
-/** SimplePartitionHandlerFactory. */
-public class SimplePartitionHandlerFactory implements PartitionHandlerFactory {
+/** TributaryServiceApplicationTest. */
+public class TributaryServiceApplicationTest {
 
-    public static final String IDENTIFY = "simple";
-
-    @Override
-    public AbstractPartitionHandler createHandler(
-            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        return new SimplePartitionHandler(groupId, logQueue, partitionId, sinkGroupConfig);
-    }
-
-    @Override
-    public String identify() {
-        return IDENTIFY;
+    public static void main(String[] args) {
+        TributaryServiceApplication.main(args);
     }
 }

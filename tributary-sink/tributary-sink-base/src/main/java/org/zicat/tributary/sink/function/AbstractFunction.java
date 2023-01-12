@@ -19,11 +19,13 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.sink.utils.HostUtils;
 
 /** AbstractFunction. */
 public abstract class AbstractFunction implements Function {
 
     public static final String FLUSH_MILL = "flushMill";
+    public static final String METRICS_HOST = "metricsHost";
 
     protected Context context;
     protected Clock clock;
@@ -31,6 +33,7 @@ public abstract class AbstractFunction implements Function {
     private RecordsOffset committableOffset;
     protected long flushMill;
     private Long preFlushTime;
+    private String metricsHost;
 
     @Override
     public void open(Context context) {
@@ -38,11 +41,22 @@ public abstract class AbstractFunction implements Function {
         this.committableOffset = context.startRecordsOffset();
         this.flushMill = context.getCustomProperty(FLUSH_MILL, 60000);
         this.clock = context.getOrCreateDefaultClock();
+        this.metricsHost =
+                context.getCustomProperty(METRICS_HOST, HostUtils.getLocalHostString(".*"));
     }
 
     @Override
     public final RecordsOffset committableOffset() {
         return committableOffset;
+    }
+
+    /**
+     * get metrics host.
+     *
+     * @return string
+     */
+    public final String metricsHost() {
+        return metricsHost;
     }
 
     /**

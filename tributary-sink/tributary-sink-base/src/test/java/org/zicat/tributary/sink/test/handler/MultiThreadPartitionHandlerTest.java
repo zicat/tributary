@@ -23,15 +23,15 @@ import org.junit.Test;
 import org.zicat.tributary.queue.MockLogQueue;
 import org.zicat.tributary.queue.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
-import org.zicat.tributary.sink.handler.DisruptorPartitionHandler;
+import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.zicat.tributary.sink.handler.DisruptorPartitionHandler.KEY_THREADS;
+import static org.zicat.tributary.sink.handler.MultiThreadPartitionHandler.KEY_THREADS;
 
 /** DisruptorMultiSinkHandlerTest. */
-public class DisruptorPartitionHandlerTest {
+public class MultiThreadPartitionHandlerTest {
 
     @Test
     public void testThreadCount() {
@@ -39,8 +39,8 @@ public class DisruptorPartitionHandlerTest {
                 SinkGroupConfigBuilder.newBuilder().functionIdentify("dummy");
         int threads = 0;
         builder.addCustomProperty(KEY_THREADS, threads);
-        DisruptorPartitionHandler handler =
-                new DisruptorPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
+        MultiThreadPartitionHandler handler =
+                new MultiThreadPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
         try {
             handler.open();
             Assert.fail();
@@ -50,7 +50,7 @@ public class DisruptorPartitionHandlerTest {
 
         threads = 10;
         builder.addCustomProperty(KEY_THREADS, threads);
-        handler = new DisruptorPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
+        handler = new MultiThreadPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
         handler.open();
         Assert.assertEquals(threads, handler.handlers().length);
         IOUtils.closeQuietly(handler);
@@ -62,12 +62,12 @@ public class DisruptorPartitionHandlerTest {
                 SinkGroupConfigBuilder.newBuilder().functionIdentify("dummy");
         final int threads = 4;
         builder.addCustomProperty(KEY_THREADS, threads);
-        DisruptorPartitionHandler handler =
-                new DisruptorPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
+        MultiThreadPartitionHandler handler =
+                new MultiThreadPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
         handler.open();
         Assert.assertEquals(threads, handler.handlers().length);
         Set<String> distinctIds = new HashSet<>();
-        for (DisruptorPartitionHandler.DataHandler dataHandler : handler.handlers()) {
+        for (MultiThreadPartitionHandler.DataHandler dataHandler : handler.handlers()) {
             distinctIds.add(dataHandler.functionId());
         }
         Assert.assertEquals(threads, distinctIds.size());

@@ -16,46 +16,26 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.sink.handler.factory;
 
-/** Clock. */
-public interface Clock {
+import org.zicat.tributary.queue.LogQueue;
+import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
+import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 
-    /**
-     * get current time millis, linux time ignore timezone.
-     *
-     * @return millis
-     */
-    long currentTimeMillis();
+/** SimplePartitionHandlerFactory. */
+public class DirectPartitionHandlerFactory implements PartitionHandlerFactory {
 
-    /**
-     * current time.
-     *
-     * @param pattern pattern
-     * @return string
-     */
-    String currentTime(String pattern);
+    public static final String IDENTIFY = "direct";
 
-    /**
-     * get today.
-     *
-     * @param format format
-     * @return string day
-     */
-    String today(String format);
+    @Override
+    public AbstractPartitionHandler createHandler(
+            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
+        return new DirectPartitionHandler(groupId, logQueue, partitionId, sinkGroupConfig);
+    }
 
-    /**
-     * get tomorrow.
-     *
-     * @param format format
-     * @return next string day
-     */
-    String tomorrow(String format);
-
-    /**
-     * get current second from today.
-     *
-     * @return millis
-     */
-    int secondFromToday();
+    @Override
+    public String identify() {
+        return IDENTIFY;
+    }
 }

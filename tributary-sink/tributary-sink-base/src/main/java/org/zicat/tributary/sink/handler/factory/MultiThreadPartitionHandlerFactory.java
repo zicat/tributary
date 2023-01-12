@@ -21,17 +21,17 @@ package org.zicat.tributary.sink.handler.factory;
 import org.zicat.tributary.queue.LogQueue;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
-import org.zicat.tributary.sink.handler.DisruptorPartitionHandler;
+import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 
 /** DisruptorPartitionHandlerFactory. */
-public class DisruptorPartitionHandlerFactory implements PartitionHandlerFactory {
+public class MultiThreadPartitionHandlerFactory implements PartitionHandlerFactory {
 
-    public static final String IDENTIFY = "disruptor";
+    public static final String IDENTIFY = "multi_thread";
 
     @Override
     public AbstractPartitionHandler createHandler(
             String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        return new DisruptorPartitionHandler(groupId, logQueue, partitionId, sinkGroupConfig);
+        return new MultiThreadPartitionHandler(groupId, logQueue, partitionId, sinkGroupConfig);
     }
 
     @Override

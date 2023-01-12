@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Test;
-import org.zicat.tributary.sink.handler.factory.DisruptorPartitionHandlerFactory;
-import org.zicat.tributary.sink.handler.factory.SimplePartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.factory.MultiThreadPartitionHandlerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,12 +33,12 @@ public class PartitionHandlerTest {
 
     @Test
     public void testSimpleSinkHandler() throws IOException {
-        SinkHandlerTestBase.test(createTestData(100), SimplePartitionHandlerFactory.IDENTIFY);
+        SinkHandlerTestBase.test(createTestData(100), DirectPartitionHandlerFactory.IDENTIFY);
     }
 
     @Test
     public void testDisruptorSinkHandler() throws IOException {
-        SinkHandlerTestBase.test(createTestData(300), DisruptorPartitionHandlerFactory.IDENTIFY);
+        SinkHandlerTestBase.test(createTestData(300), MultiThreadPartitionHandlerFactory.IDENTIFY);
     }
 
     /**

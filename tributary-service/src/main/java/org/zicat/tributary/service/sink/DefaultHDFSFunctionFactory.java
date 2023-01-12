@@ -16,46 +16,20 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.service.sink;
 
-/** Clock. */
-public interface Clock {
+import org.zicat.tributary.sink.function.Function;
+import org.zicat.tributary.sink.function.FunctionFactory;
 
-    /**
-     * get current time millis, linux time ignore timezone.
-     *
-     * @return millis
-     */
-    long currentTimeMillis();
+/** DefaultHDFSFunctionFactory. */
+public class DefaultHDFSFunctionFactory implements FunctionFactory {
+    @Override
+    public Function createFunction() {
+        return new DefaultHDFSFunction();
+    }
 
-    /**
-     * current time.
-     *
-     * @param pattern pattern
-     * @return string
-     */
-    String currentTime(String pattern);
-
-    /**
-     * get today.
-     *
-     * @param format format
-     * @return string day
-     */
-    String today(String format);
-
-    /**
-     * get tomorrow.
-     *
-     * @param format format
-     * @return next string day
-     */
-    String tomorrow(String format);
-
-    /**
-     * get current second from today.
-     *
-     * @return millis
-     */
-    int secondFromToday();
+    @Override
+    public String identify() {
+        return "hdfs";
+    }
 }

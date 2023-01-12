@@ -43,6 +43,12 @@ public class SystemClock implements Clock {
     }
 
     @Override
+    public String currentTime(String pattern) {
+        return new LocalDateTime(DateTimeUtils.currentTimeMillis(), isoChronology)
+                .toString(pattern);
+    }
+
+    @Override
     public String today(String format) {
         return new LocalDate(DateTimeUtils.currentTimeMillis(), isoChronology).toString(format);
     }

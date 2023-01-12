@@ -20,8 +20,8 @@ package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.queue.RecordsOffset;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
-import org.zicat.tributary.sink.handler.DisruptorPartitionHandler;
-import org.zicat.tributary.sink.handler.SimplePartitionHandler;
+import org.zicat.tributary.sink.handler.DirectPartitionHandler;
+import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -46,10 +46,10 @@ public interface Function extends Closeable {
     /**
      * process the data in one partition offset.
      *
-     * <p>note: In some SinkHandler{@link DisruptorPartitionHandler}, One Function Instance only
+     * <p>note: In some SinkHandler{@link MultiThreadPartitionHandler}, One Function Instance only
      * consumer parts data of the partition
      *
-     * <p>In some SinkHandler{@link SimplePartitionHandler}, One Function Instance consumer all data
+     * <p>In some SinkHandler{@link DirectPartitionHandler}, One Function Instance consumer all data
      * of the partition
      *
      * @param recordsOffset recordsOffset

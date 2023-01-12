@@ -48,14 +48,14 @@ import static org.zicat.tributary.sink.utils.Collections.copy;
 /**
  * Disruptor sink handler.
  *
- * <p>Multi Threads mode, One ${@link DisruptorPartitionHandler} instance bind with at least one
+ * <p>Multi Threads mode, One ${@link MultiThreadPartitionHandler} instance bind with at least one
  * {@link Function} instance
  *
- * <p>Set threads and {@link Function} count by ${@link DisruptorPartitionHandler#KEY_THREADS} .
+ * <p>Set threads and {@link Function} count by ${@link MultiThreadPartitionHandler#KEY_THREADS} .
  */
-public class DisruptorPartitionHandler extends AbstractPartitionHandler {
+public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DisruptorPartitionHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MultiThreadPartitionHandler.class);
 
     public static final String KEY_THREADS = "threads";
     public static final String KEY_BUFFER_SIZE = "bufferSize";
@@ -68,7 +68,7 @@ public class DisruptorPartitionHandler extends AbstractPartitionHandler {
     private DataHandler[] handlers;
     private final AtomicReference<Throwable> error = new AtomicReference<>(null);
 
-    public DisruptorPartitionHandler(
+    public MultiThreadPartitionHandler(
             String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
         super(groupId, logQueue, partitionId, sinkGroupConfig);
     }

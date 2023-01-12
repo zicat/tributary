@@ -29,8 +29,8 @@ import org.zicat.tributary.queue.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
-import org.zicat.tributary.sink.handler.DisruptorPartitionHandler;
-import org.zicat.tributary.sink.handler.SimplePartitionHandler;
+import org.zicat.tributary.sink.handler.DirectPartitionHandler;
+import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 import org.zicat.tributary.sink.test.function.MockIdleTriggerFactory;
 import org.zicat.tributary.sink.test.function.MockTriggerFunction;
@@ -62,8 +62,8 @@ public class AbstractPartitionHandlerTest {
            Because idle trigger depend on child class implements,
            Using SimpleSinkHandler & DisruptorMultiSinkHandler test idle trigger
         */
-        final SimplePartitionHandler handler =
-                new SimplePartitionHandler(groupId, logQueue, partitionCount, sinkGroupConfig);
+        final DirectPartitionHandler handler =
+                new DirectPartitionHandler(groupId, logQueue, partitionCount, sinkGroupConfig);
         handler.open();
         handler.start();
         // wait for idle trigger
@@ -73,8 +73,8 @@ public class AbstractPartitionHandlerTest {
         Assert.assertTrue(triggerTimes > 1 && triggerTimes <= 10);
         IOUtils.closeQuietly(handler);
 
-        final DisruptorPartitionHandler handler2 =
-                new DisruptorPartitionHandler(groupId, logQueue, partitionCount, sinkGroupConfig);
+        final MultiThreadPartitionHandler handler2 =
+                new MultiThreadPartitionHandler(groupId, logQueue, partitionCount, sinkGroupConfig);
         handler2.open();
         handler2.start();
         Thread.sleep(100);

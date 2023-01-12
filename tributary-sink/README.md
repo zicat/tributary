@@ -6,36 +6,36 @@ Tributary-Sink基于[Tributary-Queue](../tributary-queue/README.md)提供多种�
 
 ## Sink 模型
 
-文件队列支持多分区设计，每个分区相互独立。基于此背景，现有的消费模型包括：simple、disruptor。
+文件队列支持多分区设计，每个分区相互独立。基于此背景，现有的消费模型包括：direct、multi_thread。
 
-### Simple模型
+### Direct模型
 
-Simple模型将文件分区和线程一一绑定，适用于单线程消费速率高于单分区写入速率的场景。
+Direct模型将文件分区和线程一一绑定，适用于单线程消费速率高于单分区写入速率的场景。
 
 ![image](../doc/picture/simple_sink_mode.png)
 
-上图中一个[SimplePartitionHandler](tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/SimplePartitionHandler.java)
-对应一个线程，负责读取文件队列数据，并把数据委托给Function进行进一步处理， 详见设计：[SimpleSinkHandlerFactory](
-tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/factory/SimplePartitionHandlerFactory.java)
+上图中一个[DirectPartitionHandler](tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/DirectPartitionHandler.java)
+对应一个线程，负责读取文件队列数据，并把数据委托给Function进行进一步处理， 详见设计：[DirectPartitionHandler](
+tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/factory/DirectPartitionHandlerFactory.java)
 。
 
-### Disruptor模型
+### MultiThread模型
 
-Disruptor模型将文件单个分区与多个消费线程绑定，适用于单线程消费速率低于单分区写入速率的场景。 对比Simple模型，Disruptor需要使用更多的Cpu资源和内存资源。
+MultiThread模型模型将文件单个分区与多个消费线程绑定，适用于单线程消费速率低于单分区写入速率的场景。 对比direct模型，multi_thread需要使用更多的Cpu资源和内存资源。
 
-该模型存在一个弊端，即破坏了单分区内的数据有序性，所以该模型只适用于对乱序不敏感的场景。 如果需要保证有序，则可以采用Simple模式并适当增加分区数量从而降低单分区的写入速率，使得单分区生产和消费平衡。
+该模型存在一个弊端，即破坏了单分区内的数据有序性，所以该模型只适用于对乱序不敏感的场景。 如果需要保证有序，则可以采用Direct模式并适当增加分区数量从而降低单分区的写入速率，使得单分区生产和消费平衡。
 
 ![image](../doc/picture/disruptor_sink_mode.png)
 
-上图中一个DisruptorPartitionHandler对应一个线程，负责读取文件队列数据，并将数据再次推送到内存队列中。
+上图中一个Function对应一个线程，负责读取文件队列数据，并将数据再次推送到内存队列中。
 
-DisruptorPartitionHandler会根据设置的线程数派生对应数量的线程消费内存队列中的数据（上图的线程数为2），并把数据委托给Function进行进一步处理，
-详见设计：[DisruptorPartitionHandlerFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/factory/DisruptorPartitionHandlerFactory.java)
+MultiThreadPartitionHandler会根据设置的线程数派生对应数量的线程消费内存队列中的数据（上图的线程数为2），并把数据委托给Function进行进一步处理，
+详见设计：[MultiThreadPartitionHandlerFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/factory/MultiThreadPartitionHandlerFactory.java)
 。
 
 ## 消费抽象
 
-无论是Simple模型还是Disruptor模型，都支持配置[FunctionFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
+无论是direct模型还是multi_thread模型，都支持配置[FunctionFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
 ，用于开发实际的业务逻辑。
 
 FunctionFactory基于[Java SPI](https://www.journaldev.com/31602/java-spi-service-provider-interface-and-serviceloader)

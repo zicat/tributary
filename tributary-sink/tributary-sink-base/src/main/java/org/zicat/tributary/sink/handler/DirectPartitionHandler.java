@@ -31,16 +31,16 @@ import java.util.Iterator;
 /**
  * SimplePartitionHandler.
  *
- * <p>Single Thread mode, One ${@link SimplePartitionHandler} instance bind with one {@link
+ * <p>Single Thread mode, One ${@link DirectPartitionHandler} instance bind with one {@link
  * Function} instance .
  */
 @Slf4j
-public class SimplePartitionHandler extends AbstractPartitionHandler {
+public class DirectPartitionHandler extends AbstractPartitionHandler {
 
     private Function function;
     private Trigger trigger;
 
-    public SimplePartitionHandler(
+    public DirectPartitionHandler(
             String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
         super(groupId, logQueue, partitionId, sinkGroupConfig);
     }

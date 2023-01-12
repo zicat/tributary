@@ -20,6 +20,9 @@ package org.zicat.tributary.sink.test.function;
 
 import org.zicat.tributary.sink.function.Clock;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /** MockClock. */
 public class MockClock implements Clock {
 
@@ -47,6 +50,11 @@ public class MockClock implements Clock {
     @Override
     public long currentTimeMillis() {
         return currentTimeMillis;
+    }
+
+    @Override
+    public String currentTime(String pattern) {
+        return new SimpleDateFormat(pattern).format(new Date(currentTimeMillis));
     }
 
     @Override
