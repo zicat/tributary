@@ -16,73 +16,62 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.server;
+package org.zicat.tributary.service.source;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
-/** HeadBodyDecoder. */
-public class HeadBodyDecoder extends ByteToMessageDecoder {
+/** LengthDecoder. */
+public class LengthDecoder extends SourceDecoder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HeadBodyDecoder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LengthDecoder.class);
     private static final String FAIL_RES_FORMAT =
             "failed response pong to host:{}, port:{}, cause:{}";
-    private String remoteHost;
-    private int remotePort;
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-        final InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
-        this.remoteHost = address.getAddress().getHostAddress();
-        this.remotePort = address.getPort();
-        LOG.info("channel active, client is {}:{}", remoteHost, remotePort);
-        ctx.fireChannelActive();
-    }
-
-    @Override
-    protected void decode(
-            ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-
+    protected byte[] decode(ChannelHandlerContext ctx, ByteBuf byteBuf) {
         final int readableBytes = byteBuf.readableBytes();
         final int headLength = headLength();
         if (readableBytes < headLength) {
-            return;
+            return null;
         }
         byteBuf.markReaderIndex();
         final int len = readHead(byteBuf);
         if (readableBytes - headLength < len) {
             byteBuf.resetReaderIndex();
-            return;
+            return null;
         }
         final byte[] bytes = new byte[len];
         byteBuf.readBytes(bytes);
-        list.add(bytes);
         byteBuf.discardReadBytes();
-        response(len, channelHandlerContext);
+        response(len, ctx);
+        return bytes;
     }
 
     /**
      * response received data.
      *
      * @param len len
-     * @param channelHandlerContext channelHandlerContext
+     * @param ctx ctx
      */
-    protected void response(int len, ChannelHandlerContext channelHandlerContext) {
+    protected void response(int len, ChannelHandlerContext ctx) {
 
         final ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer(4);
         byteBuf.writeInt(len);
-        final ChannelFuture future = channelHandlerContext.writeAndFlush(byteBuf);
+        final ChannelFuture future = ctx.writeAndFlush(byteBuf);
         future.addListener(
                 f -> {
                     if (!f.isSuccess()) {
+                        final InetSocketAddress address =
+                                (InetSocketAddress) ctx.channel().remoteAddress();
+                        final String remoteHost = address.getAddress().getHostAddress();
+                        final int remotePort = address.getPort();
                         LOG.warn(FAIL_RES_FORMAT, remoteHost, remotePort, f.cause());
                     }
                 });

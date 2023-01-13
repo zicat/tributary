@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.server;
+package org.zicat.tributary.service.source;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -50,20 +50,26 @@ public class TributaryServer {
     private static final Logger LOG = LoggerFactory.getLogger(TributaryServer.class);
     private static final String HOST_SPLIT = ",";
 
-    @Value("${server.netty.port:#{8200}}")
+    @Value("${source.netty.port:#{8200}}")
     protected int port;
 
-    @Value("${server.netty.host:#{null}}")
+    @Value("${source.netty.host:#{null}}")
     protected String host;
 
-    @Value("${server.netty.idle.second:#{120}}")
+    @Value("${source.netty.idle.second:#{120}}")
     protected int idleSecond;
 
-    @Value("${server.netty.threads:#{10}}")
+    @Value("${source.netty.threads:#{10}}")
     protected int eventThreads;
 
-    @Value("${server.channel.topic}")
+    @Value("${source.channel.topic}")
     protected String topic;
+
+    @Value("${source.decoder.class}")
+    protected String sourceDecoderClass;
+
+    @Value("${source.function.class}")
+    protected String sourceFunctionClass;
 
     @Autowired DynamicChannel dynamicChannel;
 
@@ -71,6 +77,10 @@ public class TributaryServer {
     protected EventLoopGroup workGroup;
     protected ServerBootstrap serverBootstrap;
     protected List<Channel> channelList;
+
+    protected SourceDecoder sourceDecoder;
+    protected SourceFunction sourceFunction;
+
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /** init server options. */
@@ -90,8 +100,9 @@ public class TributaryServer {
      */
     protected void initChannel(SocketChannel ch) {
         ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
-        ch.pipeline().addLast(new HeadBodyDecoder());
-        ch.pipeline().addLast(new FileChannelHandler(dynamicChannel.getChannel(topic)));
+        ch.pipeline().addLast(sourceDecoder);
+        ch.pipeline()
+                .addLast(new FileChannelHandler(dynamicChannel.getChannel(topic), sourceFunction));
     }
 
     /** init handlers. */
@@ -131,8 +142,12 @@ public class TributaryServer {
     }
 
     @PostConstruct
-    public void init() throws InterruptedException {
+    public void init()
+            throws InterruptedException, ClassNotFoundException, IllegalAccessException,
+                    InstantiationException {
 
+        this.sourceDecoder = (SourceDecoder) Class.forName(sourceDecoderClass).newInstance();
+        this.sourceFunction = (SourceFunction) Class.forName(sourceFunctionClass).newInstance();
         this.bossGroup = createBossGroup();
         this.workGroup = createWorkGroup();
         this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);

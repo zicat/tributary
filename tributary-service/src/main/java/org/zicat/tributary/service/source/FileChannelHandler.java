@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.server;
+package org.zicat.tributary.service.source;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -25,9 +25,6 @@ import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.service.TributaryServiceApplication;
-
-import java.util.Random;
 
 /** FileChannelHandler. */
 public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
@@ -35,10 +32,11 @@ public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
     private static final Logger LOG = LoggerFactory.getLogger(FileChannelHandler.class);
 
     private final Channel channel;
-    private final Random random = new Random(System.currentTimeMillis());
+    private final SourceFunction sourceFunction;
 
-    public FileChannelHandler(Channel channel) {
+    public FileChannelHandler(Channel channel, SourceFunction sourceFunction) {
         this.channel = channel;
+        this.sourceFunction = sourceFunction;
     }
 
     @Override
@@ -60,22 +58,10 @@ public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) {
-        final int partition = selectPartition(packet);
         try {
-            channel.append(partition, packet);
+            sourceFunction.process(channel, packet);
         } catch (Exception e) {
-            LOG.error("append data error", e);
-            TributaryServiceApplication.shutdown();
+            sourceFunction.exception(channel, packet, e);
         }
-    }
-
-    /**
-     * select partition.
-     *
-     * @param packet packet
-     * @return int
-     */
-    protected int selectPartition(byte[] packet) {
-        return random.nextInt(channel.partition());
     }
 }
