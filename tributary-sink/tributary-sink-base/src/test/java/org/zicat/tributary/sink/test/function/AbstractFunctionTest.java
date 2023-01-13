@@ -20,8 +20,8 @@ package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.queue.RecordsOffset;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;

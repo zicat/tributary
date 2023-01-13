@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import org.zicat.tributary.queue.CompressionType;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.file.PartitionFileLogQueueBuilder;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.channel.file.PartitionFileChannelBuilder;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.service.metrics.SinkGroupManagerCollector;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-/** DynamicQueueProperties. */
+/** DynamicChannel. */
 @ConfigurationProperties(prefix = "channel")
 @Configuration
 @Data
@@ -93,8 +93,8 @@ public class DynamicChannel implements Closeable {
 
     final List<String> topics = new ArrayList<>();
     final List<String> groupIds = new ArrayList<>();
-    final Map<String, LogQueue> fileQueues = new HashMap<>();
-    final Map<String, LogQueue> groupFileLogQueueMapping = new HashMap<>();
+    final Map<String, Channel> channels = new HashMap<>();
+    final Map<String, Channel> groupFileChannelMapping = new HashMap<>();
     final Map<String, SinkGroupManager> sinkGroupManagerMap = new HashMap<>();
 
     private Map<String, String> file;
@@ -111,7 +111,7 @@ public class DynamicChannel implements Closeable {
         try {
             topics.addAll(getAllTopics());
             groupIds.addAll(Arrays.asList(sink.get(KEY_SINK_GROUP_IDS).split(SPLIT_STR)));
-            initFileQueues();
+            initFileChannels();
             initSinkGroupManagers();
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
@@ -135,19 +135,19 @@ public class DynamicChannel implements Closeable {
     }
 
     /**
-     * get log queue.
+     * get channel by topic.
      *
      * @param topic topic
-     * @return LogQueue
+     * @return Channel
      */
-    public LogQueue getLogQueue(String topic) {
-        return fileQueues.get(topic);
+    public Channel getChannel(String topic) {
+        return channels.get(topic);
     }
 
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
-            for (Map.Entry<String, LogQueue> entry : fileQueues.entrySet()) {
+            for (Map.Entry<String, Channel> entry : channels.entrySet()) {
                 try {
                     entry.getValue().flush();
                 } catch (Exception e) {
@@ -158,7 +158,7 @@ public class DynamicChannel implements Closeable {
                 sinkGroupManagerMap.forEach((k, v) -> IOUtils.closeQuietly(v));
             } finally {
                 try {
-                    fileQueues.forEach((k, v) -> IOUtils.closeQuietly(v));
+                    channels.forEach((k, v) -> IOUtils.closeQuietly(v));
                 } finally {
                     FileSystem.closeAll();
                 }
@@ -221,7 +221,7 @@ public class DynamicChannel implements Closeable {
             final String topic = dynamicSinkValue(groupId, KEY_SINK_TOPIC, null);
             if (!topics.contains(topic)) {
                 throw new IllegalStateException(
-                        "sink topic not configuration in queue.file.topics, topic = " + topic);
+                        "sink topic not configuration in channel.file.topics, topic = " + topic);
             }
             topicSinkGroupIds.computeIfAbsent(topic, key -> new HashSet<>()).add(groupId);
         }
@@ -237,14 +237,13 @@ public class DynamicChannel implements Closeable {
         return sinkGroupConfigs;
     }
 
-    /** init file queue. */
-    private void initFileQueues() {
+    /** init file channels. */
+    private void initFileChannels() {
         final Map<String, Set<String>> topicSinkGroupIds = buildTopicSinkGroupIds();
         for (String topic : topics) {
-            final LogQueue logQueue =
-                    createLogQueueBuilderByTopic(topic, topicSinkGroupIds).build();
-            groupIds.forEach(v -> groupFileLogQueueMapping.put(v, logQueue));
-            fileQueues.put(topic, logQueue);
+            final Channel channel = createChannelBuilderByTopic(topic, topicSinkGroupIds).build();
+            groupIds.forEach(v -> groupFileChannelMapping.put(v, channel));
+            channels.put(topic, channel);
         }
     }
 
@@ -285,7 +284,7 @@ public class DynamicChannel implements Closeable {
         for (Map.Entry<String, SinkGroupConfigBuilder> entry : sinkGroupConfigs.entrySet()) {
 
             final String groupId = entry.getKey();
-            final LogQueue logQueue = groupFileLogQueueMapping.get(groupId);
+            final Channel channel = groupFileChannelMapping.get(groupId);
 
             final SinkGroupConfigBuilder sinkGroupConfigBuilder = entry.getValue();
             final String maxRetainPerPartition =
@@ -301,7 +300,7 @@ public class DynamicChannel implements Closeable {
 
             final SinkGroupConfig sinkGroupConfig = sinkGroupConfigBuilder.build();
             final SinkGroupManager sinkGroupManager =
-                    new SinkGroupManager(groupId, logQueue, sinkGroupConfig);
+                    new SinkGroupManager(groupId, channel, sinkGroupConfig);
             sinkGroupManagerMap.put(groupId, sinkGroupManager);
         }
         sinkGroupManagerMap.forEach((k, v) -> v.createPartitionHandlesAndStart());
@@ -309,12 +308,12 @@ public class DynamicChannel implements Closeable {
     }
 
     /**
-     * create log queue builder by topic.
+     * create partition file channel builder by topic.
      *
      * @param topic topic
-     * @return LogQueueBuilder
+     * @return PartitionFileChannelBuilder
      */
-    private PartitionFileLogQueueBuilder createLogQueueBuilderByTopic(
+    private PartitionFileChannelBuilder createChannelBuilderByTopic(
             String topic, Map<String, Set<String>> topicSinkGroupIds) {
         final Set<String> groupIds = topicSinkGroupIds.get(topic);
         if (groupIds == null || groupIds.isEmpty()) {
@@ -353,11 +352,10 @@ public class DynamicChannel implements Closeable {
                 Boolean.parseBoolean(
                         dynamicFileValue(topic, KEY_FILE_FLUSH_FORCE, DEFAULT_FILE_FLUSH_FORCE));
 
-        final PartitionFileLogQueueBuilder logQueueBuilder =
-                PartitionFileLogQueueBuilder.newBuilder()
+        final PartitionFileChannelBuilder builder =
+                PartitionFileChannelBuilder.newBuilder()
                         .dirs(dirs.stream().map(File::new).collect(Collectors.toList()));
-        logQueueBuilder
-                .blockSize(blockSize)
+        builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(CompressionType.getByName(compression))
                 .cleanUpPeriod(cleanUpPeriodSecond, TimeUnit.SECONDS)
@@ -366,6 +364,6 @@ public class DynamicChannel implements Closeable {
                 .flushForce(flushForce)
                 .topic(topic)
                 .consumerGroups(new ArrayList<>(groupIds));
-        return logQueueBuilder;
+        return builder;
     }
 }

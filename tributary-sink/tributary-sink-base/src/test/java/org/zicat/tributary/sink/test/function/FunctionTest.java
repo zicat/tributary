@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.function.*;
 
 import java.nio.charset.StandardCharsets;

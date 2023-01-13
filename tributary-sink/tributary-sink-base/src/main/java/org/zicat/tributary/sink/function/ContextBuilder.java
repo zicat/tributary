@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.CustomConfigBuilder;
 
 /** ContextBuilder. */

@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.hbase.AbstractHBaseFunction;
 import org.zicat.tributary.sink.hbase.DiscardHBaseWriter;

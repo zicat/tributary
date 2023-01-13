@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.handler.factory;
 
-import org.zicat.tributary.queue.LogQueue;
+import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
@@ -30,8 +30,8 @@ public class MultiThreadPartitionHandlerFactory implements PartitionHandlerFacto
 
     @Override
     public AbstractPartitionHandler createHandler(
-            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        return new MultiThreadPartitionHandler(groupId, logQueue, partitionId, sinkGroupConfig);
+            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
+        return new MultiThreadPartitionHandler(groupId, channel, partitionId, sinkGroupConfig);
     }
 
     @Override

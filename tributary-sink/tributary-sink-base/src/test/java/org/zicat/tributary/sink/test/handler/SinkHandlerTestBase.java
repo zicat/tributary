@@ -19,9 +19,9 @@
 package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.MockLogQueue;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.MockChannel;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -49,7 +49,7 @@ public class SinkHandlerTestBase {
 
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;
-        final LogQueue logQueue = new MockLogQueue(partitionCount);
+        final Channel channel = new MockChannel(partitionCount);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentify(handlerIdentify)
@@ -57,16 +57,16 @@ public class SinkHandlerTestBase {
         builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         final SinkGroupManager sinkManager =
-                new SinkGroupManager(groupId, logQueue, sinkGroupConfig);
+                new SinkGroupManager(groupId, channel, sinkGroupConfig);
         sinkManager.createPartitionHandlesAndStart();
 
         for (int i = 0; i < copyData.size(); i++) {
-            logQueue.append(i % partitionCount, copyData.get(i).getBytes(StandardCharsets.UTF_8));
+            channel.append(i % partitionCount, copyData.get(i).getBytes(StandardCharsets.UTF_8));
         }
-        logQueue.flush();
+        channel.flush();
 
         IOUtils.closeQuietly(sinkManager);
         Assert.assertTrue(testData.isEmpty());
-        IOUtils.closeQuietly(logQueue);
+        IOUtils.closeQuietly(channel);
     }
 }

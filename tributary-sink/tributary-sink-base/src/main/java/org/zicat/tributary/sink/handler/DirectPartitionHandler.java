@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.handler;
 
 import lombok.extern.slf4j.Slf4j;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.Trigger;
@@ -41,8 +41,8 @@ public class DirectPartitionHandler extends AbstractPartitionHandler {
     private Trigger trigger;
 
     public DirectPartitionHandler(
-            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        super(groupId, logQueue, partitionId, sinkGroupConfig);
+            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
+        super(groupId, channel, partitionId, sinkGroupConfig);
     }
 
     @Override

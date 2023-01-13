@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.sink;
 
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.factory.PartitionHandlerFactory;
 
@@ -34,34 +34,34 @@ import java.util.concurrent.TimeUnit;
 import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.*;
 
 /**
- * One SinkGroupManager Instance maintain a group consumer one {@link LogQueue} with {@link
+ * One SinkGroupManager Instance maintain a group consumer one {@link Channel} with {@link
  * SinkGroupConfig}.
  */
 public class SinkGroupManager implements Closeable {
 
     private final String groupId;
-    private final LogQueue logQueue;
+    private final Channel channel;
     private final SinkGroupConfig sinkGroupConfig;
     private final List<AbstractPartitionHandler> handlers = new ArrayList<>();
     private ScheduledExecutorService service;
 
-    public SinkGroupManager(String groupId, LogQueue logQueue, SinkGroupConfig sinkGroupConfig) {
+    public SinkGroupManager(String groupId, Channel channel, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
-        this.logQueue = logQueue;
+        this.channel = channel;
         this.sinkGroupConfig = sinkGroupConfig;
     }
 
     /** create sink handler. */
     public synchronized void createPartitionHandlesAndStart() {
-        if (handlers.size() == logQueue.partition()) {
+        if (handlers.size() == channel.partition()) {
             return;
         }
         final PartitionHandlerFactory partitionHandlerFactory =
                 findPartitionHandlerFactory(sinkGroupConfig);
-        for (int partitionId = 0; partitionId < logQueue.partition(); partitionId++) {
+        for (int partitionId = 0; partitionId < channel.partition(); partitionId++) {
             final AbstractPartitionHandler sinkHandler =
                     partitionHandlerFactory.createHandler(
-                            groupId, logQueue, partitionId, sinkGroupConfig);
+                            groupId, channel, partitionId, sinkGroupConfig);
             handlers.add(sinkHandler);
         }
         handlers.forEach(AbstractPartitionHandler::open);

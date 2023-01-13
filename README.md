@@ -9,13 +9,13 @@ Tributary项目负责提供可靠的数据接收服务，并灵活地将数据�
 
 # 子项目介绍
 
-## Tributary-Queue
+## Tributary-Channel
 
-分发系统中关键角色Channel的设计与实现，多路Sink隔离性可靠性的重要保证，[详细介绍](tributary-queue)。
+分发系统中关键角色Channel的设计与实现，多路Sink隔离性可靠性的重要保证，[详细介绍](tributary-channel)。
 
 ## Tributary-Sink
 
-基于Tributary-Queue实现多路分发框架，针对不同分发需求，提供多样的分发算法，包括：单线程分发，多线程分发等，[详细介绍](tributary-sink)。
+基于Tributary-Channel实现多路分发框架，针对不同分发需求，提供多样的分发算法，包括：单线程分发，多线程分发等，[详细介绍](tributary-sink)。
 
 # 项目开发
 

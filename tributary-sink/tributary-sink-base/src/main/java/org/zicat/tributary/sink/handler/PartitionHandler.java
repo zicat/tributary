@@ -20,10 +20,10 @@ package org.zicat.tributary.sink.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.RecordsOffset;
-import org.zicat.tributary.queue.RecordsResultSet;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
 
@@ -43,7 +43,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     protected static final long DEFAULT_WAIT_TIME_MILLIS = 5000;
 
     protected final String groupId;
-    protected final LogQueue logQueue;
+    protected final Channel channel;
     protected final Integer partitionId;
     protected final FunctionFactory functionFactory;
     protected final SinkGroupConfig sinkGroupConfig;
@@ -51,13 +51,13 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     protected final AtomicBoolean closed;
 
     public PartitionHandler(
-            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
+            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
-        this.logQueue = logQueue;
+        this.channel = channel;
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
         this.functionFactory = findFunctionFactory(sinkGroupConfig);
-        this.startOffset = getRecordsOffset(groupId, logQueue, partitionId);
+        this.startOffset = getRecordsOffset(groupId, channel, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
     }
@@ -66,14 +66,14 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * get records offset.
      *
      * @param groupId groupId
-     * @param logQueue logQueue
+     * @param channel channel
      * @param partitionId partitionId
      * @return RecordsOffset
      */
-    private RecordsOffset getRecordsOffset(String groupId, LogQueue logQueue, int partitionId) {
-        final RecordsOffset recordsOffset = logQueue.getRecordsOffset(groupId, partitionId);
+    private RecordsOffset getRecordsOffset(String groupId, Channel channel, int partitionId) {
+        final RecordsOffset recordsOffset = channel.getRecordsOffset(groupId, partitionId);
         return recordsOffset.segmentId() == -1
-                ? recordsOffset.skip2TargetHead(logQueue.lastSegmentId(partitionId))
+                ? recordsOffset.skip2TargetHead(channel.lastSegmentId(partitionId))
                 : recordsOffset;
     }
 
@@ -115,7 +115,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
             return;
         }
         try {
-            logQueue.commit(groupId, partitionId, recordsOffset);
+            channel.commit(groupId, partitionId, recordsOffset);
         } catch (Throwable e) {
             LOG.warn("commit fail", e);
         }
@@ -135,7 +135,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
             int partitionId, RecordsOffset recordsOffset, long idleTimeMillis)
             throws IOException, InterruptedException {
         final long waitTime = idleTimeMillis <= 0 ? DEFAULT_WAIT_TIME_MILLIS : idleTimeMillis;
-        return logQueue.poll(partitionId, recordsOffset, waitTime, TimeUnit.MILLISECONDS);
+        return channel.poll(partitionId, recordsOffset, waitTime, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -161,7 +161,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * @return string
      */
     protected final String getSinHandlerId() {
-        return logQueue.topic() + "_" + groupId + "_" + partitionId;
+        return channel.topic() + "_" + groupId + "_" + partitionId;
     }
 
     /**
@@ -184,7 +184,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
                             .groupId(groupId)
                             .partitionId(partitionId)
                             .startRecordsOffset(startOffset)
-                            .topic(logQueue.topic());
+                            .topic(channel.topic());
             builder.addAll(sinkGroupConfig.customConfig());
             function.open(builder.build());
             return (AbstractFunction) function;

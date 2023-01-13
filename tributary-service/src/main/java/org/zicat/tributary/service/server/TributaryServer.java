@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.service.configuration.DynamicChannel;
 
 import javax.annotation.PostConstruct;
@@ -91,7 +91,7 @@ public class TributaryServer {
     protected void initChannel(SocketChannel ch) {
         ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
         ch.pipeline().addLast(new HeadBodyDecoder());
-        ch.pipeline().addLast(new FileChannelHandler(dynamicChannel.getLogQueue(topic)));
+        ch.pipeline().addLast(new FileChannelHandler(dynamicChannel.getChannel(topic)));
     }
 
     /** init handlers. */

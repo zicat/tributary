@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 

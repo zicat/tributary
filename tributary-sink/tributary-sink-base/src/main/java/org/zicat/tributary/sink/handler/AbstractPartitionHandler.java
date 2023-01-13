@@ -20,9 +20,9 @@ package org.zicat.tributary.sink.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.RecordsOffset;
-import org.zicat.tributary.queue.RecordsResultSet;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.Function;
@@ -65,9 +65,9 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     private long preTriggerMillis;
 
     public AbstractPartitionHandler(
-            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
+            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
 
-        super(groupId, logQueue, partitionId, sinkGroupConfig);
+        super(groupId, channel, partitionId, sinkGroupConfig);
         this.commitOffsetWaterMark = startOffset;
         this.fetchOffset = startOffset;
         this.maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
@@ -178,8 +178,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
         RecordsOffset newRecordsOffset = this.commitOffsetWaterMark;
         while (maxRetainSize != null
-                && newRecordsOffset.segmentId() < logQueue.lastSegmentId(partitionId)
-                && logQueue.lag(partitionId, newRecordsOffset) > maxRetainSize) {
+                && newRecordsOffset.segmentId() < channel.lastSegmentId(partitionId)
+                && channel.lag(partitionId, newRecordsOffset) > maxRetainSize) {
             newRecordsOffset = newRecordsOffset.skipNextSegmentHead();
         }
 
@@ -203,7 +203,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      * @return lag
      */
     public final long lag() {
-        return logQueue.lag(partitionId, fetchOffset);
+        return channel.lag(partitionId, fetchOffset);
     }
 
     /**

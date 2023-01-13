@@ -25,8 +25,8 @@ import com.lmax.disruptor.dsl.ProducerType;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
@@ -69,8 +69,8 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     private final AtomicReference<Throwable> error = new AtomicReference<>(null);
 
     public MultiThreadPartitionHandler(
-            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        super(groupId, logQueue, partitionId, sinkGroupConfig);
+            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
+        super(groupId, channel, partitionId, sinkGroupConfig);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
         disruptor.publishEvent(
                 (block, sequence) -> {
                     /*
-                     *  After process finished, source iterator will fill next data from log queue.
+                     *  After process finished, source iterator will fill next data from channel.
                      *  Put iterator to memory queue may cause data lost or exception,
                      *  because Consumer Thread may deal with the iterator later than next process.
                      */

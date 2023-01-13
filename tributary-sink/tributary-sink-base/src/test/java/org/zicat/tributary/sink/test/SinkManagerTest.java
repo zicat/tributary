@@ -20,11 +20,11 @@ package org.zicat.tributary.sink.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.MockLogQueue;
-import org.zicat.tributary.queue.test.file.FileLogQueueTest;
-import org.zicat.tributary.queue.test.file.SourceThread;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.MockChannel;
+import org.zicat.tributary.channel.test.file.FileChannelTest;
+import org.zicat.tributary.channel.test.file.SourceThread;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -62,12 +62,12 @@ public class SinkManagerTest {
         for (int i = 0; i < sinkGroups; i++) {
             consumerGroup.add("consumer_group_" + i);
         }
-        final LogQueue logQueue = new MockLogQueue("voqa", partitionCount);
+        final Channel channel = new MockChannel("voqa", partitionCount);
 
         // create sources
         final List<Thread> sourceThread = new ArrayList<>();
         for (int i = 0; i < partitionCount; i++) {
-            Thread t = new SourceThread(logQueue, i, dataSize, maxRecordLength);
+            Thread t = new SourceThread(channel, i, dataSize, maxRecordLength);
             sourceThread.add(t);
         }
 
@@ -85,15 +85,15 @@ public class SinkManagerTest {
         consumerGroup.forEach(
                 groupId -> {
                     SinkGroupManager sinkManager =
-                            new SinkGroupManager(groupId, logQueue, sinkGroupConfig);
+                            new SinkGroupManager(groupId, channel, sinkGroupConfig);
                     groupManagers.add(sinkManager);
                 });
 
         groupManagers.forEach(SinkGroupManager::createPartitionHandlesAndStart);
-        sourceThread.forEach(FileLogQueueTest::join);
-        logQueue.flush();
+        sourceThread.forEach(FileChannelTest::join);
+        channel.flush();
         groupManagers.forEach(IOUtils::closeQuietly);
         groupManagers.forEach(manager -> Assert.assertEquals(0, manager.lag()));
-        IOUtils.closeQuietly(logQueue);
+        IOUtils.closeQuietly(channel);
     }
 }

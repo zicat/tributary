@@ -22,7 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.authentication.DispatcherAuthenticationUtil;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.function.AbstractFunction;

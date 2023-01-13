@@ -2,7 +2,7 @@
 
 Tributary-Sink是[分发系统](../doc/what_is_dispatcher.md)关于Sink部分的设计与实现。
 
-Tributary-Sink基于[Tributary-Queue](../tributary-queue/README.md)提供多种消费模型，并对实际消费需求进行抽象，简化文件队列的使用门槛。
+Tributary-Sink基于[Tributary-Channel](../tributary-channel/README.md)提供多种消费模型，并对实际消费需求进行抽象，简化文件队列的使用门槛。
 
 ## Sink 模型
 

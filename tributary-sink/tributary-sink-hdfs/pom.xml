@@ -26,7 +26,7 @@
 
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>tributary-queue</artifactId>
+            <artifactId>tributary-channel</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

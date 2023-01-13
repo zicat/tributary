@@ -20,8 +20,8 @@ package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.queue.MockLogQueue;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.MockChannel;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 
@@ -40,7 +40,7 @@ public class MultiThreadPartitionHandlerTest {
         int threads = 0;
         builder.addCustomProperty(KEY_THREADS, threads);
         MultiThreadPartitionHandler handler =
-                new MultiThreadPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
+                new MultiThreadPartitionHandler("g1", new MockChannel(), 0, builder.build());
         try {
             handler.open();
             Assert.fail();
@@ -50,7 +50,7 @@ public class MultiThreadPartitionHandlerTest {
 
         threads = 10;
         builder.addCustomProperty(KEY_THREADS, threads);
-        handler = new MultiThreadPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
+        handler = new MultiThreadPartitionHandler("g1", new MockChannel(), 0, builder.build());
         handler.open();
         Assert.assertEquals(threads, handler.handlers().length);
         IOUtils.closeQuietly(handler);
@@ -63,7 +63,7 @@ public class MultiThreadPartitionHandlerTest {
         final int threads = 4;
         builder.addCustomProperty(KEY_THREADS, threads);
         MultiThreadPartitionHandler handler =
-                new MultiThreadPartitionHandler("g1", new MockLogQueue(), 0, builder.build());
+                new MultiThreadPartitionHandler("g1", new MockChannel(), 0, builder.build());
         handler.open();
         Assert.assertEquals(threads, handler.handlers().length);
         Set<String> distinctIds = new HashSet<>();

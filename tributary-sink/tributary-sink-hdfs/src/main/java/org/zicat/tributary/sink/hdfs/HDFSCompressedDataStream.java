@@ -25,7 +25,7 @@ import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionOutputStream;
 import org.apache.hadoop.io.compress.Compressor;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.utils.IOUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

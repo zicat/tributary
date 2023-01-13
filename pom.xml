@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>tributary-queue</module>
+        <module>tributary-channel</module>
         <module>tributary-sink</module>
         <module>tributary-service</module>
     </modules>

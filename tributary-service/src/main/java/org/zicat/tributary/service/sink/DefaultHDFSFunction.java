@@ -20,7 +20,7 @@ package org.zicat.tributary.service.sink;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.Trigger;
 import org.zicat.tributary.sink.hdfs.AbstractHDFSFunction;

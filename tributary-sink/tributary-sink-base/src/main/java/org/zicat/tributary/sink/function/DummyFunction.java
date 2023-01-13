@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.function;
 
 import lombok.extern.slf4j.Slf4j;
-import org.zicat.tributary.queue.RecordsOffset;
+import org.zicat.tributary.channel.RecordsOffset;
 
 import java.util.Iterator;
 

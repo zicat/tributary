@@ -22,10 +22,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.queue.LogQueue;
-import org.zicat.tributary.queue.MockLogQueue;
-import org.zicat.tributary.queue.RecordsOffset;
-import org.zicat.tributary.queue.utils.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.MockChannel;
+import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
@@ -42,7 +42,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zicat.tributary.queue.test.file.LogSegmentTest.createStringByLength;
+import static org.zicat.tributary.channel.test.file.SegmentTest.createStringByLength;
 
 /** AbstractSinkHandlerTest. */
 public class AbstractPartitionHandlerTest {
@@ -53,7 +53,7 @@ public class AbstractPartitionHandlerTest {
     @Test
     public void testIdleTrigger() throws InterruptedException {
         final int partitionCount = 1;
-        final LogQueue logQueue = new MockLogQueue(partitionCount);
+        final Channel channel = new MockChannel(partitionCount);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentify(MockIdleTriggerFactory.ID);
         final SinkGroupConfig sinkGroupConfig = builder.build();
@@ -63,7 +63,7 @@ public class AbstractPartitionHandlerTest {
            Using SimpleSinkHandler & DisruptorMultiSinkHandler test idle trigger
         */
         final DirectPartitionHandler handler =
-                new DirectPartitionHandler(groupId, logQueue, partitionCount, sinkGroupConfig);
+                new DirectPartitionHandler(groupId, channel, partitionCount, sinkGroupConfig);
         handler.open();
         handler.start();
         // wait for idle trigger
@@ -74,7 +74,7 @@ public class AbstractPartitionHandlerTest {
         IOUtils.closeQuietly(handler);
 
         final MultiThreadPartitionHandler handler2 =
-                new MultiThreadPartitionHandler(groupId, logQueue, partitionCount, sinkGroupConfig);
+                new MultiThreadPartitionHandler(groupId, channel, partitionCount, sinkGroupConfig);
         handler2.open();
         handler2.start();
         Thread.sleep(100);
@@ -92,7 +92,7 @@ public class AbstractPartitionHandlerTest {
         Assert.assertTrue(triggerTimes > 3 && triggerTimes <= 10);
 
         IOUtils.closeQuietly(handler2);
-        IOUtils.closeQuietly(logQueue);
+        IOUtils.closeQuietly(channel);
     }
 
     @Test
@@ -105,10 +105,10 @@ public class AbstractPartitionHandlerTest {
         final SinkGroupConfig sinkGroupConfig = builder.build();
 
         final int partitionCount = 2;
-        final LogQueue logQueue = new MockLogQueue(partitionCount);
+        final Channel channel = new MockChannel(partitionCount);
         final int partitionId = 0;
         final AbstractPartitionHandler handler =
-                new AbstractPartitionHandler(groupId, logQueue, partitionId, sinkGroupConfig) {
+                new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
                     @Override
                     public void closeCallback() {}
 
@@ -146,12 +146,12 @@ public class AbstractPartitionHandlerTest {
                         createStringByLength(77),
                         createStringByLength(77));
         for (String data : testData) {
-            logQueue.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
-            logQueue.flush();
+            channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
+            channel.flush();
         }
 
         IOUtils.closeQuietly(handler);
-        IOUtils.closeQuietly(logQueue);
+        IOUtils.closeQuietly(channel);
         Assert.assertEquals(5, handler.commitOffsetWaterMark().segmentId());
     }
 
@@ -159,7 +159,7 @@ public class AbstractPartitionHandlerTest {
     public void testMaxRetainPerPartition() throws IOException {
 
         final int partitionCount = 2;
-        final LogQueue logQueue = new MockLogQueue(partitionCount);
+        final Channel channel = new MockChannel(partitionCount);
 
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
@@ -181,7 +181,7 @@ public class AbstractPartitionHandlerTest {
         final AtomicBoolean skip = new AtomicBoolean(false);
         final int partitionId = 0;
         final AbstractPartitionHandler handler =
-                new AbstractPartitionHandler(groupId, logQueue, partitionId, sinkGroupConfig) {
+                new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
 
                     @Override
                     public long idleTimeMillis() {
@@ -222,12 +222,12 @@ public class AbstractPartitionHandlerTest {
         handler.start();
 
         for (String data : testData) {
-            logQueue.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
-            logQueue.flush();
+            channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
+            channel.flush();
         }
 
         IOUtils.closeQuietly(handler);
-        IOUtils.closeQuietly(logQueue);
+        IOUtils.closeQuietly(channel);
         Assert.assertEquals(5, handler.commitOffsetWaterMark().segmentId());
         Assert.assertTrue(skip.get());
     }
@@ -236,7 +236,7 @@ public class AbstractPartitionHandlerTest {
     public void testRun() throws IOException, InterruptedException {
 
         final int partitionCount = 2;
-        final LogQueue logQueue = new MockLogQueue(partitionCount);
+        final Channel channel = new MockChannel(partitionCount);
 
         final SinkGroupConfig sinkGroupConfig =
                 SinkGroupConfigBuilder.newBuilder()
@@ -251,7 +251,7 @@ public class AbstractPartitionHandlerTest {
                         createStringByLength(77));
         final List<String> consumerData = Collections.synchronizedList(new ArrayList<>(testData));
         final AbstractPartitionHandler handler =
-                new AbstractPartitionHandler(groupId, logQueue, 0, sinkGroupConfig) {
+                new AbstractPartitionHandler(groupId, channel, 0, sinkGroupConfig) {
 
                     @Override
                     public void closeCallback() throws IOException {}
@@ -297,12 +297,12 @@ public class AbstractPartitionHandlerTest {
         handler.start();
 
         for (String data : testData) {
-            logQueue.append(0, data.getBytes(StandardCharsets.UTF_8));
-            logQueue.flush();
+            channel.append(0, data.getBytes(StandardCharsets.UTF_8));
+            channel.flush();
         }
 
         countDownLatch.await();
         IOUtils.closeQuietly(handler);
-        IOUtils.closeQuietly(logQueue);
+        IOUtils.closeQuietly(channel);
     }
 }

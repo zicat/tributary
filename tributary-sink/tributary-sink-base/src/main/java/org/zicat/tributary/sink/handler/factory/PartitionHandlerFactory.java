@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.handler.factory;
 
-import org.zicat.tributary.queue.LogQueue;
+import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 
@@ -29,13 +29,13 @@ public interface PartitionHandlerFactory {
      * create partition handler.
      *
      * @param groupId groupId
-     * @param logQueue logQueue
+     * @param channel channel
      * @param partitionId partitionId
      * @param sinkGroupConfig sinkGroupConfig
      * @return AbstractSinkHandler
      */
     AbstractPartitionHandler createHandler(
-            String groupId, LogQueue logQueue, int partitionId, SinkGroupConfig sinkGroupConfig);
+            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig);
 
     /**
      * the identify of factory.
