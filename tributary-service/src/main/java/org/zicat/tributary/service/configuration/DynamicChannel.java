@@ -85,7 +85,6 @@ public class DynamicChannel implements Closeable {
     private static final String DEFAULT_SINK_HANDLER_IDENTIFY =
             DirectPartitionHandlerFactory.IDENTIFY;
 
-    private static final String KEY_SINK_GROUP_IDS = "groupIds";
     private static final String KEY_SINK_TOPIC = "topic";
     private static final String KEY_SINK_FUNCTION_IDENTIFY = "functionIdentify";
 
@@ -110,7 +109,7 @@ public class DynamicChannel implements Closeable {
         }
         try {
             topics.addAll(getAllTopics());
-            groupIds.addAll(Arrays.asList(sink.get(KEY_SINK_GROUP_IDS).split(SPLIT_STR)));
+            groupIds.addAll(getAllGroups());
             initFileChannels();
             initSinkGroupManagers();
         } catch (Throwable e) {
@@ -127,6 +126,21 @@ public class DynamicChannel implements Closeable {
     private Set<String> getAllTopics() {
         final Set<String> topics = new HashSet<>();
         for (Map.Entry<String, String> entry : file.entrySet()) {
+            final String key = entry.getKey();
+            final String[] keySplit = key.split("\\.");
+            topics.add(keySplit[0]);
+        }
+        return topics;
+    }
+
+    /**
+     * parser groups.
+     *
+     * @return group list
+     */
+    private Set<String> getAllGroups() {
+        final Set<String> topics = new HashSet<>();
+        for (Map.Entry<String, String> entry : sink.entrySet()) {
             final String key = entry.getKey();
             final String[] keySplit = key.split("\\.");
             topics.add(keySplit[0]);
