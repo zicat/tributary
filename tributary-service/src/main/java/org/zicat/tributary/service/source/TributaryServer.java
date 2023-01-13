@@ -26,17 +26,10 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.zicat.tributary.channel.utils.IOUtils;
-import org.zicat.tributary.service.configuration.DynamicChannel;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,44 +37,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_LINUX;
 
 /** TributaryServer. */
-@Component
-public class TributaryServer {
+public abstract class TributaryServer implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(TributaryServer.class);
     private static final String HOST_SPLIT = ",";
 
-    @Value("${source.netty.port:#{8200}}")
-    protected int port;
-
-    @Value("${source.netty.host:#{null}}")
-    protected String host;
-
-    @Value("${source.netty.idle.second:#{120}}")
-    protected int idleSecond;
-
-    @Value("${source.netty.threads:#{10}}")
-    protected int eventThreads;
-
-    @Value("${source.channel.topic}")
-    protected String topic;
-
-    @Value("${source.decoder.class}")
-    protected String sourceDecoderClass;
-
-    @Value("${source.function.class}")
-    protected String sourceFunctionClass;
-
-    @Autowired DynamicChannel dynamicChannel;
-
-    protected EventLoopGroup bossGroup;
-    protected EventLoopGroup workGroup;
-    protected ServerBootstrap serverBootstrap;
+    protected final String host;
+    protected final int port;
+    protected final int eventThreads;
+    protected final org.zicat.tributary.channel.Channel channel;
+    protected final EventLoopGroup bossGroup;
+    protected final EventLoopGroup workGroup;
+    protected final ServerBootstrap serverBootstrap;
     protected List<Channel> channelList;
 
-    protected SourceDecoder sourceDecoder;
-    protected SourceFunction sourceFunction;
-
     private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    public TributaryServer(
+            String host, int port, int eventThreads, org.zicat.tributary.channel.Channel channel) {
+        this.host = host;
+        this.port = port;
+        this.eventThreads = eventThreads;
+        this.channel = channel;
+        this.bossGroup = createBossGroup();
+        this.workGroup = createWorkGroup();
+        this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
+    }
+
+    public void start() throws InterruptedException {
+        initOptions(serverBootstrap);
+        initHandlers(serverBootstrap);
+        channelList = createChannelList(host);
+    }
 
     /** init server options. */
     protected void initOptions(ServerBootstrap serverBootstrap) {
@@ -98,12 +85,8 @@ public class TributaryServer {
      *
      * @param ch ch
      */
-    protected void initChannel(SocketChannel ch) {
-        ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
-        ch.pipeline().addLast(sourceDecoder);
-        ch.pipeline()
-                .addLast(new FileChannelHandler(dynamicChannel.getChannel(topic), sourceFunction));
-    }
+    protected abstract void initChannel(
+            SocketChannel ch, org.zicat.tributary.channel.Channel channel);
 
     /** init handlers. */
     private void initHandlers(ServerBootstrap serverBootstrap) {
@@ -111,7 +94,7 @@ public class TributaryServer {
                 new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) {
-                        TributaryServer.this.initChannel(ch);
+                        TributaryServer.this.initChannel(ch, channel);
                     }
                 });
     }
@@ -122,7 +105,6 @@ public class TributaryServer {
      * @param host host
      */
     private Channel createChannel(String host) throws InterruptedException {
-
         final ChannelFuture syncFuture =
                 host == null
                         ? serverBootstrap.bind(port).sync()
@@ -141,27 +123,11 @@ public class TributaryServer {
         return channelFuture.channel();
     }
 
-    @PostConstruct
-    public void init()
-            throws InterruptedException, ClassNotFoundException, IllegalAccessException,
-                    InstantiationException {
-
-        this.sourceDecoder = (SourceDecoder) Class.forName(sourceDecoderClass).newInstance();
-        this.sourceFunction = (SourceFunction) Class.forName(sourceFunctionClass).newInstance();
-        this.bossGroup = createBossGroup();
-        this.workGroup = createWorkGroup();
-        this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
-        initOptions(serverBootstrap);
-        initHandlers(serverBootstrap);
-        this.channelList = createChannelList(host);
-    }
-
     /**
      * init server channel list.
      *
      * @param host host
      * @return channel list
-     * @throws InterruptedException InterruptedException
      */
     private List<Channel> createChannelList(String host) throws InterruptedException {
         final List<Channel> channelList = new ArrayList<>();
@@ -197,7 +163,7 @@ public class TributaryServer {
      *
      * @return EventLoopGroup
      */
-    protected EventLoopGroup createWorkGroup() {
+    private EventLoopGroup createWorkGroup() {
         return IS_OS_LINUX
                 ? new EpollEventLoopGroup(eventThreads)
                 : new NioEventLoopGroup(eventThreads);
@@ -212,31 +178,24 @@ public class TributaryServer {
         return IS_OS_LINUX ? new EpollEventLoopGroup(1) : new NioEventLoopGroup(1);
     }
 
-    @PreDestroy
-    public void destroy() {
+    @Override
+    public void close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                if (channelList != null) {
-                    channelList.forEach(
-                            f -> {
-                                try {
-                                    f.close().sync();
-                                } catch (Exception e) {
-                                    LOG.info("wait close channel sync fail", e);
-                                }
-                            });
-                    channelList = null;
-                }
-                if (workGroup != null) {
-                    workGroup.shutdownGracefully();
-                    workGroup = null;
-                }
-                if (bossGroup != null) {
-                    bossGroup.shutdownGracefully();
-                    bossGroup = null;
-                }
-            } finally {
-                IOUtils.closeQuietly(dynamicChannel);
+            if (channelList != null) {
+                channelList.forEach(
+                        f -> {
+                            try {
+                                f.close().sync();
+                            } catch (Exception e) {
+                                LOG.info("wait close channel sync fail", e);
+                            }
+                        });
+            }
+            if (workGroup != null) {
+                workGroup.shutdownGracefully();
+            }
+            if (bossGroup != null) {
+                bossGroup.shutdownGracefully();
             }
         }
     }

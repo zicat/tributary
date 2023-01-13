@@ -35,7 +35,7 @@ import java.util.Random;
 public class TributaryClientTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(TributaryClientTest.class);
-    private static final InetSocketAddress LOCAL = new InetSocketAddress("localhost", 8200);
+    private static final InetSocketAddress LOCAL = new InetSocketAddress("localhost", 8300);
     private static final Random random = new Random();
 
     public static void main(String[] args) throws IOException {

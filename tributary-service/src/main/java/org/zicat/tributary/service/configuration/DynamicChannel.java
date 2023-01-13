@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /** DynamicChannel. */
-@ConfigurationProperties(prefix = "channel")
+@ConfigurationProperties
 @Configuration
 @Data
 public class DynamicChannel implements Closeable {
@@ -85,33 +85,37 @@ public class DynamicChannel implements Closeable {
     private static final String DEFAULT_SINK_HANDLER_IDENTIFY =
             DirectPartitionHandlerFactory.IDENTIFY;
 
-    private static final String KEY_SINK_TOPIC = "topic";
+    private static final String KEY_SINK_CHANNEL = "channel";
     private static final String KEY_SINK_FUNCTION_IDENTIFY = "functionIdentify";
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    final List<String> topics = new ArrayList<>();
+    final List<String> channelNames = new ArrayList<>();
     final List<String> groupIds = new ArrayList<>();
     final Map<String, Channel> channels = new HashMap<>();
     final Map<String, Channel> groupFileChannelMapping = new HashMap<>();
     final Map<String, SinkGroupManager> sinkGroupManagerMap = new HashMap<>();
 
-    private Map<String, String> file;
-    private Map<String, String> sink;
+    Map<String, String> channel;
+    Map<String, String> sink;
 
     @Value("${server.metrics.ip.pattern:.*}")
-    private String metricsIpPattern;
+    String metricsIpPattern;
 
     @PostConstruct
     public void init() {
-        if (file == null || file.isEmpty()) {
+        if (channel == null || channel.isEmpty()) {
             return;
         }
         try {
-            topics.addAll(getAllTopics());
+            channelNames.addAll(getAllChannels());
             groupIds.addAll(getAllGroups());
             initFileChannels();
             initSinkGroupManagers();
+            for (Map.Entry<String, Channel> entry : channels.entrySet()) {
+                entry.getValue().toString();
+            }
+
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
             throw e;
@@ -119,18 +123,18 @@ public class DynamicChannel implements Closeable {
     }
 
     /**
-     * parser topics.
+     * parser channels.
      *
      * @return topic list
      */
-    private Set<String> getAllTopics() {
-        final Set<String> topics = new HashSet<>();
-        for (Map.Entry<String, String> entry : file.entrySet()) {
+    private Set<String> getAllChannels() {
+        final Set<String> channels = new HashSet<>();
+        for (Map.Entry<String, String> entry : channel.entrySet()) {
             final String key = entry.getKey();
             final String[] keySplit = key.split("\\.");
-            topics.add(keySplit[0]);
+            channels.add(keySplit[0]);
         }
-        return topics;
+        return channels;
     }
 
     /**
@@ -151,11 +155,11 @@ public class DynamicChannel implements Closeable {
     /**
      * get channel by topic.
      *
-     * @param topic topic
+     * @param channel channel
      * @return Channel
      */
-    public Channel getChannel(String topic) {
-        return channels.get(topic);
+    public Channel getChannel(String channel) {
+        return channels.get(channel);
     }
 
     @Override
@@ -190,7 +194,7 @@ public class DynamicChannel implements Closeable {
      */
     private String dynamicFileValue(String topic, String key, String defaultValue) {
         final String realKey = String.join(".", topic, key);
-        final String value = file.get(realKey);
+        final String value = channel.get(realKey);
         if (value == null && defaultValue == null) {
             throw new IllegalStateException("file key not exist in configuration " + realKey);
         }
@@ -232,8 +236,8 @@ public class DynamicChannel implements Closeable {
     private Map<String, Set<String>> buildTopicSinkGroupIds() {
         final Map<String, Set<String>> topicSinkGroupIds = new HashMap<>();
         for (String groupId : groupIds) {
-            final String topic = dynamicSinkValue(groupId, KEY_SINK_TOPIC, null);
-            if (!topics.contains(topic)) {
+            final String topic = dynamicSinkValue(groupId, KEY_SINK_CHANNEL, null);
+            if (!channelNames.contains(topic)) {
                 throw new IllegalStateException(
                         "sink topic not configuration in channel.file.topics, topic = " + topic);
             }
@@ -254,10 +258,13 @@ public class DynamicChannel implements Closeable {
     /** init file channels. */
     private void initFileChannels() {
         final Map<String, Set<String>> topicSinkGroupIds = buildTopicSinkGroupIds();
-        for (String topic : topics) {
+        for (String topic : channelNames) {
             final Channel channel = createChannelBuilderByTopic(topic, topicSinkGroupIds).build();
-            groupIds.forEach(v -> groupFileChannelMapping.put(v, channel));
             channels.put(topic, channel);
+        }
+        for (String group : groupIds) {
+            String channel = dynamicSinkValue(group, KEY_SINK_CHANNEL, null);
+            groupFileChannelMapping.put(group, channels.get(channel));
         }
     }
 

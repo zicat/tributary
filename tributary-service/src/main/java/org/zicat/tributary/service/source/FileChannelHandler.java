@@ -25,18 +25,20 @@ import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.service.TributaryServiceApplication;
+
+import java.util.Random;
 
 /** FileChannelHandler. */
 public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileChannelHandler.class);
 
+    private final Random random = new Random(System.currentTimeMillis());
     private final Channel channel;
-    private final SourceFunction sourceFunction;
 
-    public FileChannelHandler(Channel channel, SourceFunction sourceFunction) {
+    public FileChannelHandler(Channel channel) {
         this.channel = channel;
-        this.sourceFunction = sourceFunction;
     }
 
     @Override
@@ -59,9 +61,11 @@ public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) {
         try {
-            sourceFunction.process(channel, packet);
+            final int partition = random.nextInt(channel.partition());
+            channel.append(partition, packet);
         } catch (Exception e) {
-            sourceFunction.exception(channel, packet, e);
+            LOG.error("append data error", e);
+            TributaryServiceApplication.shutdown();
         }
     }
 }
