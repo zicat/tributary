@@ -53,6 +53,10 @@ public class AbstractKafkaFunctionTest {
                                     new ProducerRecord<>("topic_test", iterator.next()));
                             count++;
                         }
+                        sendKafka(
+                                "broker_test" + count,
+                                new ProducerRecord<>("topic_test", "test_value".getBytes()),
+                                (metadata, exception) -> Assert.assertNull(exception));
                         flush(recordsOffset);
                     }
 

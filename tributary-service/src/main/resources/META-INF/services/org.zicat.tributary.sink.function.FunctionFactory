@@ -1,1 +1,2 @@
 org.zicat.tributary.service.sink.DefaultHDFSFunctionFactory
+org.zicat.tributary.service.sink.DefaultKafkaFunctionFactory

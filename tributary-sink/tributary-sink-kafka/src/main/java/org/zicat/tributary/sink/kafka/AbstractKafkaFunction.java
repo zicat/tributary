@@ -36,62 +36,70 @@ import java.util.Properties;
 public abstract class AbstractKafkaFunction extends AbstractFunction {
 
     public static final String KAFKA_KEY_PREFIX = "kafka.";
-    public static final String KAFKA_KEY_BOOTSTRAP_SERVERS = "bootstrap.servers";
-    protected Properties kafkaProperties;
 
     protected Map<String, Producer<byte[], byte[]>> producerMap = new HashMap<>();
 
     @Override
     public void open(Context context) {
         super.open(context);
-        this.kafkaProperties = context.filterPropertyByPrefix(KAFKA_KEY_PREFIX);
+    }
+
+    /**
+     * get kafka properties.
+     *
+     * @return properties
+     */
+    protected Properties getKafkaProperties(String clusterId) {
+        final String kafkaPrefix = getKafkaKeyPrefix(clusterId);
+        return context.filterPropertyByPrefix(kafkaPrefix);
+    }
+
+    /**
+     * get kafka key prefix by cluster id.
+     *
+     * @param clusterId clusterId
+     * @return kafka key prefix
+     */
+    protected String getKafkaKeyPrefix(String clusterId) {
+        return clusterId == null || clusterId.trim().isEmpty()
+                ? KAFKA_KEY_PREFIX
+                : KAFKA_KEY_PREFIX + clusterId + ".";
     }
 
     /**
      * set kafka data.
      *
-     * @param broker broker
+     * @param clusterId clusterId
      * @param producerRecord producerRecord
      */
     protected void sendKafka(
-            String broker, ProducerRecord<byte[], byte[]> producerRecord, Callback callback) {
+            String clusterId, ProducerRecord<byte[], byte[]> producerRecord, Callback callback) {
 
         if (producerRecord == null) {
             return;
         }
-        createProducer(broker).send(producerRecord, callback);
+        createProducer(clusterId).send(producerRecord, callback);
     }
 
     /**
      * set kafka data.
      *
-     * @param broker broker
+     * @param clusterId clusterId
      * @param producerRecord producerRecord
      */
-    protected void sendKafka(String broker, ProducerRecord<byte[], byte[]> producerRecord) {
-        sendKafka(broker, producerRecord, null);
+    protected void sendKafka(String clusterId, ProducerRecord<byte[], byte[]> producerRecord) {
+        sendKafka(clusterId, producerRecord, null);
     }
 
     /**
      * create producer.
      *
-     * @param broker broker.
+     * @param clusterId clusterId.
      * @return Producer
      */
-    protected Producer<byte[], byte[]> createProducer(String broker) {
+    protected Producer<byte[], byte[]> createProducer(String clusterId) {
         return producerMap.computeIfAbsent(
-                broker, key -> new KafkaProducer<>(createKafkaProperties(broker, kafkaProperties)));
-    }
-
-    /**
-     * create kafka properties by broker.
-     *
-     * @param broker broker
-     * @param properties properties
-     * @return Properties
-     */
-    protected Properties createKafkaProperties(String broker, Properties properties) {
-        return KafkaUtils.createKafkaProperties(broker, properties);
+                clusterId, key -> new KafkaProducer<>(getKafkaProperties(clusterId)));
     }
 
     @Override

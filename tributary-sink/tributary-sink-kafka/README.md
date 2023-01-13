@@ -5,13 +5,7 @@ Tributary-Sink-Kafka基于[Tributary-Sink-Base](../README.md)提供Sink Kafka能
 
 [AbstractKafkaFunction](src/main/java/org/zicat/tributary/sink/kafka/AbstractKafkaFunction.java)是此项目的核心类。
 
-主要功能包括：
-
-- 基于AbstractFunction初始化Kafka依赖参数。
-
-- 提供创建Kafka Producer功能。
-
-- 链接的维护与管理，自动flush等功能。
+主要功能包括：多kafka集群Producer链接管理。
 
 ## 使用方式
 
