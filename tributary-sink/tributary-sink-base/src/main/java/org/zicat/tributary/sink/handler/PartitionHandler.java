@@ -148,7 +148,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         final String identify = sinkGroupConfig.functionIdentify();
         final ServiceLoader<FunctionFactory> loader = ServiceLoader.load(FunctionFactory.class);
         for (FunctionFactory functionFactory : loader) {
-            if (identify.equals(functionFactory.identify())) {
+            if (identify.equals(functionFactory.identity())) {
                 return functionFactory;
             }
         }

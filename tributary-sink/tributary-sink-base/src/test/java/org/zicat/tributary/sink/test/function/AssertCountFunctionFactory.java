@@ -32,7 +32,7 @@ public class AssertCountFunctionFactory implements FunctionFactory {
     }
 
     @Override
-    public String identify() {
+    public String identity() {
         return IDENTIFY;
     }
 }

@@ -25,9 +25,9 @@ public interface FunctionFactory {
     Function createFunction();
 
     /**
-     * factory identify.
+     * factory identity.
      *
-     * @return string
+     * @return identity
      */
-    String identify();
+    String identity();
 }

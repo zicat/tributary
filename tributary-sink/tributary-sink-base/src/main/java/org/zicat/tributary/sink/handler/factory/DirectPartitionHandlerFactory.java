@@ -35,7 +35,7 @@ public class DirectPartitionHandlerFactory implements PartitionHandlerFactory {
     }
 
     @Override
-    public String identify() {
+    public String identity() {
         return IDENTIFY;
     }
 }

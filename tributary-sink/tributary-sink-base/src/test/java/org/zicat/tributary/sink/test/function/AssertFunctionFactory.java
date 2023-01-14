@@ -32,7 +32,7 @@ public class AssertFunctionFactory implements FunctionFactory {
     }
 
     @Override
-    public String identify() {
+    public String identity() {
         return IDENTIFY;
     }
 }

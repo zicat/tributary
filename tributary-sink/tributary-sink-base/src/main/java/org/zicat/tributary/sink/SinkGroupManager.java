@@ -118,7 +118,7 @@ public class SinkGroupManager implements Closeable {
         final ServiceLoader<PartitionHandlerFactory> loader =
                 ServiceLoader.load(PartitionHandlerFactory.class);
         for (PartitionHandlerFactory partitionHandlerFactory : loader) {
-            if (identify.equals(partitionHandlerFactory.identify())) {
+            if (identify.equals(partitionHandlerFactory.identity())) {
                 return partitionHandlerFactory;
             }
         }

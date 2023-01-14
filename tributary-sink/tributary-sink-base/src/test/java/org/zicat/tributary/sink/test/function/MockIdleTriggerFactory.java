@@ -32,7 +32,7 @@ public class MockIdleTriggerFactory implements FunctionFactory {
     }
 
     @Override
-    public String identify() {
+    public String identity() {
         return ID;
     }
 }

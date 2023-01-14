@@ -35,7 +35,7 @@ public class MultiThreadPartitionHandlerFactory implements PartitionHandlerFacto
     }
 
     @Override
-    public String identify() {
+    public String identity() {
         return IDENTIFY;
     }
 }

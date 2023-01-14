@@ -38,9 +38,9 @@ public interface PartitionHandlerFactory {
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig);
 
     /**
-     * the identify of factory.
+     * the identity of factory.
      *
-     * @return identify
+     * @return identity
      */
-    String identify();
+    String identity();
 }

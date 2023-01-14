@@ -30,7 +30,7 @@ public class DefaultKafkaFunctionFactory implements FunctionFactory {
     }
 
     @Override
-    public String identify() {
+    public String identity() {
         return "kafka";
     }
 }
