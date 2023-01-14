@@ -22,16 +22,14 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.utils.IOUtils;
-import org.zicat.tributary.service.source.DefaultTributaryServer;
 import org.zicat.tributary.service.source.TributaryServer;
+import org.zicat.tributary.service.source.TributaryServerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /** SourceConfiguration. */
 @ConfigurationProperties
@@ -39,16 +37,10 @@ import java.util.Set;
 @Data
 public class DynamicSource {
 
-    private static final String KEY_NETTY_PORT = "netty.port";
+    private static final String SPLIT = ".";
 
-    private static final String DEFAULT_NETTY_IDLE_SECOND = "120";
-    private static final String KEY_NETTY_IDLE_SECOND = "netty.idle.second";
-
-    private static final String DEFAULT_NETTY_THREADS = "10";
-    private static final String KEY_NETTY_THREADS = "netty.threads";
-
-    private static final String DEFAULT_NETTY_HOST = "";
-    private static final String KEY_NETTY_HOST = "netty.host";
+    private static final String DEFAULT_IMPLEMENT = "default";
+    private static final String KEY_IMPLEMENT = "implement";
 
     private static final String KEY_CHANNEL = "channel";
 
@@ -58,31 +50,42 @@ public class DynamicSource {
     Map<String, TributaryServer> serverMap = new HashMap<>();
 
     @PostConstruct
-    public void init() throws InterruptedException {
+    public void init() throws Exception {
         final Set<String> sourceSet = getSources();
         for (String sourceId : sourceSet) {
-            final String host = dynamicSourceValue(sourceId, KEY_NETTY_HOST, DEFAULT_NETTY_HOST);
-            final int port = Integer.parseInt(dynamicSourceValue(sourceId, KEY_NETTY_PORT));
-            final int threads =
-                    Integer.parseInt(
-                            dynamicSourceValue(sourceId, KEY_NETTY_THREADS, DEFAULT_NETTY_THREADS));
-            final String channel = dynamicSourceValue(sourceId, KEY_CHANNEL);
-            final int idleSecond =
-                    Integer.parseInt(
-                            dynamicSourceValue(
-                                    sourceId, KEY_NETTY_IDLE_SECOND, DEFAULT_NETTY_IDLE_SECOND));
+            final Channel channel =
+                    dynamicChannel.getChannel(dynamicSourceValue(sourceId, KEY_CHANNEL));
+            final String implementId =
+                    dynamicSourceValue(sourceId, KEY_IMPLEMENT, DEFAULT_IMPLEMENT);
+            final TributaryServerFactory tributaryServerFactory =
+                    findTributaryServerFactory(implementId);
             final TributaryServer server =
-                    new DefaultTributaryServer(
-                            host, port, threads, dynamicChannel.getChannel(channel), idleSecond);
-            server.start();
+                    tributaryServerFactory.createTributaryServer(
+                            channel, getSubKeyConfig(sourceId));
+            server.listen();
             serverMap.put(sourceId, server);
         }
     }
 
+    private static TributaryServerFactory findTributaryServerFactory(String identify) {
+        final ServiceLoader<TributaryServerFactory> loader =
+                ServiceLoader.load(TributaryServerFactory.class);
+        for (TributaryServerFactory tributaryServerFactory : loader) {
+            if (identify.equals(tributaryServerFactory.identity())) {
+                return tributaryServerFactory;
+            }
+        }
+        throw new RuntimeException("identify not found," + identify);
+    }
+
     @PreDestroy
     public void destroy() {
-        for (Map.Entry<String, TributaryServer> entry : serverMap.entrySet()) {
-            IOUtils.closeQuietly(entry.getValue());
+        try {
+            for (Map.Entry<String, TributaryServer> entry : serverMap.entrySet()) {
+                IOUtils.closeQuietly(entry.getValue());
+            }
+        } finally {
+            IOUtils.closeQuietly(dynamicChannel);
         }
     }
 
@@ -110,12 +113,30 @@ public class DynamicSource {
      * @return value
      */
     private String dynamicSourceValue(String sourceId, String key, String defaultValue) {
-        final String realKey = String.join(".", sourceId, key);
+        final String realKey = String.join(SPLIT, sourceId, key);
         final String value = source.get(realKey);
         if (value == null && defaultValue == null) {
             throw new RuntimeException("key not configuration, key = " + realKey);
         }
         return value == null ? defaultValue : value;
+    }
+
+    /**
+     * get sub key config.
+     *
+     * @param sourceId sourceId
+     * @return new map
+     */
+    private Map<String, String> getSubKeyConfig(String sourceId) {
+        Map<String, String> result = new HashMap<>();
+        final String prefix = sourceId + SPLIT;
+        for (Map.Entry<String, String> entry : source.entrySet()) {
+            final String key = entry.getKey();
+            if (key.startsWith(prefix)) {
+                result.put(key.replace(prefix, ""), entry.getValue());
+            }
+        }
+        return result;
     }
 
     /**

@@ -16,30 +16,32 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.source;
+package org.zicat.tributary.service.source.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.service.TributaryServiceApplication;
 
-import java.util.Random;
+/** DefaultTributaryServer. */
+public class DefaultTributaryServer extends AbstractTributaryServer {
 
-/** DefaultSourceFunction. */
-public class DefaultSourceFunction implements SourceFunction {
+    protected final int idleSecond;
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultSourceFunction.class);
-    private final Random random = new Random(System.currentTimeMillis());
-
-    @Override
-    public void process(Channel channel, byte[] data) throws Exception {
-        final int partition = random.nextInt(channel.partition());
-        channel.append(partition, data);
+    public DefaultTributaryServer(
+            String host, int port, int eventThreads, Channel channel, int idleSecond) {
+        super(host, port, eventThreads, channel);
+        this.idleSecond = idleSecond;
     }
 
+    /**
+     * init channel.
+     *
+     * @param ch ch
+     */
     @Override
-    public void exception(Channel channel, byte[] data, Exception e) {
-        LOG.error("append data error", e);
-        TributaryServiceApplication.shutdown();
+    protected void initChannel(SocketChannel ch, Channel channel) {
+        ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
+        ch.pipeline().addLast(new LengthDecoder());
+        ch.pipeline().addLast(new FileChannelHandler(channel));
     }
 }

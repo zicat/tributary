@@ -112,10 +112,6 @@ public class DynamicChannel implements Closeable {
             groupIds.addAll(getAllGroups());
             initFileChannels();
             initSinkGroupManagers();
-            for (Map.Entry<String, Channel> entry : channels.entrySet()) {
-                entry.getValue().toString();
-            }
-
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
             throw e;

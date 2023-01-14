@@ -20,24 +20,24 @@ package org.zicat.tributary.service.source;
 
 import org.zicat.tributary.channel.Channel;
 
-/** SourceFunction. */
-public interface SourceFunction {
+import java.util.Map;
+
+/** TributaryServerFactory. */
+public interface TributaryServerFactory {
 
     /**
-     * process data with channel.
+     * get factory id.
      *
-     * @param channel channel
-     * @param data
-     * @throws Exception exception
+     * @return string
      */
-    void process(Channel channel, byte[] data) throws Exception;
+    String identity();
 
     /**
-     * deal exception.
+     * create server.
      *
      * @param channel channel
-     * @param data data
-     * @param e e
+     * @param config config
+     * @return TributaryServer
      */
-    void exception(Channel channel, byte[] data, Exception e);
+    TributaryServer createTributaryServer(Channel channel, Map<String, String> config);
 }

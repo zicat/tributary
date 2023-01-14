@@ -16,32 +16,29 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.source;
+package org.zicat.tributary.service.source.impl;
 
-import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
 
-/** DefaultTributaryServer. */
-public class DefaultTributaryServer extends TributaryServer {
+import java.util.Map;
 
-    protected final int idleSecond;
+/** DefaultTributaryServerFactory. */
+public class DefaultTributaryServerFactory extends AbstractTributaryServerFactory {
 
-    public DefaultTributaryServer(
-            String host, int port, int eventThreads, Channel channel, int idleSecond) {
-        super(host, port, eventThreads, channel);
-        this.idleSecond = idleSecond;
+    private static final String DEFAULT_NETTY_IDLE_SECOND = "120";
+    private static final String KEY_NETTY_IDLE_SECOND = "netty.idle.second";
+
+    @Override
+    public String identity() {
+        return "default";
     }
 
-    /**
-     * init channel.
-     *
-     * @param ch ch
-     */
     @Override
-    protected void initChannel(SocketChannel ch, Channel channel) {
-        ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
-        ch.pipeline().addLast(new LengthDecoder());
-        ch.pipeline().addLast(new FileChannelHandler(channel));
+    public AbstractTributaryServer createAbstractTributaryServer(
+            String host, int port, int eventThreads, Channel channel, Map<String, String> config) {
+        final int idleSecond =
+                Integer.parseInt(
+                        config.getOrDefault(KEY_NETTY_IDLE_SECOND, DEFAULT_NETTY_IDLE_SECOND));
+        return new DefaultTributaryServer(host, port, eventThreads, channel, idleSecond);
     }
 }
