@@ -16,10 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.sink;
-
-import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.FunctionFactory;
+package org.zicat.tributary.sink.function;
 
 /** PrintFunctionFactory. */
 public class PrintFunctionFactory implements FunctionFactory {
