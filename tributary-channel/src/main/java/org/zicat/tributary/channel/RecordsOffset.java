@@ -18,9 +18,8 @@
 
 package org.zicat.tributary.channel;
 
-import org.zicat.tributary.channel.file.FileChannel;
-
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Objects;
 
 /**

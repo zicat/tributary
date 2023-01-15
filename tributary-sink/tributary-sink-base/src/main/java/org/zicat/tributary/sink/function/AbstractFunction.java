@@ -79,6 +79,7 @@ public abstract class AbstractFunction implements Function {
         final long current = clock.currentTimeMillis();
         if (preFlushTime == null) {
             preFlushTime = current;
+            return true;
         }
         final boolean flushable = current - preFlushTime >= flushMill;
         if (flushable) {

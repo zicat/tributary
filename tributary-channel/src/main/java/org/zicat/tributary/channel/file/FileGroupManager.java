@@ -30,9 +30,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -65,11 +63,13 @@ public class FileGroupManager implements OnePartitionGroupManager {
     private final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(16);
     private final String filePrefix;
     private final String topic;
+    private final Set<String> groups;
 
     public FileGroupManager(File dir, String topic, List<String> groupIds) {
         this.dir = dir;
         this.topic = topic;
         this.filePrefix = realPrefix(topic, FILE_PREFIX);
+        this.groups = new HashSet<>(groupIds);
         loadCache(groupIds);
     }
 
@@ -209,6 +209,11 @@ public class FileGroupManager implements OnePartitionGroupManager {
     @Override
     public String topic() {
         return topic;
+    }
+
+    @Override
+    public Set<String> groups() {
+        return groups;
     }
 
     @Override

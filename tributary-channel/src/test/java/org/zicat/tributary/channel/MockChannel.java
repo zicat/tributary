@@ -151,6 +151,11 @@ public class MockChannel implements Channel {
     }
 
     @Override
+    public Set<String> groups() {
+        return null;
+    }
+
+    @Override
     public synchronized int partition() {
         return partition;
     }

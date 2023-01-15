@@ -30,7 +30,9 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,6 +55,7 @@ public class PartitionFileChannel implements Channel, Closeable {
     private long flushPeriodMill;
     private final boolean flushForce;
     private final String topic;
+    private final Set<String> groups;
 
     protected PartitionFileChannel(
             String topic,
@@ -70,6 +73,7 @@ public class PartitionFileChannel implements Channel, Closeable {
 
         this.topic = topic;
         this.flushForce = flushForce;
+        this.groups = new HashSet<>(consumerGroups);
         fileChannels = new FileChannel[dirs.size()];
         FileChannelBuilder builder = FileChannelBuilder.newBuilder();
 
@@ -206,6 +210,11 @@ public class PartitionFileChannel implements Channel, Closeable {
     @Override
     public String topic() {
         return topic;
+    }
+
+    @Override
+    public Set<String> groups() {
+        return groups;
     }
 
     @Override

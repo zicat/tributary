@@ -144,15 +144,18 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     /** commit. */
     public synchronized void commit() {
-        updateCommitOffsetWaterMark();
-        commit(commitOffsetWaterMark);
+        if (updateCommitOffsetWaterMark()) {
+            commit(commitOffsetWaterMark);
+        }
     }
 
     /** update commit offset watermark. */
-    private void updateCommitOffsetWaterMark() {
+    private boolean updateCommitOffsetWaterMark() {
+        final RecordsOffset oldCommitOffsetWaterMark = commitOffsetWaterMark;
         commitOffsetWaterMark = RecordsOffset.max(committableOffset(), commitOffsetWaterMark);
         skipCommitOffsetWaterMarkByMaxRetainSize();
         checkFetchOffset();
+        return this.commitOffsetWaterMark != oldCommitOffsetWaterMark;
     }
 
     /**

@@ -113,7 +113,7 @@ public class FunctionTest {
                     callback.set(true);
                     return callback.get();
                 });
-        Assert.assertEquals(recordsOffset, function.committableOffset());
+        Assert.assertEquals(newRecordsOffset, function.committableOffset());
         Assert.assertFalse(callback.get());
 
         clock.setCurrentTimeMillis(9999);
@@ -123,17 +123,17 @@ public class FunctionTest {
                     callback.set(true);
                     return callback.get();
                 });
-        Assert.assertEquals(recordsOffset, function.committableOffset());
+        Assert.assertEquals(newRecordsOffset, function.committableOffset());
         Assert.assertFalse(callback.get());
 
         clock.setCurrentTimeMillis(10000);
         function.flush(
-                newRecordsOffset,
+                newRecordsOffset.skipNextSegmentHead(),
                 () -> {
                     callback.set(true);
                     return callback.get();
                 });
-        Assert.assertEquals(newRecordsOffset, function.committableOffset());
+        Assert.assertEquals(newRecordsOffset.skipNextSegmentHead(), function.committableOffset());
         Assert.assertTrue(callback.get());
     }
 }

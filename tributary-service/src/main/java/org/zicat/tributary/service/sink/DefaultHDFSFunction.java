@@ -20,11 +20,15 @@ package org.zicat.tributary.service.sink;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
+import org.apache.hadoop.fs.FileSystem;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.Trigger;
 import org.zicat.tributary.sink.hdfs.AbstractHDFSFunction;
+import org.zicat.tributary.sink.hdfs.BucketWriter;
+import org.zicat.tributary.sink.hdfs.HDFSCompressedDataStream;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 /** DefaultHDFSFunction. */
@@ -38,7 +42,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
             Counter.build()
                     .name("hdfs_sink_counter")
                     .help("hdfs sink counter")
-                    .labelNames("host", "groupId")
+                    .labelNames("host", "groupId", "topic")
                     .register();
     private static final Gauge HDFS_OPEN_FILES_GAUGE =
             Gauge.build()
@@ -87,13 +91,33 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
         updateMetrics(totalCount);
     }
 
+    @Override
+    protected BucketWriter<Object> initializeBucketWriter(String bucketPath, String realName) {
+        return new BucketWriter<Object>(
+                bucketPath,
+                realName,
+                snappyCodec,
+                new HDFSCompressedDataStream(),
+                privilegedExecutor,
+                rollSize,
+                maxRetry,
+                null,
+                clock) {
+            protected void renameBucket(String bucketPath, String targetPath, final FileSystem fs)
+                    throws IOException {
+                super.renameBucket(bucketPath, targetPath, fs);
+                DefaultHDFSFunction.this.flush(lastRecordsOffset);
+            }
+        };
+    }
+
     /**
      * update metrics count.
      *
      * @param count count
      */
     private void updateMetrics(int count) {
-        HDFS_SINK_COUNTER.labels(metricsHost(), context.groupId()).inc(count);
+        HDFS_SINK_COUNTER.labels(metricsHost(), context.groupId(), context.topic()).inc(count);
         HDFS_OPEN_FILES_GAUGE
                 .labels(metricsHost(), context.groupId(), Thread.currentThread().getName())
                 .set(sfWriters.size());
@@ -118,6 +142,5 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     public void idleTrigger() throws Throwable {
         LOG.info("idle triggered, idle time is {}", idleTimeMillis());
         refresh(true);
-        flush(lastRecordsOffset);
     }
 }

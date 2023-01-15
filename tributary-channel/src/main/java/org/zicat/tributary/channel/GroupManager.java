@@ -20,6 +20,7 @@ package org.zicat.tributary.channel;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Set;
 
 /** GroupManager. */
 public interface GroupManager extends Closeable {
@@ -30,6 +31,13 @@ public interface GroupManager extends Closeable {
      * @return topic
      */
     String topic();
+
+    /**
+     * get all group consume this topic.
+     *
+     * @return groups
+     */
+    Set<String> groups();
 
     /**
      * get current records offset by group id & partition.

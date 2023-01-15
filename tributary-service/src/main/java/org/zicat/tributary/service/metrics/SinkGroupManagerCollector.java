@@ -30,12 +30,12 @@ import java.util.Map;
 /** SinkGroupManagerCollector. */
 public class SinkGroupManagerCollector extends Collector {
 
-    private final Map<String, SinkGroupManager> sinkGroupManagerMap;
-    private final List<String> labels = Arrays.asList("host", "groupId");
+    private final Map<String, List<SinkGroupManager>> sinkGroupManagerMap;
+    private final List<String> labels = Arrays.asList("host", "groupId", "topic");
     private final String metricsIp;
 
     public SinkGroupManagerCollector(
-            Map<String, SinkGroupManager> sinkGroupManagerMap, String metricsIp) {
+            Map<String, List<SinkGroupManager>> sinkGroupManagerMap, String metricsIp) {
         this.sinkGroupManagerMap = sinkGroupManagerMap;
         this.metricsIp = metricsIp;
     }
@@ -55,8 +55,15 @@ public class SinkGroupManagerCollector extends Collector {
     private MetricFamilySamples collectionLag() {
         final GaugeMetricFamily labeledGauge =
                 new GaugeMetricFamily("sink_lag", "sink lag", labels);
-        sinkGroupManagerMap.forEach(
-                (groupId, v) -> labeledGauge.addMetric(Arrays.asList(metricsIp, groupId), v.lag()));
+        for (Map.Entry<String, List<SinkGroupManager>> entry : sinkGroupManagerMap.entrySet()) {
+            final String groupId = entry.getKey();
+            final List<SinkGroupManager> sinkGroupManagers = entry.getValue();
+            for (SinkGroupManager sinkGroupManager : sinkGroupManagers) {
+                labeledGauge.addMetric(
+                        Arrays.asList(metricsIp, groupId, sinkGroupManager.topic()),
+                        sinkGroupManager.lag());
+            }
+        }
         return labeledGauge;
     }
 }

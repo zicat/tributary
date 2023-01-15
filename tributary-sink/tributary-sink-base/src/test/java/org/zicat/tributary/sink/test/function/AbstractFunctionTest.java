@@ -27,7 +27,7 @@ import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
 
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zicat.tributary.sink.function.Context.CLOCK;
 
@@ -43,6 +43,9 @@ public class AbstractFunctionTest {
         final MockClock clock = new MockClock();
         clock.setCurrentTimeMillis(0);
         final MockFunction function = createFunction(clock);
+        Assert.assertTrue(function.committable());
+
+        clock.setCurrentTimeMillis(fullMill - 1);
         Assert.assertFalse(function.committable());
 
         clock.setCurrentTimeMillis(fullMill);
@@ -62,22 +65,22 @@ public class AbstractFunctionTest {
         final MockClock clock = new MockClock();
         clock.setCurrentTimeMillis(0);
         final MockFunction function = createFunction(clock);
-        final AtomicBoolean callback = new AtomicBoolean();
+        final AtomicInteger callback = new AtomicInteger();
         function.flush(
                 startRecordsOffset.skipNextSegmentHead(),
                 () -> {
-                    callback.set(true);
-                    return callback.get();
+                    callback.incrementAndGet();
+                    return true;
                 });
-        Assert.assertFalse(callback.get());
+        Assert.assertEquals(1, callback.get());
         clock.setCurrentTimeMillis(fullMill);
         function.flush(
                 startRecordsOffset.skipNextSegmentHead(),
                 () -> {
-                    callback.set(true);
-                    return callback.get();
+                    callback.incrementAndGet();
+                    return true;
                 });
-        Assert.assertTrue(callback.get());
+        Assert.assertEquals(2, callback.get());
     }
 
     /**

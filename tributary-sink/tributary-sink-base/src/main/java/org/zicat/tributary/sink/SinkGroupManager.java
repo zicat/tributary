@@ -124,4 +124,13 @@ public class SinkGroupManager implements Closeable {
         }
         throw new RuntimeException("identity not found," + identity);
     }
+
+    /**
+     * get topic.
+     *
+     * @return topic
+     */
+    public final String topic() {
+        return channel.topic();
+    }
 }

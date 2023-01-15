@@ -85,16 +85,17 @@ public class DynamicChannel implements Closeable {
     private static final String DEFAULT_SINK_HANDLER_IDENTITY =
             DirectPartitionHandlerFactory.IDENTITY;
 
-    private static final String KEY_SINK_CHANNEL = "channel";
     private static final String KEY_SINK_FUNCTION_IDENTITY = "functionIdentity";
+
+    private static final String KEY_GROUPS = "groups";
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    final List<String> channelNames = new ArrayList<>();
-    final List<String> groupIds = new ArrayList<>();
+    /* key:channel id, value: channel instance */
     final Map<String, Channel> channels = new HashMap<>();
-    final Map<String, Channel> groupFileChannelMapping = new HashMap<>();
-    final Map<String, SinkGroupManager> sinkGroupManagerMap = new HashMap<>();
+
+    /* key:group id, value: sink group manager consumed by the key */
+    final Map<String, List<SinkGroupManager>> sinkGroupManagerMap = new HashMap<>();
 
     Map<String, String> channel;
     Map<String, String> sink;
@@ -108,9 +109,7 @@ public class DynamicChannel implements Closeable {
             return;
         }
         try {
-            channelNames.addAll(getAllChannels());
-            groupIds.addAll(getAllGroups());
-            initFileChannels();
+            getAllChannels().forEach(this::initChannelByTopic);
             initSinkGroupManagers();
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
@@ -169,7 +168,7 @@ public class DynamicChannel implements Closeable {
                 }
             }
             try {
-                sinkGroupManagerMap.forEach((k, v) -> IOUtils.closeQuietly(v));
+                sinkGroupManagerMap.forEach((k, vs) -> vs.forEach(IOUtils::closeQuietly));
             } finally {
                 try {
                     channels.forEach((k, v) -> IOUtils.closeQuietly(v));
@@ -228,40 +227,13 @@ public class DynamicChannel implements Closeable {
         return value == null ? defaultValue : value;
     }
 
-    /** init topic sink group ids. */
-    private Map<String, Set<String>> buildTopicSinkGroupIds() {
-        final Map<String, Set<String>> topicSinkGroupIds = new HashMap<>();
-        for (String groupId : groupIds) {
-            final String topic = dynamicSinkValue(groupId, KEY_SINK_CHANNEL, null);
-            if (!channelNames.contains(topic)) {
-                throw new IllegalStateException(
-                        "sink topic not configuration in channel.file.topics, topic = " + topic);
-            }
-            topicSinkGroupIds.computeIfAbsent(topic, key -> new HashSet<>()).add(groupId);
-        }
-        return topicSinkGroupIds;
-    }
-
     /** init sink group configs. */
     private Map<String, SinkGroupConfigBuilder> buildSinkGroupConfigs() {
         Map<String, SinkGroupConfigBuilder> sinkGroupConfigs = new HashMap<>();
-        for (String groupId : groupIds) {
+        for (String groupId : getAllGroups()) {
             sinkGroupConfigs.put(groupId, createSinkGroupConfigBuilderByGroupId(groupId));
         }
         return sinkGroupConfigs;
-    }
-
-    /** init file channels. */
-    private void initFileChannels() {
-        final Map<String, Set<String>> topicSinkGroupIds = buildTopicSinkGroupIds();
-        for (String topic : channelNames) {
-            final Channel channel = createChannelBuilderByTopic(topic, topicSinkGroupIds).build();
-            channels.put(topic, channel);
-        }
-        for (String group : groupIds) {
-            String channel = dynamicSinkValue(group, KEY_SINK_CHANNEL, null);
-            groupFileChannelMapping.put(group, channels.get(channel));
-        }
     }
 
     /**
@@ -301,41 +273,49 @@ public class DynamicChannel implements Closeable {
         for (Map.Entry<String, SinkGroupConfigBuilder> entry : sinkGroupConfigs.entrySet()) {
 
             final String groupId = entry.getKey();
-            final Channel channel = groupFileChannelMapping.get(groupId);
+            final List<Channel> channels = findChannels(groupId);
+            if (channels.isEmpty()) {
+                throw new RuntimeException("group id not found channel, groupId = " + groupId);
+            }
+            for (Channel channel : channels) {
+                final SinkGroupConfigBuilder sinkGroupConfigBuilder = entry.getValue();
+                final String maxRetainPerPartition =
+                        dynamicSinkValue(
+                                groupId,
+                                AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
+                                AbstractPartitionHandler.DEFAULT_MAX_RETAIN_SIZE);
+                sinkGroupConfigBuilder.addCustomProperty(
+                        AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
+                        maxRetainPerPartition.isEmpty()
+                                ? null
+                                : Long.parseLong(maxRetainPerPartition));
+                sinkGroupConfigBuilder.addCustomProperty(
+                        AbstractFunction.KEY_METRICS_HOST, metricsHost);
 
-            final SinkGroupConfigBuilder sinkGroupConfigBuilder = entry.getValue();
-            final String maxRetainPerPartition =
-                    dynamicSinkValue(
-                            groupId,
-                            AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
-                            AbstractPartitionHandler.DEFAULT_MAX_RETAIN_SIZE);
-            sinkGroupConfigBuilder.addCustomProperty(
-                    AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
-                    maxRetainPerPartition.isEmpty() ? null : Long.parseLong(maxRetainPerPartition));
-            sinkGroupConfigBuilder.addCustomProperty(
-                    AbstractFunction.KEY_METRICS_HOST, metricsHost);
-
-            final SinkGroupConfig sinkGroupConfig = sinkGroupConfigBuilder.build();
-            final SinkGroupManager sinkGroupManager =
-                    new SinkGroupManager(groupId, channel, sinkGroupConfig);
-            sinkGroupManagerMap.put(groupId, sinkGroupManager);
+                final SinkGroupConfig sinkGroupConfig = sinkGroupConfigBuilder.build();
+                final SinkGroupManager sinkGroupManager =
+                        new SinkGroupManager(groupId, channel, sinkGroupConfig);
+                sinkGroupManagerMap
+                        .computeIfAbsent(groupId, k -> new ArrayList<>())
+                        .add(sinkGroupManager);
+            }
         }
-        sinkGroupManagerMap.forEach((k, v) -> v.createPartitionHandlesAndStart());
+        sinkGroupManagerMap.forEach(
+                (k, vs) -> vs.forEach(SinkGroupManager::createPartitionHandlesAndStart));
         new SinkGroupManagerCollector(sinkGroupManagerMap, metricsHost).register();
     }
 
     /**
-     * create partition file channel builder by topic.
+     * init channel by topic.
      *
      * @param topic topic
-     * @return PartitionFileChannelBuilder
      */
-    private PartitionFileChannelBuilder createChannelBuilderByTopic(
-            String topic, Map<String, Set<String>> topicSinkGroupIds) {
-        final Set<String> groupIds = topicSinkGroupIds.get(topic);
-        if (groupIds == null || groupIds.isEmpty()) {
+    private void initChannelByTopic(String topic) {
+        final String groupIds = dynamicFileValue(topic, KEY_GROUPS, null);
+        if (groupIds == null) {
             throw new IllegalStateException("topic has no sink group " + topic);
         }
+        final Set<String> groupSet = new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
         final List<String> dirs =
                 Arrays.asList(dynamicFileValue(topic, KEY_FILE_DIRS, null).split(SPLIT_STR));
         final int blockSize =
@@ -380,7 +360,23 @@ public class DynamicChannel implements Closeable {
                 .flushPageCacheSize(flushPageCacheSize)
                 .flushForce(flushForce)
                 .topic(topic)
-                .consumerGroups(new ArrayList<>(groupIds));
-        return builder;
+                .consumerGroups(new ArrayList<>(groupSet));
+        channels.put(topic, builder.build());
+    }
+
+    /**
+     * find channel by group id.
+     *
+     * @param groupId group id
+     * @return channel set
+     */
+    private List<Channel> findChannels(String groupId) {
+        final List<Channel> result = new ArrayList<>();
+        for (Channel channel : channels.values()) {
+            if (channel.groups().contains(groupId)) {
+                result.add(channel);
+            }
+        }
+        return result;
     }
 }

@@ -19,23 +19,25 @@
 package org.zicat.tributary.service.sink;
 
 import io.prometheus.client.Counter;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
-import org.zicat.tributary.sink.kafka.AbstractKafkaFunction;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
-/** DefaultKafkaFunction. */
-public class DefaultKafkaFunction extends AbstractKafkaFunction {
+/** PrintFunction. */
+public class PrintFunction extends AbstractFunction {
 
-    private static final Counter SINK_KAFKA_COUNTER =
+    private static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
+    private static final Counter SINK_PRINT_COUNTER =
             Counter.build()
-                    .name("sink_kafka_counter")
-                    .help("sink kafka counter")
+                    .name("sink_print_counter")
+                    .help("sink print counter")
                     .labelNames("host", "groupId", "topic")
                     .register();
-    private static final String KEY_TOPIC = "topic";
 
     @Override
     public void open(Context context) {
@@ -44,31 +46,15 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
 
     @Override
     public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
-
-        int totalCount = 0;
+        int i = 0;
         while (iterator.hasNext()) {
-            final byte[] value = iterator.next();
-            if (sendKafka(value)) {
-                totalCount++;
-            }
+            LOG.info("data:{}", new String(iterator.next(), StandardCharsets.UTF_8));
+            i++;
         }
-        flush(recordsOffset);
-        SINK_KAFKA_COUNTER
-                .labels(metricsHost(), context.groupId(), context.topic())
-                .inc(totalCount);
+        flush(recordsOffset, null);
+        SINK_PRINT_COUNTER.labels(metricsHost(), context.groupId(), context.topic()).inc(i);
     }
 
-    /**
-     * send kafka.
-     *
-     * @param value value
-     * @return boolean send.
-     */
-    protected boolean sendKafka(byte[] value) {
-        final String topic =
-                context.getCustomProperty(getKafkaKeyPrefix(null) + KEY_TOPIC).toString();
-        final ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, null, value);
-        sendKafka(null, record);
-        return true;
-    }
+    @Override
+    public void close() {}
 }
