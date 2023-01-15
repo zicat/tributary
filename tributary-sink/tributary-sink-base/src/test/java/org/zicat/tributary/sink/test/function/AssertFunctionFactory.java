@@ -24,7 +24,7 @@ import org.zicat.tributary.sink.function.FunctionFactory;
 /** AssertFunctionFactory. */
 public class AssertFunctionFactory implements FunctionFactory {
 
-    public static final String IDENTIFY = "assert";
+    public static final String IDENTITY = "assert";
 
     @Override
     public Function createFunction() {
@@ -33,6 +33,6 @@ public class AssertFunctionFactory implements FunctionFactory {
 
     @Override
     public String identity() {
-        return IDENTIFY;
+        return IDENTITY;
     }
 }

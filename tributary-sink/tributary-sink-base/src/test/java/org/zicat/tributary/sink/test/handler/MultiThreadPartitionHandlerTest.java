@@ -36,7 +36,7 @@ public class MultiThreadPartitionHandlerTest {
     @Test
     public void testThreadCount() {
         final SinkGroupConfigBuilder builder =
-                SinkGroupConfigBuilder.newBuilder().functionIdentify("dummy");
+                SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         int threads = 0;
         builder.addCustomProperty(KEY_THREADS, threads);
         MultiThreadPartitionHandler handler =
@@ -59,7 +59,7 @@ public class MultiThreadPartitionHandlerTest {
     @Test
     public void testFunctionId() {
         final SinkGroupConfigBuilder builder =
-                SinkGroupConfigBuilder.newBuilder().functionIdentify("dummy");
+                SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         final int threads = 4;
         builder.addCustomProperty(KEY_THREADS, threads);
         MultiThreadPartitionHandler handler =

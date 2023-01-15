@@ -26,7 +26,7 @@ import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 /** DisruptorPartitionHandlerFactory. */
 public class MultiThreadPartitionHandlerFactory implements PartitionHandlerFactory {
 
-    public static final String IDENTIFY = "multi_thread";
+    public static final String IDENTITY = "multi_thread";
 
     @Override
     public AbstractPartitionHandler createHandler(
@@ -36,6 +36,6 @@ public class MultiThreadPartitionHandlerFactory implements PartitionHandlerFacto
 
     @Override
     public String identity() {
-        return IDENTIFY;
+        return IDENTITY;
     }
 }

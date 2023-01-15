@@ -33,12 +33,12 @@ public class PartitionHandlerTest {
 
     @Test
     public void testSimpleSinkHandler() throws IOException {
-        SinkHandlerTestBase.test(createTestData(100), DirectPartitionHandlerFactory.IDENTIFY);
+        SinkHandlerTestBase.test(createTestData(100), DirectPartitionHandlerFactory.IDENTITY);
     }
 
     @Test
     public void testDisruptorSinkHandler() throws IOException {
-        SinkHandlerTestBase.test(createTestData(300), MultiThreadPartitionHandlerFactory.IDENTIFY);
+        SinkHandlerTestBase.test(createTestData(300), MultiThreadPartitionHandlerFactory.IDENTITY);
     }
 
     /**

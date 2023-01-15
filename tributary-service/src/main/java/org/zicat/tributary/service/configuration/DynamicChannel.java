@@ -81,12 +81,12 @@ public class DynamicChannel implements Closeable {
     private static final String DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE =
             String.valueOf(1024L * 1024L * 32L);
 
-    private static final String KEY_SINK_HANDLER_IDENTIFY = "partitionHandlerIdentify";
-    private static final String DEFAULT_SINK_HANDLER_IDENTIFY =
-            DirectPartitionHandlerFactory.IDENTIFY;
+    private static final String KEY_SINK_HANDLER_IDENTITY = "partitionHandlerIdentity";
+    private static final String DEFAULT_SINK_HANDLER_IDENTITY =
+            DirectPartitionHandlerFactory.IDENTITY;
 
     private static final String KEY_SINK_CHANNEL = "channel";
-    private static final String KEY_SINK_FUNCTION_IDENTIFY = "functionIdentify";
+    private static final String KEY_SINK_FUNCTION_IDENTITY = "functionIdentity";
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -272,13 +272,13 @@ public class DynamicChannel implements Closeable {
      */
     private SinkGroupConfigBuilder createSinkGroupConfigBuilderByGroupId(String groupId) {
 
-        final String sinkHandlerIdentify =
-                dynamicSinkValue(groupId, KEY_SINK_HANDLER_IDENTIFY, DEFAULT_SINK_HANDLER_IDENTIFY);
-        final String functionIdentify = dynamicSinkValue(groupId, KEY_SINK_FUNCTION_IDENTIFY, null);
+        final String sinkHandlerIdentity =
+                dynamicSinkValue(groupId, KEY_SINK_HANDLER_IDENTITY, DEFAULT_SINK_HANDLER_IDENTITY);
+        final String functionIdentity = dynamicSinkValue(groupId, KEY_SINK_FUNCTION_IDENTITY, null);
         final SinkGroupConfigBuilder configBuilder =
                 SinkGroupConfigBuilder.newBuilder()
-                        .functionIdentify(functionIdentify)
-                        .handlerIdentify(sinkHandlerIdentify);
+                        .functionIdentity(functionIdentity)
+                        .handlerIdentity(sinkHandlerIdentity);
 
         // add custom property.
         final String keyPrefix = groupId + ".";

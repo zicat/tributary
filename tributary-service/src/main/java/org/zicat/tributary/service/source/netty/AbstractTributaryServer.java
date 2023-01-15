@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.source.impl;
+package org.zicat.tributary.service.source.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -66,13 +66,13 @@ public abstract class AbstractTributaryServer implements TributaryServer {
 
     @Override
     public void listen() throws InterruptedException {
-        initOptions(serverBootstrap);
-        initHandlers(serverBootstrap);
-        channelList = createChannelList(host);
+        initOptions();
+        initHandlers();
+        channelList = createChannelList();
     }
 
     /** init server options. */
-    protected void initOptions(ServerBootstrap serverBootstrap) {
+    protected void initOptions() {
         serverBootstrap
                 .option(ChannelOption.SO_BACKLOG, 256)
                 .option(ChannelOption.SO_RCVBUF, 1024 * 1024)
@@ -90,7 +90,7 @@ public abstract class AbstractTributaryServer implements TributaryServer {
             SocketChannel ch, org.zicat.tributary.channel.Channel channel);
 
     /** init handlers. */
-    private void initHandlers(ServerBootstrap serverBootstrap) {
+    private void initHandlers() {
         serverBootstrap.childHandler(
                 new ChannelInitializer<SocketChannel>() {
                     @Override
@@ -110,27 +110,22 @@ public abstract class AbstractTributaryServer implements TributaryServer {
                 host == null
                         ? serverBootstrap.bind(port).sync()
                         : serverBootstrap.bind(host, port).sync();
-        final ChannelFuture channelFuture =
-                syncFuture.addListener(
-                        (future) -> {
-                            if (future.isSuccess()) {
-                                final String realHost = host == null ? "*" : host;
-                                LOG.info(">>> TcpServer started on ip {} port {} ", realHost, port);
-                            } else {
-                                final String message = "TcpServer started fail on port " + port;
-                                throw new RuntimeException(message, future.cause());
-                            }
-                        });
-        return channelFuture.channel();
+        if (syncFuture.isSuccess()) {
+            final String realHost = host == null ? "*" : host;
+            LOG.info(">>> TcpServer started on ip {}, port {} ", realHost, port);
+        } else {
+            final String message = "TcpServer started fail on port " + port;
+            throw new RuntimeException(message, syncFuture.cause());
+        }
+        return syncFuture.channel();
     }
 
     /**
      * init server channel list.
      *
-     * @param host host
      * @return channel list
      */
-    private List<Channel> createChannelList(String host) throws InterruptedException {
+    private List<Channel> createChannelList() throws InterruptedException {
         final List<Channel> channelList = new ArrayList<>();
         if (host == null || host.isEmpty()) {
             channelList.add(createChannel(null));
@@ -181,23 +176,24 @@ public abstract class AbstractTributaryServer implements TributaryServer {
 
     @Override
     public void close() {
-        if (closed.compareAndSet(false, true)) {
-            if (channelList != null) {
-                channelList.forEach(
-                        f -> {
-                            try {
-                                f.close().sync();
-                            } catch (Exception e) {
-                                LOG.info("wait close channel sync fail", e);
-                            }
-                        });
-            }
-            if (workGroup != null) {
-                workGroup.shutdownGracefully();
-            }
-            if (bossGroup != null) {
-                bossGroup.shutdownGracefully();
-            }
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+        if (channelList != null) {
+            channelList.forEach(
+                    f -> {
+                        try {
+                            f.close().sync();
+                        } catch (Exception e) {
+                            LOG.info("wait close channel sync fail", e);
+                        }
+                    });
+        }
+        if (workGroup != null) {
+            workGroup.shutdownGracefully();
+        }
+        if (bossGroup != null) {
+            bossGroup.shutdownGracefully();
         }
     }
 }

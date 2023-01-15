@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.source.impl;
+package org.zicat.tributary.service.source.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;

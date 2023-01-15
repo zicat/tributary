@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.function;
 /** Dummy Function Factory. */
 public class DummyFunctionFactory implements FunctionFactory {
 
-    public static final String IDENTIFY = "dummy";
+    public static final String IDENTITY = "dummy";
 
     @Override
     public Function createFunction() {
@@ -30,6 +30,6 @@ public class DummyFunctionFactory implements FunctionFactory {
 
     @Override
     public String identity() {
-        return IDENTIFY;
+        return IDENTITY;
     }
 }

@@ -42,18 +42,18 @@ public class SinkHandlerTestBase {
      * test sink handler.
      *
      * @param testData test data
-     * @param handlerIdentify handlerIdentify
+     * @param handlerIdentity handlerIdentity
      * @throws IOException IOException
      */
-    public static void test(List<String> testData, String handlerIdentify) throws IOException {
+    public static void test(List<String> testData, String handlerIdentity) throws IOException {
 
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;
         final Channel channel = new MockChannel(partitionCount);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
-                        .handlerIdentify(handlerIdentify)
-                        .functionIdentify(AssertFunctionFactory.IDENTIFY);
+                        .handlerIdentity(handlerIdentity)
+                        .functionIdentity(AssertFunctionFactory.IDENTITY);
         builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         final SinkGroupManager sinkManager =

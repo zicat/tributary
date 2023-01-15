@@ -139,24 +139,24 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     }
 
     /**
-     * use java spi find SinkHandlerFactory by identify.
+     * use java spi find SinkHandlerFactory by identity.
      *
      * @param sinkGroupConfig sinkGroupConfig
      * @return SinkHandlerFactory
      */
     private static FunctionFactory findFunctionFactory(SinkGroupConfig sinkGroupConfig) {
-        final String identify = sinkGroupConfig.functionIdentify();
+        final String identity = sinkGroupConfig.functionIdentity();
         final ServiceLoader<FunctionFactory> loader = ServiceLoader.load(FunctionFactory.class);
         for (FunctionFactory functionFactory : loader) {
-            if (identify.equals(functionFactory.identity())) {
+            if (identity.equals(functionFactory.identity())) {
                 return functionFactory;
             }
         }
-        throw new RuntimeException("identify not found, " + identify);
+        throw new RuntimeException("identity not found, " + identity);
     }
 
     /**
-     * get sink handler identify.
+     * get sink handler identity.
      *
      * @return string
      */

@@ -47,10 +47,10 @@ public class DynamicSource {
     @Autowired DynamicChannel dynamicChannel;
 
     Map<String, String> source;
-    Map<String, TributaryServer> serverMap = new HashMap<>();
+    final Map<String, TributaryServer> serverMap = new HashMap<>();
 
     @PostConstruct
-    public void init() throws Exception {
+    public void init() throws Throwable {
         final Set<String> sourceSet = getSources();
         for (String sourceId : sourceSet) {
             final Channel channel =
@@ -59,23 +59,35 @@ public class DynamicSource {
                     dynamicSourceValue(sourceId, KEY_IMPLEMENT, DEFAULT_IMPLEMENT);
             final TributaryServerFactory tributaryServerFactory =
                     findTributaryServerFactory(implementId);
-            final TributaryServer server =
-                    tributaryServerFactory.createTributaryServer(
-                            channel, getSubKeyConfig(sourceId));
-            server.listen();
-            serverMap.put(sourceId, server);
+            TributaryServer server = null;
+            try {
+                server =
+                        tributaryServerFactory.createTributaryServer(
+                                channel, getSubKeyConfig(sourceId));
+                server.listen();
+                serverMap.put(sourceId, server);
+            } catch (Throwable e) {
+                IOUtils.closeQuietly(server);
+                throw e;
+            }
         }
     }
 
-    private static TributaryServerFactory findTributaryServerFactory(String identify) {
+    /**
+     * find tributary server factory by id.
+     *
+     * @param identity identity
+     * @return TributaryServerFactory
+     */
+    private static TributaryServerFactory findTributaryServerFactory(String identity) {
         final ServiceLoader<TributaryServerFactory> loader =
                 ServiceLoader.load(TributaryServerFactory.class);
         for (TributaryServerFactory tributaryServerFactory : loader) {
-            if (identify.equals(tributaryServerFactory.identity())) {
+            if (identity.equals(tributaryServerFactory.identity())) {
                 return tributaryServerFactory;
             }
         }
-        throw new RuntimeException("identify not found," + identify);
+        throw new RuntimeException("identity not found," + identity);
     }
 
     @PreDestroy
@@ -84,6 +96,7 @@ public class DynamicSource {
             for (Map.Entry<String, TributaryServer> entry : serverMap.entrySet()) {
                 IOUtils.closeQuietly(entry.getValue());
             }
+            serverMap.clear();
         } finally {
             IOUtils.closeQuietly(dynamicChannel);
         }

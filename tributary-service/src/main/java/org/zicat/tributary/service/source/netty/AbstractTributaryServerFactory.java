@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.source.impl;
+package org.zicat.tributary.service.source.netty;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.service.source.TributaryServer;

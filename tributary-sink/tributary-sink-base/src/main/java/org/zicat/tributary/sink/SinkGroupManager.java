@@ -107,21 +107,21 @@ public class SinkGroupManager implements Closeable {
     }
 
     /**
-     * use java spi find {@link PartitionHandlerFactory} by identify.
+     * use java spi find {@link PartitionHandlerFactory} by identity.
      *
      * @param sinkGroupConfig sinkGroupConfig
      * @return SinkHandlerFactory
      */
     private static PartitionHandlerFactory findPartitionHandlerFactory(
             SinkGroupConfig sinkGroupConfig) {
-        final String identify = sinkGroupConfig.handlerIdentify();
+        final String identity = sinkGroupConfig.handlerIdentity();
         final ServiceLoader<PartitionHandlerFactory> loader =
                 ServiceLoader.load(PartitionHandlerFactory.class);
         for (PartitionHandlerFactory partitionHandlerFactory : loader) {
-            if (identify.equals(partitionHandlerFactory.identity())) {
+            if (identity.equals(partitionHandlerFactory.identity())) {
                 return partitionHandlerFactory;
             }
         }
-        throw new RuntimeException("identify not found," + identify);
+        throw new RuntimeException("identity not found," + identity);
     }
 }

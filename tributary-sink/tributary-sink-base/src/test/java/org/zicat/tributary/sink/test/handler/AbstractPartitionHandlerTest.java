@@ -55,7 +55,7 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 1;
         final Channel channel = new MockChannel(partitionCount);
         final SinkGroupConfigBuilder builder =
-                SinkGroupConfigBuilder.newBuilder().functionIdentify(MockIdleTriggerFactory.ID);
+                SinkGroupConfigBuilder.newBuilder().functionIdentity(MockIdleTriggerFactory.ID);
         final SinkGroupConfig sinkGroupConfig = builder.build();
 
         /*
@@ -99,7 +99,7 @@ public class AbstractPartitionHandlerTest {
     public void testIllegalCommittableOffset() throws IOException {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
-                        .functionIdentify(AssertFunctionFactory.IDENTIFY);
+                        .functionIdentity(AssertFunctionFactory.IDENTITY);
         // configuration maxRetainSize = 80 to skip segment
         builder.addCustomProperty(AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE, 80L);
         final SinkGroupConfig sinkGroupConfig = builder.build();
@@ -163,7 +163,7 @@ public class AbstractPartitionHandlerTest {
 
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
-                        .functionIdentify(AssertFunctionFactory.IDENTIFY);
+                        .functionIdentity(AssertFunctionFactory.IDENTITY);
         // configuration maxRetainSize = 80 to skip segment
         builder.addCustomProperty(AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE, 80L);
 
@@ -240,7 +240,7 @@ public class AbstractPartitionHandlerTest {
 
         final SinkGroupConfig sinkGroupConfig =
                 SinkGroupConfigBuilder.newBuilder()
-                        .functionIdentify(AssertFunctionFactory.IDENTIFY)
+                        .functionIdentity(AssertFunctionFactory.IDENTITY)
                         .build();
         final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch countDownLatch = new CountDownLatch(1);

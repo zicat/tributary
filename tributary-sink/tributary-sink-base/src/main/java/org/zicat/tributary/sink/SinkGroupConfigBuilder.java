@@ -23,8 +23,8 @@ import org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory;
 /** SinkGroupConfigBuilder. */
 public class SinkGroupConfigBuilder extends CustomConfigBuilder {
 
-    private String handlerIdentify = DirectPartitionHandlerFactory.IDENTIFY;
-    private String functionIdentify;
+    private String handlerIdentity = DirectPartitionHandlerFactory.IDENTITY;
+    private String functionIdentity;
 
     /** @return builder */
     public static SinkGroupConfigBuilder newBuilder() {
@@ -32,30 +32,30 @@ public class SinkGroupConfigBuilder extends CustomConfigBuilder {
     }
 
     /**
-     * set functionIdentify.
+     * set functionIdentity.
      *
-     * @param functionIdentify functionIdentify
+     * @param functionIdentity functionIdentity
      * @return SinkGroupConfigBuilder
      */
-    public SinkGroupConfigBuilder functionIdentify(String functionIdentify) {
-        if (functionIdentify == null) {
-            throw new IllegalArgumentException("functionIdentify is null");
+    public SinkGroupConfigBuilder functionIdentity(String functionIdentity) {
+        if (functionIdentity == null) {
+            throw new IllegalArgumentException("functionIdentity is null");
         }
-        this.functionIdentify = functionIdentify;
+        this.functionIdentity = functionIdentity;
         return this;
     }
 
     /**
-     * set handlerIdentify.
+     * set handlerIdentity.
      *
-     * @param handlerIdentify handlerIdentify
+     * @param handlerIdentity handlerIdentity
      * @return SinkGroupConfigBuilder
      */
-    public SinkGroupConfigBuilder handlerIdentify(String handlerIdentify) {
-        if (handlerIdentify == null) {
-            throw new IllegalArgumentException("handlerIdentify is null");
+    public SinkGroupConfigBuilder handlerIdentity(String handlerIdentity) {
+        if (handlerIdentity == null) {
+            throw new IllegalArgumentException("handlerIdentity is null");
         }
-        this.handlerIdentify = handlerIdentify;
+        this.handlerIdentity = handlerIdentity;
         return this;
     }
 
@@ -65,9 +65,9 @@ public class SinkGroupConfigBuilder extends CustomConfigBuilder {
      * @return SinkGroupConfig
      */
     public SinkGroupConfig build() {
-        if (functionIdentify == null) {
-            throw new IllegalStateException("function identify must not null");
+        if (functionIdentity == null) {
+            throw new IllegalStateException("function identity must not null");
         }
-        return new SinkGroupConfig(handlerIdentify, functionIdentify, customConfig);
+        return new SinkGroupConfig(handlerIdentity, functionIdentity, customConfig);
     }
 }

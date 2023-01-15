@@ -23,23 +23,23 @@ import java.util.Map;
 /** SinkGroupConfig. */
 public class SinkGroupConfig extends Config {
 
-    private final String handlerIdentify;
-    private final String functionIdentify;
+    private final String handlerIdentity;
+    private final String functionIdentity;
 
     SinkGroupConfig(
-            String handlerIdentify, String functionIdentify, Map<String, Object> customConfig) {
+            String handlerIdentity, String functionIdentity, Map<String, Object> customConfig) {
         super(customConfig);
-        this.handlerIdentify = handlerIdentify;
-        this.functionIdentify = functionIdentify;
+        this.handlerIdentity = handlerIdentity;
+        this.functionIdentity = functionIdentity;
     }
 
-    /** @return handler identify */
-    public final String handlerIdentify() {
-        return handlerIdentify;
+    /** @return handler identity */
+    public final String handlerIdentity() {
+        return handlerIdentity;
     }
 
-    /** @return function identify */
-    public final String functionIdentify() {
-        return functionIdentify;
+    /** @return function identity */
+    public final String functionIdentity() {
+        return functionIdentity;
     }
 }

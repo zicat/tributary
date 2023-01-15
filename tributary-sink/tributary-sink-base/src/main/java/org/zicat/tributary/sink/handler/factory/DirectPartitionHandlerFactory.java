@@ -26,7 +26,7 @@ import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 /** SimplePartitionHandlerFactory. */
 public class DirectPartitionHandlerFactory implements PartitionHandlerFactory {
 
-    public static final String IDENTIFY = "direct";
+    public static final String IDENTITY = "direct";
 
     @Override
     public AbstractPartitionHandler createHandler(
@@ -36,6 +36,6 @@ public class DirectPartitionHandlerFactory implements PartitionHandlerFactory {
 
     @Override
     public String identity() {
-        return IDENTIFY;
+        return IDENTITY;
     }
 }

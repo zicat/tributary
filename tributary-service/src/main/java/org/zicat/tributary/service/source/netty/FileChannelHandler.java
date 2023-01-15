@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.source.impl;
+package org.zicat.tributary.service.source.netty;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -25,7 +25,6 @@ import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.service.TributaryServiceApplication;
 
 import java.util.Random;
 
@@ -65,7 +64,6 @@ public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
             channel.append(partition, packet);
         } catch (Exception e) {
             LOG.error("append data error", e);
-            TributaryServiceApplication.shutdown();
         }
     }
 }

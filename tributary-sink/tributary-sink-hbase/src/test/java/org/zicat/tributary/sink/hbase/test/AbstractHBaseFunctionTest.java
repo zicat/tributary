@@ -60,7 +60,7 @@ public class AbstractHBaseFunctionTest {
         final Configuration configuration = new Configuration();
         final MockConnection connection = Mockito.spy(new MockConnection(configuration));
         Mockito.when(ConnectionFactory.createConnection(configuration)).thenReturn(connection);
-        final HTableEntity tableIdentify = new HTableEntity("test", "counter");
+        final HTableEntity tableIdentity = new HTableEntity("test", "counter");
         final AbstractHBaseFunction function =
                 new AbstractHBaseFunction() {
                     @Override
@@ -78,7 +78,7 @@ public class AbstractHBaseFunctionTest {
                             throws Exception {
                         while (iterator.hasNext()) {
                             byte[] data = iterator.next();
-                            sendDataToHbase(tableIdentify, new Put(data));
+                            sendDataToHbase(tableIdentity, new Put(data));
                         }
                     }
                 };
@@ -96,7 +96,7 @@ public class AbstractHBaseFunctionTest {
                         "2".getBytes(StandardCharsets.UTF_8),
                         "3".getBytes(StandardCharsets.UTF_8));
         function.process(new RecordsOffset(1, 1), testData.listIterator());
-        Assert.assertTrue(function.getHBaseWriter(tableIdentify) instanceof DiscardHBaseWriter);
+        Assert.assertTrue(function.getHBaseWriter(tableIdentity) instanceof DiscardHBaseWriter);
         function.close();
     }
 
@@ -105,7 +105,7 @@ public class AbstractHBaseFunctionTest {
         final Configuration configuration = new Configuration();
         final MockConnection connection = Mockito.spy(new MockConnection(configuration));
         Mockito.when(ConnectionFactory.createConnection(configuration)).thenReturn(connection);
-        final HTableEntity tableIdentify = new HTableEntity("test", "counter");
+        final HTableEntity tableIdentity = new HTableEntity("test", "counter");
         final AbstractHBaseFunction function =
                 new AbstractHBaseFunction() {
                     @Override
@@ -123,7 +123,7 @@ public class AbstractHBaseFunctionTest {
                             throws Exception {
                         while (iterator.hasNext()) {
                             byte[] data = iterator.next();
-                            sendDataToHbase(tableIdentify, new Put(data));
+                            sendDataToHbase(tableIdentity, new Put(data));
                         }
                     }
                 };
@@ -143,7 +143,7 @@ public class AbstractHBaseFunctionTest {
         function.process(new RecordsOffset(1, 1), testData.listIterator());
 
         final MockBufferedMutator mutator =
-                (MockBufferedMutator) connection.getBufferedMutator(tableIdentify.tableName());
+                (MockBufferedMutator) connection.getBufferedMutator(tableIdentity.tableName());
         Assert.assertEquals(3, mutator.mutateList.size());
         function.process(new RecordsOffset(1, 1), testData.listIterator());
         Assert.assertEquals(6, mutator.mutateList.size());
