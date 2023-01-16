@@ -40,8 +40,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     private static final String DATE_FORMAT = "yyyyMMdd_HH";
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
-                    .name("hdfs_sink_counter")
-                    .help("hdfs sink counter")
+                    .name("sink_hdfs_counter")
+                    .help("sink hdfs counter")
                     .labelNames("host", "groupId", "topic")
                     .register();
     private static final Gauge HDFS_OPEN_FILES_GAUGE =

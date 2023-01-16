@@ -57,9 +57,4 @@ public interface OnePartitionGroupManager extends GroupManager {
      * @return RecordsOffset
      */
     RecordsOffset getMinRecordsOffset();
-
-    @Override
-    default RecordsOffset getMinRecordsOffset(int partition) {
-        return getMinRecordsOffset();
-    }
 }

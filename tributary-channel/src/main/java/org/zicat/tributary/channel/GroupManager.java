@@ -57,12 +57,4 @@ public interface GroupManager extends Closeable {
      * @throws IOException IOException
      */
     void commit(String groupId, int partition, RecordsOffset recordsOffset) throws IOException;
-
-    /**
-     * get min records Offset of this partition.
-     *
-     * @param partition partition
-     * @return RecordsOffset
-     */
-    RecordsOffset getMinRecordsOffset(int partition);
 }

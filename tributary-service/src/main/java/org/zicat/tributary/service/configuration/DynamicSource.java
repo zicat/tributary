@@ -45,6 +45,7 @@ public class DynamicSource {
     private static final String KEY_CHANNEL = "channel";
 
     @Autowired DynamicChannel dynamicChannel;
+    @Autowired DynamicSinkGroupManager dynamicSinkGroupManager;
 
     Map<String, String> source;
     final Map<String, TributaryServer> serverMap = new HashMap<>();
@@ -98,7 +99,12 @@ public class DynamicSource {
             }
             serverMap.clear();
         } finally {
-            IOUtils.closeQuietly(dynamicChannel);
+            try {
+                dynamicChannel.flushAll();
+            } finally {
+                IOUtils.closeQuietly(dynamicSinkGroupManager);
+                IOUtils.closeQuietly(dynamicChannel);
+            }
         }
     }
 

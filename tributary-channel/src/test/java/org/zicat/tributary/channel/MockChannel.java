@@ -131,18 +131,6 @@ public class MockChannel implements Channel {
     }
 
     @Override
-    public RecordsOffset getMinRecordsOffset(int partition) {
-        RecordsOffset min = null;
-        for (Map.Entry<GroupPartition, RecordsOffset> entry : groupManager.entrySet()) {
-            if (entry.getKey().partition != partition) {
-                continue;
-            }
-            min = min == null ? entry.getValue() : RecordsOffset.min(min, entry.getValue());
-        }
-        return min;
-    }
-
-    @Override
     public synchronized void flush() {}
 
     @Override
@@ -227,14 +215,6 @@ public class MockChannel implements Channel {
             this.partition = partition;
         }
 
-        public String getGroup() {
-            return group;
-        }
-
-        public int getPartition() {
-            return partition;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -267,10 +247,6 @@ public class MockChannel implements Channel {
             this.offset = offset;
             this.length = length;
             this.recordsOffset = recordsOffset;
-        }
-
-        public int getPartition() {
-            return partition;
         }
 
         public byte[] getLog() {

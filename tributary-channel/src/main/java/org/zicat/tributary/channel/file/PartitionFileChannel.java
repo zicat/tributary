@@ -138,12 +138,6 @@ public class PartitionFileChannel implements Channel, Closeable {
     }
 
     @Override
-    public RecordsOffset getMinRecordsOffset(int partition) {
-        final FileChannel fileChannel = getPartitionChannel(partition);
-        return fileChannel.getMinRecordsOffset();
-    }
-
-    @Override
     public long lag(int partition, RecordsOffset recordsOffset) {
         final FileChannel fileChannel = getPartitionChannel(partition);
         return fileChannel.lag(recordsOffset);
