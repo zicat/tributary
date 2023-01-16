@@ -20,7 +20,7 @@ package org.zicat.tributary.channel.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.OnePartitionGroupManager;
+import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.channel.utils.TributaryChannelRuntimeException;
@@ -30,9 +30,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zicat.tributary.channel.file.SegmentUtil.realPrefix;
 import static org.zicat.tributary.channel.utils.IOUtils.*;
@@ -49,27 +51,22 @@ import static org.zicat.tributary.channel.utils.IOUtils.*;
  *
  * <p>file content: 8 Bytes(Long, segmentId) + 8 Bytes(Long, segmentId).
  */
-public class FileGroupManager implements OnePartitionGroupManager {
+public class FileGroupManager extends MemoryOnePartitionGroupManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
 
     public static final String FILE_PREFIX = "group_id_";
     private static final String FILE_SUFFIX = ".index";
 
-    private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
     private final Map<String, FileChannel> fileCache = new ConcurrentHashMap<>();
     private final File dir;
-    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(16);
     private final String filePrefix;
-    private final String topic;
-    private final Set<String> groups;
 
     public FileGroupManager(File dir, String topic, List<String> groupIds) {
+        super(topic, groupIds);
         this.dir = dir;
-        this.topic = topic;
         this.filePrefix = realPrefix(topic, FILE_PREFIX);
-        this.groups = new HashSet<>(groupIds);
         loadCache(groupIds);
     }
 
@@ -81,12 +78,15 @@ public class FileGroupManager implements OnePartitionGroupManager {
     private void loadCache(List<String> groupIds) {
 
         final int cacheExpectedSize = groupIds.size();
-        final File[] files = dir.listFiles(file -> isGroupIndexFile(file.getName()));
         final List<String> newGroups = new ArrayList<>(groupIds);
+        final Map<String, RecordsOffset> oldGroups = new HashMap<>();
+
+        final File[] files = dir.listFiles(file -> isGroupIndexFile(file.getName()));
         if (files != null) {
             for (File file : files) {
                 try {
                     final String groupId = groupIdByFileName(file.getName());
+                    // ignore new groupId
                     if (!newGroups.remove(groupId)) {
                         continue;
                     }
@@ -94,39 +94,62 @@ public class FileGroupManager implements OnePartitionGroupManager {
                     final FileChannel fileChannel = randomAccessFile.getChannel();
                     readFully(fileChannel, byteBuffer, 0).flip();
                     fileCache.put(groupId, fileChannel);
-                    cache.put(groupId, RecordsOffset.parserByteBuffer(byteBuffer));
+                    oldGroups.put(groupId, RecordsOffset.parserByteBuffer(byteBuffer));
                     byteBuffer.clear();
                 } catch (Exception e) {
                     throw new TributaryChannelRuntimeException("load group index file error", e);
                 }
             }
         }
-        newGroups.forEach(
-                groupId -> {
-                    try {
-                        commit(groupId, createNewGroupRecordsOffset());
-                    } catch (Exception e) {
-                        throw new TributaryChannelRuntimeException(
-                                "load group index file error", e);
-                    }
-                });
 
-        if (cache.size() != cacheExpectedSize) {
+        for (String groupId : newGroups) {
+            try {
+                commit(groupId, createNewGroupRecordsOffset());
+            } catch (Exception e) {
+                throw new TributaryChannelRuntimeException("load group index file error", e);
+            }
+        }
+        loadTopicGroupOffset2Cache(oldGroups);
+
+        if (oldGroups.size() + newGroups.size() != cacheExpectedSize) {
             throw new TributaryChannelRuntimeException(
                     "cache size must equal groupIds size, expected size = "
                             + cacheExpectedSize
                             + ", real size = "
-                            + cache.size());
+                            + (oldGroups.size() + newGroups.size()));
         }
     }
 
-    /**
-     * create new group records offset.
-     *
-     * @return RecordsOffset
-     */
-    public static RecordsOffset createNewGroupRecordsOffset() {
-        return new RecordsOffset(-1, 0);
+    @Override
+    public void flush(String groupId, RecordsOffset recordsOffset) throws IOException {
+        final FileChannel fileChannel =
+                fileCache.computeIfAbsent(
+                        groupId,
+                        key -> {
+                            if (!makeDir(dir)) {
+                                throw new TributaryChannelRuntimeException(
+                                        "create dir fail, dir " + dir.getPath());
+                            }
+                            final File file = new File(dir, createFileNameByGroupId(key));
+                            try {
+                                return new RandomAccessFile(file, "rw").getChannel();
+                            } catch (IOException e) {
+                                throw new TributaryChannelRuntimeException(
+                                        "create random file error", e);
+                            }
+                        });
+        byteBuffer.clear();
+        recordsOffset.fillBuffer(byteBuffer);
+        fileChannel.position(0);
+        writeFull(fileChannel, byteBuffer);
+        force(fileChannel, false);
+    }
+
+    @Override
+    public void closeCallback() {
+        fileCache.forEach((k, c) -> force(c, true));
+        fileCache.forEach((k, c) -> IOUtils.closeQuietly(c));
+        fileCache.clear();
     }
 
     /**
@@ -159,39 +182,6 @@ public class FileGroupManager implements OnePartitionGroupManager {
         return name.substring(filePrefix.length(), name.length() - FILE_SUFFIX.length());
     }
 
-    @Override
-    public synchronized void commit(String groupId, RecordsOffset recordsOffset)
-            throws IOException {
-
-        isOpen();
-        RecordsOffset cachedRecordsOffset = cache.get(groupId);
-        if (cachedRecordsOffset != null && cachedRecordsOffset.compareTo(recordsOffset) >= 0) {
-            return;
-        }
-        final FileChannel fileChannel =
-                fileCache.computeIfAbsent(
-                        groupId,
-                        key -> {
-                            if (!makeDir(dir)) {
-                                throw new TributaryChannelRuntimeException(
-                                        "create dir fail, dir " + dir.getPath());
-                            }
-                            final File file = new File(dir, createFileNameByGroupId(key));
-                            try {
-                                return new RandomAccessFile(file, "rw").getChannel();
-                            } catch (IOException e) {
-                                throw new TributaryChannelRuntimeException(
-                                        "create random file error", e);
-                            }
-                        });
-        recordsOffset.fillBuffer(byteBuffer);
-        fileChannel.position(0);
-        writeFull(fileChannel, byteBuffer);
-        force(fileChannel, false);
-        byteBuffer.clear();
-        cache.put(groupId, recordsOffset);
-    }
-
     /**
      * flush to page cache.
      *
@@ -203,45 +193,6 @@ public class FileGroupManager implements OnePartitionGroupManager {
             fileChannel.force(metaData);
         } catch (Throwable e) {
             LOG.warn("flush error", e);
-        }
-    }
-
-    @Override
-    public String topic() {
-        return topic;
-    }
-
-    @Override
-    public Set<String> groups() {
-        return groups;
-    }
-
-    @Override
-    public RecordsOffset getRecordsOffset(String groupId) {
-        isOpen();
-        return cache.get(groupId);
-    }
-
-    @Override
-    public RecordsOffset getMinRecordsOffset() {
-        isOpen();
-        return cache.values().stream().min(RecordsOffset::compareTo).orElse(null);
-    }
-
-    /** check whether closed. */
-    private void isOpen() {
-        if (closed.get()) {
-            throw new IllegalStateException("FileGroupManager is closed");
-        }
-    }
-
-    @Override
-    public void close() {
-        if (closed.compareAndSet(false, true)) {
-            fileCache.forEach((k, c) -> force(c, true));
-            fileCache.forEach((k, c) -> IOUtils.closeQuietly(c));
-            fileCache.clear();
-            cache.clear();
         }
     }
 }
