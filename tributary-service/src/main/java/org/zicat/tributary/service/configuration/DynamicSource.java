@@ -54,7 +54,7 @@ public class DynamicSource {
         final Set<String> sourceSet = getSources();
         for (String sourceId : sourceSet) {
             final Channel channel =
-                    dynamicChannel.getChannel(dynamicSourceValue(sourceId, KEY_CHANNEL));
+                    dynamicChannel.getChannel(dynamicSourceValue(sourceId, KEY_CHANNEL, null));
             final String implementId =
                     dynamicSourceValue(sourceId, KEY_IMPLEMENT, DEFAULT_IMPLEMENT);
             final TributaryServerFactory tributaryServerFactory =
@@ -150,16 +150,5 @@ public class DynamicSource {
             }
         }
         return result;
-    }
-
-    /**
-     * create dynamic source value.
-     *
-     * @param sourceId sourceId
-     * @param key key
-     * @return value
-     */
-    private String dynamicSourceValue(String sourceId, String key) {
-        return dynamicSourceValue(sourceId, key, null);
     }
 }
