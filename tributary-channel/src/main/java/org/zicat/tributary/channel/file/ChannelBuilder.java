@@ -30,8 +30,6 @@ public class ChannelBuilder {
     protected Long segmentSize;
     protected Integer blockSize;
     protected CompressionType compressionType;
-    protected long cleanUpPeriod = 5;
-    protected TimeUnit cleanUpUnit = TimeUnit.MINUTES;
 
     protected long flushPeriod = 1;
     protected TimeUnit flushTimeUnit = TimeUnit.SECONDS;
@@ -39,19 +37,6 @@ public class ChannelBuilder {
     protected boolean flushForce = false;
 
     protected List<String> consumerGroups;
-
-    /**
-     * set cleanup period.
-     *
-     * @param cleanUpPeriod cleanUpPeriod
-     * @param cleanUpUnit TimeUnit
-     * @return this
-     */
-    public ChannelBuilder cleanUpPeriod(long cleanUpPeriod, TimeUnit cleanUpUnit) {
-        this.cleanUpPeriod = cleanUpPeriod;
-        this.cleanUpUnit = cleanUpUnit;
-        return this;
-    }
 
     /**
      * set compression type.

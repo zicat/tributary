@@ -65,9 +65,6 @@ public class DynamicChannel implements Closeable {
     private static final String DEFAULT_FILE_SEGMENT_SIZE =
             String.valueOf(4L * 1024L * 1024L * 1024L);
 
-    private static final String KEY_FILE_CLEAN_UP_PERIOD_SECOND = "cleanUpPeriodSecond";
-    private static final String DEFAULT_FILE_CLEAN_UP_PERIOD_SECOND = String.valueOf(60);
-
     private static final String KEY_FILE_FLUSH_PERIOD_MILLS = "flushPeriodMills";
     private static final String DEFAULT_FILE_FLUSH_PERIOD_MILLS = String.valueOf(500);
 
@@ -324,12 +321,6 @@ public class DynamicChannel implements Closeable {
         final long segmentSize =
                 Long.parseLong(
                         dynamicFileValue(topic, KEY_FILE_SEGMENT_SIZE, DEFAULT_FILE_SEGMENT_SIZE));
-        final int cleanUpPeriodSecond =
-                Integer.parseInt(
-                        dynamicFileValue(
-                                topic,
-                                KEY_FILE_CLEAN_UP_PERIOD_SECOND,
-                                DEFAULT_FILE_CLEAN_UP_PERIOD_SECOND));
         final int flushPeriodMills =
                 Integer.parseInt(
                         dynamicFileValue(
@@ -355,7 +346,6 @@ public class DynamicChannel implements Closeable {
         builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(CompressionType.getByName(compression))
-                .cleanUpPeriod(cleanUpPeriodSecond, TimeUnit.SECONDS)
                 .flushPeriod(flushPeriodMills, TimeUnit.MILLISECONDS)
                 .flushPageCacheSize(flushPageCacheSize)
                 .flushForce(flushForce)

@@ -49,9 +49,7 @@ public class PartitionFileChannel implements Channel, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(PartitionFileChannel.class);
     private final FileChannel[] fileChannels;
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private Thread cleanUpThread;
     private Thread flushSegmentThread;
-    private long cleanupMill;
     private long flushPeriodMill;
     private final boolean flushForce;
     private final String topic;
@@ -64,8 +62,6 @@ public class PartitionFileChannel implements Channel, Closeable {
             Integer blockSize,
             Long segmentSize,
             CompressionType compressionType,
-            long cleanUpPeriod,
-            TimeUnit cleanUpUnit,
             long flushPeriod,
             TimeUnit flushUnit,
             long flushPageSize,
@@ -84,17 +80,10 @@ public class PartitionFileChannel implements Channel, Closeable {
                 .flushPageCacheSize(flushPageSize)
                 .topic(topic)
                 .consumerGroups(consumerGroups)
-                .flushForce(flushForce)
-                .cleanUpPeriod(0, cleanUpUnit);
+                .flushForce(flushForce);
         for (int i = 0; i < dirs.size(); i++) {
             FileChannel fileChannel = builder.dir(dirs.get(i)).build();
             fileChannels[i] = fileChannel;
-        }
-
-        if (cleanUpPeriod > 0) {
-            cleanupMill = cleanUpUnit.toMillis(cleanUpPeriod);
-            cleanUpThread = new Thread(this::cleanUp, "cleanup_segment_thread");
-            cleanUpThread.start();
         }
 
         if (flushPeriod > 0) {
@@ -119,24 +108,6 @@ public class PartitionFileChannel implements Channel, Closeable {
                 },
                 flushPeriodMill,
                 closed);
-    }
-
-    /** clean up task. */
-    protected void cleanUp() {
-        loopCloseableFunction(t -> cleanUpAll(), cleanupMill, closed);
-    }
-
-    /**
-     * cleanup all file channel.
-     *
-     * @return null
-     */
-    private boolean cleanUpAll() {
-        boolean cleanUp = false;
-        for (FileChannel fileChannel : fileChannels) {
-            cleanUp |= fileChannel.cleanUp();
-        }
-        return cleanUp;
     }
 
     @Override
@@ -232,9 +203,6 @@ public class PartitionFileChannel implements Channel, Closeable {
         if (closed.compareAndSet(false, true)) {
             for (Channel channel : fileChannels) {
                 IOUtils.closeQuietly(channel);
-            }
-            if (cleanUpThread != null) {
-                cleanUpThread.interrupt();
             }
             if (flushSegmentThread != null) {
                 flushSegmentThread.interrupt();

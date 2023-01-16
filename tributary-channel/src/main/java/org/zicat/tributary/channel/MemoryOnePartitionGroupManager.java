@@ -40,11 +40,11 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
     }
 
     /**
-     * load topic group offset 2 cache.
+     * load group offset to cache.
      *
      * @param map map
      */
-    public void loadTopicGroupOffset2Cache(Map<String, RecordsOffset> map) {
+    public synchronized void loadTopicGroupOffset2Cache(Map<String, RecordsOffset> map) {
         cache.putAll(map);
     }
 

@@ -53,8 +53,6 @@ public class PartitionFileChannelBuilder extends ChannelBuilder {
                 blockSize,
                 segmentSize,
                 compressionType,
-                cleanUpPeriod,
-                cleanUpUnit,
                 flushPeriod,
                 flushTimeUnit,
                 flushPageCacheSize,

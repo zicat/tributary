@@ -28,15 +28,12 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.file.PartitionFileChannel;
 import org.zicat.tributary.channel.file.PartitionFileChannelBuilder;
 import org.zicat.tributary.channel.test.utils.FileUtils;
 import org.zicat.tributary.channel.utils.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,8 +62,6 @@ public class FileChannelTest {
                         dir,
                         segmentSize,
                         blockSize,
-                        7,
-                        TimeUnit.SECONDS,
                         CompressionType.NONE)
                 .close();
         createChannel(
@@ -76,8 +71,6 @@ public class FileChannelTest {
                         dir,
                         segmentSize,
                         blockSize,
-                        7,
-                        TimeUnit.SECONDS,
                         CompressionType.NONE)
                 .close();
         createChannel(
@@ -87,8 +80,6 @@ public class FileChannelTest {
                         dir,
                         segmentSize,
                         blockSize,
-                        7,
-                        TimeUnit.SECONDS,
                         CompressionType.NONE)
                 .close();
         // close channel to create 3 empty segment
@@ -100,8 +91,6 @@ public class FileChannelTest {
                         dir,
                         segmentSize,
                         blockSize,
-                        7,
-                        TimeUnit.SECONDS,
                         CompressionType.NONE);
         channel.append(0, "foo".getBytes(StandardCharsets.UTF_8));
         channel.flush();
@@ -109,16 +98,14 @@ public class FileChannelTest {
                 channel.poll(0, new RecordsOffset(0, 0), 1, TimeUnit.MILLISECONDS);
         Assert.assertFalse(recordsResultSet.isEmpty());
         while (recordsResultSet.hasNext()) {
-            System.out.println(new String(recordsResultSet.next(), StandardCharsets.UTF_8));
+            LOG.debug(new String(recordsResultSet.next(), StandardCharsets.UTF_8));
         }
         Assert.assertEquals(3, recordsResultSet.nexRecordsOffset().segmentId());
         channel.close();
     }
 
     @Test
-    public void testCleanUp()
-            throws IOException, InterruptedException, NoSuchMethodException,
-                    InvocationTargetException, IllegalAccessException {
+    public void testCleanUp() throws IOException, InterruptedException {
         final String dir = new File(PARENT_DIR, "test_clean_up/partition-").getPath();
         final int blockSize = 28;
         final long segmentSize = 56;
@@ -132,8 +119,6 @@ public class FileChannelTest {
                         dir,
                         segmentSize,
                         blockSize,
-                        7,
-                        TimeUnit.SECONDS,
                         CompressionType.NONE);
         channel.append(0, new byte[20]);
         channel.append(0, new byte[20]);
@@ -144,13 +129,9 @@ public class FileChannelTest {
         RecordsResultSet recordsResultSet =
                 channel.poll(0, channel.getRecordsOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
         channel.commit(groupId, 0, recordsResultSet.nexRecordsOffset());
-        Method method = PartitionFileChannel.class.getDeclaredMethod("cleanUpAll");
-        method.setAccessible(true);
-        method.invoke(channel);
         Assert.assertEquals(1, channel.activeSegment());
 
         channel.commit(groupId, 0, recordsResultSet.nexRecordsOffset().skipNextSegmentHead());
-        method.invoke(channel);
         Assert.assertEquals(1, channel.activeSegment());
         IOUtils.closeQuietly(channel);
     }
@@ -430,8 +411,6 @@ public class FileChannelTest {
                 dir,
                 segmentSize,
                 blockSize,
-                7,
-                TimeUnit.SECONDS,
                 CompressionType.SNAPPY);
     }
 
@@ -442,8 +421,6 @@ public class FileChannelTest {
             String dir,
             long segmentSize,
             int blockSize,
-            int cleanUpPeriod,
-            TimeUnit cleanUpTimeUnit,
             CompressionType compressionType) {
         final List<File> dirs = new ArrayList<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
@@ -454,7 +431,6 @@ public class FileChannelTest {
                 .blockSize(blockSize)
                 .consumerGroups(consumerGroup)
                 .topic(topic)
-                .cleanUpPeriod(cleanUpPeriod, cleanUpTimeUnit)
                 .compressionType(compressionType)
                 .flushPeriod(500, TimeUnit.MILLISECONDS);
         return builder.dirs(dirs).build();

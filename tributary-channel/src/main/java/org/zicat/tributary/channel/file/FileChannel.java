@@ -58,8 +58,7 @@ import static org.zicat.tributary.channel.utils.Functions.loopCloseableFunction;
  * read writable segment or other segments tagged as finished(not writable).
  *
  * <p>FileChannel support commit RecordsOffset by {@link FileChannel#groupManager} and support clean
- * up expired segments(all group ids has commit the offset over this segments) async, see {@link
- * FileChannel#cleanUpThread}
+ * up expired segments(all group ids has commit the offset over this segments) async}
  */
 public class FileChannel implements OnePartitionChannel, Closeable {
 
@@ -74,8 +73,6 @@ public class FileChannel implements OnePartitionChannel, Closeable {
     private volatile Segment lastSegment;
     private final AtomicBoolean closed = new AtomicBoolean();
     private long flushPeriodMill;
-    private long cleanupMill;
-    private Thread cleanUpThread;
     private Thread flushSegmentThread;
     private final String topic;
     private final long flushPageCacheSize;
@@ -83,6 +80,7 @@ public class FileChannel implements OnePartitionChannel, Closeable {
     private final BufferWriter bufferWriter;
     private final AtomicLong writeBytes = new AtomicLong();
     private final AtomicLong readBytes = new AtomicLong();
+    private long minCommitSegmentId;
 
     protected FileChannel(
             String topic,
@@ -91,8 +89,6 @@ public class FileChannel implements OnePartitionChannel, Closeable {
             Integer blockSize,
             Long segmentSize,
             CompressionType compressionType,
-            long cleanUpPeriod,
-            TimeUnit cleanUpUnit,
             long flushPeriod,
             TimeUnit flushUnit,
             long flushPageCacheSize,
@@ -105,12 +101,8 @@ public class FileChannel implements OnePartitionChannel, Closeable {
         this.groupManager = groupManager;
         this.flushPageCacheSize = flushPageCacheSize;
         this.flushForce = flushForce;
+        this.minCommitSegmentId = groupManager.getMinRecordsOffset().segmentId();
         loadSegments();
-        if (cleanUpPeriod > 0) {
-            cleanupMill = cleanUpUnit.toMillis(cleanUpPeriod);
-            cleanUpThread = new Thread(this::periodCleanUp, "cleanup_segment_thread");
-            cleanUpThread.start();
-        }
         if (flushPeriod > 0) {
             flushPeriodMill = flushUnit.toMillis(flushPeriod);
             flushSegmentThread = new Thread(this::periodForceSegment, "segment_flush_thread");
@@ -251,6 +243,11 @@ public class FileChannel implements OnePartitionChannel, Closeable {
     @Override
     public void commit(String groupId, RecordsOffset recordsOffset) throws IOException {
         groupManager.commit(groupId, recordsOffset);
+        final RecordsOffset min = groupManager.getMinRecordsOffset();
+        if (minCommitSegmentId < min.segmentId()) {
+            minCommitSegmentId = min.segmentId();
+            cleanUp();
+        }
     }
 
     @Override
@@ -328,9 +325,6 @@ public class FileChannel implements OnePartitionChannel, Closeable {
             IOUtils.closeQuietly(groupManager);
             segmentCache.forEach((k, v) -> IOUtils.closeQuietly(v));
             segmentCache.clear();
-            if (cleanUpThread != null) {
-                cleanUpThread.interrupt();
-            }
             if (flushSegmentThread != null) {
                 flushSegmentThread.interrupt();
             }
@@ -368,22 +362,17 @@ public class FileChannel implements OnePartitionChannel, Closeable {
         lastSegment.flush(force);
     }
 
-    /**
-     * clean up old segment.
-     *
-     * @return boolean clean up
-     */
-    protected boolean cleanUp() {
+    /** clean up old segment. */
+    protected void cleanUp() {
 
-        final RecordsOffset min = groupManager.getMinRecordsOffset();
-        if (min == null || min.segmentId() < 0) {
-            return false;
+        if (minCommitSegmentId <= 0) {
+            return;
         }
 
         final List<Segment> expiredSegments = new ArrayList<>();
         for (Map.Entry<Long, Segment> entry : segmentCache.entrySet()) {
             final Segment segment = entry.getValue();
-            if (segment.fileId() < min.segmentId() && segment.fileId() < lastSegment.fileId()) {
+            if (segment.fileId() < minCommitSegmentId && segment.fileId() < lastSegment.fileId()) {
                 expiredSegments.add(segment);
             }
         }
@@ -396,12 +385,6 @@ public class FileChannel implements OnePartitionChannel, Closeable {
                 LOG.info("expired file " + segment.filePath() + " deleted fail");
             }
         }
-        return true;
-    }
-
-    /** clean up expired log. */
-    protected void periodCleanUp() {
-        loopCloseableFunction(t -> cleanUp(), cleanupMill, closed);
     }
 
     @Override

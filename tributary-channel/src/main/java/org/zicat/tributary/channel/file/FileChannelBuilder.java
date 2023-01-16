@@ -58,8 +58,6 @@ public class FileChannelBuilder extends ChannelBuilder {
                 blockSize,
                 segmentSize,
                 compressionType,
-                cleanUpPeriod,
-                cleanUpUnit,
                 flushPeriod,
                 flushTimeUnit,
                 flushPageCacheSize,
