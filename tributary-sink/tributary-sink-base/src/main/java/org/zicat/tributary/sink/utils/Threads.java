@@ -50,16 +50,6 @@ public class Threads {
     }
 
     /**
-     * create thread factory by prefix name.
-     *
-     * @param prefixName prefix name
-     * @return ThreadFactory
-     */
-    public static ThreadFactory createThreadFactoryByName(String prefixName) {
-        return createThreadFactoryByName(prefixName, false);
-    }
-
-    /**
      * join quietly.
      *
      * @param t thread

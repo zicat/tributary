@@ -35,27 +35,4 @@ public interface Clock {
      * @return string
      */
     String currentTime(String pattern);
-
-    /**
-     * get today.
-     *
-     * @param format format
-     * @return string day
-     */
-    String today(String format);
-
-    /**
-     * get tomorrow.
-     *
-     * @param format format
-     * @return next string day
-     */
-    String tomorrow(String format);
-
-    /**
-     * get current second from today.
-     *
-     * @return millis
-     */
-    int secondFromToday();
 }

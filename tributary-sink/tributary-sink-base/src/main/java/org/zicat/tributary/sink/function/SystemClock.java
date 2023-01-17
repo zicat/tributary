@@ -20,7 +20,6 @@ package org.zicat.tributary.sink.function;
 
 import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.chrono.ISOChronology;
 
@@ -46,23 +45,5 @@ public class SystemClock implements Clock {
     public String currentTime(String pattern) {
         return new LocalDateTime(DateTimeUtils.currentTimeMillis(), isoChronology)
                 .toString(pattern);
-    }
-
-    @Override
-    public String today(String format) {
-        return new LocalDate(DateTimeUtils.currentTimeMillis(), isoChronology).toString(format);
-    }
-
-    @Override
-    public String tomorrow(String format) {
-        return new LocalDate(DateTimeUtils.currentTimeMillis(), isoChronology)
-                .plusDays(1)
-                .toString(format);
-    }
-
-    @Override
-    public int secondFromToday() {
-        return new LocalDateTime(DateTimeUtils.currentTimeMillis(), isoChronology).getMillisOfDay()
-                / 1000;
     }
 }

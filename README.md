@@ -20,7 +20,7 @@ Tributary项目负责提供可靠的数据接收服务，并灵活地将数据�
 # 项目开发
 
 ## 编译与导入
-- $ git clone git@github.com:zicat/tributary.git
+- $ checkout project first
 - $ cd tributary && mvn clean install -DskipTests
 - 将项目导入至Intellij中进行开发工作，配置checkstyle & format
 

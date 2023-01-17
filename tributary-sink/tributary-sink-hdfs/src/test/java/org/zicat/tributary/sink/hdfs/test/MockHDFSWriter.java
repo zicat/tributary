@@ -65,11 +65,6 @@ public class MockHDFSWriter implements HDFSWriter {
         return filePath;
     }
 
-    public void open(String filePath) {
-        this.filePath = filePath;
-        filesOpened++;
-    }
-
     @Override
     public void open(FileSystem fileSystem, Path path, CompressionCodec codec) {
         this.filePath = path.getName();

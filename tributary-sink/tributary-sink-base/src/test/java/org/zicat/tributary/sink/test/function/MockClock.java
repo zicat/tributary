@@ -27,24 +27,9 @@ import java.util.Date;
 public class MockClock implements Clock {
 
     private long currentTimeMillis;
-    private String today;
-    private String tomorrow;
-    private int secondFromToday;
 
     public void setCurrentTimeMillis(long currentTimeMillis) {
         this.currentTimeMillis = currentTimeMillis;
-    }
-
-    public void setToday(String today) {
-        this.today = today;
-    }
-
-    public void setTomorrow(String tomorrow) {
-        this.tomorrow = tomorrow;
-    }
-
-    public void setSecondFromToday(int secondFromToday) {
-        this.secondFromToday = secondFromToday;
     }
 
     @Override
@@ -55,20 +40,5 @@ public class MockClock implements Clock {
     @Override
     public String currentTime(String pattern) {
         return new SimpleDateFormat(pattern).format(new Date(currentTimeMillis));
-    }
-
-    @Override
-    public String today(String format) {
-        return today;
-    }
-
-    @Override
-    public String tomorrow(String format) {
-        return tomorrow;
-    }
-
-    @Override
-    public int secondFromToday() {
-        return secondFromToday;
     }
 }

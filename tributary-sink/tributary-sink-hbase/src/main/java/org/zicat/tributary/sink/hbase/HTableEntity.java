@@ -25,31 +25,20 @@ import java.util.Objects;
 /** HTableEntity. */
 public class HTableEntity {
     private final String table;
-    private final String cluster;
     private final String tableIdentity;
 
     public HTableEntity(String cluster, String table) {
-        this.cluster = cluster;
         this.table = table;
         this.tableIdentity = cluster + "." + table;
     }
 
     /**
-     * get table.
+     * get table id.
      *
-     * @return table.
+     * @return tableIdentity
      */
-    public String table() {
-        return table;
-    }
-
-    /**
-     * get cluster.
-     *
-     * @return cluster.
-     */
-    public String cluster() {
-        return cluster;
+    public String tableIdentity() {
+        return tableIdentity;
     }
 
     @Override
@@ -80,6 +69,6 @@ public class HTableEntity {
 
     @Override
     public String toString() {
-        return tableIdentity;
+        return tableIdentity();
     }
 }
