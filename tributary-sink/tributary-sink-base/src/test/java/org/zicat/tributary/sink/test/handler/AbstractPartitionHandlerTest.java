@@ -28,6 +28,7 @@ import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
@@ -111,6 +112,11 @@ public class AbstractPartitionHandlerTest {
                 new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
                     @Override
                     public void closeCallback() {}
+
+                    @Override
+                    public List<AbstractFunction> getFunctions() {
+                        return null;
+                    }
 
                     private RecordsOffset recordsOffset;
 
@@ -217,7 +223,12 @@ public class AbstractPartitionHandlerTest {
                     }
 
                     @Override
-                    public void closeCallback() throws IOException {}
+                    public void closeCallback() {}
+
+                    @Override
+                    public List<AbstractFunction> getFunctions() {
+                        return null;
+                    }
                 };
         handler.start();
 
@@ -254,7 +265,12 @@ public class AbstractPartitionHandlerTest {
                 new AbstractPartitionHandler(groupId, channel, 0, sinkGroupConfig) {
 
                     @Override
-                    public void closeCallback() throws IOException {}
+                    public void closeCallback() {}
+
+                    @Override
+                    public List<AbstractFunction> getFunctions() {
+                        return null;
+                    }
 
                     @Override
                     public long idleTimeMillis() {

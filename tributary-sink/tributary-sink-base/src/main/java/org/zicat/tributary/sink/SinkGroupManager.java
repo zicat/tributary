@@ -20,13 +20,12 @@ package org.zicat.tributary.sink;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.factory.PartitionHandlerFactory;
 
 import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +92,19 @@ public class SinkGroupManager implements Closeable {
      */
     public long lag() {
         return handlers.stream().mapToLong(AbstractPartitionHandler::lag).sum();
+    }
+
+    /**
+     * get functions.
+     *
+     * @return map
+     */
+    public Map<Integer, List<AbstractFunction>> getFunctions() {
+        final Map<Integer, List<AbstractFunction>> result = new HashMap<>();
+        for (AbstractPartitionHandler handler : handlers) {
+            result.put(handler.partitionId(), handler.getFunctions());
+        }
+        return result;
     }
 
     @Override

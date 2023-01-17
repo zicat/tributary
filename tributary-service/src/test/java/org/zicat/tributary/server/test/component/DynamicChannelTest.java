@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test.configuration;
+package org.zicat.tributary.server.test.component;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,22 +26,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.zicat.tributary.service.configuration.DynamicChannel;
+import org.zicat.tributary.service.component.DynamicChannel;
+import org.zicat.tributary.service.configuration.ChannelConfiguration;
+
+import static org.zicat.tributary.channel.utils.IOUtils.deleteDir;
 
 /** DynamicChannelTest. */
 @RunWith(SpringRunner.class)
-@SpringBootTest
-@ContextConfiguration(classes = DynamicChannel.class)
-@EnableConfigurationProperties(DynamicChannel.class)
+@SpringBootTest(classes = DynamicChannel.class)
+@EnableConfigurationProperties(ChannelConfiguration.class)
 @ActiveProfiles("channel-test")
 public class DynamicChannelTest {
 
     @Autowired DynamicChannel dynamicChannel;
 
+    @After
+    public void after() {
+        if (dynamicChannel.getTempDir() != null) {
+            deleteDir(dynamicChannel.getTempDir());
+        }
+    }
+
     @Test
     public void test() {
+
         Assert.assertEquals("c1", dynamicChannel.getChannel("c1").topic());
         Assert.assertEquals("c2", dynamicChannel.getChannel("c2").topic());
 

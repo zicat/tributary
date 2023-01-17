@@ -16,16 +16,15 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.configuration;
+package org.zicat.tributary.service.component;
 
-import lombok.Data;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.utils.IOUtils;
-import org.zicat.tributary.service.metrics.SinkGroupManagerCollector;
+import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -40,9 +39,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** DynamicChannelSinkGroupManager. */
-@ConfigurationProperties
-@Configuration
-@Data
+@Component
+@Getter
 public class DynamicSinkGroupManager implements Closeable {
 
     private static final String KEY_SINK_HANDLER_IDENTITY = "partitionHandlerIdentity";
@@ -55,8 +53,8 @@ public class DynamicSinkGroupManager implements Closeable {
 
     /* key:group id, value: sink group manager consumed by the key */
     final Map<String, List<SinkGroupManager>> sinkGroupManagerMap = new HashMap<>();
-    Map<String, String> sink;
 
+    @Autowired SinkGroupManagerConfiguration sinkGroupManagerConfiguration;
     @Autowired DynamicChannel dynamicChannel;
 
     @Value("${server.metrics.ip.pattern:.*}")
@@ -104,7 +102,6 @@ public class DynamicSinkGroupManager implements Closeable {
         }
         sinkGroupManagerMap.forEach(
                 (k, vs) -> vs.forEach(SinkGroupManager::createPartitionHandlesAndStart));
-        new SinkGroupManagerCollector(sinkGroupManagerMap, metricsHost).register();
     }
 
     /**
@@ -125,7 +122,7 @@ public class DynamicSinkGroupManager implements Closeable {
 
         // add custom property.
         final String keyPrefix = groupId + ".";
-        for (Map.Entry<String, String> entry : sink.entrySet()) {
+        for (Map.Entry<String, String> entry : sinkGroupManagerConfiguration.getSink().entrySet()) {
             final String key = entry.getKey();
             final int index = key.indexOf(keyPrefix);
             if (index == 0) {
@@ -163,7 +160,7 @@ public class DynamicSinkGroupManager implements Closeable {
      */
     private String dynamicNullableSinkValue(String groupId, String key, String defaultValue) {
         final String realKey = String.join(".", groupId, key);
-        final String value = sink.get(realKey);
+        final String value = sinkGroupManagerConfiguration.getSink().get(realKey);
         return value == null ? defaultValue : value;
     }
 
@@ -183,7 +180,7 @@ public class DynamicSinkGroupManager implements Closeable {
      */
     private Set<String> getAllGroups() {
         final Set<String> topics = new HashSet<>();
-        for (Map.Entry<String, String> entry : sink.entrySet()) {
+        for (Map.Entry<String, String> entry : sinkGroupManagerConfiguration.getSink().entrySet()) {
             final String key = entry.getKey();
             final String[] keySplit = key.split("\\.");
             topics.add(keySplit[0]);

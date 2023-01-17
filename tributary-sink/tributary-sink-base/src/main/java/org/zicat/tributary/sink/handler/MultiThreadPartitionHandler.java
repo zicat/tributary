@@ -193,11 +193,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
         return Arrays.stream(handlers).mapToLong(DataHandler::idleTimeMillis).min().orElse(-1);
     }
 
-    /**
-     * get all handler. for unit test.
-     *
-     * @return list process functions
-     */
+    @Override
     public List<AbstractFunction> getFunctions() {
         return Arrays.stream(handlers).map(v -> v.function).collect(Collectors.toList());
     }

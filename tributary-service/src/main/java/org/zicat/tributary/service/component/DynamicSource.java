@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.configuration;
+package org.zicat.tributary.service.component;
 
-import lombok.Data;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.service.configuration.SourceConfiguration;
 import org.zicat.tributary.service.source.TributaryServer;
 import org.zicat.tributary.service.source.TributaryServerFactory;
 
@@ -32,9 +32,8 @@ import javax.annotation.PreDestroy;
 import java.util.*;
 
 /** SourceConfiguration. */
-@ConfigurationProperties
-@Configuration
-@Data
+@Component
+@Getter
 public class DynamicSource {
 
     private static final String SPLIT = ".";
@@ -46,8 +45,8 @@ public class DynamicSource {
 
     @Autowired DynamicChannel dynamicChannel;
     @Autowired DynamicSinkGroupManager dynamicSinkGroupManager;
+    @Autowired SourceConfiguration sourceConfiguration;
 
-    Map<String, String> source;
     final Map<String, TributaryServer> serverMap = new HashMap<>();
 
     @PostConstruct
@@ -115,7 +114,7 @@ public class DynamicSource {
      */
     private Set<String> getSources() {
         final Set<String> sourceSet = new HashSet<>();
-        for (Map.Entry<String, String> entry : source.entrySet()) {
+        for (Map.Entry<String, String> entry : sourceConfiguration.getSource().entrySet()) {
             final String key = entry.getKey();
             final String[] split = key.split("\\.");
             sourceSet.add(split[0]);
@@ -133,7 +132,7 @@ public class DynamicSource {
      */
     private String dynamicSourceValue(String sourceId, String key, String defaultValue) {
         final String realKey = String.join(SPLIT, sourceId, key);
-        final String value = source.get(realKey);
+        final String value = sourceConfiguration.getSource().get(realKey);
         if (value == null && defaultValue == null) {
             throw new RuntimeException("key not configuration, key = " + realKey);
         }
@@ -149,7 +148,7 @@ public class DynamicSource {
     private Map<String, String> getSubKeyConfig(String sourceId) {
         Map<String, String> result = new HashMap<>();
         final String prefix = sourceId + SPLIT;
-        for (Map.Entry<String, String> entry : source.entrySet()) {
+        for (Map.Entry<String, String> entry : sourceConfiguration.getSource().entrySet()) {
             final String key = entry.getKey();
             if (key.startsWith(prefix)) {
                 result.put(key.replace(prefix, ""), entry.getValue());

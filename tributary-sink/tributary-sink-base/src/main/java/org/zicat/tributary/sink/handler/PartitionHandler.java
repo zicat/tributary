@@ -63,6 +63,15 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     }
 
     /**
+     * get partitionId.
+     *
+     * @return int
+     */
+    public final int partitionId() {
+        return partitionId;
+    }
+
+    /**
      * get records offset.
      *
      * @param groupId groupId

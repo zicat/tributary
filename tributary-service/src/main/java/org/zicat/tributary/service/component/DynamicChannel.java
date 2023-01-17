@@ -16,18 +16,19 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.configuration;
+package org.zicat.tributary.service.component;
 
-import lombok.Data;
+import lombok.Getter;
 import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.file.PartitionFileChannelBuilder;
 import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.service.configuration.ChannelConfiguration;
 
 import javax.annotation.PostConstruct;
 import java.io.Closeable;
@@ -39,9 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** DynamicChannel. */
-@ConfigurationProperties
-@Configuration
-@Data
+@Component
+@Getter
 public class DynamicChannel implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DynamicChannel.class);
@@ -70,16 +70,19 @@ public class DynamicChannel implements Closeable {
             String.valueOf(1024L * 1024L * 32L);
 
     private static final String KEY_GROUPS = "groups";
+    private static final String KEY_TEMP_DIR = "{TMP_DIR}";
 
+    @Autowired ChannelConfiguration channelConfiguration;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /* key:channel id, value: channel instance */
     final Map<String, Channel> channels = new HashMap<>();
-    Map<String, String> channel;
+    File tempDir = null;
 
     @PostConstruct
     public void init() throws IOException {
-        if (channel == null || channel.isEmpty()) {
+        if (channelConfiguration.getChannel() == null
+                || channelConfiguration.getChannel().isEmpty()) {
             return;
         }
         try {
@@ -99,7 +102,7 @@ public class DynamicChannel implements Closeable {
      */
     private Set<String> getAllChannels() {
         final Set<String> channels = new HashSet<>();
-        for (Map.Entry<String, String> entry : channel.entrySet()) {
+        for (Map.Entry<String, String> entry : channelConfiguration.getChannel().entrySet()) {
             final String key = entry.getKey();
             final String[] keySplit = key.split("\\.");
             channels.add(keySplit[0]);
@@ -158,7 +161,7 @@ public class DynamicChannel implements Closeable {
      */
     private String dynamicChannelValue(String channelId, String key, String defaultValue) {
         final String realKey = String.join(".", channelId, key);
-        final String value = channel.get(realKey);
+        final String value = channelConfiguration.getChannel().get(realKey);
         if (value == null && defaultValue == null) {
             throw new IllegalStateException("file key not exist in configuration " + realKey);
         }
@@ -220,17 +223,29 @@ public class DynamicChannel implements Closeable {
     private List<File> createDir(List<String> dirs) throws IOException {
         final List<File> result = new ArrayList<>();
         for (String dir : dirs) {
-            if (dir.startsWith("{TMP_DIR}")) {
-                File parent = Files.createTempDirectory("").toFile();
-                String child = dir.replace("{TMP_DIR}", "").trim();
+            if (dir.startsWith(KEY_TEMP_DIR)) {
+                String child = dir.replace(KEY_TEMP_DIR, "").trim();
                 child = child.startsWith("/") ? child.substring(1) : child;
-                File file = child.isEmpty() ? parent : new File(parent, child);
+                File file = child.isEmpty() ? tempDir() : new File(tempDir(), child);
                 result.add(file);
             } else {
                 result.add(new File(dir));
             }
         }
         return result;
+    }
+
+    /**
+     * create temp dir .
+     *
+     * @return file
+     * @throws IOException IOException
+     */
+    private File tempDir() throws IOException {
+        if (tempDir == null) {
+            tempDir = Files.createTempDirectory("").toFile();
+        }
+        return tempDir;
     }
 
     /**

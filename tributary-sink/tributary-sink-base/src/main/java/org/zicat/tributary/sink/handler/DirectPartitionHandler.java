@@ -22,11 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.Trigger;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * SimplePartitionHandler.
@@ -37,7 +40,7 @@ import java.util.Iterator;
 @Slf4j
 public class DirectPartitionHandler extends AbstractPartitionHandler {
 
-    private Function function;
+    private AbstractFunction function;
     private Trigger trigger;
 
     public DirectPartitionHandler(
@@ -64,6 +67,11 @@ public class DirectPartitionHandler extends AbstractPartitionHandler {
     @Override
     public void closeCallback() throws IOException {
         function.close();
+    }
+
+    @Override
+    public List<AbstractFunction> getFunctions() {
+        return Collections.singletonList(function);
     }
 
     @Override

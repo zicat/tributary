@@ -24,11 +24,13 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.zicat.tributary.sink.utils.Threads.sleepQuietly;
 
@@ -238,6 +240,13 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     /** callback close. */
     public abstract void closeCallback() throws IOException;
+
+    /**
+     * get all functions.
+     *
+     * @return function list
+     */
+    public abstract List<AbstractFunction> getFunctions();
 
     /**
      * get commit offset watermark. for unit test visitable.
