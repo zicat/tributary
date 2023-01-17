@@ -59,7 +59,9 @@ public class TributaryClientTest {
         for (int i = 0; i < length; i++) {
             sb.append(i % 2 == 0 ? "a" : "b");
         }
-        writeData(socketChannel, sb.toString().getBytes(StandardCharsets.UTF_8));
+        byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
+        int response = writeData(socketChannel, sb.toString().getBytes(StandardCharsets.UTF_8));
+        LOG.info("send length:{}, response length:{}", data.length, response);
     }
 
     /**
@@ -69,7 +71,7 @@ public class TributaryClientTest {
      * @param data data
      * @throws IOException IOException
      */
-    private static void writeData(SocketChannel socketChannel, byte[] data) throws IOException {
+    public static int writeData(SocketChannel socketChannel, byte[] data) throws IOException {
         final ByteBuffer len =
                 ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(data.length);
         len.flip();
@@ -77,7 +79,7 @@ public class TributaryClientTest {
         writeToChannel(socketChannel, ByteBuffer.wrap(data));
         final ByteBuffer response = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN);
         readFromChannel(socketChannel, response);
-        LOG.info("send length:{}, response length:{}", data.length, response.getInt());
+        return response.getInt();
     }
 
     /**
@@ -101,7 +103,7 @@ public class TributaryClientTest {
      * @param byteBuffer byteBuffer
      * @throws IOException IOException
      */
-    static void readFromChannel(ReadableByteChannel fileChannel, ByteBuffer byteBuffer)
+    public static void readFromChannel(ReadableByteChannel fileChannel, ByteBuffer byteBuffer)
             throws IOException {
         while (byteBuffer.hasRemaining()) {
             fileChannel.read(byteBuffer);

@@ -25,7 +25,7 @@ import java.util.Map;
 /** DefaultTributaryServerFactory. */
 public class NettyTributaryServerFactory extends AbstractTributaryServerFactory {
 
-    private static final String DEFAULT_NETTY_IDLE_SECOND = "120";
+    public static final String DEFAULT_NETTY_IDLE_SECOND = "120";
     private static final String KEY_NETTY_IDLE_SECOND = "netty.idle.second";
 
     @Override

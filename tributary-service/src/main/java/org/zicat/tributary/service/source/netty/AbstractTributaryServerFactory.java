@@ -29,7 +29,7 @@ public abstract class AbstractTributaryServerFactory implements TributaryServerF
 
     private static final String KEY_NETTY_PORT = "netty.port";
 
-    private static final String DEFAULT_NETTY_THREADS = "10";
+    public static final String DEFAULT_NETTY_THREADS = "10";
     private static final String KEY_NETTY_THREADS = "netty.threads";
 
     private static final String DEFAULT_NETTY_HOST = "";

@@ -22,15 +22,24 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
 
+import static org.zicat.tributary.service.source.netty.AbstractTributaryServerFactory.DEFAULT_NETTY_THREADS;
+import static org.zicat.tributary.service.source.netty.NettyTributaryServerFactory.DEFAULT_NETTY_IDLE_SECOND;
+
 /** DefaultTributaryServer. */
 public class NettyTributaryServer extends AbstractTributaryServer {
 
+    private static final int DEFAULT_EVENT_THREADS = Integer.parseInt(DEFAULT_NETTY_THREADS);
+    private static final int DEFAULT_IDLE_SECOND = Integer.parseInt(DEFAULT_NETTY_IDLE_SECOND);
     protected final int idleSecond;
 
     public NettyTributaryServer(
             String host, int port, int eventThreads, Channel channel, int idleSecond) {
         super(host, port, eventThreads, channel);
         this.idleSecond = idleSecond;
+    }
+
+    public NettyTributaryServer(int port, Channel channel) {
+        this(null, port, DEFAULT_EVENT_THREADS, channel, DEFAULT_IDLE_SECOND);
     }
 
     /**

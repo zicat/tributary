@@ -37,7 +37,9 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     public static final String KEY_IDLE_MILLIS = "idleTriggerMillis";
     public static final int DEFAULT_IDLE_MILLIS = 30 * 1000;
 
-    private static final String DATE_FORMAT = "yyyyMMdd_HH";
+    public static final String KEY_BUCKET_DATE_FORMAT = "bucketDateFormat";
+    public static final String DEFAULT_BUCKET_DATE_FORMAT = "yyyyMMdd_HH";
+
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
                     .name("sink_hdfs_counter")
@@ -52,6 +54,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
                     .register();
 
     protected int idleTriggerMillis;
+    protected String bucketDateFormat = null;
     protected String timeBucket = null;
     protected RecordsOffset lastRecordsOffset;
 
@@ -59,17 +62,19 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     public void open(Context context) {
         super.open(context);
         idleTriggerMillis = context.getCustomProperty(KEY_IDLE_MILLIS, DEFAULT_IDLE_MILLIS);
-        timeBucket = clock.currentTime(DATE_FORMAT);
+        bucketDateFormat =
+                context.getCustomProperty(KEY_BUCKET_DATE_FORMAT, DEFAULT_BUCKET_DATE_FORMAT);
+        timeBucket = clock.currentTime(bucketDateFormat);
     }
 
     /**
      * refresh.
      *
-     * @param force forcex`
+     * @param force force
      * @throws Exception Exception
      */
-    protected void refresh(boolean force) throws Exception {
-        String currentTimeBucket = clock.currentTime(DATE_FORMAT);
+    public void refresh(boolean force) throws Exception {
+        String currentTimeBucket = clock.currentTime(bucketDateFormat);
         if (force || !currentTimeBucket.equals(timeBucket)) {
             closeBucket(timeBucket);
             timeBucket = currentTimeBucket;
@@ -106,7 +111,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
             protected void renameBucket(String bucketPath, String targetPath, final FileSystem fs)
                     throws IOException {
                 super.renameBucket(bucketPath, targetPath, fs);
-                DefaultHDFSFunction.this.flush(lastRecordsOffset);
+                DefaultHDFSFunction.this.flush(lastRecordsOffset, null);
             }
         };
     }
@@ -129,7 +134,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
      * @param record record
      * @return string
      */
-    protected String getBucket(byte[] record) {
+    public String getBucket(byte[] record) {
         return timeBucket;
     }
 

@@ -33,10 +33,10 @@ import javax.annotation.PostConstruct;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 /** DynamicChannel. */
 @ConfigurationProperties
@@ -78,12 +78,14 @@ public class DynamicChannel implements Closeable {
     Map<String, String> channel;
 
     @PostConstruct
-    public void init() {
+    public void init() throws IOException {
         if (channel == null || channel.isEmpty()) {
             return;
         }
         try {
-            getAllChannels().forEach(this::initChannelByTopic);
+            for (String channel : getAllChannels()) {
+                initChannelByTopic(channel);
+            }
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
             throw e;
@@ -113,6 +115,15 @@ public class DynamicChannel implements Closeable {
      */
     public Channel getChannel(String channel) {
         return channels.get(channel);
+    }
+
+    /**
+     * return channel count. for test
+     *
+     * @return int size
+     */
+    public int size() {
+        return channels.size();
     }
 
     @Override
@@ -159,7 +170,7 @@ public class DynamicChannel implements Closeable {
      *
      * @param topic topic
      */
-    private void initChannelByTopic(String topic) {
+    private void initChannelByTopic(String topic) throws IOException {
         final String groupIds = dynamicChannelValue(topic, KEY_GROUPS, null);
         if (groupIds == null) {
             throw new IllegalStateException("topic has no sink group " + topic);
@@ -194,8 +205,7 @@ public class DynamicChannel implements Closeable {
                         dynamicChannelValue(topic, KEY_FILE_FLUSH_FORCE, DEFAULT_FILE_FLUSH_FORCE));
 
         final PartitionFileChannelBuilder builder =
-                PartitionFileChannelBuilder.newBuilder()
-                        .dirs(dirs.stream().map(File::new).collect(Collectors.toList()));
+                PartitionFileChannelBuilder.newBuilder().dirs(createDir(dirs));
         builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(CompressionType.getByName(compression))
@@ -205,6 +215,22 @@ public class DynamicChannel implements Closeable {
                 .topic(topic)
                 .consumerGroups(new ArrayList<>(groupSet));
         channels.put(topic, builder.build());
+    }
+
+    private List<File> createDir(List<String> dirs) throws IOException {
+        final List<File> result = new ArrayList<>();
+        for (String dir : dirs) {
+            if (dir.startsWith("{TMP_DIR}")) {
+                File parent = Files.createTempDirectory("").toFile();
+                String child = dir.replace("{TMP_DIR}", "").trim();
+                child = child.startsWith("/") ? child.substring(1) : child;
+                File file = child.isEmpty() ? parent : new File(parent, child);
+                result.add(file);
+            } else {
+                result.add(new File(dir));
+            }
+        }
+        return result;
     }
 
     /**

@@ -35,7 +35,7 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                     .help("sink kafka counter")
                     .labelNames("host", "groupId", "topic")
                     .register();
-    private static final String KEY_TOPIC = "topic";
+    public static final String KEY_TOPIC = "topic";
 
     @Override
     public void open(Context context) {
