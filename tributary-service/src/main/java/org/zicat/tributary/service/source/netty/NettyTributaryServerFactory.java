@@ -18,19 +18,25 @@
 
 package org.zicat.tributary.service.source.netty;
 
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
 
 import java.util.Map;
 
+import static org.zicat.tributary.service.source.netty.NettyDecoder.lengthDecoder;
+
 /** DefaultTributaryServerFactory. */
 public class NettyTributaryServerFactory extends AbstractTributaryServerFactory {
 
+    public static final String KEY_NETTY_IDLE_SECOND = "netty.idle.second";
     public static final String DEFAULT_NETTY_IDLE_SECOND = "120";
-    private static final String KEY_NETTY_IDLE_SECOND = "netty.idle.second";
+
+    public static final String KEY_NETTY_DECODER = "netty.decoder";
 
     @Override
     public String identity() {
-        return "netty_default";
+        return "netty";
     }
 
     @Override
@@ -39,6 +45,19 @@ public class NettyTributaryServerFactory extends AbstractTributaryServerFactory 
         final int idleSecond =
                 Integer.parseInt(
                         config.getOrDefault(KEY_NETTY_IDLE_SECOND, DEFAULT_NETTY_IDLE_SECOND));
-        return new NettyTributaryServer(host, port, eventThreads, channel, idleSecond);
+
+        final NettyDecoder nettyDecoder =
+                config.get(KEY_NETTY_DECODER) == null
+                        ? lengthDecoder
+                        : NettyDecoder.valueOf(config.get(KEY_NETTY_DECODER));
+
+        return new NettyTributaryServer(host, port, eventThreads, channel, idleSecond) {
+            @Override
+            protected void initChannel(SocketChannel ch, Channel channel) {
+                ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
+                ch.pipeline().addLast(nettyDecoder.createSourceDecoder());
+                ch.pipeline().addLast(new FileChannelHandler(channel));
+            }
+        };
     }
 }

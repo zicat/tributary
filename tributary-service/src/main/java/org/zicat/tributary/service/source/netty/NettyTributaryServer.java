@@ -25,7 +25,7 @@ import org.zicat.tributary.channel.Channel;
 import static org.zicat.tributary.service.source.netty.AbstractTributaryServerFactory.DEFAULT_NETTY_THREADS;
 import static org.zicat.tributary.service.source.netty.NettyTributaryServerFactory.DEFAULT_NETTY_IDLE_SECOND;
 
-/** DefaultTributaryServer. */
+/** NettyTributaryServer. */
 public class NettyTributaryServer extends AbstractTributaryServer {
 
     private static final int DEFAULT_EVENT_THREADS = Integer.parseInt(DEFAULT_NETTY_THREADS);

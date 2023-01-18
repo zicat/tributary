@@ -30,6 +30,7 @@ import java.util.Iterator;
 public class PrintFunction extends AbstractFunction {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
+
     private static final Counter SINK_PRINT_COUNTER =
             Counter.build()
                     .name("sink_print_counter")
