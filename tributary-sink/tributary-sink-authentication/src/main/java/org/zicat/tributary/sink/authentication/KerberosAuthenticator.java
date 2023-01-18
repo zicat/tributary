@@ -33,12 +33,14 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/** KerberosAuthenticator. @ Copy From Apache Flume */
-public class KerberosAuthenticator implements DispatcherAuthenticator {
+/** KerberosAuthenticator. */
+public class KerberosAuthenticator implements TributaryAuthenticator {
 
     private static final Logger LOG = LoggerFactory.getLogger(KerberosAuthenticator.class);
 
@@ -64,8 +66,8 @@ public class KerberosAuthenticator implements DispatcherAuthenticator {
             return this;
         }
         if (!proxyCache.containsKey(proxyUserName)) {
-            UserGroupInformation proxyUgi;
-            proxyUgi = UserGroupInformation.createProxyUser(proxyUserName, ugi);
+            final UserGroupInformation proxyUgi =
+                    UserGroupInformation.createProxyUser(proxyUserName, ugi);
             printUGI(proxyUgi);
             proxyCache.put(proxyUserName, new UGIExecutor(proxyUgi));
         }
@@ -120,7 +122,6 @@ public class KerberosAuthenticator implements DispatcherAuthenticator {
         // be cruel and unusual when user tries to login as multiple principals
         // this isn't really valid with a reconfigure but this should be rare
         // enough to warrant a restart of the agent JVM
-        // TODO: find a way to interrogate the entire current config state,
         // since we don't have to be unnecessarily protective if they switch all
         // HDFS sinks to use a different principal all at once.
 
@@ -176,6 +177,7 @@ public class KerberosAuthenticator implements DispatcherAuthenticator {
                 this.ugi = UserGroupInformation.getLoginUser();
                 this.prevUser = new KerberosUser(resolvedPrincipal, keytab);
                 this.privilegedExecutor = new UGIExecutor(this.ugi);
+                startCredentialRefresher();
             }
         } catch (IOException e) {
             throw new SecurityException(
@@ -214,22 +216,40 @@ public class KerberosAuthenticator implements DispatcherAuthenticator {
      */
     @Override
     public void startCredentialRefresher() {
-        int checkTGTInterval = 120; // seconds
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        final int checkTGTInterval = 10; // minute
+        final ScheduledExecutorService scheduler =
+                new ScheduledThreadPoolExecutor(
+                        1,
+                        new ThreadFactory() {
+                            private final AtomicInteger threadId = new AtomicInteger();
+
+                            @Override
+                            public Thread newThread(Runnable r) {
+                                final String name =
+                                        "author_"
+                                                + ugi.getUserName()
+                                                + "_"
+                                                + threadId.getAndIncrement();
+                                final Thread t = new Thread(r, name);
+                                t.setDaemon(true);
+                                return t;
+                            }
+                        });
         scheduler.scheduleWithFixedDelay(
                 () -> {
                     try {
+                        LOG.info("start to relogin keytab for user {}", ugi.getUserName());
                         ugi.checkTGTAndReloginFromKeytab();
                     } catch (IOException e) {
                         LOG.warn(
-                                "Error during checkTGTAndReloginFromKeytab() for user "
-                                        + ugi.getUserName(),
+                                "Error during checkTGTAndReloginFromKeytab() for user {}",
+                                ugi.getUserName(),
                                 e);
                     }
                 },
                 checkTGTInterval,
                 checkTGTInterval,
-                TimeUnit.SECONDS);
+                TimeUnit.MINUTES);
     }
 
     @VisibleForTesting

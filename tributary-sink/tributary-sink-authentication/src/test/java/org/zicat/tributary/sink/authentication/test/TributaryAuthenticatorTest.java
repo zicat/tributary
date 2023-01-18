@@ -34,27 +34,27 @@ import java.util.Properties;
 import static org.junit.Assert.*;
 
 /** DispatcherAuthenticatorTest. */
-public class DispatcherAuthenticatorTest {
+public class TributaryAuthenticatorTest {
 
     private static MiniKdc kdc;
     private static File workDir;
-    private static File flumeKeytab;
-    private static String flumePrincipal = "flume/localhost";
+    private static File zicatKeytab;
+    private static String zicatPrincipal = "zicat/localhost";
     private static File aliceKeytab;
     private static String alicePrincipal = "alice";
 
     @BeforeClass
     public static void startMiniKdc() throws Exception {
         workDir = FileUtils.createTmpDir("test_mini_kdc");
-        flumeKeytab = new File(workDir, "flume.keytab");
+        zicatKeytab = new File(workDir, "zicat.keytab");
         aliceKeytab = new File(workDir, "alice.keytab");
         Properties conf = MiniKdc.createConf();
 
         kdc = new MiniKdc(conf, workDir);
         kdc.start();
 
-        kdc.createPrincipal(flumeKeytab, flumePrincipal);
-        flumePrincipal = flumePrincipal + "@" + kdc.getRealm();
+        kdc.createPrincipal(zicatKeytab, zicatPrincipal);
+        zicatPrincipal = zicatPrincipal + "@" + kdc.getRealm();
 
         kdc.createPrincipal(aliceKeytab, alicePrincipal);
         alicePrincipal = alicePrincipal + "@" + kdc.getRealm();
@@ -70,30 +70,30 @@ public class DispatcherAuthenticatorTest {
     @After
     public void tearDown() {
         // Clear the previous statically stored logged in credentials
-        DispatcherAuthenticationUtil.clearCredentials();
+        TributaryAuthenticationUtil.clearCredentials();
     }
 
     @Test
-    public void testFlumeLogin() {
-        String principal = flumePrincipal;
-        String keytab = flumeKeytab.getAbsolutePath();
+    public void testZicatLogin() {
+        String principal = zicatPrincipal;
+        String keytab = zicatKeytab.getAbsolutePath();
         String expResult = principal;
 
-        DispatcherAuthenticator authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(principal, keytab);
+        TributaryAuthenticator authenticator =
+                TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
         assertTrue(authenticator.isAuthenticated());
 
         String result = ((KerberosAuthenticator) authenticator).getUserName();
         assertEquals("Initial login failed", expResult, result);
 
-        authenticator = DispatcherAuthenticationUtil.getAuthenticator(principal, keytab);
+        authenticator = TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
         result = ((KerberosAuthenticator) authenticator).getUserName();
         assertEquals("Re-login failed", expResult, result);
 
         principal = alicePrincipal;
         keytab = aliceKeytab.getAbsolutePath();
         try {
-            authenticator = DispatcherAuthenticationUtil.getAuthenticator(principal, keytab);
+            authenticator = TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
             result = ((KerberosAuthenticator) authenticator).getUserName();
             fail("Login should have failed with a new principal: " + result);
         } catch (Exception ex) {
@@ -111,11 +111,11 @@ public class DispatcherAuthenticatorTest {
      */
     @Test(expected = IOException.class)
     public void testKerberosAuthenticatorExceptionInExecute() throws Exception {
-        String principal = flumePrincipal;
-        String keytab = flumeKeytab.getAbsolutePath();
+        String principal = zicatPrincipal;
+        String keytab = zicatKeytab.getAbsolutePath();
 
-        DispatcherAuthenticator authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(principal, keytab);
+        TributaryAuthenticator authenticator =
+                TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
         assertTrue(authenticator instanceof KerberosAuthenticator);
 
         authenticator.execute(
@@ -127,8 +127,8 @@ public class DispatcherAuthenticatorTest {
 
     @Test
     public void testNullLogin() {
-        DispatcherAuthenticator authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(null, null);
+        TributaryAuthenticator authenticator =
+                TributaryAuthenticationUtil.getAuthenticator(null, null);
         assertFalse(authenticator.isAuthenticated());
     }
 
@@ -138,8 +138,8 @@ public class DispatcherAuthenticatorTest {
      */
     @Test(expected = IOException.class)
     public void testSimpleAuthenticatorExceptionInExecute() throws Exception {
-        DispatcherAuthenticator authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(null, null);
+        TributaryAuthenticator authenticator =
+                TributaryAuthenticationUtil.getAuthenticator(null, null);
         assertTrue(authenticator instanceof SimpleAuthenticator);
 
         authenticator.execute(
@@ -153,38 +153,38 @@ public class DispatcherAuthenticatorTest {
     public void testProxyAs() {
         String username = "alice";
 
-        DispatcherAuthenticator authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(null, null);
+        TributaryAuthenticator authenticator =
+                TributaryAuthenticationUtil.getAuthenticator(null, null);
         String result = ((UGIExecutor) (authenticator.proxyAs(username))).getUserName();
         assertEquals("Proxy as didn't generate the expected username", username, result);
 
         authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(
-                        flumePrincipal, flumeKeytab.getAbsolutePath());
+                TributaryAuthenticationUtil.getAuthenticator(
+                        zicatPrincipal, zicatKeytab.getAbsolutePath());
 
         String login = ((KerberosAuthenticator) authenticator).getUserName();
-        assertEquals("Login succeeded, but the principal doesn't match", flumePrincipal, login);
+        assertEquals("Login succeeded, but the principal doesn't match", zicatPrincipal, login);
 
         result = ((UGIExecutor) (authenticator.proxyAs(username))).getUserName();
         assertEquals("Proxy as didn't generate the expected username", username, result);
     }
 
     @Test
-    public void testFlumeLoginPrincipalWithoutRealm() throws Exception {
-        String principal = "flume";
-        File keytab = new File(workDir, "flume2.keytab");
+    public void testZicatLoginPrincipalWithoutRealm() throws Exception {
+        String principal = "zicat";
+        File keytab = new File(workDir, "zicat2.keytab");
         kdc.createPrincipal(keytab, principal);
         String expResult = principal + "@" + kdc.getRealm();
 
-        DispatcherAuthenticator authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(principal, keytab.getAbsolutePath());
+        TributaryAuthenticator authenticator =
+                TributaryAuthenticationUtil.getAuthenticator(principal, keytab.getAbsolutePath());
         assertTrue(authenticator.isAuthenticated());
 
         String result = ((KerberosAuthenticator) authenticator).getUserName();
         assertEquals("Initial login failed", expResult, result);
 
         authenticator =
-                DispatcherAuthenticationUtil.getAuthenticator(principal, keytab.getAbsolutePath());
+                TributaryAuthenticationUtil.getAuthenticator(principal, keytab.getAbsolutePath());
         result = ((KerberosAuthenticator) authenticator).getUserName();
         assertEquals("Re-login failed", expResult, result);
 
@@ -192,7 +192,7 @@ public class DispatcherAuthenticatorTest {
         keytab = aliceKeytab;
         try {
             authenticator =
-                    DispatcherAuthenticationUtil.getAuthenticator(
+                    TributaryAuthenticationUtil.getAuthenticator(
                             principal, keytab.getAbsolutePath());
             result = ((KerberosAuthenticator) authenticator).getUserName();
             fail("Login should have failed with a new principal: " + result);

@@ -23,8 +23,8 @@ import org.apache.hadoop.io.compress.SnappyCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.sink.authentication.DispatcherAuthenticationUtil;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
+import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
@@ -72,7 +72,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
                         ? basePath.substring(0, basePath.length() - 1)
                         : basePath;
         this.privilegedExecutor =
-                DispatcherAuthenticationUtil.getAuthenticator(
+                TributaryAuthenticationUtil.getAuthenticator(
                         context.getCustomProperty(KEY_PRINCIPLE, DEFAULT_KEYTAB),
                         context.getCustomProperty(KEY_KEYTAB, DEFAULT_PRINCIPLE));
         this.rollSize = context.getCustomProperty(KEY_ROLL_SIZE, DEFAULT_ROLL_SIZE);

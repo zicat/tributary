@@ -80,7 +80,6 @@ public class BucketWriter<P> extends BucketMeta<P> {
         // set auto close as false, the close hook method will close file system cause SinkFunction
         // append remaining to hdfs fail.
         config.setBoolean(CommonConfigurationKeysPublic.FS_AUTOMATIC_CLOSE_KEY, false);
-        /* See FLUME-1231. */
         synchronized (BucketWriter.class) {
             try {
                 callWithPrivileged(

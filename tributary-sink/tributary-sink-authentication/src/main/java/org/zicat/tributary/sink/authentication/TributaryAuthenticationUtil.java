@@ -21,30 +21,25 @@ package org.zicat.tributary.sink.authentication;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import org.apache.hadoop.security.SaslRpcServer;
-import org.apache.hadoop.security.SecurityUtil;
 
-import javax.security.auth.callback.CallbackHandler;
-import java.io.IOException;
+/** TributaryAuthenticationUtil. */
+public class TributaryAuthenticationUtil {
 
-/** DispatcherAuthenticationUtil. @ Copy From Apache Flume */
-public class DispatcherAuthenticationUtil {
-
-    private DispatcherAuthenticationUtil() {}
+    private TributaryAuthenticationUtil() {}
 
     private static KerberosAuthenticator kerbAuthenticator;
 
     /**
      * If principal and keytab are null, this method returns a SimpleAuthenticator which executes
-     * without authentication. If valid credentials are provided KerberosAuthenitcator is returned
+     * without authentication. If valid credentials are provided KerberosAuthenticator is returned
      * which can be used to execute as the authenticated principal. Invalid credentials result in
      * IllegalArgumentException and Failure to authenticate results in SecurityException.
      *
      * @param principal principal
      * @param keytab keytab
-     * @return FlumeAuthenticator
+     * @return TributaryAuthenticator
      */
-    public static synchronized DispatcherAuthenticator getAuthenticator(
+    public static synchronized TributaryAuthenticator getAuthenticator(
             String principal, String keytab) throws SecurityException {
 
         if (Strings.isNullOrEmpty(principal) && Strings.isNullOrEmpty(keytab)) {
@@ -62,28 +57,6 @@ public class DispatcherAuthenticationUtil {
         kerbAuthenticator.authenticate(principal, keytab);
 
         return kerbAuthenticator;
-    }
-
-    /**
-     * Returns the standard SaslGssCallbackHandler from the hadoop common module.
-     *
-     * @return CallbackHandler
-     */
-    public static CallbackHandler getSaslGssCallbackHandler() {
-        return new SaslRpcServer.SaslGssCallbackHandler();
-    }
-
-    /**
-     * Resolves the principal using Hadoop common's SecurityUtil and splits the kerberos principal
-     * into three parts user name, host and kerberos realm.
-     *
-     * @param principal principal
-     * @return String[] of username, hostname and kerberos realm
-     * @throws IOException IOException
-     */
-    public static String[] splitKerberosName(String principal) throws IOException {
-        String resolvedPrinc = SecurityUtil.getServerPrincipal(principal, "");
-        return SaslRpcServer.splitKerberosName(resolvedPrinc);
     }
 
     @VisibleForTesting

@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.sink.authentication;
 
-/** DispatcherAuthenticator. @ Copy From Apache Flume */
-public interface DispatcherAuthenticator extends PrivilegedExecutor {
+/** DispatcherAuthenticator. */
+public interface TributaryAuthenticator extends PrivilegedExecutor {
 
     /**
-     * Returns the current instance if proxyUsername is null or returns the proxied Executor if
+     * Returns the current instance if proxyUsername is null or returns the proxy Executor if
      * proxyUserName is valid.
      *
      * @param proxyUserName proxyUserName

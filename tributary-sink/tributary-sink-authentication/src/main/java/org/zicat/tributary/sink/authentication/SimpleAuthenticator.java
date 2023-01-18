@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** SimpleAuthenticator. */
-public class SimpleAuthenticator implements DispatcherAuthenticator {
+public class SimpleAuthenticator implements TributaryAuthenticator {
 
     private SimpleAuthenticator() {}
 

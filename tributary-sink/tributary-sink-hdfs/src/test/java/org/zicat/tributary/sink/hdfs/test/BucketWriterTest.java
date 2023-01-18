@@ -30,8 +30,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.sink.authentication.DispatcherAuthenticationUtil;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
+import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
 import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.SystemClock;
 import org.zicat.tributary.sink.hdfs.BucketWriter;
@@ -53,7 +53,7 @@ public class BucketWriterTest {
 
     @BeforeClass
     public static void setup() {
-        proxy = DispatcherAuthenticationUtil.getAuthenticator(null, null).proxyAs(null);
+        proxy = TributaryAuthenticationUtil.getAuthenticator(null, null).proxyAs(null);
     }
 
     @Test
@@ -129,7 +129,7 @@ public class BucketWriterTest {
     public void testRotateFail() throws IOException {
         final String bucketPath = "/tmp/bucket_writer";
         final String fileName =
-                "flume-test."
+                "zicat-test."
                         + Calendar.getInstance().getTimeInMillis()
                         + "."
                         + Thread.currentThread().getId();
@@ -177,7 +177,7 @@ public class BucketWriterTest {
 
         final String bucketPath = "/tmp/bucket_writer";
         final String fileName =
-                "flume-test."
+                "zicat-test."
                         + Calendar.getInstance().getTimeInMillis()
                         + "."
                         + Thread.currentThread().getId();
@@ -215,13 +215,11 @@ public class BucketWriterTest {
                 numberOfRetriesRequired);
     }
 
-    // Test that we don't swallow IOExceptions in secure mode. We should close the bucket writer
-    // and rethrow the exception. Regression test for FLUME-3049.
     @Test
     public void testRotateBucketOnIOException() throws IOException {
         final MockHDFSWriter hdfsWriter = Mockito.spy(new MockHDFSWriter());
         final PrivilegedExecutor ugiProxy =
-                DispatcherAuthenticationUtil.getAuthenticator(null, null).proxyAs("alice");
+                TributaryAuthenticationUtil.getAuthenticator(null, null).proxyAs("alice");
 
         // Cause a roll after every successful append().
         final int rollSize = 1;

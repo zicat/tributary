@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.authentication;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 
-/** PrivilegedExecutor. @ Copy From Apache Flume */
+/** PrivilegedExecutor. */
 public interface PrivilegedExecutor {
 
     /**

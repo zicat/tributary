@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.authentication;
 
 import java.util.Objects;
 
-/** KerberosUser. @ Copy From Apache Flume */
+/** KerberosUser. */
 public class KerberosUser {
 
     private final String principal;

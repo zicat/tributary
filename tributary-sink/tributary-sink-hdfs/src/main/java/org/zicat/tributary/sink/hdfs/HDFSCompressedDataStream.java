@@ -30,7 +30,7 @@ import org.zicat.tributary.channel.utils.IOUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-/** HDFSCompressedDataStreamWriter. @ Copy From Apache Flume */
+/** HDFSCompressedDataStreamWriter. */
 public class HDFSCompressedDataStream extends AbstractHDFSWriter {
 
     protected Compressor compressor;
