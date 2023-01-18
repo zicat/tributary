@@ -26,23 +26,27 @@ import java.nio.ByteBuffer;
 import static org.zicat.tributary.channel.utils.VIntUtil.putVInt;
 import static org.zicat.tributary.channel.utils.VIntUtil.vIntLength;
 
-/** BufferWriter. */
+/**
+ * BufferWriter.
+ *
+ * <p>struct: Array[data length(VINT) + data body(byte arrays)]
+ */
 public final class BufferWriter {
 
     final ByteBuffer writeBuf;
     final int capacity;
-    ByteBuffer compressionBuf;
+    ByteBuffer reusedByteBuf;
 
-    private BufferWriter(int capacity, ByteBuffer writeBuf, ByteBuffer compressionBuf) {
+    private BufferWriter(int capacity, ByteBuffer writeBuf, ByteBuffer reusedByteBuf) {
         this.capacity = capacity;
         this.writeBuf = writeBuf;
-        this.compressionBuf = compressionBuf;
+        this.reusedByteBuf = reusedByteBuf;
     }
 
     public BufferWriter(int capacity) {
         this.capacity = capacity;
         this.writeBuf = ByteBuffer.allocateDirect(capacity);
-        this.compressionBuf = ByteBuffer.allocateDirect(capacity);
+        this.reusedByteBuf = ByteBuffer.allocateDirect(capacity);
     }
 
     /**
@@ -86,7 +90,7 @@ public final class BufferWriter {
             return;
         }
         writeBuf.flip();
-        compressionBuf = clearHandler.clearCallback(writeBuf, compressionBuf);
+        reusedByteBuf = clearHandler.clearCallback(writeBuf, reusedByteBuf);
         writeBuf.clear();
     }
 
@@ -112,7 +116,7 @@ public final class BufferWriter {
      */
     public BufferWriter reAllocate(int size) {
         return new BufferWriter(
-                size, IOUtils.reAllocate(writeBuf, size), IOUtils.reAllocate(compressionBuf, size));
+                size, IOUtils.reAllocate(writeBuf, size), IOUtils.reAllocate(reusedByteBuf, size));
     }
 
     /**
@@ -166,6 +170,6 @@ public final class BufferWriter {
      * @return ByteBuffer
      */
     public final ByteBuffer compressionBuf() {
-        return compressionBuf;
+        return reusedByteBuf;
     }
 }

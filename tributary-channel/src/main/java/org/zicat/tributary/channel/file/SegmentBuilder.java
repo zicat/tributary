@@ -35,7 +35,7 @@ import static org.zicat.tributary.channel.file.SegmentUtil.getNameById;
 import static org.zicat.tributary.channel.utils.IOUtils.readFully;
 import static org.zicat.tributary.channel.utils.IOUtils.writeFull;
 
-/** LogSegmentBuilder. */
+/** LogSegmentBuilder for {@link Segment}. */
 public class SegmentBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(SegmentBuilder.class);

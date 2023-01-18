@@ -40,88 +40,156 @@ public class IOUtils {
      * compression none.
      *
      * @param byteBuffer byteBuffer
-     * @param compressionBlock compressionBlock
+     * @param reusedByteBuffer reusedByteBuffer
      * @return length + compression data
      */
-    public static ByteBuffer compressionNone(ByteBuffer byteBuffer, ByteBuffer compressionBlock) {
-        compressionBlock =
-                IOUtils.reAllocate(compressionBlock, byteBuffer.remaining() + INT_LENGTH);
-        compressionBlock.putInt(byteBuffer.remaining()).put(byteBuffer).flip();
-        return compressionBlock;
+    public static ByteBuffer compressionNone(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
+        reusedByteBuffer =
+                IOUtils.reAllocate(reusedByteBuffer, byteBuffer.remaining() + INT_LENGTH);
+        reusedByteBuffer.putInt(byteBuffer.remaining()).put(byteBuffer).flip();
+        return reusedByteBuffer;
     }
 
     /**
-     * compression zstd.
+     * compression none.
      *
      * @param byteBuffer byteBuffer
-     * @param compressionBlock compressionBlock
+     * @return length + compression data
+     */
+    public static ByteBuffer compressionNone(ByteBuffer byteBuffer) {
+        return compressionNone(byteBuffer, null);
+    }
+
+    /**
+     * decompression none.
+     *
+     * @param byteBuffer byteBuffer
+     * @param reusedByteBuffer reusedByteBuffer
+     * @return ByteBuffer
+     */
+    public static ByteBuffer decompressionNone(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
+        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, byteBuffer.remaining());
+        reusedByteBuffer.put(byteBuffer).flip();
+        return reusedByteBuffer;
+    }
+
+    /**
+     * decompression none.
+     *
+     * @param byteBuffer byteBuffer
+     * @return ByteBuffer
+     */
+    public static ByteBuffer decompressionNone(ByteBuffer byteBuffer) {
+        return decompressionNone(byteBuffer, null);
+    }
+
+    /**
+     * compression zstd. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer must direct bytebuffer
+     * @param reusedByteBuffer reusedByteBuffer
      * @return byteBuffer, length + compression data
      */
-    public static ByteBuffer compressionZSTD(ByteBuffer byteBuffer, ByteBuffer compressionBlock) {
+    public static ByteBuffer compressionZSTD(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
         final ByteBuffer zstdBuffer = Zstd.compress(byteBuffer, 3);
-        compressionBlock =
-                IOUtils.reAllocate(compressionBlock, zstdBuffer.remaining() + INT_LENGTH);
-        compressionBlock.putInt(zstdBuffer.remaining()).put(zstdBuffer).flip();
-        return compressionBlock;
+        reusedByteBuffer =
+                IOUtils.reAllocate(reusedByteBuffer, zstdBuffer.remaining() + INT_LENGTH);
+        reusedByteBuffer.putInt(zstdBuffer.remaining()).put(zstdBuffer).flip();
+        return reusedByteBuffer;
     }
 
     /**
-     * compression snappy.
+     * compression zstd. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer must direct bytebuffer
+     * @return byteBuffer, length + compression data
+     */
+    public static ByteBuffer compressionZSTD(ByteBuffer byteBuffer) {
+        return compressionZSTD(byteBuffer, null);
+    }
+
+    /**
+     * decompression zstd. only support DirectByteBuffer
      *
      * @param byteBuffer byteBuffer
-     * @param compressionBlock compressionBlock
+     * @param reusedByteBuffer reusedByteBuffer
+     * @return ByteBuffer
+     */
+    public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
+        final int size = (int) Zstd.decompressedSize(byteBuffer);
+        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, size * 2, size);
+        Zstd.decompress(reusedByteBuffer, byteBuffer);
+        reusedByteBuffer.flip();
+        return reusedByteBuffer;
+    }
+
+    /**
+     * decompression zstd. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer
+     * @return ByteBuffer
+     */
+    public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer) {
+        return decompressionZSTD(byteBuffer, null);
+    }
+
+    /**
+     * compression snappy. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer
+     * @param reusedByteBuffer reusedByteBuffer
      * @return byteBuffer, length + compression data
      * @throws IOException IOException
      */
-    public static ByteBuffer compressionSnappy(ByteBuffer byteBuffer, ByteBuffer compressionBlock)
+    public static ByteBuffer compressionSnappy(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer)
             throws IOException {
         final int size = byteBuffer.remaining();
         final int maxCompressedLength = Snappy.maxCompressedLength(size);
-        if (!byteBuffer.isDirect()) {
-            final byte[] buf = new byte[maxCompressedLength];
-            final int offset = 0;
-            final int compressedByteSize =
-                    Snappy.rawCompress(
-                            byteBuffer.array(), byteBuffer.position(), size, buf, offset);
-            final int limit = compressedByteSize + INT_LENGTH;
-            compressionBlock = IOUtils.reAllocate(compressionBlock, limit, limit, false);
-            compressionBlock.putInt(compressedByteSize);
-            compressionBlock.put(buf, offset, compressedByteSize);
-            compressionBlock.flip();
-        } else {
-            compressionBlock =
-                    IOUtils.reAllocate(compressionBlock, maxCompressedLength + INT_LENGTH);
-            compressionBlock.position(INT_LENGTH);
-            Snappy.compress(byteBuffer, compressionBlock);
-            final int length = compressionBlock.remaining();
-            compressionBlock.position(0);
-            compressionBlock.putInt(length).position(0);
-        }
-        return compressionBlock;
+        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH);
+        reusedByteBuffer.position(INT_LENGTH);
+        Snappy.compress(byteBuffer, reusedByteBuffer);
+        final int length = reusedByteBuffer.remaining();
+        reusedByteBuffer.position(0);
+        reusedByteBuffer.putInt(length).position(0);
+        return reusedByteBuffer;
     }
 
     /**
-     * decompression snappy.
+     * compression snappy. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer
+     * @return byteBuffer, length + compression data
+     * @throws IOException IOException
+     */
+    public static ByteBuffer compressionSnappy(ByteBuffer byteBuffer) throws IOException {
+        return compressionSnappy(byteBuffer, null);
+    }
+
+    /**
+     * decompression snappy. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer
+     * @param reusedByteBuffer reusedByteBuffer
+     * @return byteBuffer
+     * @throws IOException IOException
+     */
+    public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer)
+            throws IOException {
+        final int uncompressedLength = Snappy.uncompressedLength(byteBuffer);
+        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, uncompressedLength);
+        Snappy.uncompress(byteBuffer, reusedByteBuffer);
+        return reusedByteBuffer;
+    }
+
+    /**
+     * decompression snappy. only support DirectByteBuffer
      *
      * @param byteBuffer byteBuffer
      * @return byteBuffer
      * @throws IOException IOException
      */
-    public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer, ByteBuffer compressionBlock)
-            throws IOException {
-        if (!byteBuffer.isDirect()) {
-            final int dataSize = byteBuffer.remaining();
-            final int size =
-                    Snappy.uncompressedLength(byteBuffer.array(), byteBuffer.position(), dataSize);
-            final byte[] result = new byte[size];
-            Snappy.uncompress(byteBuffer.array(), byteBuffer.position(), dataSize, result, 0);
-            return ByteBuffer.wrap(result);
-        } else {
-            final int uncompressedLength = Snappy.uncompressedLength(byteBuffer);
-            compressionBlock = IOUtils.reAllocate(compressionBlock, uncompressedLength);
-            Snappy.uncompress(byteBuffer, compressionBlock);
-            return compressionBlock;
-        }
+    public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer) throws IOException {
+        return decompressionSnappy(byteBuffer, null);
     }
 
     /**

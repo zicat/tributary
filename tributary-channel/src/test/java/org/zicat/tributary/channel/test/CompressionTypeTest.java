@@ -33,52 +33,36 @@ public class CompressionTypeTest {
 
     @Test
     public void test() throws IOException {
-        test(true, new CompressTypeEntity(CompressionType.NONE, (byte) 1, "none"));
-        test(false, new CompressTypeEntity(CompressionType.NONE, (byte) 1, "none"));
-
-        // zstd only support direct buffer
-        test(true, new CompressTypeEntity(CompressionType.ZSTD, (byte) 2, "zstd"));
-
-        test(true, new CompressTypeEntity(CompressionType.SNAPPY, (byte) 3, "snappy"));
-        test(false, new CompressTypeEntity(CompressionType.SNAPPY, (byte) 3, "snappy"));
+        test(new CompressTypeEntity(CompressionType.NONE, (byte) 1, "none"));
+        test(new CompressTypeEntity(CompressionType.ZSTD, (byte) 2, "zstd"));
+        test(new CompressTypeEntity(CompressionType.SNAPPY, (byte) 3, "snappy"));
     }
 
     /**
      * test compression type.
      *
-     * @param direct direct
      * @param entity entity
      * @throws IOException IOException
      */
-    private void test(boolean direct, CompressTypeEntity entity) throws IOException {
+    private void test(CompressTypeEntity entity) throws IOException {
         final CompressionType compressionType = entity.type;
         Assert.assertEquals(CompressionType.getById(entity.expectedId), compressionType);
         Assert.assertEquals(CompressionType.getByName(entity.expectedName), compressionType);
-        final ByteBuffer byteBuffer = testArray(direct);
+        final ByteBuffer byteBuffer = testArray();
         final byte[] expectedArray = new byte[byteBuffer.remaining()];
         byteBuffer.duplicate().get(expectedArray);
         final ByteBuffer compressBuffer =
                 compressionType.compression(
-                        byteBuffer,
-                        direct
-                                ? ByteBuffer.allocateDirect(byteBuffer.remaining())
-                                : ByteBuffer.allocate(byteBuffer.remaining()));
+                        byteBuffer, ByteBuffer.allocateDirect(byteBuffer.remaining()));
         // read length
         compressBuffer.getInt();
 
         // zstd may must from position 0, so copy new Buffer
-        final ByteBuffer copy =
-                direct
-                        ? ByteBuffer.allocateDirect(compressBuffer.remaining())
-                        : ByteBuffer.allocate(compressBuffer.remaining());
+        final ByteBuffer copy = ByteBuffer.allocateDirect(compressBuffer.remaining());
         copy.put(compressBuffer).flip();
 
         final ByteBuffer decompressionBuffer =
-                compressionType.decompression(
-                        copy,
-                        direct
-                                ? ByteBuffer.allocateDirect(copy.remaining())
-                                : ByteBuffer.allocate(copy.remaining()));
+                compressionType.decompression(copy, ByteBuffer.allocateDirect(copy.remaining()));
         final byte[] finalArray = new byte[decompressionBuffer.remaining()];
         decompressionBuffer.get(finalArray);
         Assert.assertArrayEquals(expectedArray, finalArray);
@@ -89,11 +73,10 @@ public class CompressionTypeTest {
      *
      * @return byte array
      */
-    private ByteBuffer testArray(boolean direct) {
+    private ByteBuffer testArray() {
         final int length = 4096;
         final int capacity = length + 10;
-        final ByteBuffer byteBuffer =
-                direct ? ByteBuffer.allocateDirect(capacity) : ByteBuffer.allocate(capacity);
+        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(capacity);
         for (int i = 0; i < capacity; i++) {
             byteBuffer.put((byte) random.nextInt(100));
         }

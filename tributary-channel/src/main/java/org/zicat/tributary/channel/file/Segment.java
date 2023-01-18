@@ -39,7 +39,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.zicat.tributary.channel.file.SegmentUtil.SEGMENT_HEAD_SIZE;
 
 /**
- * LogSegment.
+ * A LogSegment instance is the represent of a file with file id.
+ *
+ * <p>The life cycle of a LogSegment instance include create(construct function),
+ * writeable/readable, readonly(invoke finish method), closed(invoke close method), delete(invoke
+ * delete method)
  *
  * <p>All public methods are @ThreadSafe
  *
@@ -264,7 +268,7 @@ public final class Segment implements Closeable, Comparable<Segment> {
     }
 
     /**
-     * set log segment as not writeable, but read is allow.
+     * set log segment to be not writeable, but read is allowed.
      *
      * @throws IOException IOException
      */

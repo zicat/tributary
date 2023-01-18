@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.channel;
 
-import com.github.luben.zstd.Zstd;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -84,39 +82,38 @@ public enum CompressionType {
     }
 
     /**
-     * compression byte buffer.
+     * compression byte buffer. only support DirectByteBuffer
      *
      * @param uncompressed byteBuffer
      * @return byteBuffer length + compression data
      */
-    public ByteBuffer compression(ByteBuffer uncompressed, ByteBuffer compressed)
+    public ByteBuffer compression(ByteBuffer uncompressed, ByteBuffer reusedByteBuffer)
             throws IOException {
         if (this == ZSTD) {
-            return compressionZSTD(uncompressed, compressed);
+            return compressionZSTD(uncompressed, reusedByteBuffer);
         } else if (this == NONE) {
-            return compressionNone(uncompressed, compressed);
+            return compressionNone(uncompressed, reusedByteBuffer);
         } else if (this == SNAPPY) {
-            return compressionSnappy(uncompressed, compressed);
+            return compressionSnappy(uncompressed, reusedByteBuffer);
         } else {
             throw new IllegalArgumentException("compression type not found, id " + id());
         }
     }
 
     /**
-     * decompression byte buffer.
+     * decompression byte buffer. only support DirectByteBuffer
      *
      * @param byteBuffer byteBuffer
      * @return byteBuffer
      */
-    public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer compressionBlock)
+    public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer)
             throws IOException {
         if (this == ZSTD) {
-            final int size = (int) Zstd.decompressedSize(byteBuffer.duplicate());
-            return Zstd.decompress(byteBuffer, size);
+            return decompressionZSTD(byteBuffer, reusedByteBuffer);
         } else if (this == NONE) {
-            return byteBuffer.duplicate();
+            return decompressionNone(byteBuffer, reusedByteBuffer);
         } else if (this == SNAPPY) {
-            return decompressionSnappy(byteBuffer, compressionBlock);
+            return decompressionSnappy(byteBuffer, reusedByteBuffer);
         } else {
             throw new IllegalArgumentException("compression type not found, id " + id());
         }

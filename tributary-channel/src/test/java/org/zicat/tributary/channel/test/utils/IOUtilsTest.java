@@ -122,25 +122,67 @@ public class IOUtilsTest {
     }
 
     @Test
+    public void testCompressionNone() {
+        testCompressionNone("zhangjun zstd compression data");
+        testCompressionNone("zicat zstd compression data");
+    }
+
+    /**
+     * create compression none.
+     *
+     * @param data data
+     */
+    private void testCompressionNone(String data) {
+        final byte[] bs = data.getBytes(StandardCharsets.UTF_8);
+        final ByteBuffer dataBuffer = createBuffer(bs);
+        final ByteBuffer compressionBuffer = IOUtils.compressionNone(dataBuffer);
+        compressionBuffer.getInt();
+        final ByteBuffer decompressionBuffer = IOUtils.decompressionNone(compressionBuffer);
+        final byte[] result = new byte[decompressionBuffer.remaining()];
+        decompressionBuffer.get(result);
+        Assert.assertEquals(data, new String(result, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testCompressionZSTD() {
+        testCompressionZSTD("zhangjun zstd compression data");
+        testCompressionZSTD("zicat zstd compression data");
+    }
+
+    /**
+     * test compression zstd.
+     *
+     * @param data data
+     */
+    private void testCompressionZSTD(final String data) {
+        final byte[] bs = data.getBytes(StandardCharsets.UTF_8);
+        final ByteBuffer dataBuffer = createBuffer(bs);
+        final ByteBuffer compressionBuffer = IOUtils.compressionZSTD(dataBuffer);
+        compressionBuffer.getInt();
+        final ByteBuffer decompressionBuffer = IOUtils.decompressionZSTD(compressionBuffer);
+        final byte[] result = new byte[decompressionBuffer.remaining()];
+        decompressionBuffer.get(result);
+        Assert.assertEquals(data, new String(result, StandardCharsets.UTF_8));
+    }
+
+    @Test
     public void testCompressionSnappy() throws IOException {
-        final String data = IOUtilsTest.class.getName();
-        testCompressionSnappy(true, data);
-        testCompressionSnappy(false, data);
+        testCompressionSnappy("zhangjun snappy compression data");
+        testCompressionSnappy("zicat snappy compression data");
     }
 
     /**
      * test compression snappy.
      *
-     * @param direct direct
      * @param data data
      * @throws IOException IOException
      */
-    private void testCompressionSnappy(boolean direct, final String data) throws IOException {
+    private void testCompressionSnappy(final String data) throws IOException {
         final byte[] bs = data.getBytes(StandardCharsets.UTF_8);
-        final ByteBuffer dataBuffer = createBuffer(direct, bs);
-        final ByteBuffer compressionBuffer = IOUtils.compressionSnappy(dataBuffer, null);
+        final ByteBuffer dataBuffer = createBuffer(bs);
+        final ByteBuffer compressionBuffer = IOUtils.compressionSnappy(dataBuffer);
         compressionBuffer.getInt();
-        final ByteBuffer decompressionBuffer = IOUtils.decompressionSnappy(compressionBuffer, null);
+        final ByteBuffer decompressionBuffer = IOUtils.decompressionSnappy(compressionBuffer);
         final byte[] result = new byte[decompressionBuffer.remaining()];
         decompressionBuffer.get(result);
         Assert.assertEquals(data, new String(result, StandardCharsets.UTF_8));
@@ -149,19 +191,15 @@ public class IOUtilsTest {
     /**
      * create buffer.
      *
-     * @param direct direct
      * @param bs bs
      * @return byte buffer
      */
-    private ByteBuffer createBuffer(boolean direct, byte[] bs) {
+    private ByteBuffer createBuffer(byte[] bs) {
 
         final ByteBuffer dataBuffer;
-        if (direct) {
-            dataBuffer = ByteBuffer.allocateDirect(bs.length);
-        } else {
-            dataBuffer = ByteBuffer.allocate(bs.length);
-        }
-        dataBuffer.put(bs).flip();
+        dataBuffer = ByteBuffer.allocateDirect(bs.length + 4);
+        dataBuffer.putInt(bs.length).put(bs).flip();
+        dataBuffer.getInt();
         return dataBuffer;
     }
 }

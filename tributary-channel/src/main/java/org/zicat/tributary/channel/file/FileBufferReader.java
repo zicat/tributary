@@ -34,7 +34,7 @@ import static org.zicat.tributary.channel.utils.IOUtils.readFully;
 
 /**
  * A tool which fill block from file channel to {@link org.zicat.tributary.channel.RecordsResultSet}
- * .
+ * by readChannel @NotThreadSafe
  *
  * <p>Read logic should be adjusted when {@link org.zicat.tributary.channel.BufferWriter} be
  * adjusted.
@@ -85,6 +85,10 @@ public final class FileBufferReader {
 
     /**
      * read from file channel with compression type.
+     *
+     * <p>note: limitOffset must be the start offset of one block, else will cause read
+     * unpredictable data, the method will return empty ResultSet and offset point to {@param
+     * limitOffset}
      *
      * @param fileChannel fileChannel
      * @param compressionType compressionType

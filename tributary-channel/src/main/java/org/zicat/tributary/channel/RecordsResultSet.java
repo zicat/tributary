@@ -30,8 +30,7 @@ import java.util.concurrent.TimeUnit;
  * <p>When invoke {@link Channel#poll(int, org.zicat.tributary.channel.RecordsOffset, long,
  * TimeUnit)} no data, Method {@link RecordsResultSet#isEmpty()} return true.
  *
- * <p>Method {@link RecordsResultSet#readBytes()} can got the total size(after compression if turn
- * on compression) of this block,
+ * <p>Method {@link RecordsResultSet#readBytes()} can got the total size of this block,
  */
 public interface RecordsResultSet extends Iterator<byte[]> {
 
@@ -43,7 +42,7 @@ public interface RecordsResultSet extends Iterator<byte[]> {
     RecordsOffset nexRecordsOffset();
 
     /**
-     * read bytes size.
+     * read bytes size of the block. if block compression, return compression size
      *
      * @return long
      */

@@ -21,7 +21,7 @@ package org.zicat.tributary.channel.file;
 import java.io.File;
 import java.util.List;
 
-/** PartitionFileChannelBuilder. */
+/** PartitionFileChannelBuilder for {@link PartitionFileChannel}. */
 public class PartitionFileChannelBuilder extends ChannelBuilder {
 
     private List<File> dirs;

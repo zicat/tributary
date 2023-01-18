@@ -20,7 +20,7 @@ package org.zicat.tributary.channel;
 
 import java.io.IOException;
 
-/** OnePartitionGroupManager. */
+/** OnePartitionGroupManager for {@link GroupManager} offset without partition. */
 public interface OnePartitionGroupManager extends GroupManager {
 
     /**

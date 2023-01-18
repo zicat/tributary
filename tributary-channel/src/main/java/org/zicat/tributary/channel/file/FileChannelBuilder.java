@@ -24,7 +24,7 @@ import java.io.File;
 
 import static org.zicat.tributary.channel.utils.IOUtils.makeDir;
 
-/** FileChannelBuilder. */
+/** FileChannelBuilder for {@link FileChannel}. */
 public class FileChannelBuilder extends ChannelBuilder {
 
     private File dir;

@@ -102,6 +102,7 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
             }
         }
 
+        // commit new group ids
         for (String groupId : newGroups) {
             try {
                 commit(groupId, createNewGroupRecordsOffset());
@@ -109,6 +110,7 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
                 throw new TributaryChannelRuntimeException("load group index file error", e);
             }
         }
+        // add old group ids to cache, because old groups be read from groupManager, not commit
         loadTopicGroupOffset2Cache(oldGroups);
 
         if (oldGroups.size() + newGroups.size() != cacheExpectedSize) {

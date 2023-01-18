@@ -23,7 +23,7 @@ import org.zicat.tributary.channel.CompressionType;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/** ChannelBuilder. */
+/** ChannelBuilder for {@link org.zicat.tributary.channel.Channel}. */
 public class ChannelBuilder {
 
     protected String topic;

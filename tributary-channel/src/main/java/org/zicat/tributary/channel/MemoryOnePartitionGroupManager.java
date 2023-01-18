@@ -26,7 +26,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** MemoryOnePartitionGroupManager. */
+/**
+ * MemoryOnePartitionGroupManager.
+ *
+ * <p>Store commit offset in memory cache, Override flush(String groupId, RecordsOffset
+ * recordsOffset) to storage.
+ */
 public abstract class MemoryOnePartitionGroupManager implements OnePartitionGroupManager {
 
     private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
