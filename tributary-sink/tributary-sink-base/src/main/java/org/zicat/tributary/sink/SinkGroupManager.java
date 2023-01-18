@@ -22,7 +22,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
-import org.zicat.tributary.sink.handler.factory.PartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
 
 import java.io.Closeable;
 import java.util.*;

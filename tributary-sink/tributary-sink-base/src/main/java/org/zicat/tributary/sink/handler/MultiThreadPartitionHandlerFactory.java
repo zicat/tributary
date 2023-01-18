@@ -16,31 +16,24 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.handler.factory;
+package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 
-/** PartitionHandlerFactory. */
-public interface PartitionHandlerFactory {
+/** DisruptorPartitionHandlerFactory. */
+public class MultiThreadPartitionHandlerFactory implements PartitionHandlerFactory {
 
-    /**
-     * create partition handler.
-     *
-     * @param groupId groupId
-     * @param channel channel
-     * @param partitionId partitionId
-     * @param sinkGroupConfig sinkGroupConfig
-     * @return AbstractSinkHandler
-     */
-    AbstractPartitionHandler createHandler(
-            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig);
+    public static final String IDENTITY = "multi_thread";
 
-    /**
-     * the identity of factory.
-     *
-     * @return identity
-     */
-    String identity();
+    @Override
+    public AbstractPartitionHandler createHandler(
+            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
+        return new MultiThreadPartitionHandler(groupId, channel, partitionId, sinkGroupConfig);
+    }
+
+    @Override
+    public String identity() {
+        return IDENTITY;
+    }
 }

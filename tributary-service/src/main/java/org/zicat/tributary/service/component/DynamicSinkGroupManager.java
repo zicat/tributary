@@ -30,7 +30,7 @@ import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
-import org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
 import org.zicat.tributary.sink.utils.HostUtils;
 
 import javax.annotation.PostConstruct;

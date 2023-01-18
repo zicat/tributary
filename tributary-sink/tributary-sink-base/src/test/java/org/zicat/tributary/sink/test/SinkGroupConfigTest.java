@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
-import org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
 import java.util.HashMap;

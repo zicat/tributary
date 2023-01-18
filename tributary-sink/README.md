@@ -16,7 +16,7 @@ Direct模型将文件分区和线程一一绑定，适用于单线程消费速�
 
 上图中一个[DirectPartitionHandler](tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/DirectPartitionHandler.java)
 对应一个线程，负责读取文件队列数据，并把数据委托给Function进行进一步处理， 详见设计：[DirectPartitionHandler](
-tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/factory/DirectPartitionHandlerFactory.java)
+tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/DirectPartitionHandlerFactory.java)
 。
 
 ### MultiThread模型
@@ -30,7 +30,7 @@ MultiThread模型模型将文件单个分区与多个消费线程绑定，适用
 上图中一个Function对应一个线程，负责读取文件队列数据，并将数据再次推送到内存队列中。
 
 MultiThreadPartitionHandler会根据设置的线程数派生对应数量的线程消费内存队列中的数据（上图的线程数为2），并把数据委托给Function进行进一步处理，
-详见设计：[MultiThreadPartitionHandlerFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/factory/MultiThreadPartitionHandlerFactory.java)
+详见设计：[MultiThreadPartitionHandlerFactory](tributary-sink-base/src/main/java/org/zicat/tributary/sink/handler/MultiThreadPartitionHandlerFactory.java)
 。
 
 ## 消费抽象

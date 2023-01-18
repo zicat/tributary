@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink;
 
-import org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
 
 /** SinkGroupConfigBuilder. */
 public class SinkGroupConfigBuilder extends CustomConfigBuilder {

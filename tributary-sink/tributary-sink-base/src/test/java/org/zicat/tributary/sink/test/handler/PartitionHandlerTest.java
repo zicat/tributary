@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Test;
-import org.zicat.tributary.sink.handler.factory.DirectPartitionHandlerFactory;
-import org.zicat.tributary.sink.handler.factory.MultiThreadPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.MultiThreadPartitionHandlerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;

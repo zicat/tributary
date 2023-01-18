@@ -19,20 +19,10 @@
 package org.zicat.tributary.service.source.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.InetSocketAddress;
 
 /** LengthDecoder. */
 public class LengthDecoder extends SourceDecoder {
-
-    private static final Logger LOG = LoggerFactory.getLogger(LengthDecoder.class);
-    private static final String FAIL_RES_FORMAT =
-            "failed response pong to host:{}, port:{}, cause:{}";
 
     @Override
     protected byte[] decode(ChannelHandlerContext ctx, ByteBuf byteBuf) {
@@ -52,29 +42,6 @@ public class LengthDecoder extends SourceDecoder {
         byteBuf.discardReadBytes();
         response(len, ctx);
         return bytes;
-    }
-
-    /**
-     * response received data.
-     *
-     * @param len len
-     * @param ctx ctx
-     */
-    protected void response(int len, ChannelHandlerContext ctx) {
-
-        final ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer(4);
-        byteBuf.writeInt(len);
-        final ChannelFuture future = ctx.writeAndFlush(byteBuf);
-        future.addListener(
-                f -> {
-                    if (!f.isSuccess()) {
-                        final InetSocketAddress address =
-                                (InetSocketAddress) ctx.channel().remoteAddress();
-                        final String remoteHost = address.getAddress().getHostAddress();
-                        final int remotePort = address.getPort();
-                        LOG.warn(FAIL_RES_FORMAT, remoteHost, remotePort, f.cause());
-                    }
-                });
     }
 
     /**
