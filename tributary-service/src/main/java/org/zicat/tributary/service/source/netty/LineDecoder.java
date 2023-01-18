@@ -38,11 +38,9 @@ public class LineDecoder extends SourceDecoder {
         frame.readBytes(result);
         frame.discardReadBytes();
         if (clientQuit(result)) {
-            response(-1, ctx);
             ctx.close();
             return null;
         }
-        response(length, ctx);
         return result;
     }
 
