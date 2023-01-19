@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test.source.netty;
+package org.zicat.tributary.service.test.source.netty;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +31,7 @@ import java.net.ServerSocket;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.TimeUnit;
 
-import static org.zicat.tributary.server.test.TributaryClientTest.writeData;
+import static org.zicat.tributary.service.test.TributaryClientTest.writeData;
 
 /** NettyTributaryServerTest. */
 public class NettyTributaryServerTest {

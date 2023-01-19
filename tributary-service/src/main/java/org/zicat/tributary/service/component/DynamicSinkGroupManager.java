@@ -69,7 +69,7 @@ public class DynamicSinkGroupManager implements Closeable {
     private void initSinkGroupManagers() {
 
         final Map<String, SinkGroupConfigBuilder> sinkGroupConfigs = buildSinkGroupConfigs();
-        final String metricsHost = HostUtils.getLocalHostString(metricsIpPattern);
+        final String metricsHost = getMetricsIp();
         for (Map.Entry<String, SinkGroupConfigBuilder> entry : sinkGroupConfigs.entrySet()) {
 
             final String groupId = entry.getKey();
@@ -193,5 +193,14 @@ public class DynamicSinkGroupManager implements Closeable {
         if (closed.compareAndSet(false, true)) {
             sinkGroupManagerMap.forEach((k, vs) -> vs.forEach(IOUtils::closeQuietly));
         }
+    }
+
+    /**
+     * get metrics ip.
+     *
+     * @return ip
+     */
+    public String getMetricsIp() {
+        return HostUtils.getLocalHostString(metricsIpPattern);
     }
 }

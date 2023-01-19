@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test.component;
+package org.zicat.tributary.service.test.component;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -28,11 +28,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.server.test.sink.CollectionFunction;
 import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.component.DynamicSinkGroupManager;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
+import org.zicat.tributary.service.test.sink.CollectionFunction;
 import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.IOException;

@@ -2,50 +2,59 @@
 
 ## Overview
 
-Tributary is a reliable, stateless，fault-tolerance service for efficiently collecting and moving huge amounts of records.
-It has a simple and flexible architecture based on streaming records flows. It is robust and fault tolerant.
+Tributary is a reliable, stateless，fault-tolerance service for efficiently collecting and moving huge amounts of
+records. It has a simple and flexible architecture based on streaming records flows. It is robust and fault tolerant.
 
-The duty of tributary is providing records uploading network interface, ensuring records not lost 
-and sinking records to multi external systems, ensuring external systems failures not affect each other and not affect sources.
+The duty of tributary is providing records uploading network interface, ensuring records not lost and sinking records to
+multi external systems, ensuring external systems failures not affect each other and not affect sources.
 
 ## Architecture
 
-A tributary is a JVM service process hosts the components through which records(byte arrays) flow from a source to a channel to multi sinks.
+A tributary is a jvm-based service process hosts the components through which records flow from a source to a channel to
+multi sinks.
 ![image](picture/tributary.png)
 
 ### Reliability
-When a record upload to the tributary service, the source receive it ack client and append it into the channel, the channel storage and delete util all sinks consumed it. 
-This is a how the record in Tributary provide end-to-end reliability of the flow.
 
-Tributary sink uses a RecordOffset to fetch records from the channel, and commit the RecordOffset after external system store the record.
+When records are sent to the tributary service, the source append into the channel and ack client, tributary sinks fetch
+records from the channel with RecordsOffset, and commit the RecordsOffset after external system store these records.
+This is a how records in Tributary provide end-to-end reliability of the flow.
 
 ### Recoverability
-If the channel crash e.g., disk full, tributary will be offline automatically. Because tributary service is stateless, client can switch to other tributary services.
-If the external sink system crashed, the sink will roll up to the previous committed RecordOffset and reconsume records(at least once). 
-Some sink systems crashed not affect the others sink records to theirs healthy external systems.
+
+If the channel crash e.g., disk full, tributary will be offline automatically. Because tributary service is stateless,
+client can switch to other tributary services.
+
+If the external sink system crashed, the sink will roll up to the previous committed RecordsOffset and reconsume
+records(at least once). Some sink systems crashed not affect the others sink records to theirs healthy external systems.
 
 ## Setting up a tributary service
-This section documents how to configure and wire tributary components using tributary’s long-standing configuration techniques using properties files. 
-See the following section for creating a tributary application using Spring Boot.
 
-### prepare
-Before start the tributary, We should compile and package it from source code.
-Tributary depend on java and maven, so please install JDK8 AND Maven3 first on your machine on MACOS OR LINUX.
+This section documents how to configure the tributary’s application.properties. See the following section for creating a
+tributary application using Spring Boot.
 
-### package
+### build package
+
+Before start the tributary, we should compile and package it from source code. Tributary depend on java and maven, so
+please install JDK8 and Maven3 first on your macOS or linux computer.
 
 Download source code using git clone or other tools first.
+
 ```shell
 $ cd tributary
 $ bash sbin/package.sh
 $ cd release/tributary  
 ``` 
-If everything is right, Current dir is the release dir that contains bin, config, libs sub dirs.
+
+If everything is right, the current dir is the release dir named tributary which contains some sub dirs like bin,
+config, libs.
 
 ### A simple example
-Here, we give an example in config/application.properties like below
 
-Note: server.port and source.s1.netty.port is not be used, channel.c1.dirs is exist and allow reading and writing.
+Here, we give an example in config/application.properties like below:
+
+Note: server.port and source.s1.netty.port is not be used, channel.c1.dirs is existing and allowed to read and write.
+
 ```properties
 server.port=8765
 server.metrics.ip.pattern=.*
@@ -63,25 +72,36 @@ sink.group_1.functionIdentity=print
 ```
 
 Given this application.properties, we can start tributary as follows:
+
 ```shell
 $ bash bin/tributary.sh start
 ```
 
-Check whether the tributary service start successfully by the log file in log dir
+Check whether the tributary service start successfully by the log file in log dir.
+
 ```shell
 $ tail -f log/tributary.log
 ```
 
 ![image](picture/start_success_log.png)
 
-Using telnet tool try to send some records
+Try to use telnet tool sending some records, attend to the port if source.s1.netty.port changed.
 
 ![image](picture/telnet_client.png)
 
-Check whether the tributary service receive and sink successfully by the log file in log dir
+Check whether the tributary service receive and sink successfully by the log file in log dir.
 
 ![image](picture/receive_success_log.png)
 
-Congratulations - you’ve successfully configured and deployed a tributary service! 
+Check the metrics of the tributary service by http restful api, attend to the port if server.port changed.
 
-Subsequent sections cover the application.properties in much more detail.
+```shell
+$ curl -s http://localhost:8765/metrics|grep -v '#'
+```
+
+![image](picture/metrics_url.png)
+
+Congratulations - you’ve successfully configured and deployed a tributary service!
+
+[Tributary User Guide Of Config Details](user_guide_config_detail.md) cover the application.properties in much more
+detail, let's continue.

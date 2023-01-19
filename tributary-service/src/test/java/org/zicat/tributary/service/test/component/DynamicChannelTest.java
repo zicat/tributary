@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test.component;
+package org.zicat.tributary.service.test.component;
 
 import org.junit.After;
 import org.junit.Assert;

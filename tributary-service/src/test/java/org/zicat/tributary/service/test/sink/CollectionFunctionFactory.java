@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test.sink;
+package org.zicat.tributary.service.test.sink;
 
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;

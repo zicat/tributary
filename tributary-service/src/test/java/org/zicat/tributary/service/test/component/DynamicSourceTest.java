@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test.component;
+package org.zicat.tributary.service.test.component;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -27,13 +27,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.zicat.tributary.server.test.sink.CollectionFunction;
 import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.component.DynamicSinkGroupManager;
 import org.zicat.tributary.service.component.DynamicSource;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
+import org.zicat.tributary.service.test.sink.CollectionFunction;
 import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.IOException;
@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zicat.tributary.channel.utils.IOUtils.deleteDir;
-import static org.zicat.tributary.server.test.TributaryClientTest.writeData;
+import static org.zicat.tributary.service.test.TributaryClientTest.writeData;
 
 /** DynamicSourceTest. */
 @RunWith(SpringRunner.class)

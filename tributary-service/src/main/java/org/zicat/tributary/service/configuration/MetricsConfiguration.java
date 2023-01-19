@@ -22,7 +22,9 @@ import io.prometheus.client.Collector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.component.DynamicSinkGroupManager;
+import org.zicat.tributary.service.metrics.ChannelCollector;
 import org.zicat.tributary.service.metrics.SinkGroupManagerCollector;
 
 /** MetricsConfiguration. */
@@ -30,12 +32,19 @@ import org.zicat.tributary.service.metrics.SinkGroupManagerCollector;
 public class MetricsConfiguration {
 
     @Autowired DynamicSinkGroupManager dynamicSinkGroupManager;
+    @Autowired DynamicChannel dynamicChannel;
 
     @Bean
     public Collector sinkGroupManagerCollector() {
         return new SinkGroupManagerCollector(
                         dynamicSinkGroupManager.getSinkGroupManagerMap(),
-                        dynamicSinkGroupManager.getMetricsIpPattern())
+                        dynamicSinkGroupManager.getMetricsIp())
+                .register();
+    }
+
+    @Bean
+    public Collector channelCollector() {
+        return new ChannelCollector(dynamicChannel, dynamicSinkGroupManager.getMetricsIp())
                 .register();
     }
 }

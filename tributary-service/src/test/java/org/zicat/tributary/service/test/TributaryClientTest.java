@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test;
+package org.zicat.tributary.service.test;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

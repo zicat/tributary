@@ -16,14 +16,30 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.test;
+package org.zicat.tributary.service.test.sink;
 
-import org.zicat.tributary.service.TributaryServiceApplication;
+import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.sink.function.AbstractFunction;
 
-/** TributaryServiceApplicationTest. */
-public class TributaryServiceApplicationTest {
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-    public static void main(String[] args) {
-        TributaryServiceApplication.main(args);
+/** CollectionFunction. */
+public class CollectionFunction extends AbstractFunction {
+
+    public List<byte[]> history = new ArrayList<>();
+
+    @Override
+    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+        while (iterator.hasNext()) {
+            history.add(iterator.next());
+        }
+        flush(recordsOffset, null);
+    }
+
+    @Override
+    public void close() {
+        history.clear();
     }
 }
