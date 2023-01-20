@@ -2,7 +2,7 @@
 
 ## Overview
 
-Tributary is a reliable, stateless，fault-tolerance service for efficiently collecting and moving huge amounts of
+Tributary is a reliable, stateless, fault-tolerance service for efficiently collecting and moving huge amounts of
 records. It has a simple and flexible architecture based on streaming records flows. It is robust and fault tolerant.
 
 The duty of tributary is to provide records uploading network interface, ensure records not lost and sink records to
@@ -22,8 +22,8 @@ This is a how records in Tributary provide end-to-end reliability of the flow.
 
 ### Recoverability
 
-If the channel crash e.g., disk full, tributary will be offline automatically. Because tributary service is stateless,
-client can switch to other tributary services.
+If the channel crash e.g., disk full, Source report client exception. Because tributary service is stateless, client can
+switch to other tributary services until this service recover.
 
 If the external sink system crashed, the sink will roll up to the previous committed RecordsOffset and reconsume
 records(at least once). Some sink systems crashed not affect the others sink records to theirs healthy external systems.
@@ -50,7 +50,7 @@ If expected, the current dir is the release dir named tributary which contains d
 
 ### A simple example
 
-Here, we give an example in config/application.properties like below:
+Here, we give an example in config/application.properties as follows:
 
 ```properties
 server.port=8765

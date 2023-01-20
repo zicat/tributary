@@ -56,7 +56,7 @@ public class DefaultNettyTributaryServerFactory extends AbstractNettyTributarySe
             protected void initChannel(SocketChannel ch, Channel channel) {
                 ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
                 ch.pipeline().addLast(nettyDecoder.createSourceDecoder());
-                ch.pipeline().addLast(new FileChannelHandler(channel));
+                ch.pipeline().addLast(new FileChannelHandler(channel, nettyDecoder.isAck()));
             }
         };
     }

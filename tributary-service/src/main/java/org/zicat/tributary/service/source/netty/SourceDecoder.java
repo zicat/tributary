@@ -19,8 +19,6 @@
 package org.zicat.tributary.service.source.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
@@ -33,8 +31,6 @@ import java.util.List;
 public abstract class SourceDecoder extends ByteToMessageDecoder {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceDecoder.class);
-    private static final String FAIL_RES_FORMAT =
-            "failed response pong to host:{}, port:{}, cause:{}";
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
@@ -53,38 +49,6 @@ public abstract class SourceDecoder extends ByteToMessageDecoder {
      * @return byte, return null if not ready
      */
     protected abstract byte[] decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception;
-
-    /**
-     * response received data.
-     *
-     * @param byteBuf byteBuf
-     * @param ctx ctx
-     */
-    protected void response(ByteBuf byteBuf, ChannelHandlerContext ctx) {
-        final ChannelFuture future = ctx.writeAndFlush(byteBuf);
-        future.addListener(
-                f -> {
-                    if (!f.isSuccess()) {
-                        final InetSocketAddress address =
-                                (InetSocketAddress) ctx.channel().remoteAddress();
-                        final String remoteHost = address.getAddress().getHostAddress();
-                        final int remotePort = address.getPort();
-                        LOG.warn(FAIL_RES_FORMAT, remoteHost, remotePort, f.cause());
-                    }
-                });
-    }
-
-    /**
-     * response int data.
-     *
-     * @param length length
-     * @param ctx ctx
-     */
-    protected void response(int length, ChannelHandlerContext ctx) {
-        final ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer(4);
-        byteBuf.writeInt(length);
-        response(byteBuf, ctx);
-    }
 
     @Override
     protected final void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out)

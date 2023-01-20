@@ -20,13 +20,36 @@ package org.zicat.tributary.service.source.netty;
 
 /** NettyDecoder. */
 public enum NettyDecoder {
-    lineDecoder,
-    lengthDecoder;
+    lineDecoder(false, LineDecoder::new),
+    lengthDecoder(true, LengthDecoder::new);
 
+    private final boolean ack;
+    private final SourceDecoderFactory sourceDecoderFactory;
+
+    NettyDecoder(boolean ack, SourceDecoderFactory sourceDecoderFactory) {
+        this.ack = ack;
+        this.sourceDecoderFactory = sourceDecoderFactory;
+    }
+
+    /**
+     * is ack.
+     *
+     * @return boolean
+     */
+    public boolean isAck() {
+        return ack;
+    }
+
+    /**
+     * create source decoder.
+     *
+     * @return source decoder
+     */
     public SourceDecoder createSourceDecoder() {
-        if (this == lineDecoder) {
-            return new LineDecoder();
-        }
-        return new LengthDecoder();
+        return sourceDecoderFactory.createSourceDecoder();
+    }
+
+    interface SourceDecoderFactory {
+        SourceDecoder createSourceDecoder();
     }
 }

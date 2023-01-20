@@ -40,7 +40,6 @@ public class LengthDecoder extends SourceDecoder {
         final byte[] bytes = new byte[len];
         byteBuf.readBytes(bytes);
         byteBuf.discardReadBytes();
-        response(len, ctx);
         return bytes;
     }
 

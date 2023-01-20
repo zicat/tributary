@@ -9,13 +9,14 @@ server.port=8765
 server.metrics.ip.pattern=.*
 ```
 
-Tributary service provider metrics http restful api base on SpringBoot, get more details abort server.* by SpringBoot Document.
+Tributary service provider metrics http restful api based on SpringBoot, get more details abort server.* by SpringBoot
+Document.
 
-The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get the expected matched host as metrics dimension
-value. Tributary provide the http restful api to exposure metrics like sink_lag, sink_counter, most metrics need the
-dimension of host.
+The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get
+the expected matched host as metrics dimension value. Tributary provide the http restful api to exposure metrics like
+sink_lag, sink_counter, most metrics need the dimension of host.
 
-Got the metrics of the tributary service like below, attend to the port if server.port changed.
+Got the metrics of the tributary service as follows, attend to the port if server.port changed.
 
 ![image](picture/metrics_url.png)
 
@@ -28,7 +29,7 @@ Got the metrics of the tributary service like below, attend to the port if serve
 
 Tributary support to define multi sources in the application.properties.
 
-The source must bind a channel and implement like below
+The source must bind a channel and implement as follows
 
 ```properties
 source.s1.channel=c1
@@ -41,13 +42,13 @@ We define two sources named s1 bind the channel named c1 and s2 bind the channel
 
 The source must config implement to receive records from the network.
 
-Tributary provide the 
+Tributary provide the
 [TributaryServerFactory](../tributary-service/src/main/java/org/zicat/tributary/service/source/TributaryServerFactory.java)
-interface for users to create special sources suitable business.
+interface to develop special sources for suitable scenarios.
 
-Tributary as provide the default implement 
+Tributary also provide the default implement
 [netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/NettyTributaryServerFactory.java)
-, below shows all params netty required.
+, shows all params netty required as follows.
 
 ```properties
 source.s1.netty.port=8200
@@ -69,7 +70,8 @@ Note：
 
 2. The lineDecoder parse the streaming to records by text line. It is suitable for demo scenarios using telnet.
 
-3. The lengthDecoder parse the streaming by length-value decode like below, it's suitable for production environment.
+3. The lengthDecoder parse the streaming by length-value decode like below, lengthDecoder ack all requests with the
+   length of received records, ack -1 if append records to the channel fail, it's suitable for production environment.
 
    ![image](picture/line_decoder.png)
 
@@ -79,7 +81,7 @@ for reference.
 
 ## Channel Detail
 
-A channel like data streaming can be appended data and consumed data by sinks repeatedly, the channel also has the
+A channel like data streaming can be appended records and consumed records by sinks repeatedly, the channel also has the
 ability of persistence.
 
 Tributary service support to define multi channels in the application.properties.
@@ -107,19 +109,18 @@ We define two channels named c1, c2 with params.
 
 |  key              |  default       | valid value                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| dir               |                | valid absolute path          | the dir to store data, dir must be readable and writable, use ',' to config the channel with multi partitions |
+| dir               |                | valid absolute path          | the dir to store records, dir must be readable and writable, use ',' to config the channel with multi partitions |
 | groups            |                | string value                 | the groups that consume this channel                             |
 | compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache, snappy suggested  |
 | blockSize         | 32768(32K)     | long value(unit: byte)       | records are appended to the memory block first, after the block over this param the channel flush the block to page cache|
 | segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new file if the size of current segment file in the channel is over this param |
 | flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period|
 | flushPageCacheSize| 33554432(32M)  | long value(unit: byte)       | sync flush page cache to disk|
-| flushForce        | false          | [false,true] | whether records in the block flush to page cache first before flush page cache to disk, suggest to set false on production|
+| flushForce        | false          | [false,true] | whether records in the block flush to page cache first when trigger async/sync flush page cache, suggest to set false on production|
 
 Note:
 
-1. Using suitable blockSize like 32768. Lower value like 1K may cause disk iops high, higher value like 1M may cause
-   source timeout.
+1. Using suitable blockSize like 32768. Lower value may cause disk iops high and higher value may cause source timeout.
 2. Using suitable segmentSize like 4294967296. Lower value cause frequent file creation/deletion, higher value cause
    deleting expired files not timely.
 3. The purpose of setting flushForce=true is to reduce consumption delay, If the size of receive records is lower than
@@ -194,7 +195,7 @@ sink.group_2.kafka.flushMill=60000
 |  ----                             | ----           | ---                          | ---                                                                       |
 | kafka.topic                       |                | string value                 | kafka topic name|
 
-Tributary support all kafka producer params, 
+Tributary support all kafka producer params,
 [apache kafka producer config](https://kafka.apache.org/documentation/#producerconfigs) .
 
 ## The complete demo config
