@@ -41,8 +41,8 @@ public class HttpTributaryServer extends AbstractNettyTributaryServer {
     @Override
     protected void initChannel(SocketChannel ch, Channel channel) {
         final ChannelPipeline pip = ch.pipeline();
-        pip.addLast(new HttpRequestDecoder());
         pip.addLast(new HttpResponseEncoder());
+        pip.addLast(new HttpRequestDecoder());
         pip.addLast(new HttpObjectAggregator(512 * 1024));
         pip.addLast(new SimpleHttpHandler(channel));
     }

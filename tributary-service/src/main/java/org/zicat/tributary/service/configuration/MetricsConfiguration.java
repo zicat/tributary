@@ -19,7 +19,9 @@
 package org.zicat.tributary.service.configuration;
 
 import io.prometheus.client.Collector;
+import io.prometheus.client.exporter.MetricsServlet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.zicat.tributary.service.component.DynamicChannel;
@@ -30,6 +32,8 @@ import org.zicat.tributary.service.metrics.SinkGroupManagerCollector;
 /** MetricsConfiguration. */
 @Configuration
 public class MetricsConfiguration {
+
+    private static final String METRICS_PATH = "/metrics";
 
     @Autowired DynamicSinkGroupManager dynamicSinkGroupManager;
     @Autowired DynamicChannel dynamicChannel;
@@ -46,5 +50,13 @@ public class MetricsConfiguration {
     public Collector channelCollector() {
         return new ChannelCollector(dynamicChannel, dynamicSinkGroupManager.getMetricsIp())
                 .register();
+    }
+
+    @Bean
+    public ServletRegistrationBean<MetricsServlet> getServletRegistrationBean() {
+        final ServletRegistrationBean<MetricsServlet> bean =
+                new ServletRegistrationBean<>(new MetricsServlet());
+        bean.addUrlMappings(METRICS_PATH);
+        return bean;
     }
 }

@@ -18,27 +18,18 @@
 
 package org.zicat.tributary.demo;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.env.AbstractEnvironment;
-import org.zicat.tributary.service.TributaryServiceApplication;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-
-/** HttpSourceApplicationTest. */
-@SpringBootApplication(scanBasePackages = "ort.zicat")
-public class HttpSourceDemoApplication extends TributaryServiceApplication {
+/** HttpSourceDemoApplication. */
+@SpringBootApplication
+public class HttpSourceDemoApplication {
 
     private static final String ACTIVE_PROFILE = "source-demo";
 
     public static void main(String[] args) {
         System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
-        TributaryServiceApplication.main(args);
-    }
-
-    @Override
-    public void onStartup(ServletContext servletContext) throws ServletException {
-        System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
-        super.onStartup(servletContext);
+        SpringApplication.run(HttpSourceDemoApplication.class, args);
     }
 }

@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.zicat.tributary.service.autoconfigure.TributaryAutoConfiguration

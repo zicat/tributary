@@ -18,12 +18,14 @@
 
 package org.zicat.tributary.service.test;
 
-import org.zicat.tributary.service.TributaryServiceApplication;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /** TributaryServiceApplicationTest. */
+@SpringBootApplication
 public class TributaryServiceApplicationTest {
 
     public static void main(String[] args) {
-        TributaryServiceApplication.main(args);
+        SpringApplication.run(TributaryServiceApplicationTest.class, args);
     }
 }

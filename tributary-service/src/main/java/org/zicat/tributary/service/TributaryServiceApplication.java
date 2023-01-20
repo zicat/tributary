@@ -18,44 +18,14 @@
 
 package org.zicat.tributary.service;
 
-import io.prometheus.client.exporter.MetricsServlet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.web.servlet.ServletRegistrationBean;
-import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /** TributaryServiceApplication. */
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
-public class TributaryServiceApplication extends SpringBootServletInitializer {
-
-    private static ConfigurableApplicationContext applicationContext;
-    private static final Logger LOG = LoggerFactory.getLogger(TributaryServiceApplication.class);
-    private static final AtomicBoolean closed = new AtomicBoolean(false);
+@SpringBootApplication
+public class TributaryServiceApplication {
 
     public static void main(String[] args) {
-        applicationContext = SpringApplication.run(TributaryServiceApplication.class, args);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> LOG.info("Stop Tributary Service")));
-    }
-
-    @Bean
-    public ServletRegistrationBean<MetricsServlet> getServletRegistrationBean() {
-        final ServletRegistrationBean<MetricsServlet> bean =
-                new ServletRegistrationBean<>(new MetricsServlet());
-        bean.addUrlMappings("/metrics");
-        return bean;
-    }
-
-    /** shutdown dispatcher spring application. */
-    public static void shutdown() {
-        if (closed.compareAndSet(false, true)) {
-            SpringApplication.exit(applicationContext);
-        }
+        SpringApplication.run(TributaryServiceApplication.class, args);
     }
 }
