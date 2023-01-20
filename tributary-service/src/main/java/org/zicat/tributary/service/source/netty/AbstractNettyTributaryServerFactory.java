@@ -24,8 +24,8 @@ import org.zicat.tributary.service.source.TributaryServerFactory;
 
 import java.util.Map;
 
-/** AbstractTributaryServerFactory. */
-public abstract class AbstractTributaryServerFactory implements TributaryServerFactory {
+/** AbstractNettyTributaryServerFactory. */
+public abstract class AbstractNettyTributaryServerFactory implements TributaryServerFactory {
 
     private static final String KEY_NETTY_PORT = "netty.port";
 
@@ -55,6 +55,6 @@ public abstract class AbstractTributaryServerFactory implements TributaryServerF
      * @param config config
      * @return AbstractTributaryServer
      */
-    public abstract AbstractTributaryServer createAbstractTributaryServer(
+    public abstract AbstractNettyTributaryServer createAbstractTributaryServer(
             String host, int port, int eventThreads, Channel channel, Map<String, String> config);
 }

@@ -16,7 +16,7 @@ multi sinks.
 
 ### Reliability
 
-When records are sent to the tributary service, the source append into the channel and ack client, tributary sinks fetch
+When records sent to the tributary service, the source append into the channel and ack client, tributary sinks fetch
 records from the channel with RecordsOffset, and commit the RecordsOffset after external system store these records.
 This is a how records in Tributary provide end-to-end reliability of the flow.
 

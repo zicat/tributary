@@ -12,6 +12,7 @@
         <module>tributary-channel</module>
         <module>tributary-sink</module>
         <module>tributary-service</module>
+        <module>tributary-demo</module>
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>

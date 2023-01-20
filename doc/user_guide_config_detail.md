@@ -41,11 +41,12 @@ We define two sources named s1 bind the channel named c1 and s2 bind the channel
 
 The source must config implement to receive records from the network.
 
-Tributary provide
-the [TributaryServerFactory](../tributary-service/src/main/java/org/zicat/tributary/service/source/TributaryServerFactory.java)
+Tributary provide the 
+[TributaryServerFactory](../tributary-service/src/main/java/org/zicat/tributary/service/source/TributaryServerFactory.java)
 interface for users to create special sources suitable business.
 
-Tributary as provide the default implement [netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/NettyTributaryServerFactory.java)
+Tributary as provide the default implement 
+[netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/NettyTributaryServerFactory.java)
 , below shows all params netty required.
 
 ```properties
@@ -72,8 +73,8 @@ Note：
 
    ![image](picture/line_decoder.png)
 
-Tributary provide the lengthDecoder java
-client [TributaryClientTest](../tributary-service/src/test/java/org/zicat/tributary/service/test/TributaryClientTest.java)
+Tributary provide the lengthDecoder java client
+[TributaryClientTest](../tributary-service/src/test/java/org/zicat/tributary/service/test/TributaryClientTest.java)
 for reference.
 
 ## Channel Detail
@@ -193,8 +194,8 @@ sink.group_2.kafka.flushMill=60000
 |  ----                             | ----           | ---                          | ---                                                                       |
 | kafka.topic                       |                | string value                 | kafka topic name|
 
-Tributary support all kafka producer
-params, [apache kafka producer config](https://kafka.apache.org/documentation/#producerconfigs) .
+Tributary support all kafka producer params, 
+[apache kafka producer config](https://kafka.apache.org/documentation/#producerconfigs) .
 
 ## The complete demo config
 

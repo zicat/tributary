@@ -26,8 +26,8 @@ import java.util.Map;
 
 import static org.zicat.tributary.service.source.netty.NettyDecoder.lengthDecoder;
 
-/** DefaultTributaryServerFactory. */
-public class NettyTributaryServerFactory extends AbstractTributaryServerFactory {
+/** DefaultNettyTributaryServerFactory. */
+public class DefaultNettyTributaryServerFactory extends AbstractNettyTributaryServerFactory {
 
     public static final String KEY_NETTY_IDLE_SECOND = "netty.idle.second";
     public static final String DEFAULT_NETTY_IDLE_SECOND = "120";
@@ -40,7 +40,7 @@ public class NettyTributaryServerFactory extends AbstractTributaryServerFactory 
     }
 
     @Override
-    public AbstractTributaryServer createAbstractTributaryServer(
+    public AbstractNettyTributaryServer createAbstractTributaryServer(
             String host, int port, int eventThreads, Channel channel, Map<String, String> config) {
         final int idleSecond =
                 Integer.parseInt(
@@ -51,7 +51,7 @@ public class NettyTributaryServerFactory extends AbstractTributaryServerFactory 
                         ? lengthDecoder
                         : NettyDecoder.valueOf(config.get(KEY_NETTY_DECODER));
 
-        return new NettyTributaryServer(host, port, eventThreads, channel, idleSecond) {
+        return new DefaultNettyTributaryServer(host, port, eventThreads, channel, idleSecond) {
             @Override
             protected void initChannel(SocketChannel ch, Channel channel) {
                 ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));

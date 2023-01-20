@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.zicat.tributary.channel.MockChannel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.service.source.netty.NettyTributaryServer;
+import org.zicat.tributary.service.source.netty.DefaultNettyTributaryServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,14 +33,14 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.service.test.TributaryClientTest.writeData;
 
-/** NettyTributaryServerTest. */
-public class NettyTributaryServerTest {
+/** DefaultNettyTributaryServerTest. */
+public class DefaultNettyTributaryServerTest {
 
     @Test
     public void test() throws InterruptedException, IOException {
         final MockChannel channel = new MockChannel();
         final int port = getFreeTcpPort();
-        try (NettyTributaryServer server = new NettyTributaryServer(port, channel)) {
+        try (DefaultNettyTributaryServer server = new DefaultNettyTributaryServer(port, channel)) {
             server.listen();
 
             final InetSocketAddress client = new InetSocketAddress(port);

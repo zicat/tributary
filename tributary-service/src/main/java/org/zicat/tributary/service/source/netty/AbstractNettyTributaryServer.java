@@ -36,10 +36,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.commons.lang3.SystemUtils.IS_OS_LINUX;
 
-/** AbstractTributaryServer. */
-public abstract class AbstractTributaryServer implements TributaryServer {
+/** AbstractNettyTributaryServer. */
+public abstract class AbstractNettyTributaryServer implements TributaryServer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractTributaryServer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractNettyTributaryServer.class);
     private static final String HOST_SPLIT = ",";
 
     protected final String host;
@@ -53,7 +53,7 @@ public abstract class AbstractTributaryServer implements TributaryServer {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public AbstractTributaryServer(
+    public AbstractNettyTributaryServer(
             String host, int port, int eventThreads, org.zicat.tributary.channel.Channel channel) {
         this.host = host;
         this.port = port;
@@ -95,7 +95,7 @@ public abstract class AbstractTributaryServer implements TributaryServer {
                 new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) {
-                        AbstractTributaryServer.this.initChannel(ch, channel);
+                        AbstractNettyTributaryServer.this.initChannel(ch, channel);
                     }
                 });
     }

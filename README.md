@@ -8,3 +8,5 @@ It has a simple and flexible architecture based on streaming records flows. It i
 ## Documentation
 
 [Tributary User Guide](doc/user_guide.md)
+
+[Tributary Developer Guide](doc/developer_guide.md)

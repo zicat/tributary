@@ -25,6 +25,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** TributaryServiceApplication. */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
-public class TributaryServiceApplication {
+public class TributaryServiceApplication extends SpringBootServletInitializer {
 
     private static ConfigurableApplicationContext applicationContext;
     private static final Logger LOG = LoggerFactory.getLogger(TributaryServiceApplication.class);
