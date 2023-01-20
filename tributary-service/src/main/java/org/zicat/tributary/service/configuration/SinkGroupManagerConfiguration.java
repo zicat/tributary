@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.service.configuration;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,8 +26,25 @@ import java.util.Map;
 /** SinkGroupManagerConfiguration. */
 @ConfigurationProperties
 @Configuration
-@Data
 public class SinkGroupManagerConfiguration {
 
     Map<String, String> sink;
+
+    /**
+     * get sink config.
+     *
+     * @return sink config map
+     */
+    public Map<String, String> getSink() {
+        return sink;
+    }
+
+    /**
+     * set sink config. for @ConfigurationProperties
+     *
+     * @param sink sin config map
+     */
+    public void setSink(Map<String, String> sink) {
+        this.sink = sink;
+    }
 }

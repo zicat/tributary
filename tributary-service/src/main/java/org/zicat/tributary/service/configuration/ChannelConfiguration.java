@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.service.configuration;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,12 +26,25 @@ import java.util.Map;
 /** ChannelConfiguration. */
 @ConfigurationProperties
 @Configuration
-@Data
 public class ChannelConfiguration {
 
     Map<String, String> channel;
 
+    /**
+     * set channel. for @ConfigurationProperties
+     *
+     * @param channel channel
+     */
     public void setChannel(Map<String, String> channel) {
         this.channel = channel;
+    }
+
+    /**
+     * get channel config.
+     *
+     * @return map
+     */
+    public Map<String, String> getChannel() {
+        return channel;
     }
 }

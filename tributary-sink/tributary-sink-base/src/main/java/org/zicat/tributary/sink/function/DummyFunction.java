@@ -18,14 +18,16 @@
 
 package org.zicat.tributary.sink.function;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.RecordsOffset;
 
 import java.util.Iterator;
 
 /** dummy data function do nothing. */
-@Slf4j
 public class DummyFunction extends AbstractFunction {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DummyFunction.class);
 
     @Override
     public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
@@ -34,6 +36,6 @@ public class DummyFunction extends AbstractFunction {
 
     @Override
     public void close() {
-        log.info("Dummy data function closed");
+        LOG.info("Dummy data function closed");
     }
 }

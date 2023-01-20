@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.service.component;
 
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
@@ -33,7 +32,6 @@ import java.util.*;
 
 /** SourceConfiguration. */
 @Component
-@Getter
 public class DynamicSource {
 
     private static final String SPLIT = ".";

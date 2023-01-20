@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.service.configuration;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,8 +26,25 @@ import java.util.Map;
 /** SourceConfiguration. */
 @ConfigurationProperties
 @Configuration
-@Data
 public class SourceConfiguration {
 
     Map<String, String> source;
+
+    /**
+     * get source config.
+     *
+     * @return source config map
+     */
+    public Map<String, String> getSource() {
+        return source;
+    }
+
+    /**
+     * set source config. for @ConfigurationProperties
+     *
+     * @param source source config map
+     */
+    public void setSource(Map<String, String> source) {
+        this.source = source;
+    }
 }

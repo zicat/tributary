@@ -18,14 +18,16 @@
 
 package org.zicat.tributary.sink.utils;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** ThreadPoolUtils. */
-@Slf4j
 public class Threads {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Threads.class);
 
     /**
      * create thread factory by prefix name.
@@ -60,7 +62,7 @@ public class Threads {
                 t.join();
             }
         } catch (InterruptedException e) {
-            log.warn("join interrupted", e);
+            LOG.warn("join interrupted", e);
         }
     }
 
@@ -75,7 +77,7 @@ public class Threads {
                 Thread.sleep(millis);
             }
         } catch (InterruptedException e) {
-            log.info("sleep interrupted", e);
+            LOG.info("sleep interrupted", e);
         }
     }
 }

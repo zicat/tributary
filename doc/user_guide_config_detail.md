@@ -1,6 +1,6 @@
 # Tributary User Guide of Config Details
 
-Tributary Config is consists of 4 parts include server, source, channel and sink, The details is introduced below.
+Tributary Config is consists of 4 parts include server, source, channel and sink.
 
 ## Server Detail
 
@@ -9,11 +9,11 @@ server.port=8765
 server.metrics.ip.pattern=.*
 ```
 
-Tributary service base on SpringBoot, we can get more details abort server.* by SpringBoot Document.
+Tributary service provider metrics http restful api base on SpringBoot, get more details abort server.* by SpringBoot Document.
 
-The key server.metrics.ip.pattern is a pattern, filter host list and return the first matched host as metrics dimension
+The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get the expected matched host as metrics dimension
 value. Tributary provide the http restful api to exposure metrics like sink_lag, sink_counter, most metrics need the
-dimension of host. If the server has multi network adapter cards, the dimension of host is uncertain.
+dimension of host.
 
 Got the metrics of the tributary service like below, attend to the port if server.port changed.
 
@@ -22,13 +22,13 @@ Got the metrics of the tributary service like below, attend to the port if serve
 |  Key                          |  default       | valid value                  | describe                                             |
 |  ----                         | ----           | ---                          | ---                                                  |
 | server.port                   |                | 1000-65535                   | port to bind                                         |
-| server.metrics.ip.pattern     | .*             | pattern rule                 | filter suitable host as metrics dimension value      |
+| server.metrics.ip.pattern     | .*             | pattern rule                 | filter expected host as metrics dimension value      |
 
 ## Source Detail
 
 Tributary support to define multi sources in the application.properties.
 
-The source must bind a channel id and implement like below
+The source must bind a channel and implement like below
 
 ```properties
 source.s1.channel=c1
@@ -37,18 +37,16 @@ source.s2.channel=c2
 source.s2.implement=netty
 ``` 
 
-We define two sources named s1 and s2. s1 append records to the channel named c1, s2 append records to the channel named
-c2.
+We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2.
 
-The source must config implement to accept data from the network.
+The source must config implement to receive records from the network.
 
 Tributary provide
 the [TributaryServerFactory](../tributary-service/src/main/java/org/zicat/tributary/service/source/TributaryServerFactory.java)
 interface for users to create special sources suitable business.
 
-Tributary provide
-the [netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/NettyTributaryServerFactory.java)
-implement, below shows all params netty required.
+Tributary as provide the default implement [netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/NettyTributaryServerFactory.java)
+, below shows all params netty required.
 
 ```properties
 source.s1.netty.port=8200
@@ -61,18 +59,16 @@ source.s1.netty.decoder=lineDecoder
 |  ----             | ----           | ---                          | ---                                                  |
 | netty.port        |                | 1000-65535                   | port to bind                                         |
 | netty.threads     | 10             | > 0                           | netty event loop threads                             |
-| netty.idle.second | 120            | > 0                           | how long wait to close the channel which no read write event be received   |
+| netty.idle.second | 120            | > 0                           | how long wait to close the idle channel |
 | netty.decoder     | lengthDecoder  | [lengthDecoder,lineDecoder]  |  streaming decode                                 |
 
 Note：
 
 1. Different source use different netty.port
 
-2. The lineDecoder parse the streaming to records by text line. It is very suitable for demo scenarios, because we can
-   send streaming data by telnet, but it's not useful.
+2. The lineDecoder parse the streaming to records by text line. It is suitable for demo scenarios using telnet.
 
-3. The lengthDecoder parse the streaming by length-value decode like below, it's more useful and suitable for production
-   environment.
+3. The lengthDecoder parse the streaming by length-value decode like below, it's suitable for production environment.
 
    ![image](picture/line_decoder.png)
 
@@ -106,16 +102,16 @@ channel.c2.flushPageCacheSize=67108864
 channel.c2.flushForce=true
 ```
 
-We define two channels named c1, c2 with some params.
+We define two channels named c1, c2 with params.
 
 |  key              |  default       | valid value                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
 | dir               |                | valid absolute path          | the dir to store data, dir must be readable and writable, use ',' to config the channel with multi partitions |
 | groups            |                | string value                 | the groups that consume this channel                             |
 | compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache, snappy suggested  |
-| blockSize         | 32768(32K)     | long value(unit: byte)        | records are appended to the memory block first, after the block over this param then write the block to page cache|
-| segmentSize       | 4294967296(4G) | long value(unit: byte)        | roll new file if the size of current file is over this param |
-| flushPeriodMills  | 500            | long value(unit: ms)          | async flush page cache to disk period|
+| blockSize         | 32768(32K)     | long value(unit: byte)       | records are appended to the memory block first, after the block over this param the channel flush the block to page cache|
+| segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new file if the size of current segment file in the channel is over this param |
+| flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period|
 | flushPageCacheSize| 33554432(32M)  | long value(unit: byte)       | sync flush page cache to disk|
 | flushForce        | false          | [false,true] | whether records in the block flush to page cache first before flush page cache to disk, suggest to set false on production|
 
@@ -145,8 +141,8 @@ sink.group_2.functionIdentity=kafka
 
 key                               |  default       | valid value                  | describe                                                                  |
 |  ----                             | ----           | ---                          | ---                                                                       |
-| maxRetainPerPartitionBytes        |                | long value                   | sink expired the oldest segment file in channel if sink lag is over maxRetainPerPartitionBytes, the param may cause data lost, be careful     |
-| partitionHandlerIdentity          | direct         | [direct,multi_thread]        | set sink mode, direct mode combine one partition with one thread, multi_thread mode combine one partition with multi threads|
+| maxRetainPerPartitionBytes        |                | long value                   | sink expired the oldest segment file in the channel if sink lag is over maxRetainPerPartitionBytes, the param may cause data lost, be careful     |
+| partitionHandlerIdentity          | direct         | [direct,multi_thread]        | set sink mode, direct mode combine one channel's partition with one thread, multi_thread mode combine one channel's partition with multi threads|
 | threads                           | 2              |int value | set multi_thread mode thread count, only valid when partitionHandlerIdentity=multi_thread |  
 | functionIdentity                  |                | [print,kafka,hdfs]           | set the function identity that configure how to consume records  |
 

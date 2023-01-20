@@ -22,7 +22,6 @@ import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
@@ -261,13 +260,6 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
         }
     }
 
-    /** block. */
-    @Data
-    static class Block {
-        private Iterator<byte[]> iterator;
-        private RecordsOffset offset;
-    }
-
     /**
      * format cap as a power of 2.
      *
@@ -282,5 +274,28 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
         n |= n >>> 8;
         n |= n >>> 16;
         return (n < MIN_CAPACITY) ? MIN_CAPACITY : (n >= MAX_CAPACITY) ? MAX_CAPACITY : n + 1;
+    }
+
+    /** block. */
+    static class Block {
+
+        private Iterator<byte[]> iterator;
+        private RecordsOffset offset;
+
+        public Iterator<byte[]> getIterator() {
+            return iterator;
+        }
+
+        public void setIterator(Iterator<byte[]> iterator) {
+            this.iterator = iterator;
+        }
+
+        public RecordsOffset getOffset() {
+            return offset;
+        }
+
+        public void setOffset(RecordsOffset offset) {
+            this.offset = offset;
+        }
     }
 }

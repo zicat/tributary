@@ -33,12 +33,12 @@ records(at least once). Some sink systems crashed not affect the others sink rec
 This section documents how to configure the tributary’s application.properties. See the following section for creating a
 tributary application using Spring Boot.
 
-### build package
+### Build package
 
-Before start the tributary, we should compile and package it from source code. Tributary depend on java and maven, so
-please install JDK8 and Maven3 first on your macOS or linux computer.
+Before start the tributary service, we should compile and package it from source code depending on java and maven,
+please install JDK8 and Maven3 first on your macOS or linux pc.
 
-Download source code using git clone or other tools first.
+Download source code using Git or other tools.
 
 ```shell
 $ cd tributary
@@ -46,14 +46,11 @@ $ bash sbin/package.sh
 $ cd release/tributary  
 ``` 
 
-If everything is right, the current dir is the release dir named tributary which contains some sub dirs like bin,
-config, libs.
+If expected, the current dir is the release dir named tributary which contains dirs include bin, config, libs.
 
 ### A simple example
 
 Here, we give an example in config/application.properties like below:
-
-Note: server.port and source.s1.netty.port is not be used, channel.c1.dirs is existing and allowed to read and write.
 
 ```properties
 server.port=8765
@@ -71,7 +68,9 @@ sink.group_1.partitionHandlerIdentity=direct
 sink.group_1.functionIdentity=print
 ```
 
-Given this application.properties, we can start tributary as follows:
+Note: server.port and source.s1.netty.port is not be used, channel.c1.dirs is existing and allowed to read and write.
+
+Given the application.properties, we can start tributary service as follows:
 
 ```shell
 $ bash bin/tributary.sh start

@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.service.component;
 
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -40,7 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** DynamicChannelSinkGroupManager. */
 @Component
-@Getter
 public class DynamicSinkGroupManager implements Closeable {
 
     private static final String KEY_SINK_HANDLER_IDENTITY = "partitionHandlerIdentity";
@@ -202,5 +200,14 @@ public class DynamicSinkGroupManager implements Closeable {
      */
     public String getMetricsIp() {
         return HostUtils.getLocalHostString(metricsIpPattern);
+    }
+
+    /**
+     * get all sink group manager.
+     *
+     * @return sink group managers map
+     */
+    public Map<String, List<SinkGroupManager>> getSinkGroupManagerMap() {
+        return sinkGroupManagerMap;
     }
 }

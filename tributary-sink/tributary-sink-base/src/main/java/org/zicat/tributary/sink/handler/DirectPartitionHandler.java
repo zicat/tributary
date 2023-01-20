@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.sink.handler;
 
-import lombok.extern.slf4j.Slf4j;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -37,7 +36,6 @@ import java.util.List;
  * <p>Single Thread mode, One ${@link DirectPartitionHandler} instance bind with one {@link
  * Function} instance .
  */
-@Slf4j
 public class DirectPartitionHandler extends AbstractPartitionHandler {
 
     private AbstractFunction function;

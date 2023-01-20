@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.service.component;
 
-import lombok.Getter;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** DynamicChannel. */
 @Component
-@Getter
 public class DynamicChannel implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DynamicChannel.class);
@@ -262,5 +261,24 @@ public class DynamicChannel implements Closeable {
             }
         }
         return result;
+    }
+
+    /**
+     * get all channels.
+     *
+     * @return channel.
+     */
+    public Map<String, Channel> getChannels() {
+        return channels;
+    }
+
+    /**
+     * get temp dir.
+     *
+     * @return file
+     */
+    @VisibleForTesting
+    public File getTempDir() {
+        return tempDir;
     }
 }
