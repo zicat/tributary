@@ -9,12 +9,14 @@ server.port=8765
 server.metrics.ip.pattern=.*
 ```
 
-Tributary service provider metrics http restful api based on SpringBoot, get more details abort server.* by SpringBoot
-Document.
+Tributary service provide service metrics by http restful api based on SpringBoot, get more details abort server.* by
+SpringBoot Document.
 
 The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get
-the expected matched host as metrics dimension value. Tributary provide the http restful api to exposure metrics like
-sink_lag, sink_counter, most metrics need the dimension of host.
+the expected matched host as metrics dimension value.
+
+Tributary provide the http restful api to exposure metrics like sink_lag, sink_counter, most metrics need the dimension
+of host.
 
 Got the metrics of the tributary service as follows, attend to the port if server.port changed.
 
@@ -40,14 +42,14 @@ source.s2.implement=netty
 
 We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2.
 
-The source must config implement to receive records from the network.
+The source must config the implement to tell the source how to receive records from the network.
 
 Tributary provide the
 [TributaryServerFactory](../tributary-service/src/main/java/org/zicat/tributary/service/source/TributaryServerFactory.java)
 interface to develop special sources for suitable scenarios.
 
 Tributary also provide the default implement
-[netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/NettyTributaryServerFactory.java)
+[netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/DefaultNettyTributaryServerFactory.java)
 , shows all params netty required as follows.
 
 ```properties
@@ -70,13 +72,13 @@ Note：
 
 2. The lineDecoder parse the streaming to records by text line. It is suitable for demo scenarios using telnet.
 
-3. The lengthDecoder parse the streaming by length-value decode like below, lengthDecoder ack all requests with the
-   length of received records, ack -1 if append records to the channel fail, it's suitable for production environment.
+3. The lengthDecoder parse the streaming by length-value decode like below, lengthDecoder ack the length of the received
+   record, ack -1 if append the record to the channel fail, it's suitable for production environment.
 
    ![image](picture/line_decoder.png)
 
 Tributary provide the lengthDecoder java client
-[TributaryClientTest](../tributary-service/src/test/java/org/zicat/tributary/service/test/TributaryClientTest.java)
+[LengthDecoderClient](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/client/LengthDecoderClient.java)
 for reference.
 
 ## Channel Detail
@@ -109,8 +111,8 @@ We define two channels named c1, c2 with params.
 
 |  key              |  default       | valid value                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| dir               |                | valid absolute path          | the dir to store records, dir must be readable and writable, use ',' to config the channel with multi partitions |
-| groups            |                | string value                 | the groups that consume this channel                             |
+| dir               |                | valid absolute path          | the dir to store records, dir is allowed reading and writing, using ',' config multi partitions  |
+| groups            |                | string value                 | the group list that consume this channel                             |
 | compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache, snappy suggested  |
 | blockSize         | 32768(32K)     | long value(unit: byte)       | records are appended to the memory block first, after the block over this param the channel flush the block to page cache|
 | segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new file if the size of current segment file in the channel is over this param |

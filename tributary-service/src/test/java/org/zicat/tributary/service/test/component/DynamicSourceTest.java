@@ -33,17 +33,15 @@ import org.zicat.tributary.service.component.DynamicSource;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
+import org.zicat.tributary.service.source.netty.client.LengthDecoderClient;
 import org.zicat.tributary.service.test.sink.CollectionFunction;
 import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.Map;
 
 import static org.zicat.tributary.channel.utils.IOUtils.deleteDir;
-import static org.zicat.tributary.service.test.TributaryClientTest.writeData;
 
 /** DynamicSourceTest. */
 @RunWith(SpringRunner.class)
@@ -70,18 +68,14 @@ public class DynamicSourceTest {
     @Test
     public void test() throws IOException, InterruptedException {
 
-        final InetSocketAddress client = new InetSocketAddress(57132);
-        byte[] data1 = "lyn".getBytes();
-        try (SocketChannel socketChannel = SocketChannel.open(client)) {
-            int response = writeData(socketChannel, data1);
-            Assert.assertEquals(data1.length, response);
+        final byte[] data1 = "lyn".getBytes();
+        try (LengthDecoderClient client = new LengthDecoderClient(57132)) {
+            Assert.assertEquals(data1.length, client.append(data1));
         }
 
-        final InetSocketAddress client2 = new InetSocketAddress(57133);
-        byte[] data2 = "zicat".getBytes();
-        try (SocketChannel socketChannel = SocketChannel.open(client2)) {
-            int response = writeData(socketChannel, data2);
-            Assert.assertEquals(data2.length, response);
+        final byte[] data2 = "zicat".getBytes();
+        try (LengthDecoderClient client = new LengthDecoderClient("localhost", 57133)) {
+            Assert.assertEquals(data2.length, client.append(data2));
         }
 
         dynamicChannel.flushAll();

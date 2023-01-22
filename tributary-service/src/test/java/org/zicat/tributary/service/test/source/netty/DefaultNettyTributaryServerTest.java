@@ -24,14 +24,11 @@ import org.zicat.tributary.channel.MockChannel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.service.source.netty.DefaultNettyTributaryServer;
+import org.zicat.tributary.service.source.netty.client.LengthDecoderClient;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.nio.channels.SocketChannel;
 import java.util.concurrent.TimeUnit;
-
-import static org.zicat.tributary.service.test.TributaryClientTest.writeData;
 
 /** DefaultNettyTributaryServerTest. */
 public class DefaultNettyTributaryServerTest {
@@ -43,15 +40,11 @@ public class DefaultNettyTributaryServerTest {
         try (DefaultNettyTributaryServer server = new DefaultNettyTributaryServer(port, channel)) {
             server.listen();
 
-            final InetSocketAddress client = new InetSocketAddress(port);
-
-            byte[] data1 = "lyn".getBytes();
-            byte[] data2 = "zhangjun".getBytes();
-            try (SocketChannel socketChannel = SocketChannel.open(client)) {
-                int response = writeData(socketChannel, data1);
-                Assert.assertEquals(data1.length, response);
-                int response2 = writeData(socketChannel, data2);
-                Assert.assertEquals(data2.length, response2);
+            final byte[] data1 = "lyn".getBytes();
+            final byte[] data2 = "zhangjun".getBytes();
+            try (LengthDecoderClient client = new LengthDecoderClient(port)) {
+                Assert.assertEquals(data1.length, client.append(data1));
+                Assert.assertEquals(data2.length, client.append(data2));
             }
 
             RecordsResultSet recordsResultSet =

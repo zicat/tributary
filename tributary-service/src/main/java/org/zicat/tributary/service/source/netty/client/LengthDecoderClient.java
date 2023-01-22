@@ -16,11 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.test;
+package org.zicat.tributary.service.source.netty.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -28,40 +26,47 @@ import java.nio.ByteOrder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.StandardCharsets;
-import java.util.Random;
 
-/** TributaryClientTest. */
-public class TributaryClientTest {
+/** LengthDecoderClient. */
+public class LengthDecoderClient implements Closeable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TributaryClientTest.class);
-    private static final InetSocketAddress LOCAL = new InetSocketAddress("localhost", 8200);
-    private static final Random random = new Random();
+    private final InetSocketAddress address;
+    private SocketChannel socketChannel;
 
-    public static void main(String[] args) throws IOException {
+    public LengthDecoderClient(int port) throws IOException {
+        this(new InetSocketAddress(port));
+    }
 
-        try (SocketChannel socketChannel = SocketChannel.open(LOCAL)) {
-            for (int i = 0; i < 1; i++) {
-                createTestDate(socketChannel);
-            }
-        }
+    public LengthDecoderClient(String host, int port) throws IOException {
+        this(new InetSocketAddress(host, port));
+    }
+
+    public LengthDecoderClient(InetSocketAddress address) throws IOException {
+        this.address = address;
+        this.socketChannel = SocketChannel.open(address);
     }
 
     /**
-     * create test data.
+     * append record.
      *
-     * @param socketChannel socketChannel
+     * @param record record
+     * @return response length
      * @throws IOException IOException
      */
-    private static void createTestDate(SocketChannel socketChannel) throws IOException {
-        int length = random.nextInt(100) + 50;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            sb.append(i % 2 == 0 ? "a" : "b");
+    public int append(byte[] record) throws IOException {
+        if (!isOpen()) {
+            throw new IOException("channel " + address + " closed");
         }
-        byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
-        int response = writeData(socketChannel, sb.toString().getBytes(StandardCharsets.UTF_8));
-        LOG.info("send length:{}, response length:{}", data.length, response);
+        return writeData(socketChannel, record);
+    }
+
+    /**
+     * check client is open.
+     *
+     * @return boolean
+     */
+    private boolean isOpen() {
+        return socketChannel != null;
     }
 
     /**
@@ -109,5 +114,16 @@ public class TributaryClientTest {
             fileChannel.read(byteBuffer);
         }
         byteBuffer.flip();
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (isOpen()) {
+            try {
+                socketChannel.close();
+            } finally {
+                socketChannel = null;
+            }
+        }
     }
 }

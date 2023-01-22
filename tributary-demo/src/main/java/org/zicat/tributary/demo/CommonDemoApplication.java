@@ -16,16 +16,20 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.test;
+package org.zicat.tributary.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.core.env.AbstractEnvironment;
 
-/** TributaryServiceApplicationTest. */
+/** CommonDemoApplication. */
 @SpringBootApplication
-public class TributaryServiceApplicationTest {
+public class CommonDemoApplication {
+
+    private static final String ACTIVE_PROFILE = "common-demo";
 
     public static void main(String[] args) {
-        SpringApplication.run(TributaryServiceApplicationTest.class, args);
+        System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
+        SpringApplication.run(CommonDemoApplication.class, args);
     }
 }
