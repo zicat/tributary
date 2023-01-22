@@ -88,6 +88,9 @@ of [HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tribut
 In the document [Tributary User Guide of Config Details](user_guide_config_detail.md), we have introduced 3 kinds of
 sink include kafka, hdfs, print. In this section, we introduce more details of kafka.
 
+We suggest reading [Tributary Design Guide](tributary_design_guide.md) first to know more about channel and sink
+concept.
+
 ### Sink kafka
 
 The kafka sink need to configure a kafka topic, actually in some scenarios we need to dispatch different records to

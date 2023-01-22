@@ -146,8 +146,8 @@ sink.group_2.functionIdentity=kafka
 key                               |  default       | valid value                  | describe                                                                  |
 |  ----                             | ----           | ---                          | ---                                                                       |
 | maxRetainPerPartitionBytes        |                | long value                   | sink expired the oldest segment file in the channel if sink lag is over maxRetainPerPartitionBytes, the param may cause data lost, be careful     |
-| partitionHandlerIdentity          | direct         | [direct,multi_thread]        | set sink mode, direct mode combine one channel's partition with one thread, multi_thread mode combine one channel's partition with multi threads|
-| threads                           | 2              |int value | set multi_thread mode thread count, only valid when partitionHandlerIdentity=multi_thread |  
+| partitionHandlerIdentity          | direct         | [direct,multi_thread]        | set sink model, direct model combine one channel's partition with one thread, multi_thread model combine one channel's partition with multi threads|
+| threads                           | 2              |int value | set multi_thread model thread count, only valid when partitionHandlerIdentity=multi_thread |  
 | functionIdentity                  |                | [print,kafka,hdfs]           | set the function identity that configure how to consume records  |
 
 Note:

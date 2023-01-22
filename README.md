@@ -10,3 +10,5 @@ records. It has a simple and flexible architecture based on streaming records fl
 [Tributary User Guide](doc/user_guide.md)
 
 [Tributary Developer Guide](doc/developer_guide.md)
+
+[Tributary Design Guide](doc/tributary_design_guide.md)
