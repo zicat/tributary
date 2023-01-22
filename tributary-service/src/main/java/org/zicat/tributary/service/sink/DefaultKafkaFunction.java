@@ -36,10 +36,13 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                     .labelNames("host", "groupId", "topic")
                     .register();
     public static final String KEY_TOPIC = "topic";
+    protected String customTopic;
 
     @Override
     public void open(Context context) {
         super.open(context);
+        this.customTopic =
+                context.getCustomProperty(getKafkaKeyPrefix(null) + KEY_TOPIC).toString();
     }
 
     @Override
@@ -65,9 +68,8 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
      * @return boolean send.
      */
     protected boolean sendKafka(byte[] value) {
-        final String topic =
-                context.getCustomProperty(getKafkaKeyPrefix(null) + KEY_TOPIC).toString();
-        final ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, null, value);
+        final ProducerRecord<byte[], byte[]> record =
+                new ProducerRecord<>(customTopic, null, value);
         sendKafka(null, record);
         return true;
     }
