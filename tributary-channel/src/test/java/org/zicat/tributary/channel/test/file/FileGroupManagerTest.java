@@ -144,18 +144,6 @@ public class FileGroupManagerTest {
         IOUtils.closeQuietly(manager4);
     }
 
-    @Test
-    public void testFileNameGroupMapping() {
-        final String groupId4 = "g444";
-        final String topic = "t1";
-        final FileGroupManager manager =
-                new FileGroupManager(DIR, topic, Collections.singletonList(groupId4));
-        final String fileName = manager.createFileNameByGroupId("g444");
-        Assert.assertTrue(manager.isGroupIndexFile(fileName));
-        Assert.assertEquals(groupId4, manager.groupIdByFileName(fileName));
-        IOUtils.closeQuietly(manager);
-    }
-
     @BeforeClass
     public static void before() throws IOException {
         deleteDir(DIR);

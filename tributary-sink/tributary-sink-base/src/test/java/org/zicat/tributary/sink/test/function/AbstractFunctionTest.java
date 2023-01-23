@@ -21,7 +21,6 @@ package org.zicat.tributary.sink.test.function;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -36,28 +35,6 @@ public class AbstractFunctionTest {
 
     final int fullMill = 10;
     final RecordsOffset startRecordsOffset = RecordsOffset.startRecordOffset();
-
-    @Test
-    public void testCommittable() {
-
-        final MockClock clock = new MockClock();
-        clock.setCurrentTimeMillis(0);
-        final MockFunction function = createFunction(clock);
-        Assert.assertTrue(function.committable());
-
-        clock.setCurrentTimeMillis(fullMill - 1);
-        Assert.assertFalse(function.committable());
-
-        clock.setCurrentTimeMillis(fullMill);
-        Assert.assertTrue(function.committable());
-        Assert.assertFalse(function.committable());
-
-        clock.setCurrentTimeMillis(fullMill * 2);
-        Assert.assertTrue(function.committable());
-        Assert.assertFalse(function.committable());
-
-        IOUtils.closeQuietly(function);
-    }
 
     @Test
     public void testFlush() {
@@ -98,7 +75,6 @@ public class AbstractFunctionTest {
                         .groupId("g1")
                         .partitionId(1);
         builder.addCustomProperty(CLOCK, clock);
-        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, fullMill);
         final Context context = builder.build();
         clock.setCurrentTimeMillis(0);
         function.open(context);
@@ -107,11 +83,6 @@ public class AbstractFunctionTest {
 
     /** MockFunction. */
     private static class MockFunction extends AbstractFunction {
-
-        @Override
-        public boolean committable() {
-            return super.committable();
-        }
 
         @Override
         public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}

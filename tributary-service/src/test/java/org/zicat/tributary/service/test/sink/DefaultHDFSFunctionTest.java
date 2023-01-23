@@ -109,7 +109,7 @@ public class DefaultHDFSFunctionTest {
                         .length);
 
         // because clock not set new current time over 1 min, committable offset not changed
-        Assert.assertEquals(recordsOffset, defaultHDFSFunction.committableOffset());
+        Assert.assertEquals(recordsOffset2, defaultHDFSFunction.committableOffset());
     }
 
     /**

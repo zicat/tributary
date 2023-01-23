@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.hdfs;
 
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.zicat.tributary.sink.utils.Threads;
+import org.zicat.tributary.channel.utils.Threads;
 
 import java.util.concurrent.atomic.AtomicLong;
 

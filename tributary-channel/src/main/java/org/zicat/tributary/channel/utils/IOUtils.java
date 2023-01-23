@@ -23,9 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
@@ -35,6 +33,36 @@ public class IOUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(IOUtils.class);
     private static final int INT_LENGTH = 4;
+
+    /**
+     * to byte array.
+     *
+     * @param file file
+     * @return array
+     * @throws IOException IOException
+     */
+    public static byte[] readFull(File file) throws IOException {
+        try (InputStream in = new FileInputStream(file)) {
+            return toByteArray(in);
+        }
+    }
+
+    /**
+     * to byte array.
+     *
+     * @param in in
+     * @return array
+     * @throws IOException IOException
+     */
+    public static byte[] toByteArray(InputStream in) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024 * 4];
+        int n;
+        while ((n = in.read(buffer)) != -1) {
+            out.write(buffer, 0, n);
+        }
+        return out.toByteArray();
+    }
 
     /**
      * compression none.

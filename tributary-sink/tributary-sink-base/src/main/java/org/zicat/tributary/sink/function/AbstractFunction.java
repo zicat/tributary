@@ -24,9 +24,6 @@ import org.zicat.tributary.sink.utils.HostUtils;
 /** AbstractFunction. */
 public abstract class AbstractFunction implements Function {
 
-    public static final String KEY_FLUSH_MILL = "flushMill";
-    public static final int DEFAULT_FLUSH_MILL = 60000;
-
     public static final String KEY_METRICS_HOST = "metricsHost";
     public static final String DEFAULT_METRICS_HOST = HostUtils.getLocalHostString(".*");
 
@@ -34,15 +31,12 @@ public abstract class AbstractFunction implements Function {
     protected Clock clock;
 
     private RecordsOffset committableOffset;
-    protected long flushMill;
-    private Long preFlushTime;
     private String metricsHost;
 
     @Override
     public void open(Context context) {
         this.context = context;
         this.committableOffset = context.startRecordsOffset();
-        this.flushMill = context.getCustomProperty(KEY_FLUSH_MILL, DEFAULT_FLUSH_MILL);
         this.clock = context.getOrCreateDefaultClock();
         this.metricsHost = context.getCustomProperty(KEY_METRICS_HOST, DEFAULT_METRICS_HOST);
     }
@@ -71,31 +65,13 @@ public abstract class AbstractFunction implements Function {
     }
 
     /**
-     * check whether flushable.
-     *
-     * @return boolean
-     */
-    protected boolean committable() {
-        final long current = clock.currentTimeMillis();
-        if (preFlushTime == null) {
-            preFlushTime = current;
-            return true;
-        }
-        final boolean flushable = current - preFlushTime >= flushMill;
-        if (flushable) {
-            preFlushTime = current;
-        }
-        return flushable;
-    }
-
-    /**
      * execute callback and persist offset.
      *
      * @param newCommittableOffset newCommittableOffset
      * @param callback callback
      */
     public final void flush(RecordsOffset newCommittableOffset, OnFlushCallback callback) {
-        if (newCommittableOffset == null || !committable()) {
+        if (newCommittableOffset == null) {
             return;
         }
         if (callback == null || callback.run()) {

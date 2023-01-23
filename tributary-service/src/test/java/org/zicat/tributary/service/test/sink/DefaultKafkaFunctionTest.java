@@ -73,7 +73,7 @@ public class DefaultKafkaFunctionTest {
                         .listIterator());
         Assert.assertEquals(testValues.get(0), new String(producer.history().get(2).value()));
         Assert.assertEquals(testValues.get(1), new String(producer.history().get(3).value()));
-        Assert.assertEquals(recordsOffset, kafkaFunction.committableOffset());
+        Assert.assertEquals(recordsOffset.skipNextSegmentHead(), kafkaFunction.committableOffset());
     }
 
     private class MockDefaultKafkaFunction extends DefaultKafkaFunction {

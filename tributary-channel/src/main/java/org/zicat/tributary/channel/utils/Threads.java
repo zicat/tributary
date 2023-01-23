@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.utils;
+package org.zicat.tributary.channel.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -241,10 +241,11 @@ public class FileChannel implements OnePartitionChannel, Closeable {
     }
 
     @Override
-    public void commit(String groupId, RecordsOffset recordsOffset) throws IOException {
+    public synchronized void commit(String groupId, RecordsOffset recordsOffset)
+            throws IOException {
         groupManager.commit(groupId, recordsOffset);
         final RecordsOffset min = groupManager.getMinRecordsOffset();
-        if (minCommitSegmentId < min.segmentId()) {
+        if (min != null && minCommitSegmentId < min.segmentId()) {
             minCommitSegmentId = min.segmentId();
             cleanUp();
         }

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.channel.utils.Threads;
 import org.zicat.tributary.channel.utils.TributaryChannelRuntimeException;
 
 import java.io.File;
@@ -30,171 +31,170 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zicat.tributary.channel.file.SegmentUtil.realPrefix;
-import static org.zicat.tributary.channel.utils.IOUtils.*;
+import static org.zicat.tributary.channel.utils.IOUtils.readFull;
+import static org.zicat.tributary.channel.utils.IOUtils.writeFull;
 
 /**
  * FileGroupManager.
  *
- * <p>Store RecordsOffset in local {@link FileGroupManager#dir}.
+ * <p>Store RecordsOffset in local {@link FileGroupManager#groupIndexFile}.
  *
- * <p>each partition has different {@link FileGroupManager#dir}.
+ * <p>File name example: {myTopic}_group_id.index
  *
- * <p>File name start with topic_name + "_" + {@link FileGroupManager#filePrefix} + "_" + {@link
- * FileGroupManager#FILE_SUFFIX} group_id, example: {myTopic}_group_id_{myGroup}.index
- *
- * <p>file content: 8 Bytes(Long, segmentId) + 8 Bytes(Long, segmentId).
+ * <p>file content: 4 bytes(Int, GroupLength) + group body + 8 Bytes(Long, segmentId) + 8
+ * Bytes(Long, segmentId).
  */
 public class FileGroupManager extends MemoryOnePartitionGroupManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
+    private static final int RECORD_LENGTH = 20;
 
-    public static final String FILE_PREFIX = "group_id_";
-    private static final String FILE_SUFFIX = ".index";
+    public static final String FILE_SUFFIX = "_group_id.index";
 
-    private final Map<String, FileChannel> fileCache = new ConcurrentHashMap<>();
-    private final File dir;
-    private final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(16);
-    private final String filePrefix;
+    private final File groupIndexFile;
+    private final ScheduledExecutorService schedule;
+    private final AtomicBoolean needFlush = new AtomicBoolean(false);
+    private ByteBuffer byteBuffer;
 
     public FileGroupManager(File dir, String topic, List<String> groupIds) {
-        super(topic, groupIds);
-        this.dir = dir;
-        this.filePrefix = realPrefix(topic, FILE_PREFIX);
-        loadCache(groupIds);
+        super(topic, getGroupOffsets(new File(dir, createFileName(topic)), groupIds));
+        this.groupIndexFile = new File(dir, createFileName(topic));
+        this.schedule =
+                Executors.newScheduledThreadPool(
+                        1, Threads.createThreadFactoryByName("group_id_flush_disk", true));
+        schedule.scheduleWithFixedDelay(this::flush, 30, 30, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void flush(String groupId, RecordsOffset recordsOffset) throws IOException {
+        needFlush.set(true);
+    }
+
+    @Override
+    public void closeCallback() {
+        schedule.shutdownNow();
+        flush();
+    }
+
+    /** flush to disk. */
+    public synchronized void flush() {
+        if (!needFlush.get()) {
+            return;
+        }
+        final File tmpFile = new File(groupIndexFile + "." + UUID.randomUUID() + ".tmp");
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(tmpFile, "rw");
+                FileChannel channel = randomAccessFile.getChannel()) {
+            foreachGroup(
+                    (group, recordsOffset) -> {
+                        final byte[] groupByteArray = group.getBytes(StandardCharsets.UTF_8);
+                        final int bufferSize = groupByteArray.length + RECORD_LENGTH;
+                        byteBuffer = IOUtils.reAllocate(byteBuffer, bufferSize);
+                        byteBuffer.putInt(groupByteArray.length);
+                        byteBuffer.put(groupByteArray);
+                        recordsOffset.fillBuffer(byteBuffer);
+                        writeFull(channel, byteBuffer);
+                    });
+            channel.force(true);
+        } catch (IOException e) {
+            LOG.error("flush groups to tmp file error, file " + tmpFile.getPath(), e);
+        }
+        if (groupIndexFile.exists() && !groupIndexFile.delete()) {
+            LOG.error("delete group index file " + groupIndexFile.getPath() + " fail");
+            return;
+        }
+        if (!tmpFile.renameTo(groupIndexFile)) {
+            LOG.error(
+                    "rename tmp file to group index file fail, tmp file "
+                            + tmpFile.getPath()
+                            + ", group index file "
+                            + groupIndexFile.getPath());
+        }
     }
 
     /**
      * add group ids to cache.
      *
-     * @param groupIds groupIds
+     * @param groupIndexFile groupIndexFile
+     * @param groupIds groupIds groupIds
+     * @return group records offset
      */
-    private void loadCache(List<String> groupIds) {
+    private static Map<String, RecordsOffset> getGroupOffsets(
+            File groupIndexFile, List<String> groupIds) {
 
         final int cacheExpectedSize = groupIds.size();
-        final List<String> newGroups = new ArrayList<>(groupIds);
-        final Map<String, RecordsOffset> oldGroups = new HashMap<>();
-
-        final File[] files = dir.listFiles(file -> isGroupIndexFile(file.getName()));
-        if (files != null) {
-            for (File file : files) {
-                try {
-                    final String groupId = groupIdByFileName(file.getName());
-                    // ignore new groupId
-                    if (!newGroups.remove(groupId)) {
-                        continue;
-                    }
-                    final RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
-                    final FileChannel fileChannel = randomAccessFile.getChannel();
-                    readFully(fileChannel, byteBuffer, 0).flip();
-                    fileCache.put(groupId, fileChannel);
-                    oldGroups.put(groupId, RecordsOffset.parserByteBuffer(byteBuffer));
-                    byteBuffer.clear();
-                } catch (Exception e) {
-                    throw new TributaryChannelRuntimeException("load group index file error", e);
-                }
-            }
-        }
-
-        // commit new group ids
-        for (String groupId : newGroups) {
-            try {
-                commit(groupId, createNewGroupRecordsOffset());
-            } catch (Exception e) {
-                throw new TributaryChannelRuntimeException("load group index file error", e);
-            }
-        }
-        // add old group ids to cache, because old groups be read from groupManager, not commit
-        loadTopicGroupOffset2Cache(oldGroups);
-
-        if (oldGroups.size() + newGroups.size() != cacheExpectedSize) {
+        final List<String> allGroups = new ArrayList<>(groupIds);
+        final Map<String, RecordsOffset> existsGroups =
+                parseExistsGroups(groupIndexFile, allGroups);
+        final Map<String, RecordsOffset> result = new HashMap<>(existsGroups);
+        // AllGroups only contains new groups after call method parseExistsGroups.
+        // Add new group with default offset to result ensure all groupIds has one offset.
+        allGroups.forEach(groupId -> result.put(groupId, createNewGroupRecordsOffset()));
+        if (result.size() != cacheExpectedSize) {
             throw new TributaryChannelRuntimeException(
                     "cache size must equal groupIds size, expected size = "
                             + cacheExpectedSize
                             + ", real size = "
-                            + (oldGroups.size() + newGroups.size()));
+                            + result);
         }
-    }
-
-    @Override
-    public void flush(String groupId, RecordsOffset recordsOffset) throws IOException {
-        final FileChannel fileChannel =
-                fileCache.computeIfAbsent(
-                        groupId,
-                        key -> {
-                            if (!makeDir(dir)) {
-                                throw new TributaryChannelRuntimeException(
-                                        "create dir fail, dir " + dir.getPath());
-                            }
-                            final File file = new File(dir, createFileNameByGroupId(key));
-                            try {
-                                return new RandomAccessFile(file, "rw").getChannel();
-                            } catch (IOException e) {
-                                throw new TributaryChannelRuntimeException(
-                                        "create random file error", e);
-                            }
-                        });
-        byteBuffer.clear();
-        recordsOffset.fillBuffer(byteBuffer);
-        fileChannel.position(0);
-        writeFull(fileChannel, byteBuffer);
-        force(fileChannel, false);
-    }
-
-    @Override
-    public void closeCallback() {
-        fileCache.forEach((k, c) -> force(c, true));
-        fileCache.forEach((k, c) -> IOUtils.closeQuietly(c));
-        fileCache.clear();
+        return result;
     }
 
     /**
-     * check name is group id file.
+     * parse exists groups.
      *
-     * @param name name
-     * @return true if group index file
+     * @param groupIndexFile groupIndexFile
+     * @param allGroups allGroups, allGroups will remove those groups that exits.
+     * @return group offsets map
      */
-    public boolean isGroupIndexFile(String name) {
-        return name.startsWith(filePrefix) && name.endsWith(FILE_SUFFIX);
+    private static Map<String, RecordsOffset> parseExistsGroups(
+            final File groupIndexFile, List<String> allGroups) {
+        final Map<String, RecordsOffset> existsGroups = new HashMap<>();
+        File realGroupIndexFile = groupIndexFile;
+        if (!groupIndexFile.exists()) {
+            final File dir = groupIndexFile.getParentFile();
+            final File[] tmpFiles =
+                    dir.listFiles(
+                            f ->
+                                    f.isFile()
+                                            && f.getName().startsWith(groupIndexFile.getName())
+                                            && f.getName().endsWith(".tmp"));
+            if (tmpFiles == null || tmpFiles.length == 0) {
+                return existsGroups;
+            }
+            realGroupIndexFile =
+                    Arrays.stream(tmpFiles).max(Comparator.comparing(File::lastModified)).get();
+        }
+        try {
+            final ByteBuffer byteBuffer = ByteBuffer.wrap(readFull(realGroupIndexFile));
+            while (byteBuffer.hasRemaining()) {
+                final int groupLength = byteBuffer.getInt();
+                final byte[] groupArray = new byte[groupLength];
+                byteBuffer.get(groupArray);
+                final String groupId = new String(groupArray, StandardCharsets.UTF_8);
+                final RecordsOffset offset = RecordsOffset.parserByteBuffer(byteBuffer);
+                if (allGroups.remove(groupId)) {
+                    existsGroups.put(groupId, offset);
+                }
+            }
+        } catch (Exception e) {
+            throw new TributaryChannelRuntimeException("load group index file error", e);
+        }
+        return existsGroups;
     }
 
     /**
      * create file name by group id.
      *
-     * @param groupId group id
      * @return file name
      */
-    public String createFileNameByGroupId(String groupId) {
-        return filePrefix + groupId + FILE_SUFFIX;
-    }
-
-    /**
-     * get group id by name.
-     *
-     * @param name name
-     * @return group id
-     */
-    public String groupIdByFileName(String name) {
-        return name.substring(filePrefix.length(), name.length() - FILE_SUFFIX.length());
-    }
-
-    /**
-     * flush to page cache.
-     *
-     * @param fileChannel fileChannel
-     * @param metaData metaData
-     */
-    private void force(FileChannel fileChannel, boolean metaData) {
-        try {
-            fileChannel.force(metaData);
-        } catch (Throwable e) {
-            LOG.warn("flush error", e);
-        }
+    public static String createFileName(String topic) {
+        return topic + FILE_SUFFIX;
     }
 }

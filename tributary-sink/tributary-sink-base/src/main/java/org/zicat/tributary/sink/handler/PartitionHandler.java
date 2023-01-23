@@ -34,7 +34,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zicat.tributary.sink.utils.Threads.joinQuietly;
+import static org.zicat.tributary.channel.utils.Threads.joinQuietly;
 
 /** PartitionHandler. */
 public abstract class PartitionHandler extends Thread implements Closeable, Trigger {

@@ -26,9 +26,6 @@ import org.zicat.tributary.sink.function.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.zicat.tributary.sink.function.Context.CLOCK;
 
 /** FunctionTest. */
 public class FunctionTest {
@@ -50,7 +47,6 @@ public class FunctionTest {
                         .startRecordsOffset(recordsOffset)
                         .partitionId(1)
                         .groupId("g1");
-        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, 0);
         final Context context = builder.build();
         function.open(context);
         Assert.assertEquals(function.committableOffset(), recordsOffset);
@@ -74,7 +70,6 @@ public class FunctionTest {
                         .startRecordsOffset(recordsOffset)
                         .groupId("g1")
                         .partitionId(1);
-        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, 0);
         final Context context = builder.build();
         function.open(context);
 
@@ -83,57 +78,5 @@ public class FunctionTest {
                 recordsOffset.skip2TargetHead(2),
                 Collections.singleton("data".getBytes(StandardCharsets.UTF_8)).iterator());
         Assert.assertEquals(function.committableOffset(), newRecordsOffset);
-    }
-
-    @Test
-    public void testFlushMill() throws Exception {
-        final AbstractFunction function = new DummyFunction();
-        final RecordsOffset recordsOffset = new RecordsOffset(1, 0);
-        final ContextBuilder builder =
-                ContextBuilder.newBuilder()
-                        .startRecordsOffset(recordsOffset)
-                        .groupId("g1")
-                        .partitionId(1);
-        MockClock clock = new MockClock();
-        builder.addCustomProperty(CLOCK, clock);
-        builder.addCustomProperty(AbstractFunction.KEY_FLUSH_MILL, 10000);
-        clock.setCurrentTimeMillis(0);
-
-        final Context context = builder.build();
-        function.open(context);
-
-        final AtomicBoolean callback = new AtomicBoolean();
-        final RecordsOffset newRecordsOffset = recordsOffset.skip2TargetHead(2);
-        function.process(
-                recordsOffset.skip2TargetHead(2),
-                Collections.singleton("data".getBytes(StandardCharsets.UTF_8)).iterator());
-        function.flush(
-                newRecordsOffset,
-                () -> {
-                    callback.set(true);
-                    return callback.get();
-                });
-        Assert.assertEquals(newRecordsOffset, function.committableOffset());
-        Assert.assertFalse(callback.get());
-
-        clock.setCurrentTimeMillis(9999);
-        function.flush(
-                newRecordsOffset,
-                () -> {
-                    callback.set(true);
-                    return callback.get();
-                });
-        Assert.assertEquals(newRecordsOffset, function.committableOffset());
-        Assert.assertFalse(callback.get());
-
-        clock.setCurrentTimeMillis(10000);
-        function.flush(
-                newRecordsOffset.skipNextSegmentHead(),
-                () -> {
-                    callback.set(true);
-                    return callback.get();
-                });
-        Assert.assertEquals(newRecordsOffset.skipNextSegmentHead(), function.committableOffset());
-        Assert.assertTrue(callback.get());
     }
 }

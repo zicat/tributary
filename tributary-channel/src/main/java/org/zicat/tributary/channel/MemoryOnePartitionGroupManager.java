@@ -20,7 +20,6 @@ package org.zicat.tributary.channel;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,22 +34,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class MemoryOnePartitionGroupManager implements OnePartitionGroupManager {
 
     private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
+    private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final String topic;
-    private final Set<String> groups;
 
-    public MemoryOnePartitionGroupManager(String topic, List<String> groups) {
+    public MemoryOnePartitionGroupManager(String topic, Map<String, RecordsOffset> groupOffsets) {
         this.topic = topic;
-        this.groups = new HashSet<>(groups);
-    }
-
-    /**
-     * load group offset to cache.
-     *
-     * @param map map
-     */
-    public synchronized void loadTopicGroupOffset2Cache(Map<String, RecordsOffset> map) {
-        cache.putAll(map);
+        this.cache.putAll(groupOffsets);
+        this.groups.addAll(groupOffsets.keySet());
     }
 
     /**
@@ -62,13 +53,27 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
      */
     public abstract void flush(String groupId, RecordsOffset recordsOffset) throws IOException;
 
+    /**
+     * foreach group.
+     *
+     * @param action callback function
+     */
+    protected void foreachGroup(Consumer<String, RecordsOffset> action) throws IOException {
+        for (Map.Entry<String, RecordsOffset> entry : cache.entrySet()) {
+            action.accept(entry.getKey(), entry.getValue());
+        }
+    }
+
     @Override
     public synchronized void commit(String groupId, RecordsOffset recordsOffset)
             throws IOException {
 
         isOpen();
-        RecordsOffset cachedRecordsOffset = cache.get(groupId);
-        if (cachedRecordsOffset != null && cachedRecordsOffset.compareTo(recordsOffset) >= 0) {
+        final RecordsOffset cachedRecordsOffset = cache.get(groupId);
+        if (cachedRecordsOffset == null) {
+            throw new IllegalStateException("group id " + groupId + " not found in cache");
+        }
+        if (cachedRecordsOffset.compareTo(recordsOffset) >= 0) {
             return;
         }
         flush(groupId, recordsOffset);
@@ -94,7 +99,12 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
     @Override
     public RecordsOffset getMinRecordsOffset() {
         isOpen();
-        return cache.values().stream().min(RecordsOffset::compareTo).orElse(null);
+        RecordsOffset min = null;
+        for (Map.Entry<String, RecordsOffset> entry : cache.entrySet()) {
+            final RecordsOffset recordsOffset = entry.getValue();
+            min = min == null ? recordsOffset : RecordsOffset.min(min, recordsOffset);
+        }
+        return min;
     }
 
     /**
@@ -126,4 +136,22 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
 
     /** call back close. */
     public abstract void closeCallback() throws IOException;
+
+    /**
+     * Consumer.
+     *
+     * @param <T>
+     * @param <U>
+     */
+    public interface Consumer<T, U> {
+
+        /**
+         * accept t u.
+         *
+         * @param t t
+         * @param u u
+         * @throws IOException IOException
+         */
+        void accept(T t, U u) throws IOException;
+    }
 }
