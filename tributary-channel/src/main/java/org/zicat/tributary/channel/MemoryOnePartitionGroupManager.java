@@ -18,11 +18,16 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.channel.utils.Threads;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -33,25 +38,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class MemoryOnePartitionGroupManager implements OnePartitionGroupManager {
 
+    public static final long DEFAULT_GROUP_PERSIST_PERIOD_SECOND = 30;
+
     private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final String topic;
+    private final ScheduledExecutorService schedule;
 
-    public MemoryOnePartitionGroupManager(String topic, Map<String, RecordsOffset> groupOffsets) {
+    public MemoryOnePartitionGroupManager(
+            String topic, Map<String, RecordsOffset> groupOffsets, long periodSecond) {
         this.topic = topic;
         this.cache.putAll(groupOffsets);
         this.groups.addAll(groupOffsets.keySet());
+        this.schedule =
+                Executors.newSingleThreadScheduledExecutor(
+                        Threads.createThreadFactoryByName("group_persist", true));
+        schedule.scheduleWithFixedDelay(
+                this::persist, periodSecond, periodSecond, TimeUnit.SECONDS);
     }
 
-    /**
-     * flush to storage.
-     *
-     * @param groupId groupId
-     * @param recordsOffset recordsOffset
-     * @throws IOException IOException
-     */
-    public abstract void flush(String groupId, RecordsOffset recordsOffset) throws IOException;
+    /** persist. */
+    public abstract void persist();
 
     /**
      * foreach group.
@@ -76,7 +84,6 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
         if (cachedRecordsOffset.compareTo(recordsOffset) >= 0) {
             return;
         }
-        flush(groupId, recordsOffset);
         cache.put(groupId, recordsOffset);
     }
 
@@ -127,15 +134,13 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
             try {
-                closeCallback();
+                schedule.shutdownNow();
+                persist();
             } finally {
                 cache.clear();
             }
         }
     }
-
-    /** call back close. */
-    public abstract void closeCallback() throws IOException;
 
     /**
      * Consumer.

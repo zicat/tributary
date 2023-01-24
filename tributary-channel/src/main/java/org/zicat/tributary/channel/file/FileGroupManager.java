@@ -23,20 +23,14 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.utils.IOUtils;
-import org.zicat.tributary.channel.utils.Threads;
 import org.zicat.tributary.channel.utils.TributaryChannelRuntimeException;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zicat.tributary.channel.utils.IOUtils.readFull;
 import static org.zicat.tributary.channel.utils.IOUtils.writeFull;
@@ -59,35 +53,19 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
     public static final String FILE_SUFFIX = "_group_id.index";
 
     private final File groupIndexFile;
-    private final ScheduledExecutorService schedule;
-    private final AtomicBoolean needFlush = new AtomicBoolean(false);
     private ByteBuffer byteBuffer;
 
     public FileGroupManager(File dir, String topic, List<String> groupIds) {
-        super(topic, getGroupOffsets(new File(dir, createFileName(topic)), groupIds));
+        this(dir, topic, groupIds, DEFAULT_GROUP_PERSIST_PERIOD_SECOND);
+    }
+
+    public FileGroupManager(File dir, String topic, List<String> groupIds, long periodSecond) {
+        super(topic, getGroupOffsets(new File(dir, createFileName(topic)), groupIds), periodSecond);
         this.groupIndexFile = new File(dir, createFileName(topic));
-        this.schedule =
-                Executors.newScheduledThreadPool(
-                        1, Threads.createThreadFactoryByName("group_id_flush_disk", true));
-        schedule.scheduleWithFixedDelay(this::flush, 30, 30, TimeUnit.SECONDS);
     }
 
     @Override
-    public void flush(String groupId, RecordsOffset recordsOffset) throws IOException {
-        needFlush.set(true);
-    }
-
-    @Override
-    public void closeCallback() {
-        schedule.shutdownNow();
-        flush();
-    }
-
-    /** flush to disk. */
-    public synchronized void flush() {
-        if (!needFlush.get()) {
-            return;
-        }
+    public synchronized void persist() {
         final File tmpFile = new File(groupIndexFile + "." + UUID.randomUUID() + ".tmp");
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(tmpFile, "rw");
                 FileChannel channel = randomAccessFile.getChannel()) {
@@ -102,19 +80,18 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
                         writeFull(channel, byteBuffer);
                     });
             channel.force(true);
-        } catch (IOException e) {
-            LOG.error("flush groups to tmp file error, file " + tmpFile.getPath(), e);
-        }
-        if (groupIndexFile.exists() && !groupIndexFile.delete()) {
-            LOG.error("delete group index file " + groupIndexFile.getPath() + " fail");
-            return;
-        }
-        if (!tmpFile.renameTo(groupIndexFile)) {
-            LOG.error(
-                    "rename tmp file to group index file fail, tmp file "
-                            + tmpFile.getPath()
-                            + ", group index file "
-                            + groupIndexFile.getPath());
+            if (groupIndexFile.exists() && !groupIndexFile.delete()) {
+                LOG.error("delete group index file {} fail", groupIndexFile.getPath());
+                return;
+            }
+            if (!tmpFile.renameTo(groupIndexFile)) {
+                LOG.error(
+                        "rename tmp file to group index file fail, tmp file {}, group index file {}",
+                        tmpFile.getPath(),
+                        groupIndexFile.getPath());
+            }
+        } catch (Throwable e) {
+            LOG.error("flush groups to tmp file error, file {}", tmpFile.getPath(), e);
         }
     }
 

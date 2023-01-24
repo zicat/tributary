@@ -27,6 +27,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 
@@ -43,6 +44,8 @@ public class DynamicChannelTest {
 
     @After
     public void after() {
+        dynamicChannel.flushAll();
+        IOUtils.closeQuietly(dynamicChannel);
         if (dynamicChannel.getTempDir() != null) {
             deleteDir(dynamicChannel.getTempDir());
         }

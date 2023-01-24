@@ -65,7 +65,8 @@ public class PartitionFileChannel implements Channel, Closeable {
             long flushPeriod,
             TimeUnit flushUnit,
             long flushPageSize,
-            boolean flushForce) {
+            boolean flushForce,
+            long groupPersistPeriodSecond) {
 
         this.topic = topic;
         this.flushForce = flushForce;
@@ -82,7 +83,10 @@ public class PartitionFileChannel implements Channel, Closeable {
                 .consumerGroups(consumerGroups)
                 .flushForce(flushForce);
         for (int i = 0; i < dirs.size(); i++) {
-            FileChannel fileChannel = builder.dir(dirs.get(i)).build();
+            FileChannel fileChannel =
+                    builder.dir(dirs.get(i))
+                            .groupPersistPeriodSecond(groupPersistPeriodSecond)
+                            .build();
             fileChannels[i] = fileChannel;
         }
 

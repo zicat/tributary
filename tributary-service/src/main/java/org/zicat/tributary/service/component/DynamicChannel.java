@@ -39,6 +39,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zicat.tributary.channel.MemoryOnePartitionGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
+
 /** DynamicChannel. */
 @Component
 public class DynamicChannel implements Closeable {
@@ -47,6 +49,8 @@ public class DynamicChannel implements Closeable {
     private static final String SPLIT_STR = ",";
 
     private static final String KEY_FILE_DIRS = "dirs";
+
+    private static final String KEY_GROUP_PERSIST_PERIOD_SECOND = "groupPersistPeriodSecond";
 
     private static final String KEY_FILE_BLOCK_SIZE = "blockSize";
     private static final String DEFAULT_FILE_BLOCK_SIZE = String.valueOf(32 * 1024);
@@ -206,8 +210,17 @@ public class DynamicChannel implements Closeable {
                 Boolean.parseBoolean(
                         dynamicChannelValue(topic, KEY_FILE_FLUSH_FORCE, DEFAULT_FILE_FLUSH_FORCE));
 
+        final long groupPersist =
+                Long.parseLong(
+                        dynamicChannelValue(
+                                topic,
+                                KEY_GROUP_PERSIST_PERIOD_SECOND,
+                                String.valueOf(DEFAULT_GROUP_PERSIST_PERIOD_SECOND)));
+
         final PartitionFileChannelBuilder builder =
-                PartitionFileChannelBuilder.newBuilder().dirs(createDir(dirs));
+                PartitionFileChannelBuilder.newBuilder()
+                        .dirs(createDir(dirs))
+                        .groupPersistPeriodSecond(groupPersist);
         builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(CompressionType.getByName(compression))

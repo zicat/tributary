@@ -21,10 +21,13 @@ package org.zicat.tributary.channel.file;
 import java.io.File;
 import java.util.List;
 
+import static org.zicat.tributary.channel.MemoryOnePartitionGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
+
 /** PartitionFileChannelBuilder for {@link PartitionFileChannel}. */
 public class PartitionFileChannelBuilder extends ChannelBuilder {
 
     private List<File> dirs;
+    private long groupPersistPeriodSecond = DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
 
     /**
      * set dir list.
@@ -34,6 +37,17 @@ public class PartitionFileChannelBuilder extends ChannelBuilder {
      */
     public PartitionFileChannelBuilder dirs(List<File> dirs) {
         this.dirs = dirs;
+        return this;
+    }
+
+    /**
+     * set group persist period second.
+     *
+     * @param groupPersistPeriodSecond groupPersistPeriodSecond.
+     * @return this
+     */
+    public PartitionFileChannelBuilder groupPersistPeriodSecond(long groupPersistPeriodSecond) {
+        this.groupPersistPeriodSecond = groupPersistPeriodSecond;
         return this;
     }
 
@@ -56,7 +70,8 @@ public class PartitionFileChannelBuilder extends ChannelBuilder {
                 flushPeriod,
                 flushTimeUnit,
                 flushPageCacheSize,
-                flushForce);
+                flushForce,
+                groupPersistPeriodSecond);
     }
 
     /**

@@ -22,15 +22,22 @@ import org.zicat.tributary.channel.OnePartitionGroupManager;
 
 import java.io.File;
 
+import static org.zicat.tributary.channel.MemoryOnePartitionGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
 import static org.zicat.tributary.channel.utils.IOUtils.makeDir;
 
 /** FileChannelBuilder for {@link FileChannel}. */
 public class FileChannelBuilder extends ChannelBuilder {
 
     private File dir;
+    private long groupPersistPeriodSecond = DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
 
     public FileChannelBuilder dir(File dir) {
         this.dir = dir;
+        return this;
+    }
+
+    public FileChannelBuilder groupPersistPeriodSecond(long groupPersistPeriodSecond) {
+        this.groupPersistPeriodSecond = groupPersistPeriodSecond;
         return this;
     }
 
@@ -70,7 +77,7 @@ public class FileChannelBuilder extends ChannelBuilder {
      * @return return
      */
     public FileChannel build() {
-        return build(new FileGroupManager(dir, topic, consumerGroups));
+        return build(new FileGroupManager(dir, topic, consumerGroups, groupPersistPeriodSecond));
     }
 
     /**

@@ -97,6 +97,7 @@ channel.c1.segmentSize=4294967296
 channel.c1.flushPeriodMills=1000
 channel.c1.flushPageCacheSize=67108864
 channel.c1.flushForce=true
+channel.c1.groupPersistPeriodSecond=40
 channel.c2.dirs=/tmp/tributary/p2
 channel.c2.groups=group_2
 channel.c2.compression=snappy
@@ -105,6 +106,7 @@ channel.c2.segmentSize=4294967296
 channel.c2.flushPeriodMills=1000
 channel.c2.flushPageCacheSize=67108864
 channel.c2.flushForce=true
+channel.c2.groupPersistPeriodSecond=50
 ```
 
 We define two channels named c1, c2 with params.
@@ -119,6 +121,7 @@ We define two channels named c1, c2 with params.
 | flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period|
 | flushPageCacheSize| 33554432(32M)  | long value(unit: byte)       | sync flush page cache to disk|
 | flushForce        | false          | [false,true] | whether records in the block flush to page cache first when trigger async/sync flush page cache, suggest to set false on production|
+|groupPersistPeriodSecond| 30 |long value:(unit: second)|long to persist the committed group offset to disk|     
 
 Note:
 

@@ -28,6 +28,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.component.DynamicSinkGroupManager;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
@@ -53,6 +54,8 @@ public class DynamicSinkGroupManagerTest {
 
     @After
     public void after() {
+        dynamicChannel.flushAll();
+        IOUtils.closeQuietly(dynamicSinkGroupManager, dynamicChannel);
         if (dynamicChannel.getTempDir() != null) {
             deleteDir(dynamicChannel.getTempDir());
         }
