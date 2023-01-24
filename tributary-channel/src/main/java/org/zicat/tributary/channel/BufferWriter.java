@@ -64,12 +64,22 @@ public final class BufferWriter {
     }
 
     /**
+     * wrap from byte array.
+     *
+     * @param data byte array
+     * @return ReusableBuffer
+     */
+    public static BufferWriter wrap(byte[] data) {
+        return wrap(data, 0, data.length);
+    }
+
+    /**
      * append data to block set.
      *
      * @param data data
      * @param offset offset
      * @param length length
-     * @return ReusableBuffer this
+     * @return boolean put success
      */
     public final boolean put(byte[] data, int offset, int length) {
         if (remaining() < vIntLength(length)) {
@@ -78,6 +88,16 @@ public final class BufferWriter {
         putVInt(writeBuf, length);
         writeBuf.put(data, offset, length);
         return true;
+    }
+
+    /**
+     * append data to block set.
+     *
+     * @param data data
+     * @return boolean put success
+     */
+    public final boolean put(byte[] data) {
+        return put(data, 0, data.length);
     }
 
     /**
@@ -165,11 +185,11 @@ public final class BufferWriter {
     }
 
     /**
-     * compression buf. VisibleForTesting
+     * reusedByteBuf. VisibleForTesting
      *
      * @return ByteBuffer
      */
-    public final ByteBuffer compressionBuf() {
+    public final ByteBuffer reusedByteBuf() {
         return reusedByteBuf;
     }
 }

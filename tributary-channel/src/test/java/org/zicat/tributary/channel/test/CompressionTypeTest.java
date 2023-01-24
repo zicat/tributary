@@ -57,12 +57,9 @@ public class CompressionTypeTest {
         // read length
         compressBuffer.getInt();
 
-        // zstd may must from position 0, so copy new Buffer
-        final ByteBuffer copy = ByteBuffer.allocateDirect(compressBuffer.remaining());
-        copy.put(compressBuffer).flip();
-
         final ByteBuffer decompressionBuffer =
-                compressionType.decompression(copy, ByteBuffer.allocateDirect(copy.remaining()));
+                compressionType.decompression(
+                        compressBuffer, ByteBuffer.allocateDirect(compressBuffer.remaining()));
         final byte[] finalArray = new byte[decompressionBuffer.remaining()];
         decompressionBuffer.get(finalArray);
         Assert.assertArrayEquals(expectedArray, finalArray);

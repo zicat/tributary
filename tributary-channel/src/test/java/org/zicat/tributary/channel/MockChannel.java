@@ -88,9 +88,9 @@ public class MockChannel implements Channel {
                 VIntUtil.putVInt(dataBuffer, element.length);
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
-                return new RecordsResultSetImpl(
-                        new BufferRecordsOffset(
-                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes));
+                return new BufferRecordsOffset(
+                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes)
+                        .toResultSet();
             }
         }
         if (!hasWait) {
@@ -108,12 +108,12 @@ public class MockChannel implements Channel {
                 VIntUtil.putVInt(dataBuffer, element.length);
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
-                return new RecordsResultSetImpl(
-                        new BufferRecordsOffset(
-                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes));
+                return new BufferRecordsOffset(
+                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes)
+                        .toResultSet();
             }
         }
-        return new RecordsResultSetImpl(BufferRecordsOffset.cast(logOffset).reset());
+        return BufferRecordsOffset.cast(logOffset).reset().toResultSet();
     }
 
     @Override

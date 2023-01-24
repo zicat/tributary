@@ -43,17 +43,24 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
     private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final long periodSecond;
     private final String topic;
-    private final ScheduledExecutorService schedule;
+    protected final ScheduledExecutorService schedule;
 
     public MemoryOnePartitionGroupManager(
             String topic, Map<String, RecordsOffset> groupOffsets, long periodSecond) {
         this.topic = topic;
         this.cache.putAll(groupOffsets);
         this.groups.addAll(groupOffsets.keySet());
+        this.periodSecond = periodSecond;
         this.schedule =
                 Executors.newSingleThreadScheduledExecutor(
                         Threads.createThreadFactoryByName("group_persist", true));
+        schedule();
+    }
+
+    /** schedule. */
+    protected void schedule() {
         schedule.scheduleWithFixedDelay(
                 this::persist, periodSecond, periodSecond, TimeUnit.SECONDS);
     }

@@ -54,8 +54,7 @@ public class BufferRecordsOffset extends RecordsOffset {
      * @return RecordsResultSet
      */
     public RecordsResultSet toResultSet() {
-        final BufferRecordsOffset nextRecordsOffset = this;
-        return new RecordsResultSetImpl(nextRecordsOffset);
+        return new RecordsResultSetImpl();
     }
 
     /**
@@ -173,5 +172,37 @@ public class BufferRecordsOffset extends RecordsOffset {
      */
     public final long readBytes() {
         return readBytes;
+    }
+
+    /** RecordsResultSetImpl. */
+    private class RecordsResultSetImpl implements RecordsResultSet {
+
+        private byte[] nextData;
+
+        RecordsResultSetImpl() {
+            next();
+        }
+
+        @Override
+        public final RecordsOffset nexRecordsOffset() {
+            return BufferRecordsOffset.this;
+        }
+
+        @Override
+        public final boolean hasNext() {
+            return nextData != null;
+        }
+
+        @Override
+        public final byte[] next() {
+            final byte[] result = this.nextData;
+            this.nextData = BufferRecordsOffset.this.readNext();
+            return result;
+        }
+
+        @Override
+        public final long readBytes() {
+            return BufferRecordsOffset.this.readBytes();
+        }
     }
 }

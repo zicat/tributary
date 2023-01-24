@@ -103,7 +103,7 @@ public class BufferRecordsResultSetWriterTest {
 
         // test reAllocate . append "foo"
         final BufferWriter writer3 = writer.reAllocate(6);
-        Assert.assertSame(writer3.compressionBuf(), writer.compressionBuf());
+        Assert.assertSame(writer3.reusedByteBuf(), writer.reusedByteBuf());
         Assert.assertSame(writer3.writeBuf(), writer3.writeBuf());
         Assert.assertTrue(writer3.put(bs, 0, bs.length));
         Assert.assertTrue(writer3.remaining() > 0);
