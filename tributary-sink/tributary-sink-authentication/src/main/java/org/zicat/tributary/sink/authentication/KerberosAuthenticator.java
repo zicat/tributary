@@ -26,6 +26,7 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.channel.utils.Threads;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,9 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** KerberosAuthenticator. */
 public class KerberosAuthenticator implements TributaryAuthenticator {
@@ -220,27 +219,14 @@ public class KerberosAuthenticator implements TributaryAuthenticator {
         final ScheduledExecutorService scheduler =
                 new ScheduledThreadPoolExecutor(
                         1,
-                        new ThreadFactory() {
-                            private final AtomicInteger threadId = new AtomicInteger();
-
-                            @Override
-                            public Thread newThread(Runnable r) {
-                                final String name =
-                                        "author_"
-                                                + ugi.getUserName()
-                                                + "_"
-                                                + threadId.getAndIncrement();
-                                final Thread t = new Thread(r, name);
-                                t.setDaemon(true);
-                                return t;
-                            }
-                        });
+                        Threads.createThreadFactoryByName(
+                                "author_" + ugi.getUserName() + "_", true));
         scheduler.scheduleWithFixedDelay(
                 () -> {
                     try {
                         LOG.info("start to relogin keytab for user {}", ugi.getUserName());
                         ugi.checkTGTAndReloginFromKeytab();
-                    } catch (IOException e) {
+                    } catch (Throwable e) {
                         LOG.warn(
                                 "Error during checkTGTAndReloginFromKeytab() for user {}",
                                 ugi.getUserName(),

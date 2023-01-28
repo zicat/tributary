@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -37,6 +39,8 @@ import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.*;
  * SinkGroupConfig}.
  */
 public class SinkGroupManager implements Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SinkGroupManager.class);
 
     private final String groupId;
     private final Channel channel;
@@ -77,8 +81,16 @@ public class SinkGroupManager implements Closeable {
                             KEY_RETAIN_SIZE_CHECK_PERIOD_MILLI,
                             DEFAULT_RETAIN_SIZE_CHECK_PERIOD_MILLI);
             service = Executors.newSingleThreadScheduledExecutor();
-            service.scheduleAtFixedRate(
-                    () -> handlers.forEach(AbstractPartitionHandler::commit),
+            service.scheduleWithFixedDelay(
+                    () -> {
+                        for (AbstractPartitionHandler handler : handlers) {
+                            try {
+                                handler.commit();
+                            } catch (Throwable e) {
+                                LOG.warn("period commit handle error", e);
+                            }
+                        }
+                    },
                     periodMill,
                     periodMill,
                     TimeUnit.MILLISECONDS);

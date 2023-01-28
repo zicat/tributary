@@ -27,7 +27,6 @@ import org.zicat.tributary.channel.utils.TributaryChannelRuntimeException;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -110,7 +109,7 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
                 return null;
             }
             return file;
-        } catch (IOException e) {
+        } catch (Throwable e) {
             LOG.error("create new file fail, file name = {}", file.getPath(), e);
             return null;
         }
@@ -136,11 +135,19 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
      * @param tmpFile tmpFile
      */
     private void swapIndexFileQuietly(File tmpFile) {
-        if (deleteGroupIndexFile() && !tmpFile.renameTo(groupIndexFile)) {
+        try {
+            if (deleteGroupIndexFile() && !tmpFile.renameTo(groupIndexFile)) {
+                LOG.error(
+                        "rename tmp file to group index file fail, tmp file {}, group index file {}",
+                        tmpFile.getPath(),
+                        groupIndexFile.getPath());
+            }
+        } catch (Throwable e) {
             LOG.error(
                     "rename tmp file to group index file fail, tmp file {}, group index file {}",
                     tmpFile.getPath(),
-                    groupIndexFile.getPath());
+                    groupIndexFile.getPath(),
+                    e);
         }
     }
 
