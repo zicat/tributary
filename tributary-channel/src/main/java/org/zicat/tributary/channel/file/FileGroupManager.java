@@ -26,6 +26,8 @@ import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.channel.utils.TributaryChannelRuntimeException;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -51,6 +53,7 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
     private static final int RECORD_LENGTH = 20;
 
     public static final String FILE_SUFFIX = "_group_id.index";
+    public static final String TMP_SUFFIX = ".tmp";
 
     private final File groupIndexFile;
     private ByteBuffer byteBuffer;
@@ -66,7 +69,10 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
 
     @Override
     public synchronized void persist() {
-        final File tmpFile = new File(groupIndexFile + "." + UUID.randomUUID() + ".tmp");
+        final File tmpFile = createTmpGroupIndexFile();
+        if (tmpFile == null) {
+            return;
+        }
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(tmpFile, "rw");
                 FileChannel channel = randomAccessFile.getChannel()) {
             foreachGroup(
@@ -80,18 +86,61 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
                         writeFull(channel, byteBuffer);
                     });
             channel.force(true);
-            if (groupIndexFile.exists() && !groupIndexFile.delete()) {
-                LOG.error("delete group index file {} fail", groupIndexFile.getPath());
-                return;
-            }
-            if (!tmpFile.renameTo(groupIndexFile)) {
-                LOG.error(
-                        "rename tmp file to group index file fail, tmp file {}, group index file {}",
-                        tmpFile.getPath(),
-                        groupIndexFile.getPath());
-            }
         } catch (Throwable e) {
             LOG.error("flush groups to tmp file error, file {}", tmpFile.getPath(), e);
+        }
+        swapIndexFileQuietly(tmpFile);
+    }
+
+    /**
+     * create new tmp group index file based on groupIndexFile.
+     *
+     * @return tmp file
+     */
+    private File createTmpGroupIndexFile() {
+        final File file = new File(groupIndexFile + "." + UUID.randomUUID() + TMP_SUFFIX);
+        try {
+            final File parent = groupIndexFile.getParentFile();
+            if (!IOUtils.makeDir(parent)) {
+                LOG.error("create dir fail, dir name = {}", parent.getPath());
+                return null;
+            }
+            if (!file.createNewFile()) {
+                LOG.error("create new file fail, file name = {}", file.getPath());
+                return null;
+            }
+            return file;
+        } catch (IOException e) {
+            LOG.error("create new file fail, file name = {}", file.getPath(), e);
+            return null;
+        }
+    }
+
+    /**
+     * delete group index file.
+     *
+     * @return return true if delete success or not exists
+     */
+    private boolean deleteGroupIndexFile() {
+        if (groupIndexFile.exists() && !groupIndexFile.delete()) {
+            LOG.error("delete group index file {} fail", groupIndexFile.getPath());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * swap tmp file to group index file. swap may cause current index file delete success but tmp
+     * file rename fail.
+     *
+     * @param tmpFile tmpFile
+     */
+    private void swapIndexFileQuietly(File tmpFile) {
+        if (deleteGroupIndexFile() && !tmpFile.renameTo(groupIndexFile)) {
+            LOG.error(
+                    "rename tmp file to group index file fail, tmp file {}, group index file {}",
+                    tmpFile.getPath(),
+                    groupIndexFile.getPath());
         }
     }
 
@@ -124,6 +173,21 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
     }
 
     /**
+     * valid file max tmp group index file.
+     *
+     * @param groupIndexFile groupIndexFile
+     * @return file return null if not found
+     */
+    private static File findMaxValidTmpGroupIndexFile(File groupIndexFile) {
+        final File dir = groupIndexFile.getParentFile();
+        final File[] tmpFiles = dir.listFiles(createValidTmpGroupIndexFileFilter(groupIndexFile));
+        if (tmpFiles == null || tmpFiles.length == 0) {
+            return null;
+        }
+        return Arrays.stream(tmpFiles).max(Comparator.comparing(File::lastModified)).get();
+    }
+
+    /**
      * parse exists groups.
      *
      * @param groupIndexFile groupIndexFile
@@ -132,22 +196,18 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
      */
     private static Map<String, RecordsOffset> parseExistsGroups(
             final File groupIndexFile, List<String> allGroups) {
+
         final Map<String, RecordsOffset> existsGroups = new HashMap<>();
-        File realGroupIndexFile = groupIndexFile;
-        if (!groupIndexFile.exists()) {
-            final File dir = groupIndexFile.getParentFile();
-            final File[] tmpFiles =
-                    dir.listFiles(
-                            f ->
-                                    f.isFile()
-                                            && f.getName().startsWith(groupIndexFile.getName())
-                                            && f.getName().endsWith(".tmp"));
-            if (tmpFiles == null || tmpFiles.length == 0) {
-                return existsGroups;
-            }
-            realGroupIndexFile =
-                    Arrays.stream(tmpFiles).max(Comparator.comparing(File::lastModified)).get();
+
+        /*
+         * Method {@link FileGroupManager#swapIndexFileQuietly} may cause delete groupIndexFile
+         * success but rename tmp file to groupIndexFile fail, Using max valid tmp file if exists
+         */
+        final File maxTmpFile = findMaxValidTmpGroupIndexFile(groupIndexFile);
+        if ((maxTmpFile == null || !maxTmpFile.exists()) && !groupIndexFile.exists()) {
+            return existsGroups;
         }
+        final File realGroupIndexFile = maxTmpFile != null ? maxTmpFile : groupIndexFile;
         try {
             final ByteBuffer byteBuffer = ByteBuffer.wrap(readFull(realGroupIndexFile));
             while (byteBuffer.hasRemaining()) {
@@ -173,5 +233,24 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
      */
     public static String createFileName(String topic) {
         return topic + FILE_SUFFIX;
+    }
+
+    /**
+     * filter the tmp file name start with groupIndexFile and end with .tmp.
+     *
+     * <p>the .tmp file size must equals or over groupIndexFile, and the lastModified over
+     * groupIndexFile.
+     *
+     * @param groupIndexFile groupIndexFile.
+     * @return FileFilter
+     */
+    private static FileFilter createValidTmpGroupIndexFileFilter(File groupIndexFile) {
+        return f ->
+                f.isFile()
+                        && f.getName().startsWith(groupIndexFile.getName())
+                        && f.getName().endsWith(TMP_SUFFIX)
+                        && f.length() > 0
+                        && f.length() >= groupIndexFile.length()
+                        && f.lastModified() > groupIndexFile.lastModified();
     }
 }

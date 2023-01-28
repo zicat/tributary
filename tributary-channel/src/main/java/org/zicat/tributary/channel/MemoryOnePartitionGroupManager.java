@@ -80,8 +80,7 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
     }
 
     @Override
-    public synchronized void commit(String groupId, RecordsOffset recordsOffset)
-            throws IOException {
+    public synchronized void commit(String groupId, RecordsOffset recordsOffset) {
 
         isOpen();
         final RecordsOffset cachedRecordsOffset = cache.get(groupId);
@@ -138,7 +137,7 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
                 schedule.shutdownNow();

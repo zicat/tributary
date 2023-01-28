@@ -43,7 +43,7 @@ public class FileGroupManagerTest {
     private static final String topic = "topic_1";
 
     @Test
-    public void testFirstUsedGroupId() throws IOException {
+    public void testFirstUsedGroupId() {
 
         // test new group ids
         final Random random = new Random();
@@ -65,7 +65,6 @@ public class FileGroupManagerTest {
             Assert.assertEquals(newRecordsOffset, manager.getRecordsOffset(group));
             cache.put(group, manager.getRecordsOffset(group));
         }
-        IOUtils.closeQuietly(manager);
         IOUtils.closeQuietly(manager);
 
         // test exist group id and new ids
