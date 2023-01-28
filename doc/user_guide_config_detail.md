@@ -9,7 +9,7 @@ server.port=8765
 server.metrics.ip.pattern=.*
 ```
 
-Tributary service provide service metrics by http restful api based on SpringBoot, get more details abort server.* by
+Tributary service provide service metrics by http restful api based on SpringBoot, you can get more details abort server.* from
 SpringBoot Document.
 
 The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get
@@ -40,7 +40,7 @@ source.s2.channel=c2
 source.s2.implement=netty
 ``` 
 
-We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2.
+We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2 (How to define the channel will be introduced as below).
 
 The source must config the implement to tell the source how to receive records from the network.
 
@@ -49,8 +49,8 @@ Tributary provide the
 interface to develop special sources for suitable scenarios.
 
 Tributary also provide the default implement
-[netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/DefaultNettyTributaryServerFactory.java)
-, shows all params netty required as follows.
+[netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/DefaultNettyTributaryServerFactory.java), 
+shows all params netty required as follows.
 
 ```properties
 source.s1.netty.port=8200
@@ -73,7 +73,7 @@ Note：
 2. The lineDecoder parse the streaming to records by text line. It is suitable for demo scenarios using telnet.
 
 3. The lengthDecoder parse the streaming by length-value decode like below, lengthDecoder ack the length of the received
-   record, ack -1 if append the record to the channel fail, it's suitable for production environment.
+   record, ack -1 if append the record to the channel fail, it's suitable for most environment.
 
    ![image](picture/line_decoder.png)
 
@@ -115,7 +115,7 @@ We define two channels named c1, c2 with params.
 |  ----             | ----           | ---                          | ---                                                  |
 | dir               |                | valid absolute path          | the dir to store records, dir is allowed reading and writing, using ',' config multi partitions  |
 | groups            |                | string value                 | the group list that consume this channel                             |
-| compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache, snappy suggested  |
+| compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache |
 | blockSize         | 32768(32K)     | long value(unit: byte)       | records are appended to the memory block first, after the block over this param the channel flush the block to page cache|
 | segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new file if the size of current segment file in the channel is over this param |
 | flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period|
@@ -125,7 +125,7 @@ We define two channels named c1, c2 with params.
 
 Note:
 
-1. Using suitable blockSize like 32768. Lower value may cause disk iops high and higher value may cause source timeout.
+1. Using suitable blockSize, Lower value may cause disk iops high.
 2. Using suitable segmentSize like 4294967296. Lower value cause frequent file creation/deletion, higher value cause
    deleting expired files not timely.
 3. The purpose of setting flushForce=true is to reduce consumption delay, If the size of receive records is lower than

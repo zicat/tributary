@@ -5,8 +5,8 @@
 Tributary is a reliable, stateless, fault-tolerance service for efficiently collecting and moving huge amounts of
 records. It has a simple and flexible architecture based on streaming records flows. It is robust and fault tolerant.
 
-The duty of tributary is to provide records uploading network interface, ensure records not lost and sink records to
-multi external systems, ensure the crash of some external systems not affect other sinks and not affect sources.
+The duty of tributary is to provide records uploading network interface, ensure not to lost records and sink records to
+multi external systems, ensure not affect other sinks and sources when some external systems crash.
 
 ## Architecture
 
@@ -16,14 +16,14 @@ multi sinks.
 
 ### Reliability
 
-When records sent to the tributary service, the source append into the channel and ack client, sinks fetch records from
+When records arrive at the tributary service, the source append into the channel and ack client, sinks fetch records from
 the channel with RecordsOffset, and commit the RecordsOffset after external systems store these records. This is a how
 records in Tributary provide end-to-end reliability of the flow.
 
 ### Recoverability
 
-If the channel crash e.g., disk full, Source report client exception. Because tributary service is stateless, client can
-switch to other tributary services until this service is recovered.
+If the channel crash e.g., disk full, source report the exception to the client. Because tributary service is stateless, client can
+switch to other tributary services until this service recover.
 
 If the external sink system crash, the sink will roll up to the previous committed RecordsOffset and reconsume records(
 at least once). The crash of some sink systems not affect the others that sink records to theirs healthy external
@@ -36,7 +36,7 @@ tributary application using Spring Boot.
 
 ### Build package
 
-Before start the tributary service, we should compile and package it from source code depending on java and maven,
+Before start the tributary service, we should compile and package it from source code with java and maven,
 please install JDK8 and Maven3 first on your macOS or linux pc.
 
 Download source code using Git or other tools.
@@ -69,10 +69,10 @@ sink.group_1.partitionHandlerIdentity=direct
 sink.group_1.functionIdentity=print
 ```
 
-Note: server.port and source.s1.netty.port is not be used and same, channel.c1.dirs must exist and allow reading and
+Note that server.port and source.s1.netty.port is not be used and same, channel.c1.dirs must exist and allow reading and
 writing.
 
-Given the application.properties, we can start tributary service as follows:
+Given the application.properties, we can start the tributary service as follows:
 
 ```shell
 $ bash bin/tributary.sh start
@@ -86,11 +86,11 @@ $ tail -f log/tributary.log
 
 ![image](picture/start_success_log.png)
 
-Try to use telnet tool sending some records, attend to the port if source.s1.netty.port changed.
+Try to use the telnet to send some records, please attend to the port if source.s1.netty.port changed.
 
 ![image](picture/telnet_client.png)
 
-Check whether the tributary service receive and sink successfully by the log file in log dir.
+Check whether the tributary service receive and sink records successfully by the log file in log dir.
 
 ![image](picture/receive_success_log.png)
 

@@ -1,10 +1,10 @@
 # Tributary Developer Guide
 
-If you first know abort Tributary, please read the [Tributary User Guide](user_guide.md) first.
+If you are not know of Tributary, please read the [Tributary User Guide](user_guide.md) first.
 
 ## Building Tributary
 
-Checkout the code using Git, compile the source code and testing unit case
+Checkout the code, compile the source code and run unit test.
 
 ```shell script
 $ git fetch && git checkout master && git pull
@@ -44,7 +44,7 @@ Note:
    of [SimpleHttpHandler](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
    defined in the
    [HttpTributaryServer](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServer.java)
-   is to get data from http body and append to the channel.
+   is to parse streaming to record from http body and append to the channel.
 2. The channel may have multi
    partitions, [SimpleHttpHandler](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
    select one partition to append by the policy of random.
@@ -57,7 +57,7 @@ when the tributary service is starting, the identity will be used in application
 
 Create a file if not exist
 named [org.zicat.tributary.service.source.TributaryServerFactory](../tributary-demo/src/main/resources/META-INF/services/org.zicat.tributary.service.source.TributaryServerFactory)
-in [resources/META-INF/services](../tributary-demo/src/main/resources/META-INF/services), append the full name
+in [resources/META-INF/services](../tributary-demo/src/main/resources/META-INF/services), append the full class name
 of [HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServerFactory.java)
 .
 
@@ -73,13 +73,13 @@ of [HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tribut
 
 3. Using intellij Run tool start this main class
 
-4. Using terminal to send test data
+4. Using terminal to send test records
 
     ```shell script
      $ curl -s -X POST http://localhost:8200 -d 'Hello Tributary Http Server'
     ```
 
-5. Check whether print the log from intellij console
+5. Check whether print the records from intellij console
 
    ![image](picture/source_http_demo_receive_data.png)
 
@@ -88,8 +88,7 @@ of [HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tribut
 In the document [Tributary User Guide of Config Details](user_guide_config_detail.md), we have introduced 3 kinds of
 sink include kafka, hdfs, print. In this section, we introduce more details of kafka.
 
-We suggest reading [Tributary Design Guide](tributary_design_guide.md) first to know more about channel and sink
-concept.
+We suggest reading [Tributary Design Guide](tributary_design_guide.md) first to know the concept of channel and sink more.
 
 ### Sink kafka
 
@@ -129,8 +128,7 @@ public class DispatcherKafkaFunctionFactory implements FunctionFactory {
 [DispatchKafkaFunction](../tributary-demo/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunction.java)
 extends
 [DefaultKafkaFunction](../tributary-service/src/main/java/org/zicat/tributary/service/sink/DefaultKafkaFunction.java)
-override the sendKafka function. In this case, the value is converted to string that be combined with topic and value
-by ','.
+override the sendKafka function. In this case, records are converted into utf-8 string with the topic and value by ','.
 
 [DispatchKafkaFunctionFactory](
 ../tributary-demo/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunctionFactory.java) implements
