@@ -16,25 +16,40 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.demo.source;
+package org.zicat.tributary.source.netty;
 
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.source.netty.AbstractNettyTributaryServer;
-import org.zicat.tributary.source.netty.AbstractNettyTributaryServerFactory;
+/** NettyDecoder. */
+public enum NettyDecoder {
+    lineDecoder(false, LineDecoder::new),
+    lengthDecoder(true, LengthDecoder::new);
 
-import java.util.Map;
+    private final boolean ack;
+    private final SourceDecoderFactory sourceDecoderFactory;
 
-/** HttpTributaryServerFactory. */
-public class HttpTributaryServerFactory extends AbstractNettyTributaryServerFactory {
-
-    @Override
-    public String identity() {
-        return "http";
+    NettyDecoder(boolean ack, SourceDecoderFactory sourceDecoderFactory) {
+        this.ack = ack;
+        this.sourceDecoderFactory = sourceDecoderFactory;
     }
 
-    @Override
-    public AbstractNettyTributaryServer createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, Map<String, String> config) {
-        return new HttpTributaryServer(host, port, eventThreads, channel);
+    /**
+     * is ack.
+     *
+     * @return boolean
+     */
+    public boolean isAck() {
+        return ack;
+    }
+
+    /**
+     * create source decoder.
+     *
+     * @return source decoder
+     */
+    public SourceDecoder createSourceDecoder() {
+        return sourceDecoderFactory.createSourceDecoder();
+    }
+
+    interface SourceDecoderFactory {
+        SourceDecoder createSourceDecoder();
     }
 }

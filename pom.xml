@@ -13,6 +13,7 @@
         <module>tributary-sink</module>
         <module>tributary-service</module>
         <module>tributary-demo</module>
+        <module>tributary-source</module>
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>

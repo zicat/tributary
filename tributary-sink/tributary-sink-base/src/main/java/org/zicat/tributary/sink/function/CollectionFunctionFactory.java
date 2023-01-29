@@ -16,25 +16,17 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.demo.source;
+package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.source.netty.AbstractNettyTributaryServer;
-import org.zicat.tributary.source.netty.AbstractNettyTributaryServerFactory;
-
-import java.util.Map;
-
-/** HttpTributaryServerFactory. */
-public class HttpTributaryServerFactory extends AbstractNettyTributaryServerFactory {
-
+/** CollectionFunctionFactory. */
+public class CollectionFunctionFactory implements FunctionFactory {
     @Override
-    public String identity() {
-        return "http";
+    public Function createFunction() {
+        return new CollectionFunction();
     }
 
     @Override
-    public AbstractNettyTributaryServer createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, Map<String, String> config) {
-        return new HttpTributaryServer(host, port, eventThreads, channel);
+    public String identity() {
+        return "collector";
     }
 }

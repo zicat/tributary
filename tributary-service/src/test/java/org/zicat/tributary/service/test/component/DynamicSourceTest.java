@@ -34,9 +34,9 @@ import org.zicat.tributary.service.component.DynamicSource;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
-import org.zicat.tributary.service.source.netty.client.LengthDecoderClient;
-import org.zicat.tributary.service.test.sink.CollectionFunction;
 import org.zicat.tributary.sink.SinkGroupManager;
+import org.zicat.tributary.sink.function.CollectionFunction;
+import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 
 import java.io.IOException;
 import java.util.List;

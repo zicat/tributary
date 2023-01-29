@@ -56,7 +56,7 @@ is a factory to create
 when the tributary service is starting, the identity will be used in application.properties.
 
 Create a file if not exist
-named [org.zicat.tributary.service.source.TributaryServerFactory](../tributary-demo/src/main/resources/META-INF/services/org.zicat.tributary.service.source.TributaryServerFactory)
+named [org.zicat.tributary.source.TributaryServerFactory](../tributary-demo/src/main/resources/META-INF/services/org.zicat.tributary.source.TributaryServerFactory)
 in [resources/META-INF/services](../tributary-demo/src/main/resources/META-INF/services), append the full class name
 of [HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServerFactory.java)
 .

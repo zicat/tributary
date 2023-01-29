@@ -24,7 +24,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.service.source.netty.AbstractNettyTributaryServer;
+import org.zicat.tributary.source.netty.AbstractNettyTributaryServer;
 
 /** HttpTributaryServer. */
 public class HttpTributaryServer extends AbstractNettyTributaryServer {

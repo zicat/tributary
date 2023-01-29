@@ -45,11 +45,11 @@ We define two sources named s1 bind the channel named c1 and s2 bind the channel
 The source must config the implement to tell the source how to receive records from the network.
 
 Tributary provide the
-[TributaryServerFactory](../tributary-service/src/main/java/org/zicat/tributary/service/source/TributaryServerFactory.java)
+[TributaryServerFactory](../tributary-source/src/main/java/org/zicat/tributary/source/TributaryServerFactory.java)
 interface to develop special sources for suitable scenarios.
 
 Tributary also provide the default implement
-[netty](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/DefaultNettyTributaryServerFactory.java), 
+[netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettyTributaryServerFactory.java), 
 shows all params netty required as follows.
 
 ```properties
@@ -78,7 +78,7 @@ Note：
    ![image](picture/line_decoder.png)
 
 Tributary provide the lengthDecoder java client
-[LengthDecoderClient](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/client/LengthDecoderClient.java)
+[LengthDecoderClient](../tributary-source/src/main/java/org/zicat/tributary/source/netty/client/LengthDecoderClient.java)
 for reference.
 
 ## Channel Detail

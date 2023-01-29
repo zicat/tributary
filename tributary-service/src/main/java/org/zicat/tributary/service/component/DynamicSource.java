@@ -23,8 +23,8 @@ import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
-import org.zicat.tributary.service.source.TributaryServer;
-import org.zicat.tributary.service.source.TributaryServerFactory;
+import org.zicat.tributary.source.TributaryServer;
+import org.zicat.tributary.source.TributaryServerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;

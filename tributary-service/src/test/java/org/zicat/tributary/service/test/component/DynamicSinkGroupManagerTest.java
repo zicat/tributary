@@ -33,7 +33,7 @@ import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.component.DynamicSinkGroupManager;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
-import org.zicat.tributary.service.test.sink.CollectionFunction;
+import org.zicat.tributary.sink.function.CollectionFunction;
 import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.IOException;

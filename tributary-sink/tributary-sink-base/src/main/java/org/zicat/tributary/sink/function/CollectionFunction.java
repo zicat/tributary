@@ -16,25 +16,29 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.demo.source;
+package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.source.netty.AbstractNettyTributaryServer;
-import org.zicat.tributary.source.netty.AbstractNettyTributaryServerFactory;
+import org.zicat.tributary.channel.RecordsOffset;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-/** HttpTributaryServerFactory. */
-public class HttpTributaryServerFactory extends AbstractNettyTributaryServerFactory {
+/** CollectionFunction. */
+public class CollectionFunction extends AbstractFunction {
+
+    public List<byte[]> history = new ArrayList<>();
 
     @Override
-    public String identity() {
-        return "http";
+    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+        while (iterator.hasNext()) {
+            history.add(iterator.next());
+        }
+        flush(recordsOffset, null);
     }
 
     @Override
-    public AbstractNettyTributaryServer createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, Map<String, String> config) {
-        return new HttpTributaryServer(host, port, eventThreads, channel);
+    public void close() {
+        history.clear();
     }
 }
