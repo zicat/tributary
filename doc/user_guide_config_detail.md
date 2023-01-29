@@ -9,8 +9,8 @@ server.port=8765
 server.metrics.ip.pattern=.*
 ```
 
-Tributary service provide service metrics by http restful api based on SpringBoot, you can get more details abort server.* from
-SpringBoot Document.
+Tributary service provide service metrics by http restful api based on SpringBoot, you can get more details abort
+server.* from SpringBoot Document.
 
 The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get
 the expected matched host as metrics dimension value.
@@ -40,17 +40,18 @@ source.s2.channel=c2
 source.s2.implement=netty
 ``` 
 
-We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2 (How to define the channel will be introduced as below).
+We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2 (How to define the channel
+will be introduced as below).
 
 The source must config the implement to tell the source how to receive records from the network.
 
 Tributary provide the
-[TributaryServerFactory](../tributary-source/src/main/java/org/zicat/tributary/source/TributaryServerFactory.java)
+[SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java)
 interface to develop special sources for suitable scenarios.
 
 Tributary also provide the default implement
-[netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettyTributaryServerFactory.java), 
-shows all params netty required as follows.
+[netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettySourceFactory.java), shows all
+params netty required as follows.
 
 ```properties
 source.s1.netty.port=8200

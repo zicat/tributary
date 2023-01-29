@@ -20,8 +20,8 @@ compile() {
 # shellcheck disable=SC2034
 # shellcheck disable=SC2012
 prepare_lib() {
-  mvn -f tributary-service dependency:copy-dependencies -DoutputDirectory="${release_dir_libs}"
-  ls tributary-service/target/tributary-service-*.jar | awk '{print $1}' | grep -v "tests.jar" | xargs -I {} cp {} "${release_dir}"
+  mvn -f spring-boot-starter-tributary dependency:copy-dependencies -DoutputDirectory="${release_dir_libs}"
+  ls spring-boot-starter-tributary/target/spring-boot-starter-tributary-*.jar | awk '{print $1}' | grep -v "tests.jar" | xargs -I {} cp {} "${release_dir}"
 }
 
 prepare_config() {

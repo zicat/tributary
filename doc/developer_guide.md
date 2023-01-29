@@ -18,7 +18,7 @@ Before developing custom components, loading the project to IDE, we recommend de
 
 Goto [Intellij Plugin Install and Config](intellij_plugin.md) for more details.
 
-To show the demo code conveniently, we create the module [tributary-demo](../tributary-demo).
+To show the demo code conveniently, we create the module [demo-code](../demo-code).
 
 ## Developing custom sources
 
@@ -32,43 +32,43 @@ Now we try to develop a simple http source and use it.
 Http protocol is a complicated protocol, we use netty framework helping to finish http decoder and encoder.
 
 Tributary provide
-[AbstractNettyTributaryServer](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/AbstractNettyTributaryServer.java)
+[AbstractNettySource](../tributary-source/src/main/java/org/zicat/tributary/source/netty/AbstractNettySource.java)
 to simplify the code, let's have a look at how to extend
-[AbstractNettyTributaryServer](../tributary-service/src/main/java/org/zicat/tributary/service/source/netty/AbstractNettyTributaryServer.java)
-implement [HttpTributaryServer](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServer.java)
+[AbstractNettySource](../tributary-source/src/main/java/org/zicat/tributary/source/netty/AbstractNettySource.java)
+implement [HttpSource](../demo-code/src/main/java/org/zicat/tributary/demo/source/HttpSource.java)
 .
 
 Note:
 
 1. Add necessary http decoder and encoder, the duty
-   of [SimpleHttpHandler](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
+   of [SimpleHttpHandler](../demo-code/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
    defined in the
-   [HttpTributaryServer](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServer.java)
+   [HttpSource](../demo-code/src/main/java/org/zicat/tributary/demo/source/HttpSource.java)
    is to parse streaming to record from http body and append to the channel.
 2. The channel may have multi
-   partitions, [SimpleHttpHandler](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
+   partitions, [SimpleHttpHandler](../demo-code/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
    select one partition to append by the policy of random.
 3. Response the length of the received record.
 
-[HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServerFactory.java)
+[HttpSourceFactory](../demo-code/src/main/java/org/zicat/tributary/demo/source/HttpSourceFactory.java)
 is a factory to create
-[HttpTributaryServer](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServer.java)
+[HttpSource](../demo-code/src/main/java/org/zicat/tributary/demo/source/HttpSource.java)
 when the tributary service is starting, the identity will be used in application.properties.
 
 Create a file if not exist
-named [org.zicat.tributary.source.TributaryServerFactory](../tributary-demo/src/main/resources/META-INF/services/org.zicat.tributary.source.TributaryServerFactory)
-in [resources/META-INF/services](../tributary-demo/src/main/resources/META-INF/services), append the full class name
-of [HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tributary/demo/source/HttpTributaryServerFactory.java)
+named [org.zicat.tributary.source.SourceFactory](../demo-code/src/main/resources/META-INF/services/org.zicat.tributary.source.SourceFactory)
+in [resources/META-INF/services](../demo-code/src/main/resources/META-INF/services), append the full class name
+of [HttpSourceFactory](../demo-code/src/main/java/org/zicat/tributary/demo/source/HttpSourceFactory.java)
 .
 
 ### Testing
 
 1. Create a
-   properties [application-source-demo.properties](../tributary-demo/src/main/resources/application-source-demo.properties)
+   properties [application-source-demo.properties](../demo-code/src/main/resources/application-source-demo.properties)
    set source.s1.implement=http
 
 2. Create a main
-   class [HttpSourceDemoApplication](../tributary-demo/src/main/java/org/zicat/tributary/demo/HttpSourceDemoApplication.java)
+   class [HttpSourceDemoApplication](../demo-code/src/main/java/org/zicat/tributary/demo/HttpSourceDemoApplication.java)
    for testing
 
 3. Using intellij Run tool start this main class
@@ -88,13 +88,13 @@ of [HttpTributaryServerFactory](../tributary-demo/src/main/java/org/zicat/tribut
 In the document [Tributary User Guide of Config Details](user_guide_config_detail.md), we have introduced 3 kinds of
 sink include kafka, hdfs, print. In this section, we introduce more details of kafka.
 
-We suggest reading [Tributary Design Guide](tributary_design_guide.md) first to know the concept of channel and sink more.
+We suggest reading [Tributary Design Guide](tributary_design_guide.md) first to know the concept of channel and sink
+more.
 
 ### Sink kafka
 
 The kafka sink need to configure a kafka topic, actually in some scenarios we need to dispatch different records to
-different topic, let's implement this feature(All of these codes can be found in
-the [tributary-demo](../tributary-demo)).
+different topic, let's implement this feature(All of these codes can be found in the [demo-code](../demo-code)).
 
 ```java
 public class DispatchKafkaFunction extends DefaultKafkaFunction {
@@ -125,20 +125,20 @@ public class DispatcherKafkaFunctionFactory implements FunctionFactory {
 }
 ```
 
-[DispatchKafkaFunction](../tributary-demo/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunction.java)
+[DispatchKafkaFunction](../demo-code/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunction.java)
 extends
 [DefaultKafkaFunction](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/DefaultKafkaFunction.java)
 override the sendKafka function. In this case, records are converted into utf-8 string with the topic and value by ','.
 
 [DispatchKafkaFunctionFactory](
-../tributary-demo/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunctionFactory.java) implements
+../demo-code/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunctionFactory.java) implements
 [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
 to override function createFunction to create a DispatchKafkaFunction instance and define an identity of '
 kafka_demo_dispatcher'.
 
 Create the file if not exists named
-[org.zicat.tributary.sink.function.FunctionFactory](../tributary-demo/src/main/resources/META-INF/services/org.zicat.tributary.sink.function.FunctionFactory)
-in classpath [META-INF/services](../tributary-demo/src/main/resources/META-INF/services), append the full class name of
+[org.zicat.tributary.sink.function.FunctionFactory](../demo-code/src/main/resources/META-INF/services/org.zicat.tributary.sink.function.FunctionFactory)
+in classpath [META-INF/services](../demo-code/src/main/resources/META-INF/services), append the full class name of
 DispatcherKafkaFunctionFactory to it.
 
 All is ready, let's configure it in the application.properties
