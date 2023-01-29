@@ -69,8 +69,7 @@ public class Functions {
                 return;
             }
             final long waitTime = period - (System.currentTimeMillis() - start);
-            final long leastWait = waitTime <= 0 ? 10 : waitTime;
-            if (sleepQuietly(leastWait) && breakIfInterrupted) {
+            if (waitTime > 0 && sleepQuietly(waitTime) && breakIfInterrupted) {
                 return;
             }
         }
