@@ -19,7 +19,7 @@
 package org.zicat.tributary.demo.sink;
 
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.zicat.tributary.service.sink.DefaultKafkaFunction;
+import org.zicat.tributary.sink.kafka.DefaultKafkaFunction;
 
 import java.nio.charset.StandardCharsets;
 

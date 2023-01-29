@@ -23,14 +23,14 @@ import org.apache.kafka.clients.producer.Producer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.service.sink.DefaultKafkaFunction;
 import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.kafka.DefaultKafkaFunction;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.zicat.tributary.service.sink.DefaultKafkaFunction.KEY_TOPIC;
+import static org.zicat.tributary.sink.kafka.DefaultKafkaFunction.KEY_TOPIC;
 
 /** DefaultKafkaFunctionTest. */
 public class DefaultKafkaFunctionTest {

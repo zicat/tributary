@@ -16,21 +16,20 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.sink;
+package org.zicat.tributary.sink.hdfs;
 
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
-/** DefaultKafkaFunctionFactory. */
-public class DefaultKafkaFunctionFactory implements FunctionFactory {
-
+/** DefaultHDFSFunctionFactory. */
+public class DefaultHDFSFunctionFactory implements FunctionFactory {
     @Override
     public Function createFunction() {
-        return new DefaultKafkaFunction();
+        return new DefaultHDFSFunction();
     }
 
     @Override
     public String identity() {
-        return "kafka";
+        return "hdfs";
     }
 }

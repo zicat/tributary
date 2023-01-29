@@ -182,9 +182,9 @@ the [Function](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tri
 instance, users can implement it according to actual needs, such
 as [PrintFunction](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/PrintFunctionFactory.java)
 ,
-[DefaultHDFSFunction](../tributary-service/src/main/java/org/zicat/tributary/service/sink/DefaultHDFSFunctionFactory.java)
+[DefaultHDFSFunction](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/DefaultHDFSFunctionFactory.java)
 ,
-[DefaultKafkaFunction](../tributary-service/src/main/java/org/zicat/tributary/service/sink/DefaultKafkaFunctionFactory.java)
+[DefaultKafkaFunction](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/DefaultKafkaFunctionFactory.java)
 .
 
 #### Trigger
@@ -196,6 +196,6 @@ of [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tribu
 idleTimeMillis and trigger idleTrigger() function if no records is received for idleTimeMillis.
 
 Tributary service use the trigger feature
-in [DefaultHDFSFunction](../tributary-service/src/main/java/org/zicat/tributary/service/sink/DefaultHDFSFunction.java)
+in [DefaultHDFSFunction](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/DefaultHDFSFunction.java)
 to flush the records to hdfs and close the file handler when the idle exceeds the configured time.
 

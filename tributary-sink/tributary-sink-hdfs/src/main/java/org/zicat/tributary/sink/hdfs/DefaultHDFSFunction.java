@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.sink;
+package org.zicat.tributary.sink.hdfs;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
@@ -24,9 +24,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.Trigger;
-import org.zicat.tributary.sink.hdfs.AbstractHDFSFunction;
-import org.zicat.tributary.sink.hdfs.BucketWriter;
-import org.zicat.tributary.sink.hdfs.HDFSCompressedDataStream;
 
 import java.io.IOException;
 import java.util.Iterator;

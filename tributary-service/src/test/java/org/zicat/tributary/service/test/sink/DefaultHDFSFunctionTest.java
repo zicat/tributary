@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.test.utils.FileUtils;
-import org.zicat.tributary.service.sink.DefaultHDFSFunction;
+import org.zicat.tributary.sink.hdfs.DefaultHDFSFunction;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.test.function.MockClock;
 
@@ -35,8 +35,8 @@ import java.util.Objects;
 
 import static org.zicat.tributary.channel.utils.IOUtils.deleteDir;
 import static org.zicat.tributary.channel.utils.IOUtils.makeDir;
-import static org.zicat.tributary.service.sink.DefaultHDFSFunction.KEY_BUCKET_DATE_FORMAT;
-import static org.zicat.tributary.service.sink.DefaultHDFSFunction.KEY_IDLE_MILLIS;
+import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.KEY_BUCKET_DATE_FORMAT;
+import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.KEY_IDLE_MILLIS;
 import static org.zicat.tributary.sink.Config.CLOCK;
 import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.BASE_SINK_PATH;
 

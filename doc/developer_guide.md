@@ -127,7 +127,7 @@ public class DispatcherKafkaFunctionFactory implements FunctionFactory {
 
 [DispatchKafkaFunction](../tributary-demo/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunction.java)
 extends
-[DefaultKafkaFunction](../tributary-service/src/main/java/org/zicat/tributary/service/sink/DefaultKafkaFunction.java)
+[DefaultKafkaFunction](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/DefaultKafkaFunction.java)
 override the sendKafka function. In this case, records are converted into utf-8 string with the topic and value by ','.
 
 [DispatchKafkaFunctionFactory](

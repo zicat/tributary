@@ -16,13 +16,12 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.service.sink;
+package org.zicat.tributary.sink.kafka;
 
 import io.prometheus.client.Counter;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.sink.function.Context;
-import org.zicat.tributary.sink.kafka.AbstractKafkaFunction;
 
 import java.util.Iterator;
 
