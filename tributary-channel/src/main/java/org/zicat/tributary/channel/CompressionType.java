@@ -85,19 +85,33 @@ public enum CompressionType {
      * compression byte buffer. only support DirectByteBuffer
      *
      * @param uncompressed byteBuffer
+     * @param reusedBuf reusedBuf
      * @return byteBuffer length + compression data
      */
-    public ByteBuffer compression(ByteBuffer uncompressed, ByteBuffer reusedByteBuffer)
+    public ByteBuffer compression(ByteBuffer uncompressed, ByteBuffer reusedBuf)
             throws IOException {
         if (this == ZSTD) {
-            return compressionZSTD(uncompressed, reusedByteBuffer);
+            return compressionZSTD(uncompressed, reusedBuf);
         } else if (this == NONE) {
-            return compressionNone(uncompressed, reusedByteBuffer);
+            return compressionNone(uncompressed, reusedBuf);
         } else if (this == SNAPPY) {
-            return compressionSnappy(uncompressed, reusedByteBuffer);
+            return compressionSnappy(uncompressed, reusedBuf);
         } else {
             throw new IllegalArgumentException("compression type not found, id " + id());
         }
+    }
+
+    /**
+     * compression buffer.
+     *
+     * @param buffer buffer
+     * @return ByteBuffer
+     * @throws IOException IOException
+     */
+    public ByteBuffer compression(Buffer buffer) throws IOException {
+        final ByteBuffer compressionBuf = compression(buffer.resultBuf, buffer.reusedBuf);
+        buffer.reusedBuf(compressionBuf);
+        return compressionBuf;
     }
 
     /**

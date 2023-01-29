@@ -27,6 +27,16 @@ public class SegmentUtil {
     public static final int SEGMENT_HEAD_SIZE = 8;
 
     /**
+     * legal offset, return SEGMENT_HEAD_SIZE if offset < 8.
+     *
+     * @param offset offset
+     * @return offset
+     */
+    public static long legalOffset(long offset) {
+        return offset < SEGMENT_HEAD_SIZE ? SEGMENT_HEAD_SIZE : offset;
+    }
+
+    /**
      * get fileId by fileName.
      *
      * @param fileName fileName

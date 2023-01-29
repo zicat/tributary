@@ -89,7 +89,9 @@ public class MockChannel implements Channel {
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
                 return new BufferRecordsOffset(
-                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes)
+                                searchSegmentId,
+                                readBytes,
+                                new BufferReader(dataBuffer, null, readBytes))
                         .toResultSet();
             }
         }
@@ -109,7 +111,9 @@ public class MockChannel implements Channel {
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
                 return new BufferRecordsOffset(
-                                searchSegmentId, readBytes, null, null, dataBuffer, readBytes)
+                                searchSegmentId,
+                                readBytes,
+                                new BufferReader(dataBuffer, null, readBytes))
                         .toResultSet();
             }
         }

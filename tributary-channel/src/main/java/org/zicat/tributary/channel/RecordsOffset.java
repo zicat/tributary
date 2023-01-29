@@ -122,6 +122,16 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
         return new RecordsOffset(segmentId, offset);
     }
 
+    /**
+     * skip to target offset.
+     *
+     * @param newOffset newOffset
+     * @return RecordsOffset
+     */
+    public RecordsOffset skip2TargetOffset(long newOffset) {
+        return new RecordsOffset(segmentId(), newOffset);
+    }
+
     @Override
     public int compareTo(RecordsOffset o) {
         if (this.segmentId == o.segmentId) {

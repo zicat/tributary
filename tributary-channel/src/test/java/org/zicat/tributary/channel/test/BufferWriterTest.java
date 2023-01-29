@@ -25,6 +25,7 @@ import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.utils.IOUtils;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,10 +44,10 @@ public class BufferWriterTest {
         Assert.assertNotSame(bufferWriter, bufferWriter2);
         Assert.assertNotSame(bufferWriter, bufferWriter3);
 
-        Assert.assertSame(bufferWriter.writeBuf(), bufferWriter2.writeBuf());
-        Assert.assertSame(bufferWriter.reusedByteBuf(), bufferWriter2.reusedByteBuf());
-        Assert.assertNotSame(bufferWriter.writeBuf(), bufferWriter3.writeBuf());
-        Assert.assertNotSame(bufferWriter.reusedByteBuf(), bufferWriter3.reusedByteBuf());
+        Assert.assertSame(bufferWriter.resultBuf(), bufferWriter2.resultBuf());
+        Assert.assertSame(bufferWriter.reusedBuf(), bufferWriter2.reusedBuf());
+        Assert.assertNotSame(bufferWriter.resultBuf(), bufferWriter3.resultBuf());
+        Assert.assertNotSame(bufferWriter.reusedBuf(), bufferWriter3.reusedBuf());
 
         Assert.assertEquals(9, bufferWriter.remaining());
         Assert.assertEquals(9, bufferWriter2.remaining());
@@ -60,10 +61,11 @@ public class BufferWriterTest {
         Assert.assertEquals(0, bufferWriter.remaining());
         Assert.assertFalse(bufferWriter.put(new byte[] {1}));
         bufferWriter.clear(
-                (byteBuffer, reusedBuffer) -> {
-                    reusedBuffer = IOUtils.reAllocate(reusedBuffer, byteBuffer.remaining());
-                    while (byteBuffer.hasRemaining()) {
-                        reusedBuffer.put(byteBuffer.get());
+                (buffer) -> {
+                    ByteBuffer reusedBuffer =
+                            IOUtils.reAllocate(buffer.reusedBuf(), buffer.resultBuf().remaining());
+                    while (buffer.resultBuf().hasRemaining()) {
+                        reusedBuffer.put(buffer.resultBuf().get());
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
@@ -72,7 +74,7 @@ public class BufferWriterTest {
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData, rs.next());
                     Assert.assertFalse(rs.hasNext());
-                    return reusedBuffer;
+                    buffer.reusedBuf(reusedBuffer);
                 });
     }
 
@@ -93,10 +95,11 @@ public class BufferWriterTest {
         Assert.assertFalse(bufferWriter.put(testData.get(2)));
         Assert.assertEquals(3, bufferWriter.remaining());
         bufferWriter.clear(
-                (byteBuffer, reusedBuffer) -> {
-                    reusedBuffer = IOUtils.reAllocate(reusedBuffer, byteBuffer.remaining());
-                    while (byteBuffer.hasRemaining()) {
-                        reusedBuffer.put(byteBuffer.get());
+                (buffer) -> {
+                    ByteBuffer reusedBuffer =
+                            IOUtils.reAllocate(buffer.reusedBuf(), buffer.resultBuf().remaining());
+                    while (buffer.resultBuf().hasRemaining()) {
+                        reusedBuffer.put(buffer.resultBuf().get());
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
@@ -107,7 +110,7 @@ public class BufferWriterTest {
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData.get(1), rs.next());
                     Assert.assertFalse(rs.hasNext());
-                    return reusedBuffer;
+                    buffer.reusedBuf(reusedBuffer);
                 });
     }
 }

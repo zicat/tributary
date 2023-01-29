@@ -18,34 +18,18 @@
 
 package org.zicat.tributary.channel;
 
-import java.nio.ByteBuffer;
-
-import static org.zicat.tributary.channel.utils.VIntUtil.readVInt;
-
 /** BufferRecordsOffset. */
 public class BufferRecordsOffset extends RecordsOffset {
 
-    protected final ByteBuffer headBuf;
-    protected final ByteBuffer bodyBuf;
-    protected final ByteBuffer resultBuf;
-    protected final long readBytes;
+    protected final BufferReader bufferReader;
 
-    public BufferRecordsOffset(
-            long segmentId,
-            long offset,
-            ByteBuffer headBuf,
-            ByteBuffer bodyBuf,
-            ByteBuffer resultBuf,
-            long readBytes) {
+    public BufferRecordsOffset(long segmentId, long offset, BufferReader bufferReader) {
         super(segmentId, offset);
-        this.headBuf = headBuf;
-        this.bodyBuf = bodyBuf;
-        this.resultBuf = resultBuf;
-        this.readBytes = readBytes;
+        this.bufferReader = bufferReader == null ? new BufferReader(null, null, 0) : bufferReader;
     }
 
     private BufferRecordsOffset(long segmentId, long offset) {
-        this(segmentId, offset, null, null, null, 0);
+        this(segmentId, offset, null);
     }
 
     /**
@@ -58,18 +42,12 @@ public class BufferRecordsOffset extends RecordsOffset {
     }
 
     /**
-     * read next value.
+     * get buffer.
      *
-     * @return byte[]
+     * @return Buffer
      */
-    public byte[] readNext() {
-        if (resultBuf == null || !resultBuf.hasRemaining()) {
-            return null;
-        }
-        final int length = readVInt(resultBuf);
-        final byte[] bs = new byte[length];
-        resultBuf.get(bs);
-        return bs;
+    public Buffer buffer() {
+        return bufferReader;
     }
 
     /**
@@ -107,15 +85,18 @@ public class BufferRecordsOffset extends RecordsOffset {
     }
 
     /**
-     * reset buffer and return new BufferRecord.
+     * reset buffer.
      *
      * @return BufferRecordsOffset
      */
     public final BufferRecordsOffset reset() {
-        if (resultBuf != null && resultBuf.hasRemaining()) {
-            resultBuf.clear().flip();
-        }
-        return new BufferRecordsOffset(segmentId, offset, headBuf, bodyBuf, resultBuf, 0);
+        bufferReader.reset();
+        return this;
+    }
+
+    @Override
+    public BufferRecordsOffset skip2TargetOffset(long newOffset) {
+        return skip2Target(segmentId(), newOffset);
     }
 
     @Override
@@ -135,43 +116,7 @@ public class BufferRecordsOffset extends RecordsOffset {
 
     @Override
     public BufferRecordsOffset skip2Target(long segmentId, long offset) {
-        return new BufferRecordsOffset(segmentId, offset, headBuf, bodyBuf, resultBuf, 0);
-    }
-
-    /**
-     * get head buf.
-     *
-     * @return ByteBuffer
-     */
-    public final ByteBuffer headBuf() {
-        return headBuf;
-    }
-
-    /**
-     * get body buf.
-     *
-     * @return ByteBuffer
-     */
-    public final ByteBuffer bodyBuf() {
-        return bodyBuf;
-    }
-
-    /**
-     * get result buf.
-     *
-     * @return ByteBuffer
-     */
-    public final ByteBuffer resultBuf() {
-        return resultBuf;
-    }
-
-    /**
-     * get read bytes.
-     *
-     * @return bytes
-     */
-    public final long readBytes() {
-        return readBytes;
+        return new BufferRecordsOffset(segmentId, offset, bufferReader);
     }
 
     /** RecordsResultSetImpl. */
@@ -196,13 +141,13 @@ public class BufferRecordsOffset extends RecordsOffset {
         @Override
         public final byte[] next() {
             final byte[] result = this.nextData;
-            this.nextData = BufferRecordsOffset.this.readNext();
+            this.nextData = BufferRecordsOffset.this.bufferReader.readNext();
             return result;
         }
 
         @Override
         public final long readBytes() {
-            return BufferRecordsOffset.this.readBytes();
+            return BufferRecordsOffset.this.bufferReader.readBytes();
         }
     }
 }

@@ -20,6 +20,8 @@ package org.zicat.tributary.channel.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.channel.Buffer;
+import org.zicat.tributary.channel.BufferReader;
 import org.zicat.tributary.channel.BufferRecordsOffset;
 import org.zicat.tributary.channel.CompressionType;
 
@@ -28,7 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import static org.zicat.tributary.channel.file.SegmentUtil.BLOCK_HEAD_SIZE;
-import static org.zicat.tributary.channel.file.SegmentUtil.SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.SegmentUtil.legalOffset;
 import static org.zicat.tributary.channel.utils.IOUtils.reAllocate;
 import static org.zicat.tributary.channel.utils.IOUtils.readFully;
 
@@ -39,48 +41,22 @@ import static org.zicat.tributary.channel.utils.IOUtils.readFully;
  * <p>Read logic should be adjusted when {@link org.zicat.tributary.channel.BufferWriter} be
  * adjusted.
  */
-public final class FileBufferReader {
+public final class FileBufferReaderUtil {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileBufferReader.class);
-    private final BufferRecordsOffset buffer;
-    private final long legalOffset;
-
-    private FileBufferReader(BufferRecordsOffset buffer) {
-        this.buffer = buffer;
-        this.legalOffset =
-                buffer.offset() < SEGMENT_HEAD_SIZE ? SEGMENT_HEAD_SIZE : buffer.offset();
-    }
-
-    /**
-     * cast bufferReader as FileBufferReader.
-     *
-     * @param bufferRecordsOffset bufferReader
-     * @return FileBufferReader
-     */
-    public static FileBufferReader from(BufferRecordsOffset bufferRecordsOffset) {
-        return new FileBufferReader(bufferRecordsOffset);
-    }
-
-    /**
-     * check readable on position.
-     *
-     * @param position position
-     * @return boolean
-     */
-    public final boolean reach(long position) {
-        return legalOffset >= position;
-    }
+    private static final Logger LOG = LoggerFactory.getLogger(FileBufferReaderUtil.class);
 
     /**
      * create empty BufferRecordsOffset.
      *
+     * @param bufferRecordsOffset bufferRecordsOffset
      * @param newOffset newOffset
-     * @param newHeadBuf newHeadBuf
+     * @param reusedBuf reusedBuf
      * @return BufferRecordsOffset
      */
-    private BufferRecordsOffset empty(long newOffset, ByteBuffer newHeadBuf) {
-        return new BufferRecordsOffset(
-                buffer.segmentId(), newOffset, newHeadBuf, buffer.bodyBuf(), buffer.resultBuf(), 0);
+    private static BufferRecordsOffset skip2TargetOffset(
+            BufferRecordsOffset bufferRecordsOffset, long newOffset, ByteBuffer reusedBuf) {
+        bufferRecordsOffset.buffer().reset().reusedBuf(reusedBuf);
+        return bufferRecordsOffset.skip2TargetOffset(newOffset);
     }
 
     /**
@@ -90,17 +66,27 @@ public final class FileBufferReader {
      * unpredictable data, the method will return empty ResultSet and offset point to {@param
      * limitOffset}
      *
+     * @param bufferRecordsOffset bufferRecordsOffset
      * @param fileChannel fileChannel
      * @param compressionType compressionType
+     * @param limitOffset limitOffset
      * @return new block file offset.
      * @throws IOException IOException
      */
-    public final BufferRecordsOffset readChannel(
-            FileChannel fileChannel, CompressionType compressionType, long limitOffset)
+    public static BufferRecordsOffset readChannel(
+            BufferRecordsOffset bufferRecordsOffset,
+            FileChannel fileChannel,
+            CompressionType compressionType,
+            long limitOffset)
             throws IOException {
 
-        long nextOffset = legalOffset;
-        final ByteBuffer headBuf = reAllocate(buffer.headBuf(), BLOCK_HEAD_SIZE);
+        long nextOffset = legalOffset(bufferRecordsOffset.offset());
+        if (nextOffset >= limitOffset) {
+            bufferRecordsOffset.reset();
+            return bufferRecordsOffset;
+        }
+        final Buffer buffer = bufferRecordsOffset.buffer();
+        final ByteBuffer headBuf = reAllocate(buffer.reusedBuf(), BLOCK_HEAD_SIZE);
         readFully(fileChannel, headBuf, nextOffset).flip();
         nextOffset += headBuf.remaining();
 
@@ -109,32 +95,33 @@ public final class FileBufferReader {
                     "read block head over limit, next offset {}, limit offset {}",
                     nextOffset,
                     limitOffset);
-            return empty(limitOffset, headBuf);
+            return skip2TargetOffset(bufferRecordsOffset, limitOffset, headBuf);
         }
 
-        final int limit = headBuf.getInt();
-        if (limit <= 0) {
-            LOG.warn("data length is less than 0, real value {}", limit);
-            return empty(limitOffset, headBuf);
+        final int dataLength = headBuf.getInt();
+        if (dataLength <= 0) {
+            LOG.warn("data length is less than 0, real value {}", dataLength);
+            return skip2TargetOffset(bufferRecordsOffset, limitOffset, headBuf);
         }
-        if (limit + nextOffset > limitOffset) {
+
+        final long finalNextOffset = dataLength + nextOffset;
+        if (finalNextOffset > limitOffset) {
             LOG.warn(
                     "read block body over limit, next offset {}, limit offset {}",
-                    limit + nextOffset,
+                    finalNextOffset,
                     limitOffset);
-            return empty(limitOffset, headBuf);
+            return skip2TargetOffset(bufferRecordsOffset, limitOffset, headBuf);
         }
 
-        final ByteBuffer bodyBuf = reAllocate(buffer.bodyBuf(), limit << 1, limit);
+        final ByteBuffer bodyBuf = reAllocate(buffer.reusedBuf(), dataLength << 1, dataLength);
         readFully(fileChannel, bodyBuf, nextOffset).flip();
-        nextOffset += bodyBuf.remaining();
-        final ByteBuffer resultBuf = compressionType.decompression(bodyBuf, buffer.resultBuf());
+
+        final BufferReader bufferReader =
+                new BufferReader(
+                        compressionType.decompression(bodyBuf, buffer.resultBuf()),
+                        bodyBuf,
+                        dataLength + BLOCK_HEAD_SIZE);
         return new BufferRecordsOffset(
-                buffer.segmentId(),
-                nextOffset,
-                headBuf,
-                bodyBuf,
-                resultBuf,
-                limit + BLOCK_HEAD_SIZE);
+                bufferRecordsOffset.segmentId(), finalNextOffset, bufferReader);
     }
 }

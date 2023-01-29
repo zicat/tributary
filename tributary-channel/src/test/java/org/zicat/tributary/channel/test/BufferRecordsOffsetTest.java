@@ -20,6 +20,7 @@ package org.zicat.tributary.channel.test;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zicat.tributary.channel.BufferReader;
 import org.zicat.tributary.channel.BufferRecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 
@@ -70,9 +71,8 @@ public class BufferRecordsOffsetTest {
         final ByteBuffer resultBuf = toBuffer(testData);
         final BufferRecordsOffset recordsOffset = new BufferRecordsOffsetMock(resultBuf);
         final BufferRecordsOffset recordsOffset2 = recordsOffset.skip2Target(2, 0);
-        Assert.assertSame(recordsOffset.headBuf(), recordsOffset2.headBuf());
-        Assert.assertSame(recordsOffset.bodyBuf(), recordsOffset2.bodyBuf());
-        Assert.assertSame(recordsOffset.resultBuf(), recordsOffset2.resultBuf());
+        Assert.assertSame(recordsOffset.buffer().resultBuf(), recordsOffset2.buffer().resultBuf());
+        Assert.assertSame(recordsOffset.buffer().resultBuf(), recordsOffset2.buffer().resultBuf());
 
         Assert.assertTrue(recordsOffset.toResultSet().hasNext());
         Assert.assertFalse(recordsOffset2.toResultSet().hasNext());
@@ -82,7 +82,7 @@ public class BufferRecordsOffsetTest {
     public static class BufferRecordsOffsetMock extends BufferRecordsOffset {
 
         public BufferRecordsOffsetMock(ByteBuffer resultBuf) {
-            super(1, 0, null, null, resultBuf, resultBuf.remaining());
+            super(1, 0, new BufferReader(resultBuf, null, resultBuf.remaining()));
         }
     }
 

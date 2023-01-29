@@ -28,7 +28,6 @@ import org.zicat.tributary.channel.utils.TributaryChannelException;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,7 +35,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.zicat.tributary.channel.file.FileBufferReaderUtil.readChannel;
 import static org.zicat.tributary.channel.file.SegmentUtil.SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.SegmentUtil.legalOffset;
 
 /**
  * A LogSegment instance is the represent of a file with file id.
@@ -88,14 +89,12 @@ public final class Segment implements Closeable, Comparable<Segment> {
         this.writer = writer;
         this.readablePosition.set(position);
         this.clearHandler =
-                (byteBuffer, reusedBuffer) -> {
-                    final ByteBuffer compressedBuffer =
-                            compressionType.compression(byteBuffer, reusedBuffer);
-                    final int readableCount = IOUtils.writeFull(fileChannel, compressedBuffer);
+                (buffer) -> {
+                    final int readableCount =
+                            IOUtils.writeFull(fileChannel, compressionType.compression(buffer));
                     readablePosition.addAndGet(readableCount);
                     pageCacheUsed += readableCount;
                     readable.signalAll();
-                    return compressedBuffer;
                 };
     }
 
@@ -169,27 +168,28 @@ public final class Segment implements Closeable, Comparable<Segment> {
                             + fileId());
         }
 
-        final FileBufferReader fileBufferReader = FileBufferReader.from(bufferRecordsOffset);
         final long readablePosition = readablePosition();
-        if (!fileBufferReader.reach(readablePosition)) {
-            return fileBufferReader.readChannel(fileChannel, compressionType, readablePosition);
+        final long offset = legalOffset(bufferRecordsOffset.offset());
+
+        if (offset < readablePosition) {
+            return readChannel(bufferRecordsOffset, fileChannel, compressionType, readablePosition);
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (fileBufferReader.reach(readablePosition()) && !finished.get()) {
+            if (offset >= readablePosition() && !finished.get()) {
                 if (time == 0) {
                     readable.await();
                 } else if (!readable.await(time, unit)) {
                     return bufferRecordsOffset.reset();
                 }
-            } else if (fileBufferReader.reach(readablePosition())) {
+            } else if (offset >= readablePosition()) {
                 return bufferRecordsOffset.reset();
             }
         } finally {
             lock.unlock();
         }
-        return fileBufferReader.readChannel(fileChannel, compressionType, readablePosition());
+        return readChannel(bufferRecordsOffset, fileChannel, compressionType, readablePosition());
     }
 
     /**

@@ -31,22 +31,17 @@ import static org.zicat.tributary.channel.utils.VIntUtil.vIntLength;
  *
  * <p>struct: Array[data length(VINT) + data body(byte arrays)]
  */
-public final class BufferWriter {
+public final class BufferWriter extends Buffer {
 
-    final ByteBuffer writeBuf;
     final int capacity;
-    ByteBuffer reusedByteBuf;
 
-    private BufferWriter(int capacity, ByteBuffer writeBuf, ByteBuffer reusedByteBuf) {
+    private BufferWriter(int capacity, ByteBuffer resultBuf, ByteBuffer reusedBuf) {
+        super(resultBuf, reusedBuf);
         this.capacity = capacity;
-        this.writeBuf = writeBuf;
-        this.reusedByteBuf = reusedByteBuf;
     }
 
     public BufferWriter(int capacity) {
-        this.capacity = capacity;
-        this.writeBuf = ByteBuffer.allocateDirect(capacity);
-        this.reusedByteBuf = ByteBuffer.allocateDirect(capacity);
+        this(capacity, ByteBuffer.allocateDirect(capacity), ByteBuffer.allocateDirect(capacity));
     }
 
     /**
@@ -85,8 +80,8 @@ public final class BufferWriter {
         if (remaining() < vIntLength(length)) {
             return false;
         }
-        putVInt(writeBuf, length);
-        writeBuf.put(data, offset, length);
+        putVInt(resultBuf, length);
+        resultBuf.put(data, offset, length);
         return true;
     }
 
@@ -109,9 +104,9 @@ public final class BufferWriter {
         if (isEmpty()) {
             return;
         }
-        writeBuf.flip();
-        reusedByteBuf = clearHandler.clearCallback(writeBuf, reusedByteBuf);
-        writeBuf.clear();
+        resultBuf.flip();
+        clearHandler.clearCallback(this);
+        resultBuf.clear();
     }
 
     /** ClearHandler. */
@@ -120,12 +115,10 @@ public final class BufferWriter {
         /**
          * clearCallback.
          *
-         * @param byteBuffer byteBuffer
-         * @param reusedBuffer reusedBuffer
-         * @return reusedBuffer.
+         * @param buffer buffer
          * @throws IOException IOException
          */
-        ByteBuffer clearCallback(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) throws IOException;
+        void clearCallback(Buffer buffer) throws IOException;
     }
 
     /**
@@ -136,7 +129,7 @@ public final class BufferWriter {
      */
     public BufferWriter reAllocate(int size) {
         return new BufferWriter(
-                size, IOUtils.reAllocate(writeBuf, size), IOUtils.reAllocate(reusedByteBuf, size));
+                size, IOUtils.reAllocate(resultBuf, size), IOUtils.reAllocate(reusedBuf, size));
     }
 
     /**
@@ -146,50 +139,5 @@ public final class BufferWriter {
      */
     public final int capacity() {
         return capacity;
-    }
-
-    /**
-     * remaining.
-     *
-     * @return int
-     */
-    public final int remaining() {
-        return writeBuf.remaining();
-    }
-
-    /**
-     * position.
-     *
-     * @return position
-     */
-    public final int position() {
-        return writeBuf.position();
-    }
-
-    /**
-     * check is empty.
-     *
-     * @return boolean.
-     */
-    public final boolean isEmpty() {
-        return position() == 0;
-    }
-
-    /**
-     * write buf. VisibleForTesting
-     *
-     * @return ByteBuffer
-     */
-    public final ByteBuffer writeBuf() {
-        return writeBuf;
-    }
-
-    /**
-     * reusedByteBuf. VisibleForTesting
-     *
-     * @return ByteBuffer
-     */
-    public final ByteBuffer reusedByteBuf() {
-        return reusedByteBuf;
     }
 }
