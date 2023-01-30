@@ -13,7 +13,7 @@
         <module>tributary-channel</module>
         <module>tributary-sink</module>
         <module>spring-boot-starter-tributary</module>
-        <module>demo-code</module>
+        <module>sample-code</module>
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>
