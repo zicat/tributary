@@ -77,7 +77,7 @@ public class FileChannel implements OnePartitionChannel, Closeable {
     private final String topic;
     private final long flushPageCacheSize;
     private final boolean flushForce;
-    private final BufferWriter bufferWriter;
+    private final BlockWriter blockWriter;
     private final AtomicLong writeBytes = new AtomicLong();
     private final AtomicLong readBytes = new AtomicLong();
     private long minCommitSegmentId;
@@ -95,7 +95,7 @@ public class FileChannel implements OnePartitionChannel, Closeable {
             boolean flushForce) {
         this.topic = topic;
         this.dir = dir;
-        this.bufferWriter = new BufferWriter(blockSize);
+        this.blockWriter = new BlockWriter(blockSize);
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;
         this.groupManager = groupManager;
@@ -154,7 +154,7 @@ public class FileChannel implements OnePartitionChannel, Closeable {
                         .segmentSize(segmentSize)
                         .filePrefix(topic)
                         .compressionType(compressionType)
-                        .build(bufferWriter);
+                        .build(blockWriter);
         segmentCache.put(id, segment);
         return segment;
     }
@@ -270,7 +270,7 @@ public class FileChannel implements OnePartitionChannel, Closeable {
             throws IOException, InterruptedException {
 
         final Segment lastSegment = this.lastSegment;
-        final BufferRecordsOffset recordsOffset = cast(originalRecordsOffset);
+        final BlockRecordsOffset recordsOffset = cast(originalRecordsOffset);
         final Segment segment =
                 lastSegment.matchSegment(recordsOffset)
                         ? lastSegment
@@ -308,13 +308,13 @@ public class FileChannel implements OnePartitionChannel, Closeable {
      * read from last segment at beginning if null or over lastSegment.
      *
      * @param recordsOffset recordsOffset
-     * @return BufferReader
+     * @return BlockRecordsOffset
      */
-    protected BufferRecordsOffset cast(RecordsOffset recordsOffset) {
+    protected BlockRecordsOffset cast(RecordsOffset recordsOffset) {
         if (recordsOffset == null) {
-            return BufferRecordsOffset.cast(lastSegment.fileId());
+            return BlockRecordsOffset.cast(lastSegment.fileId());
         }
-        final BufferRecordsOffset newRecordOffset = BufferRecordsOffset.cast(recordsOffset);
+        final BlockRecordsOffset newRecordOffset = BlockRecordsOffset.cast(recordsOffset);
         return recordsOffset.segmentId() < 0 || recordsOffset.segmentId() > lastSegment.fileId()
                 ? newRecordOffset.skip2TargetHead(lastSegment.fileId())
                 : newRecordOffset;

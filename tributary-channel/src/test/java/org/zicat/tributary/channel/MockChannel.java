@@ -88,10 +88,10 @@ public class MockChannel implements Channel {
                 VIntUtil.putVInt(dataBuffer, element.length);
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
-                return new BufferRecordsOffset(
+                return new BlockRecordsOffset(
                                 searchSegmentId,
                                 readBytes,
-                                new BufferReader(dataBuffer, null, readBytes))
+                                new BlockReader(dataBuffer, null, readBytes))
                         .toResultSet();
             }
         }
@@ -110,14 +110,14 @@ public class MockChannel implements Channel {
                 VIntUtil.putVInt(dataBuffer, element.length);
                 dataBuffer.put(element.log, element.offset, element.length).flip();
                 readBytes += dataBuffer.remaining();
-                return new BufferRecordsOffset(
+                return new BlockRecordsOffset(
                                 searchSegmentId,
                                 readBytes,
-                                new BufferReader(dataBuffer, null, readBytes))
+                                new BlockReader(dataBuffer, null, readBytes))
                         .toResultSet();
             }
         }
-        return BufferRecordsOffset.cast(logOffset).reset().toResultSet();
+        return BlockRecordsOffset.cast(logOffset).reset().toResultSet();
     }
 
     @Override
@@ -126,7 +126,7 @@ public class MockChannel implements Channel {
         RecordsOffset recordsOffset =
                 groupManager.computeIfAbsent(
                         groupPartition, k -> RecordsOffset.startRecordOffset());
-        return BufferRecordsOffset.cast(recordsOffset);
+        return BlockRecordsOffset.cast(recordsOffset);
     }
 
     @Override

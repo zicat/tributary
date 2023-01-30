@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
-import static org.zicat.tributary.channel.file.FileBufferReaderUtil.readChannel;
+import static org.zicat.tributary.channel.file.FileBlockReaderUtil.readChannel;
 import static org.zicat.tributary.channel.file.SegmentUtil.SEGMENT_HEAD_SIZE;
 import static org.zicat.tributary.channel.file.SegmentUtil.legalOffset;
 import static org.zicat.tributary.channel.utils.VIntUtil.putVInt;
@@ -61,7 +61,7 @@ public class BufferRecordsResultSetWriterTest {
         IOUtils.deleteDir(dir);
     }
 
-    static final class MockClearHandler implements BufferWriter.ClearHandler {
+    static final class MockClearHandler implements BlockWriter.ClearHandler {
 
         public int count;
         private final FileChannel fileChannel;
@@ -73,8 +73,8 @@ public class BufferRecordsResultSetWriterTest {
         }
 
         @Override
-        public void clearCallback(Buffer buffer) throws IOException {
-            final ByteBuffer compressedBuffer = compressionType.compression(buffer);
+        public void clearCallback(Block block) throws IOException {
+            final ByteBuffer compressedBuffer = compressionType.compression(block);
             count = IOUtils.writeFull(fileChannel, compressedBuffer);
         }
     }
@@ -84,7 +84,7 @@ public class BufferRecordsResultSetWriterTest {
 
         // test writer. append "foo"
         final MockClearHandler handler = new MockClearHandler(fileChannel, CompressionType.SNAPPY);
-        final BufferWriter writer = new BufferWriter(6);
+        final BlockWriter writer = new BlockWriter(6);
         final byte[] bs = "foo".getBytes(StandardCharsets.UTF_8);
         Assert.assertTrue(writer.put(bs, 0, bs.length));
         Assert.assertTrue(writer.remaining() > 0);
@@ -94,13 +94,13 @@ public class BufferRecordsResultSetWriterTest {
 
         // test wrap. append "lynn:
         final byte[] bs2 = "lynn".getBytes(StandardCharsets.UTF_8);
-        final BufferWriter writer2 = BufferWriter.wrap(bs2, 0, bs2.length);
+        final BlockWriter writer2 = BlockWriter.wrap(bs2, 0, bs2.length);
         Assert.assertFalse(writer2.put(bs, 0, 1));
         writer2.clear(handler);
         Assert.assertTrue(handler.count > 0);
 
         // test reAllocate . append "foo"
-        final BufferWriter writer3 = writer.reAllocate(6);
+        final BlockWriter writer3 = writer.reAllocate(6);
         Assert.assertSame(writer3.reusedBuf(), writer.reusedBuf());
         Assert.assertSame(writer3.resultBuf(), writer3.resultBuf());
         Assert.assertTrue(writer3.put(bs, 0, bs.length));
@@ -112,8 +112,8 @@ public class BufferRecordsResultSetWriterTest {
         fileChannel.force(false);
 
         // test buffer reader
-        BufferRecordsOffset bufferRecordsResultSet =
-                BufferRecordsOffset.cast(new RecordsOffset(0, 0));
+        BlockRecordsOffset bufferRecordsResultSet =
+                BlockRecordsOffset.cast(new RecordsOffset(0, 0));
         long offset = legalOffset(bufferRecordsResultSet.offset());
         Assert.assertTrue(offset >= 2);
         Assert.assertFalse(offset >= 10);
@@ -129,7 +129,7 @@ public class BufferRecordsResultSetWriterTest {
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
-        bufferRecordsResultSet = BufferRecordsOffset.cast(resultSet.nexRecordsOffset());
+        bufferRecordsResultSet = BlockRecordsOffset.cast(resultSet.nexRecordsOffset());
         Assert.assertSame(bufferRecordsResultSet, resultSet.nexRecordsOffset());
         resultSet =
                 readChannel(
@@ -142,7 +142,7 @@ public class BufferRecordsResultSetWriterTest {
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
-        bufferRecordsResultSet = BufferRecordsOffset.cast(resultSet.nexRecordsOffset());
+        bufferRecordsResultSet = BlockRecordsOffset.cast(resultSet.nexRecordsOffset());
         resultSet =
                 readChannel(
                                 bufferRecordsResultSet,
@@ -164,7 +164,7 @@ public class BufferRecordsResultSetWriterTest {
                         .toResultSet();
         Assert.assertFalse(resultSet.hasNext());
 
-        BufferWriter writer4 = writer.reAllocate(6);
+        BlockWriter writer4 = writer.reAllocate(6);
         writer4.put(bs2, 0, bs2.length);
         writer4.clear(handler);
         fileChannel.force(false);
@@ -177,7 +177,7 @@ public class BufferRecordsResultSetWriterTest {
                                 resultSet.nexRecordsOffset().offset() + 1);
         resultSet =
                 readChannel(
-                                BufferRecordsOffset.cast(newOffset),
+                                BlockRecordsOffset.cast(newOffset),
                                 fileChannel,
                                 CompressionType.SNAPPY,
                                 fileChannel.position())
@@ -195,7 +195,7 @@ public class BufferRecordsResultSetWriterTest {
 
         resultSet =
                 readChannel(
-                                BufferRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
                                 fileChannel,
                                 CompressionType.SNAPPY,
                                 fileChannel.position())
@@ -209,7 +209,7 @@ public class BufferRecordsResultSetWriterTest {
 
         resultSet =
                 readChannel(
-                                BufferRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
                                 fileChannel,
                                 CompressionType.SNAPPY,
                                 fileChannel.position())

@@ -20,17 +20,17 @@ package org.zicat.tributary.channel;
 
 import java.nio.ByteBuffer;
 
-/** Buffer. */
-public class Buffer {
+/** Block. */
+public class Block {
 
     protected final ByteBuffer resultBuf;
     protected ByteBuffer reusedBuf;
 
-    public Buffer() {
+    public Block() {
         this(null, null);
     }
 
-    public Buffer(ByteBuffer resultBuf, ByteBuffer reusedBuf) {
+    public Block(ByteBuffer resultBuf, ByteBuffer reusedBuf) {
         this.resultBuf = resultBuf;
         this.reusedBuf = reusedBuf;
     }
@@ -40,7 +40,7 @@ public class Buffer {
      *
      * @return this
      */
-    public Buffer reset() {
+    public Block reset() {
         if (resultBuf != null && resultBuf.hasRemaining()) {
             resultBuf.clear().flip();
         }

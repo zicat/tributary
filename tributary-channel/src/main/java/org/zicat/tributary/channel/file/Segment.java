@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.channel.file;
 
-import org.zicat.tributary.channel.BufferRecordsOffset;
-import org.zicat.tributary.channel.BufferWriter;
+import org.zicat.tributary.channel.BlockRecordsOffset;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.utils.IOUtils;
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.zicat.tributary.channel.file.FileBufferReaderUtil.readChannel;
+import static org.zicat.tributary.channel.file.FileBlockReaderUtil.readChannel;
 import static org.zicat.tributary.channel.file.SegmentUtil.SEGMENT_HEAD_SIZE;
 import static org.zicat.tributary.channel.file.SegmentUtil.legalOffset;
 
@@ -62,15 +62,15 @@ public final class Segment implements Closeable, Comparable<Segment> {
     private final Condition readable = lock.newCondition();
     private final AtomicLong readablePosition = new AtomicLong();
     private final AtomicBoolean finished = new AtomicBoolean(false);
-    private final BufferWriter writer;
-    private final BufferWriter.ClearHandler clearHandler;
+    private final BlockWriter writer;
+    private final BlockWriter.ClearHandler clearHandler;
     private long pageCacheUsed = 0;
 
     public Segment(
             long id,
             File file,
             FileChannel fileChannel,
-            BufferWriter writer,
+            BlockWriter writer,
             long segmentSize,
             CompressionType compressionType,
             long position) {
@@ -89,9 +89,9 @@ public final class Segment implements Closeable, Comparable<Segment> {
         this.writer = writer;
         this.readablePosition.set(position);
         this.clearHandler =
-                (buffer) -> {
+                (block) -> {
                     final int readableCount =
-                            IOUtils.writeFull(fileChannel, compressionType.compression(buffer));
+                            IOUtils.writeFull(fileChannel, compressionType.compression(block));
                     readablePosition.addAndGet(readableCount);
                     pageCacheUsed += readableCount;
                     readable.signalAll();
@@ -137,7 +137,7 @@ public final class Segment implements Closeable, Comparable<Segment> {
             /* data length is over writer.size,
              * wrap new writer which match data length and flush channel directly
              */
-            BufferWriter.wrap(data, offset, length).clear(clearHandler);
+            BlockWriter.wrap(data, offset, length).clear(clearHandler);
             return true;
         } finally {
             lock.unlock();
@@ -147,32 +147,32 @@ public final class Segment implements Closeable, Comparable<Segment> {
     /**
      * blocking read data from file channel.
      *
-     * @param bufferRecordsOffset offset in file
+     * @param blockRecordsOffset offset in file
      * @param time block time
      * @param unit time unit
      * @return return null if eof or timeout, else return data
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    public BufferRecordsOffset readBlock(
-            BufferRecordsOffset bufferRecordsOffset, long time, TimeUnit unit)
+    public BlockRecordsOffset readBlock(
+            BlockRecordsOffset blockRecordsOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
 
         checkOpen();
 
-        if (!matchSegment(bufferRecordsOffset)) {
+        if (!matchSegment(blockRecordsOffset)) {
             throw new IllegalStateException(
                     "segment match fail, want "
-                            + bufferRecordsOffset.segmentId()
+                            + blockRecordsOffset.segmentId()
                             + " real "
                             + fileId());
         }
 
         final long readablePosition = readablePosition();
-        final long offset = legalOffset(bufferRecordsOffset.offset());
+        final long offset = legalOffset(blockRecordsOffset.offset());
 
         if (offset < readablePosition) {
-            return readChannel(bufferRecordsOffset, fileChannel, compressionType, readablePosition);
+            return readChannel(blockRecordsOffset, fileChannel, compressionType, readablePosition);
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -181,15 +181,15 @@ public final class Segment implements Closeable, Comparable<Segment> {
                 if (time == 0) {
                     readable.await();
                 } else if (!readable.await(time, unit)) {
-                    return bufferRecordsOffset.reset();
+                    return blockRecordsOffset.reset();
                 }
             } else if (offset >= readablePosition()) {
-                return bufferRecordsOffset.reset();
+                return blockRecordsOffset.reset();
             }
         } finally {
             lock.unlock();
         }
-        return readChannel(bufferRecordsOffset, fileChannel, compressionType, readablePosition());
+        return readChannel(blockRecordsOffset, fileChannel, compressionType, readablePosition());
     }
 
     /**
@@ -243,7 +243,7 @@ public final class Segment implements Closeable, Comparable<Segment> {
     /**
      * flush page cache data to disk.
      *
-     * @param force if force, buffer data will flush to page cache first.
+     * @param force if force, block data will flush to page cache first.
      * @throws IOException IOException
      */
     public void flush(boolean force) throws IOException {
@@ -323,7 +323,7 @@ public final class Segment implements Closeable, Comparable<Segment> {
     }
 
     /**
-     * estimate lag, the lag not contains data in buffer.
+     * estimate lag, the lag not contains data in block.
      *
      * @param recordsOffset recordsOffset
      * @return long lag
@@ -379,9 +379,9 @@ public final class Segment implements Closeable, Comparable<Segment> {
     }
 
     /**
-     * reusableBuffer.
+     * blockSize.
      *
-     * @return reusableBuffer
+     * @return int size
      */
     public final int blockSize() {
         return writer.capacity();

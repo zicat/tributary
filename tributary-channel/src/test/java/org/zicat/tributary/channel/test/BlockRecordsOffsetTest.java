@@ -20,8 +20,8 @@ package org.zicat.tributary.channel.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.BufferReader;
-import org.zicat.tributary.channel.BufferRecordsOffset;
+import org.zicat.tributary.channel.BlockReader;
+import org.zicat.tributary.channel.BlockRecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 
 import java.nio.ByteBuffer;
@@ -32,7 +32,7 @@ import static org.zicat.tributary.channel.utils.VIntUtil.putVInt;
 import static org.zicat.tributary.channel.utils.VIntUtil.vIntLength;
 
 /** BufferRecordsOffsetTest. */
-public class BufferRecordsOffsetTest {
+public class BlockRecordsOffsetTest {
 
     @Test
     public void testToResultSet() {
@@ -41,7 +41,7 @@ public class BufferRecordsOffsetTest {
         testData.add(new byte[] {1, 2, 3, 4, 5});
         testData.add(new byte[] {1, 2, 3});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BufferRecordsOffset recordsOffset = new BufferRecordsOffsetMock(resultBuf);
+        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf);
         final RecordsResultSet resultSet = recordsOffset.toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertArrayEquals(testData.get(0), resultSet.next());
@@ -58,7 +58,7 @@ public class BufferRecordsOffsetTest {
         final List<byte[]> testData = new ArrayList<>();
         testData.add(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BufferRecordsOffset recordsOffset = new BufferRecordsOffsetMock(resultBuf);
+        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf);
         Assert.assertTrue(recordsOffset.toResultSet().hasNext());
         Assert.assertFalse(recordsOffset.reset().toResultSet().hasNext());
         Assert.assertTrue(recordsOffset.reset().toResultSet().isEmpty());
@@ -69,20 +69,20 @@ public class BufferRecordsOffsetTest {
         final List<byte[]> testData = new ArrayList<>();
         testData.add(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BufferRecordsOffset recordsOffset = new BufferRecordsOffsetMock(resultBuf);
-        final BufferRecordsOffset recordsOffset2 = recordsOffset.skip2Target(2, 0);
-        Assert.assertSame(recordsOffset.buffer().resultBuf(), recordsOffset2.buffer().resultBuf());
-        Assert.assertSame(recordsOffset.buffer().resultBuf(), recordsOffset2.buffer().resultBuf());
+        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf);
+        final BlockRecordsOffset recordsOffset2 = recordsOffset.skip2Target(2, 0);
+        Assert.assertSame(recordsOffset.block().resultBuf(), recordsOffset2.block().resultBuf());
+        Assert.assertSame(recordsOffset.block().resultBuf(), recordsOffset2.block().resultBuf());
 
         Assert.assertTrue(recordsOffset.toResultSet().hasNext());
         Assert.assertFalse(recordsOffset2.toResultSet().hasNext());
     }
 
     /** BufferRecordsOffsetMock. */
-    public static class BufferRecordsOffsetMock extends BufferRecordsOffset {
+    public static class BlockRecordsOffsetMock extends BlockRecordsOffset {
 
-        public BufferRecordsOffsetMock(ByteBuffer resultBuf) {
-            super(1, 0, new BufferReader(resultBuf, null, resultBuf.remaining()));
+        public BlockRecordsOffsetMock(ByteBuffer resultBuf) {
+            super(1, 0, new BlockReader(resultBuf, null, resultBuf.remaining()));
         }
     }
 

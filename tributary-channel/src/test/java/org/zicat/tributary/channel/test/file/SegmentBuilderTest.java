@@ -22,7 +22,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.BufferWriter;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.file.Segment;
 import org.zicat.tributary.channel.file.SegmentBuilder;
@@ -45,20 +45,20 @@ public class SegmentBuilderTest {
 
         final SegmentBuilder builder = new SegmentBuilder();
         try {
-            builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BufferWriter(1024));
+            builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BlockWriter(1024));
             Assert.fail();
         } catch (RuntimeException e) {
             Assert.assertTrue(true);
         }
 
         final int blockSize = 1024;
-        final BufferWriter bw1 = new BufferWriter(blockSize);
+        final BlockWriter bw1 = new BlockWriter(blockSize);
         final Segment segment =
                 builder.segmentSize(1024000L).compressionType(CompressionType.SNAPPY).build(bw1);
         Assert.assertNotNull(segment);
         IOUtils.closeQuietly(segment);
 
-        final BufferWriter bw2 = new BufferWriter(blockSize * 2);
+        final BlockWriter bw2 = new BlockWriter(blockSize * 2);
         final Segment segment2 = builder.compressionType(CompressionType.ZSTD).build(bw2);
         Assert.assertEquals(CompressionType.SNAPPY, segment2.compressionType());
         Assert.assertEquals(1024, segment2.blockSize());

@@ -20,7 +20,7 @@ package org.zicat.tributary.channel.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.BufferWriter;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.utils.IOUtils;
 
@@ -30,17 +30,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** BufferWriterTest. */
-public class BufferWriterTest {
+public class BlockWriterTest {
 
     @Test
     public void testReAllocate() {
         final byte[] testData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
-        final BufferWriter bufferWriter = new BufferWriter(10);
+        final BlockWriter bufferWriter = new BlockWriter(10);
         bufferWriter.put(testData);
         Assert.assertEquals(0, bufferWriter.remaining());
 
-        final BufferWriter bufferWriter2 = bufferWriter.reAllocate(9);
-        final BufferWriter bufferWriter3 = bufferWriter.reAllocate(12);
+        final BlockWriter bufferWriter2 = bufferWriter.reAllocate(9);
+        final BlockWriter bufferWriter3 = bufferWriter.reAllocate(12);
         Assert.assertNotSame(bufferWriter, bufferWriter2);
         Assert.assertNotSame(bufferWriter, bufferWriter3);
 
@@ -57,7 +57,7 @@ public class BufferWriterTest {
     @Test
     public void testWrap() throws IOException {
         final byte[] testData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        final BufferWriter bufferWriter = BufferWriter.wrap(testData);
+        final BlockWriter bufferWriter = BlockWriter.wrap(testData);
         Assert.assertEquals(0, bufferWriter.remaining());
         Assert.assertFalse(bufferWriter.put(new byte[] {1}));
         bufferWriter.clear(
@@ -69,7 +69,7 @@ public class BufferWriterTest {
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
-                            new BufferRecordsOffsetTest.BufferRecordsOffsetMock(reusedBuffer)
+                            new BlockRecordsOffsetTest.BlockRecordsOffsetMock(reusedBuffer)
                                     .toResultSet();
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData, rs.next());
@@ -80,7 +80,7 @@ public class BufferWriterTest {
 
     @Test
     public void testPutAndClear() throws IOException {
-        final BufferWriter bufferWriter = new BufferWriter(20);
+        final BlockWriter bufferWriter = new BlockWriter(20);
         Assert.assertEquals(20, bufferWriter.capacity());
         Assert.assertEquals(20, bufferWriter.remaining());
         Assert.assertTrue(bufferWriter.isEmpty());
@@ -103,7 +103,7 @@ public class BufferWriterTest {
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
-                            new BufferRecordsOffsetTest.BufferRecordsOffsetMock(reusedBuffer)
+                            new BlockRecordsOffsetTest.BlockRecordsOffsetMock(reusedBuffer)
                                     .toResultSet();
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData.get(0), rs.next());

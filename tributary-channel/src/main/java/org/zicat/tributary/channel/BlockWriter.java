@@ -27,20 +27,20 @@ import static org.zicat.tributary.channel.utils.VIntUtil.putVInt;
 import static org.zicat.tributary.channel.utils.VIntUtil.vIntLength;
 
 /**
- * BufferWriter.
+ * BlockWriter.
  *
  * <p>struct: Array[data length(VINT) + data body(byte arrays)]
  */
-public final class BufferWriter extends Buffer {
+public final class BlockWriter extends Block {
 
     final int capacity;
 
-    private BufferWriter(int capacity, ByteBuffer resultBuf, ByteBuffer reusedBuf) {
+    private BlockWriter(int capacity, ByteBuffer resultBuf, ByteBuffer reusedBuf) {
         super(resultBuf, reusedBuf);
         this.capacity = capacity;
     }
 
-    public BufferWriter(int capacity) {
+    public BlockWriter(int capacity) {
         this(capacity, ByteBuffer.allocateDirect(capacity), ByteBuffer.allocateDirect(capacity));
     }
 
@@ -50,21 +50,21 @@ public final class BufferWriter extends Buffer {
      * @param data byte array
      * @param offset offset
      * @param length length
-     * @return ReusableBuffer
+     * @return BlockWriter
      */
-    public static BufferWriter wrap(byte[] data, int offset, int length) {
-        final BufferWriter bufferWriter = new BufferWriter(vIntLength(length));
-        bufferWriter.put(data, offset, length);
-        return bufferWriter;
+    public static BlockWriter wrap(byte[] data, int offset, int length) {
+        final BlockWriter blockWriter = new BlockWriter(vIntLength(length));
+        blockWriter.put(data, offset, length);
+        return blockWriter;
     }
 
     /**
      * wrap from byte array.
      *
      * @param data byte array
-     * @return ReusableBuffer
+     * @return BlockWriter
      */
-    public static BufferWriter wrap(byte[] data) {
+    public static BlockWriter wrap(byte[] data) {
         return wrap(data, 0, data.length);
     }
 
@@ -96,7 +96,7 @@ public final class BufferWriter extends Buffer {
     }
 
     /**
-     * clear buffer writer.
+     * clear block writer.
      *
      * @param clearHandler consumerHandler
      */
@@ -115,20 +115,20 @@ public final class BufferWriter extends Buffer {
         /**
          * clearCallback.
          *
-         * @param buffer buffer
+         * @param block block
          * @throws IOException IOException
          */
-        void clearCallback(Buffer buffer) throws IOException;
+        void clearCallback(Block block) throws IOException;
     }
 
     /**
-     * reallocate reusable buffer.
+     * reallocate reusable BlockWriter.
      *
      * @param size size
-     * @return BlockSet
+     * @return BlockWriter
      */
-    public BufferWriter reAllocate(int size) {
-        return new BufferWriter(
+    public BlockWriter reAllocate(int size) {
+        return new BlockWriter(
                 size, IOUtils.reAllocate(resultBuf, size), IOUtils.reAllocate(reusedBuf, size));
     }
 

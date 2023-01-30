@@ -102,15 +102,15 @@ public enum CompressionType {
     }
 
     /**
-     * compression buffer.
+     * compression block.
      *
-     * @param buffer buffer
+     * @param block block
      * @return ByteBuffer
      * @throws IOException IOException
      */
-    public ByteBuffer compression(Buffer buffer) throws IOException {
-        final ByteBuffer compressionBuf = compression(buffer.resultBuf, buffer.reusedBuf);
-        buffer.reusedBuf(compressionBuf);
+    public ByteBuffer compression(Block block) throws IOException {
+        final ByteBuffer compressionBuf = compression(block.resultBuf, block.reusedBuf);
+        block.reusedBuf(compressionBuf);
         return compressionBuf;
     }
 

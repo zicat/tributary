@@ -22,8 +22,8 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.BufferRecordsOffset;
-import org.zicat.tributary.channel.BufferWriter;
+import org.zicat.tributary.channel.BlockRecordsOffset;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.file.Segment;
@@ -52,7 +52,7 @@ public class SegmentTest {
         makeDir(childDir);
         final SegmentBuilder builder = new SegmentBuilder();
         final Segment segment =
-                builder.segmentSize(64L).fileId(1).dir(childDir).build(new BufferWriter(16));
+                builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
         Assert.assertTrue(segment.append("".getBytes(), 0, 0));
 
         testAppend(6, segment);
@@ -73,7 +73,7 @@ public class SegmentTest {
         final SegmentBuilder builder = new SegmentBuilder();
         final int fileId = 1;
         final Segment segment =
-                builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BufferWriter(16));
+                builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));
         Thread writerThread =
                 new Thread(
                         () -> {
@@ -92,8 +92,8 @@ public class SegmentTest {
                             result.add(createStringByLength(6));
                             result.add(createStringByLength(20));
 
-                            BufferRecordsOffset recordsOffset =
-                                    BufferRecordsOffset.cast(new RecordsOffset(fileId, 0));
+                            BlockRecordsOffset recordsOffset =
+                                    BlockRecordsOffset.cast(new RecordsOffset(fileId, 0));
                             while (!result.isEmpty()) {
                                 RecordsResultSet resultSet;
                                 try {
@@ -109,7 +109,7 @@ public class SegmentTest {
                                                         new String(bs, StandardCharsets.UTF_8)));
                                     }
                                     recordsOffset =
-                                            BufferRecordsOffset.cast(resultSet.nexRecordsOffset());
+                                            BlockRecordsOffset.cast(resultSet.nexRecordsOffset());
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
@@ -130,7 +130,7 @@ public class SegmentTest {
         final SegmentBuilder builder = new SegmentBuilder();
         final int fileId = 1;
         final Segment segment =
-                builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BufferWriter(16));
+                builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));
         Assert.assertTrue(segment.append("".getBytes(), 0, 0));
         testAppend(6, segment);
         testAppend(20, segment);
@@ -143,7 +143,7 @@ public class SegmentTest {
         result.add(createStringByLength(20));
         int i = 0;
 
-        final BufferRecordsOffset bufferRecordsOffset = BufferRecordsOffset.cast(fileId);
+        final BlockRecordsOffset bufferRecordsOffset = BlockRecordsOffset.cast(fileId);
 
         RecordsResultSet resultSet =
                 segment.readBlock(bufferRecordsOffset, 1, TimeUnit.MILLISECONDS).toResultSet();
@@ -156,7 +156,7 @@ public class SegmentTest {
 
         resultSet =
                 segment.readBlock(
-                                BufferRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
                                 1,
                                 TimeUnit.MILLISECONDS)
                         .toResultSet();
@@ -169,7 +169,7 @@ public class SegmentTest {
 
         resultSet =
                 segment.readBlock(
-                                BufferRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
                                 1,
                                 TimeUnit.MILLISECONDS)
                         .toResultSet();

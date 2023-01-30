@@ -22,7 +22,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.BufferWriter;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.file.Segment;
 import org.zicat.tributary.channel.file.SegmentBuilder;
 import org.zicat.tributary.channel.file.SegmentUtil;
@@ -57,11 +57,11 @@ public class SegmentUtilTest {
         makeDir(childDir);
         final SegmentBuilder builder = new SegmentBuilder();
         final Segment segment1 =
-                builder.segmentSize(64L).fileId(1).dir(childDir).build(new BufferWriter(16));
+                builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
         final Segment segment2 =
-                builder.segmentSize(64L).fileId(2).dir(childDir).build(new BufferWriter(16));
+                builder.segmentSize(64L).fileId(2).dir(childDir).build(new BlockWriter(16));
         final Segment segment3 =
-                builder.segmentSize(64L).fileId(3).dir(childDir).build(new BufferWriter(16));
+                builder.segmentSize(64L).fileId(3).dir(childDir).build(new BlockWriter(16));
 
         Assert.assertSame(segment1, SegmentUtil.min(segment1, segment2));
         Assert.assertSame(segment2, SegmentUtil.max(segment1, segment2));

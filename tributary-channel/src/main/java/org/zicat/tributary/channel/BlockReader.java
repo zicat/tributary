@@ -22,12 +22,12 @@ import java.nio.ByteBuffer;
 
 import static org.zicat.tributary.channel.utils.VIntUtil.readVInt;
 
-/** BufferReader. */
-public class BufferReader extends Buffer {
+/** BlockReader. */
+public class BlockReader extends Block {
 
     private long readBytes;
 
-    public BufferReader(ByteBuffer resultBuf, ByteBuffer reusedBuf, long readBytes) {
+    public BlockReader(ByteBuffer resultBuf, ByteBuffer reusedBuf, long readBytes) {
         super(resultBuf, reusedBuf);
         this.readBytes = readBytes;
     }
@@ -53,7 +53,7 @@ public class BufferReader extends Buffer {
     }
 
     @Override
-    public BufferReader reset() {
+    public BlockReader reset() {
         super.reset();
         readBytes = 0;
         return this;

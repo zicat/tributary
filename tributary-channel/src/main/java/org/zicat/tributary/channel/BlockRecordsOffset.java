@@ -18,17 +18,17 @@
 
 package org.zicat.tributary.channel;
 
-/** BufferRecordsOffset. */
-public class BufferRecordsOffset extends RecordsOffset {
+/** BlockRecordsOffset. */
+public class BlockRecordsOffset extends RecordsOffset {
 
-    protected final BufferReader bufferReader;
+    protected final BlockReader blockReader;
 
-    public BufferRecordsOffset(long segmentId, long offset, BufferReader bufferReader) {
+    public BlockRecordsOffset(long segmentId, long offset, BlockReader blockReader) {
         super(segmentId, offset);
-        this.bufferReader = bufferReader == null ? new BufferReader(null, null, 0) : bufferReader;
+        this.blockReader = blockReader == null ? new BlockReader(null, null, 0) : blockReader;
     }
 
-    private BufferRecordsOffset(long segmentId, long offset) {
+    private BlockRecordsOffset(long segmentId, long offset) {
         this(segmentId, offset, null);
     }
 
@@ -42,81 +42,81 @@ public class BufferRecordsOffset extends RecordsOffset {
     }
 
     /**
-     * get buffer.
+     * get block.
      *
-     * @return Buffer
+     * @return Block
      */
-    public Buffer buffer() {
-        return bufferReader;
+    public Block block() {
+        return blockReader;
     }
 
     /**
-     * create buffer by segment id.
+     * create block by segment id.
      *
      * @param segmentId segmentId
-     * @return BufferReader
+     * @return BlockRecordsOffset
      */
-    public static BufferRecordsOffset cast(long segmentId) {
+    public static BlockRecordsOffset cast(long segmentId) {
         return cast(segmentId, 0);
     }
 
     /**
-     * create buffer by segment id and offset.
+     * create block by segment id and offset.
      *
      * @param segmentId segmentId
      * @param offset offset
-     * @return BufferReader
+     * @return BlockRecordsOffset
      */
-    public static BufferRecordsOffset cast(long segmentId, long offset) {
-        return new BufferRecordsOffset(segmentId, offset);
+    public static BlockRecordsOffset cast(long segmentId, long offset) {
+        return new BlockRecordsOffset(segmentId, offset);
     }
 
     /**
-     * cast RecordsOffset as BufferRecordsOffset.
+     * cast RecordsOffset as BlockRecordsOffset.
      *
      * @param recordsOffset recordsOffset
-     * @return BufferRecordsOffset
+     * @return BlockRecordsOffset
      */
-    public static BufferRecordsOffset cast(RecordsOffset recordsOffset) {
-        if (recordsOffset instanceof BufferRecordsOffset) {
-            return (BufferRecordsOffset) recordsOffset;
+    public static BlockRecordsOffset cast(RecordsOffset recordsOffset) {
+        if (recordsOffset instanceof BlockRecordsOffset) {
+            return (BlockRecordsOffset) recordsOffset;
         }
-        return new BufferRecordsOffset(recordsOffset.segmentId, recordsOffset.offset);
+        return new BlockRecordsOffset(recordsOffset.segmentId, recordsOffset.offset);
     }
 
     /**
-     * reset buffer.
+     * reset block.
      *
-     * @return BufferRecordsOffset
+     * @return BlockRecordsOffset
      */
-    public final BufferRecordsOffset reset() {
-        bufferReader.reset();
+    public final BlockRecordsOffset reset() {
+        blockReader.reset();
         return this;
     }
 
     @Override
-    public BufferRecordsOffset skip2TargetOffset(long newOffset) {
+    public BlockRecordsOffset skip2TargetOffset(long newOffset) {
         return skip2Target(segmentId(), newOffset);
     }
 
     @Override
-    public BufferRecordsOffset skipNextSegmentHead() {
+    public BlockRecordsOffset skipNextSegmentHead() {
         return skip2TargetHead(segmentId() + 1);
     }
 
     @Override
-    public BufferRecordsOffset skip2TargetHead(long segmentId) {
+    public BlockRecordsOffset skip2TargetHead(long segmentId) {
         return skip2Target(segmentId, 0);
     }
 
     @Override
-    public BufferRecordsOffset skip2Target(RecordsOffset recordsOffset) {
+    public BlockRecordsOffset skip2Target(RecordsOffset recordsOffset) {
         return skip2Target(recordsOffset.segmentId(), recordsOffset.offset());
     }
 
     @Override
-    public BufferRecordsOffset skip2Target(long segmentId, long offset) {
-        return new BufferRecordsOffset(segmentId, offset, bufferReader);
+    public BlockRecordsOffset skip2Target(long segmentId, long offset) {
+        return new BlockRecordsOffset(segmentId, offset, blockReader);
     }
 
     /** RecordsResultSetImpl. */
@@ -130,7 +130,7 @@ public class BufferRecordsOffset extends RecordsOffset {
 
         @Override
         public final RecordsOffset nexRecordsOffset() {
-            return BufferRecordsOffset.this;
+            return BlockRecordsOffset.this;
         }
 
         @Override
@@ -141,13 +141,13 @@ public class BufferRecordsOffset extends RecordsOffset {
         @Override
         public final byte[] next() {
             final byte[] result = this.nextData;
-            this.nextData = BufferRecordsOffset.this.bufferReader.readNext();
+            this.nextData = BlockRecordsOffset.this.blockReader.readNext();
             return result;
         }
 
         @Override
         public final long readBytes() {
-            return BufferRecordsOffset.this.bufferReader.readBytes();
+            return BlockRecordsOffset.this.blockReader.readBytes();
         }
     }
 }

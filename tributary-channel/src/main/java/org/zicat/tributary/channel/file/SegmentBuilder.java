@@ -20,7 +20,7 @@ package org.zicat.tributary.channel.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.BufferWriter;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.utils.IOUtils;
 
@@ -110,7 +110,7 @@ public class SegmentBuilder {
      *
      * @return LogSegment
      */
-    public Segment build(BufferWriter bufferWriter) {
+    public Segment build(BlockWriter blockWriter) {
         if (fileId == null) {
             throw new NullPointerException("segment file id is null");
         }
@@ -118,7 +118,7 @@ public class SegmentBuilder {
             throw new NullPointerException("segment dir is null");
         }
         final File file = new File(dir, getNameById(filePrefix, fileId));
-        int blockSize = bufferWriter.capacity();
+        int blockSize = blockWriter.capacity();
         RandomAccessFile randomAccessFile = null;
         FileChannel fileChannel = null;
         try {
@@ -140,7 +140,7 @@ public class SegmentBuilder {
                 blockSize = byteBuffer.getInt();
                 realCompressType = CompressionType.getById(byteBuffer.get());
             }
-            return create(file, fileChannel, bufferWriter, blockSize, realCompressType, position);
+            return create(file, fileChannel, blockWriter, blockSize, realCompressType, position);
         } catch (Exception e) {
             IOUtils.closeQuietly(fileChannel);
             IOUtils.closeQuietly(randomAccessFile);
@@ -165,7 +165,7 @@ public class SegmentBuilder {
     private Segment create(
             File file,
             FileChannel channel,
-            BufferWriter writer,
+            BlockWriter writer,
             int blockSize,
             CompressionType compressionType,
             long position)
