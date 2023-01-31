@@ -5,8 +5,8 @@
 Tributary is a reliable, stateless, fault-tolerance service for efficiently collecting and moving huge amounts of
 records. It has a simple and flexible architecture based on streaming records flows. It is robust and fault tolerant.
 
-The duty of tributary is to provide records uploading network interface, ensure not to lost records and sink records to
-multi external systems, ensure not affect other sinks and sources when some external systems crash.
+The duty of tributary is to provide records uploading network interface, ensure records integrity and sink records to
+multi external systems, ensure not to affect other sinks and sources when some external systems crash.
 
 ## Architecture
 
