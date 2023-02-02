@@ -21,6 +21,7 @@ package org.zicat.tributary.channel.file;
 import org.zicat.tributary.channel.OnePartitionGroupManager;
 
 import java.io.File;
+import java.io.IOException;
 
 import static org.zicat.tributary.channel.MemoryOnePartitionGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
 import static org.zicat.tributary.channel.utils.IOUtils.makeDir;
@@ -32,7 +33,11 @@ public class FileChannelBuilder extends ChannelBuilder {
     private long groupPersistPeriodSecond = DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
 
     public FileChannelBuilder dir(File dir) {
-        this.dir = dir;
+        try {
+            this.dir = dir.getCanonicalFile();
+        } catch (IOException e) {
+            throw new RuntimeException("get canonical file fail", e);
+        }
         return this;
     }
 

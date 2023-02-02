@@ -21,6 +21,7 @@ package org.zicat.tributary.source;
 import org.zicat.tributary.channel.Channel;
 
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /** SourceFactory. */
 public interface SourceFactory {
@@ -40,4 +41,20 @@ public interface SourceFactory {
      * @return TributaryServer
      */
     Source createTributaryServer(Channel channel, Map<String, String> config);
+
+    /**
+     * find tributary server factory by id.
+     *
+     * @param identity identity
+     * @return TributaryServerFactory
+     */
+    static SourceFactory findTributaryServerFactory(String identity) {
+        final ServiceLoader<SourceFactory> loader = ServiceLoader.load(SourceFactory.class);
+        for (SourceFactory sourceFactory : loader) {
+            if (identity.equals(sourceFactory.identity())) {
+                return sourceFactory;
+            }
+        }
+        throw new RuntimeException("identity not found," + identity);
+    }
 }

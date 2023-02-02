@@ -20,6 +20,7 @@ package org.zicat.tributary.service.test.component;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,11 +39,10 @@ import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.function.CollectionFunction;
 import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import static org.zicat.tributary.channel.utils.IOUtils.deleteDir;
 
 /** DynamicSourceTest. */
 @RunWith(SpringRunner.class)
@@ -60,12 +60,24 @@ public class DynamicSourceTest {
     @Autowired DynamicSinkGroupManager dynamicSinkGroupManager;
 
     @After
-    public void after() {
+    public void after() throws IOException {
         dynamicChannel.flushAll();
         IOUtils.closeQuietly(dynamicSinkGroupManager, dynamicChannel);
-        if (dynamicChannel.getTempDir() != null) {
-            deleteDir(dynamicChannel.getTempDir());
-        }
+        cleanup();
+    }
+
+    @Before
+    public void before() throws IOException {
+        cleanup();
+    }
+
+    /**
+     * clean up.
+     *
+     * @throws IOException IOException
+     */
+    private void cleanup() throws IOException {
+        IOUtils.deleteDir(new File("tributary_source_test").getCanonicalFile());
     }
 
     @Test

@@ -28,7 +28,12 @@ import org.zicat.tributary.source.SourceFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static org.zicat.tributary.source.SourceFactory.findTributaryServerFactory;
 
 /** DynamicSource. */
 @Component
@@ -66,22 +71,6 @@ public class DynamicSource {
                 throw e;
             }
         }
-    }
-
-    /**
-     * find tributary server factory by id.
-     *
-     * @param identity identity
-     * @return TributaryServerFactory
-     */
-    private static SourceFactory findTributaryServerFactory(String identity) {
-        final ServiceLoader<SourceFactory> loader = ServiceLoader.load(SourceFactory.class);
-        for (SourceFactory sourceFactory : loader) {
-            if (identity.equals(sourceFactory.identity())) {
-                return sourceFactory;
-            }
-        }
-        throw new RuntimeException("identity not found," + identity);
     }
 
     @PreDestroy

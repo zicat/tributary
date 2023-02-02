@@ -18,84 +18,72 @@
 
 package org.zicat.tributary.service.component;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.file.PartitionFileChannelBuilder;
+import org.zicat.tributary.channel.ChannelFactory;
+import org.zicat.tributary.channel.file.FileChannelFactory;
 import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 
 import javax.annotation.PostConstruct;
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.zicat.tributary.channel.MemoryOnePartitionGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
 
 /** DynamicChannel. */
 @Component
 public class DynamicChannel implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DynamicChannel.class);
-    private static final String SPLIT_STR = ",";
-
-    private static final String KEY_FILE_DIRS = "dirs";
-
-    private static final String KEY_GROUP_PERSIST_PERIOD_SECOND = "groupPersistPeriodSecond";
-
-    private static final String KEY_FILE_BLOCK_SIZE = "blockSize";
-    private static final String DEFAULT_FILE_BLOCK_SIZE = String.valueOf(32 * 1024);
-
-    private static final String KEY_FILE_SEGMENT_SIZE = "segmentSize";
-    private static final String DEFAULT_FILE_SEGMENT_SIZE =
-            String.valueOf(4L * 1024L * 1024L * 1024L);
-
-    private static final String KEY_FILE_FLUSH_PERIOD_MILLS = "flushPeriodMills";
-    private static final String DEFAULT_FILE_FLUSH_PERIOD_MILLS = String.valueOf(500);
-
-    private static final String KEY_FILE_FLUSH_FORCE = "flushForce";
-    private static final String DEFAULT_FILE_FLUSH_FORCE = "false";
-
-    private static final String KEY_FILE_COMPRESSION = "compression";
-    private static final String DEFAULT_FILE_COMPRESSION = "none";
-
-    private static final String KEY_FILE_FLUSH_PAGE_CACHE_SIZE = "flushPageCacheSize";
-    private static final String DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE =
-            String.valueOf(1024L * 1024L * 32L);
-
-    private static final String KEY_GROUPS = "groups";
-    private static final String KEY_TEMP_DIR = "{TMP_DIR}";
+    private static final String KEY_TYPE = "type";
 
     @Autowired ChannelConfiguration channelConfiguration;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /* key:channel id, value: channel instance */
     final Map<String, Channel> channels = new HashMap<>();
-    File tempDir = null;
 
     @PostConstruct
-    public void init() throws IOException {
+    public void init() throws Throwable {
         if (channelConfiguration.getChannel() == null
                 || channelConfiguration.getChannel().isEmpty()) {
             return;
         }
         try {
             for (String channel : getAllChannels()) {
-                initChannelByTopic(channel);
+                final Map<String, String> params = getChannelParams(channel);
+                final String type = params.getOrDefault(KEY_TYPE, FileChannelFactory.TYPE);
+                final ChannelFactory factory = ChannelFactory.findChannelFactory(type);
+                channels.put(channel, factory.createChannel(channel, params));
             }
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
             throw e;
         }
+    }
+
+    /**
+     * get channel params.
+     *
+     * @param channel channel
+     * @return map
+     */
+    private Map<String, String> getChannelParams(String channel) {
+        final Map<String, String> result = new HashMap<>();
+        final String prefix = channel + ".";
+        for (Map.Entry<String, String> entry : channelConfiguration.getChannel().entrySet()) {
+            final String key = entry.getKey();
+            final int index = key.indexOf(prefix);
+            if (index != -1) {
+                result.put(key.substring(index + prefix.length()), entry.getValue());
+            }
+        }
+        return result;
     }
 
     /**
@@ -155,112 +143,6 @@ public class DynamicChannel implements Closeable {
     }
 
     /**
-     * get dynamic field value.
-     *
-     * @param channelId channelId
-     * @param key key
-     * @param defaultValue defaultValue
-     * @return string value
-     */
-    private String dynamicChannelValue(String channelId, String key, String defaultValue) {
-        final String realKey = String.join(".", channelId, key);
-        final String value = channelConfiguration.getChannel().get(realKey);
-        if (value == null && defaultValue == null) {
-            throw new IllegalStateException("file key not exist in configuration " + realKey);
-        }
-        return value == null ? defaultValue : value;
-    }
-
-    /**
-     * init channel by topic.
-     *
-     * @param topic topic
-     */
-    private void initChannelByTopic(String topic) throws IOException {
-        final String groupIds = dynamicChannelValue(topic, KEY_GROUPS, null);
-        if (groupIds == null) {
-            throw new IllegalStateException("topic has no sink group " + topic);
-        }
-        final Set<String> groupSet = new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
-        final List<String> dirs =
-                Arrays.asList(dynamicChannelValue(topic, KEY_FILE_DIRS, null).split(SPLIT_STR));
-        final int blockSize =
-                Integer.parseInt(
-                        dynamicChannelValue(topic, KEY_FILE_BLOCK_SIZE, DEFAULT_FILE_BLOCK_SIZE));
-        final long segmentSize =
-                Long.parseLong(
-                        dynamicChannelValue(
-                                topic, KEY_FILE_SEGMENT_SIZE, DEFAULT_FILE_SEGMENT_SIZE));
-        final int flushPeriodMills =
-                Integer.parseInt(
-                        dynamicChannelValue(
-                                topic,
-                                KEY_FILE_FLUSH_PERIOD_MILLS,
-                                DEFAULT_FILE_FLUSH_PERIOD_MILLS));
-        final long flushPageCacheSize =
-                Long.parseLong(
-                        dynamicChannelValue(
-                                topic,
-                                KEY_FILE_FLUSH_PAGE_CACHE_SIZE,
-                                DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE));
-        final String compression =
-                dynamicChannelValue(topic, KEY_FILE_COMPRESSION, DEFAULT_FILE_COMPRESSION);
-
-        final boolean flushForce =
-                Boolean.parseBoolean(
-                        dynamicChannelValue(topic, KEY_FILE_FLUSH_FORCE, DEFAULT_FILE_FLUSH_FORCE));
-
-        final long groupPersist =
-                Long.parseLong(
-                        dynamicChannelValue(
-                                topic,
-                                KEY_GROUP_PERSIST_PERIOD_SECOND,
-                                String.valueOf(DEFAULT_GROUP_PERSIST_PERIOD_SECOND)));
-
-        final PartitionFileChannelBuilder builder =
-                PartitionFileChannelBuilder.newBuilder()
-                        .dirs(createDir(dirs))
-                        .groupPersistPeriodSecond(groupPersist);
-        builder.blockSize(blockSize)
-                .segmentSize(segmentSize)
-                .compressionType(CompressionType.getByName(compression))
-                .flushPeriod(flushPeriodMills, TimeUnit.MILLISECONDS)
-                .flushPageCacheSize(flushPageCacheSize)
-                .flushForce(flushForce)
-                .topic(topic)
-                .consumerGroups(new ArrayList<>(groupSet));
-        channels.put(topic, builder.build());
-    }
-
-    private List<File> createDir(List<String> dirs) throws IOException {
-        final List<File> result = new ArrayList<>();
-        for (String dir : dirs) {
-            if (dir.startsWith(KEY_TEMP_DIR)) {
-                String child = dir.replace(KEY_TEMP_DIR, "").trim();
-                child = child.startsWith("/") ? child.substring(1) : child;
-                File file = child.isEmpty() ? tempDir() : new File(tempDir(), child);
-                result.add(file);
-            } else {
-                result.add(new File(dir));
-            }
-        }
-        return result;
-    }
-
-    /**
-     * create temp dir .
-     *
-     * @return file
-     * @throws IOException IOException
-     */
-    private File tempDir() throws IOException {
-        if (tempDir == null) {
-            tempDir = Files.createTempDirectory("").toFile();
-        }
-        return tempDir;
-    }
-
-    /**
      * find channel by group id.
      *
      * @param groupId group id
@@ -283,15 +165,5 @@ public class DynamicChannel implements Closeable {
      */
     public Map<String, Channel> getChannels() {
         return channels;
-    }
-
-    /**
-     * get temp dir.
-     *
-     * @return file
-     */
-    @VisibleForTesting
-    public File getTempDir() {
-        return tempDir;
     }
 }

@@ -16,36 +16,44 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.channel;
 
+import java.util.Map;
 import java.util.ServiceLoader;
 
-/** FunctionFactory create function. */
-public interface FunctionFactory {
-
-    /** create function. */
-    Function createFunction();
+/** ChannelFactory. */
+public interface ChannelFactory {
 
     /**
-     * factory identity.
+     * get channel type.
      *
-     * @return identity
+     * @return type
      */
-    String identity();
+    String type();
 
     /**
-     * use java spi find SinkHandlerFactory by identity.
+     * create channel.
      *
-     * @param identity identity
-     * @return SinkHandlerFactory
+     * @param topic topic
+     * @param params params
+     * @throws Exception exception
+     * @return Channel
      */
-    static FunctionFactory findFunctionFactory(String identity) {
-        final ServiceLoader<FunctionFactory> loader = ServiceLoader.load(FunctionFactory.class);
-        for (FunctionFactory functionFactory : loader) {
-            if (identity.equals(functionFactory.identity())) {
-                return functionFactory;
+    Channel createChannel(String topic, Map<String, String> params) throws Exception;
+
+    /**
+     * find channel factory.
+     *
+     * @param type type
+     * @return ChannelFactory
+     */
+    static ChannelFactory findChannelFactory(String type) {
+        final ServiceLoader<ChannelFactory> loader = ServiceLoader.load(ChannelFactory.class);
+        for (ChannelFactory channelFactory : loader) {
+            if (type.equals(channelFactory.type())) {
+                return channelFactory;
             }
         }
-        throw new RuntimeException("identity not found, " + identity);
+        throw new RuntimeException("channel type not found," + type);
     }
 }

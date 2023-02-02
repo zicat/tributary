@@ -21,6 +21,8 @@ package org.zicat.tributary.sink.handler;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.sink.SinkGroupConfig;
 
+import java.util.ServiceLoader;
+
 /** PartitionHandlerFactory. */
 public interface PartitionHandlerFactory {
 
@@ -42,4 +44,21 @@ public interface PartitionHandlerFactory {
      * @return identity
      */
     String identity();
+
+    /**
+     * find partition handler factory by id.
+     *
+     * @param identity id
+     * @return PartitionHandlerFactory
+     */
+    static PartitionHandlerFactory findPartitionHandlerFactory(String identity) {
+        final ServiceLoader<PartitionHandlerFactory> loader =
+                ServiceLoader.load(PartitionHandlerFactory.class);
+        for (PartitionHandlerFactory partitionHandlerFactory : loader) {
+            if (identity.equals(partitionHandlerFactory.identity())) {
+                return partitionHandlerFactory;
+            }
+        }
+        throw new RuntimeException("identity not found," + identity);
+    }
 }

@@ -30,11 +30,11 @@ import org.zicat.tributary.sink.function.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zicat.tributary.channel.utils.Threads.joinQuietly;
+import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
 
 /** PartitionHandler. */
 public abstract class PartitionHandler extends Thread implements Closeable, Trigger {
@@ -56,7 +56,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.channel = channel;
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
-        this.functionFactory = findFunctionFactory(sinkGroupConfig);
+        this.functionFactory = findFunctionFactory(sinkGroupConfig.functionIdentity());
         this.startOffset = getRecordsOffset(groupId, channel, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
@@ -145,23 +145,6 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
             throws IOException, InterruptedException {
         final long waitTime = idleTimeMillis <= 0 ? DEFAULT_WAIT_TIME_MILLIS : idleTimeMillis;
         return channel.poll(partitionId, recordsOffset, waitTime, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * use java spi find SinkHandlerFactory by identity.
-     *
-     * @param sinkGroupConfig sinkGroupConfig
-     * @return SinkHandlerFactory
-     */
-    private static FunctionFactory findFunctionFactory(SinkGroupConfig sinkGroupConfig) {
-        final String identity = sinkGroupConfig.functionIdentity();
-        final ServiceLoader<FunctionFactory> loader = ServiceLoader.load(FunctionFactory.class);
-        for (FunctionFactory functionFactory : loader) {
-            if (identity.equals(functionFactory.identity())) {
-                return functionFactory;
-            }
-        }
-        throw new RuntimeException("identity not found, " + identity);
     }
 
     /**

@@ -20,6 +20,7 @@ package org.zicat.tributary.service.test.component;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,8 @@ import org.zicat.tributary.channel.utils.IOUtils;
 import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 
-import static org.zicat.tributary.channel.utils.IOUtils.deleteDir;
+import java.io.File;
+import java.io.IOException;
 
 /** DynamicChannelTest. */
 @RunWith(SpringRunner.class)
@@ -42,13 +44,25 @@ public class DynamicChannelTest {
 
     @Autowired DynamicChannel dynamicChannel;
 
+    @Before
+    public void before() throws IOException {
+        cleanup();
+    }
+
     @After
-    public void after() {
+    public void after() throws IOException {
         dynamicChannel.flushAll();
         IOUtils.closeQuietly(dynamicChannel);
-        if (dynamicChannel.getTempDir() != null) {
-            deleteDir(dynamicChannel.getTempDir());
-        }
+        cleanup();
+    }
+
+    /**
+     * clean up.
+     *
+     * @throws IOException IOException
+     */
+    private void cleanup() throws IOException {
+        IOUtils.deleteDir(new File("tributary_channel_test").getCanonicalFile());
     }
 
     @Test

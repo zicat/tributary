@@ -20,6 +20,7 @@ package org.zicat.tributary.service.test.component;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,14 +34,13 @@ import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.component.DynamicSinkGroupManager;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
-import org.zicat.tributary.sink.function.CollectionFunction;
 import org.zicat.tributary.sink.SinkGroupManager;
+import org.zicat.tributary.sink.function.CollectionFunction;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import static org.zicat.tributary.channel.utils.IOUtils.deleteDir;
 
 /** DynamicSinkGroupManagerTest. */
 @RunWith(SpringRunner.class)
@@ -53,12 +53,24 @@ public class DynamicSinkGroupManagerTest {
     @Autowired DynamicSinkGroupManager dynamicSinkGroupManager;
 
     @After
-    public void after() {
+    public void after() throws IOException {
         dynamicChannel.flushAll();
         IOUtils.closeQuietly(dynamicSinkGroupManager, dynamicChannel);
-        if (dynamicChannel.getTempDir() != null) {
-            deleteDir(dynamicChannel.getTempDir());
-        }
+        cleanup();
+    }
+
+    @Before
+    public void before() throws IOException {
+        cleanup();
+    }
+
+    /**
+     * clean up.
+     *
+     * @throws IOException IOException
+     */
+    private void cleanup() throws IOException {
+        IOUtils.deleteDir(new File("tributary_sink_test").getCanonicalFile());
     }
 
     @Test

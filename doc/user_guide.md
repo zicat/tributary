@@ -16,14 +16,14 @@ multi sinks.
 
 ### Reliability
 
-When records arrive at the tributary service, the source append into the channel and ack client, sinks fetch records from
-the channel with RecordsOffset, and commit the RecordsOffset after external systems store these records. This is a how
-records in Tributary provide end-to-end reliability of the flow.
+When records arrive at the tributary service, the source append into the channel and ack client, sinks fetch records
+from the channel with RecordsOffset, and commit the RecordsOffset after external systems store these records. This is a
+how records in Tributary provide end-to-end reliability of the flow.
 
 ### Recoverability
 
-If the channel crash e.g., disk full, source report the exception to the client. Because tributary service is stateless, client can
-switch to other tributary services until this service recover.
+If the channel crash e.g., disk full, source report the exception to the client. Because tributary service is stateless,
+client can switch to other tributary services until this service recover.
 
 If the external sink system crash, the sink will roll up to the previous committed RecordsOffset and reconsume records(
 at least once). The crash of some sink systems not affect the others that sink records to theirs healthy external
@@ -36,8 +36,8 @@ tributary application using Spring Boot.
 
 ### Build package
 
-Before start the tributary service, we should compile and package it from source code with java and maven,
-please install JDK8 and Maven3 first on your macOS or linux pc.
+Before start the tributary service, we should compile and package it from source code with java and maven, please
+install JDK8 and Maven3 first on your macOS or linux pc.
 
 Download source code using Git or other tools.
 
@@ -60,6 +60,7 @@ source.s1.channel=c1
 source.s1.netty.port=8200
 source.s1.netty.decoder=lineDecoder
 source.s1.implement=netty
+channel.c1.type=file
 channel.c1.dirs=/tmp/tributary/p1
 channel.c1.groups=group_1
 channel.c1.compression=snappy

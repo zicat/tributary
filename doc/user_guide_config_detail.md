@@ -99,6 +99,7 @@ channel.c1.flushPeriodMills=1000
 channel.c1.flushPageCacheSize=67108864
 channel.c1.flushForce=true
 channel.c1.groupPersistPeriodSecond=40
+channel.c2.type=file
 channel.c2.dirs=/tmp/tributary/p2
 channel.c2.groups=group_2
 channel.c2.compression=snappy
@@ -114,6 +115,7 @@ We define two channels named c1, c2 with params.
 
 |  key              |  default       | valid value                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
+|type               | file           | [file]                       | the implement type of the channel, only support file | 
 | dir               |                | valid absolute path          | the dir to store records, dir is allowed reading and writing, using ',' config multi partitions  |
 | groups            |                | string value                 | the group list that consume this channel                             |
 | compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache |

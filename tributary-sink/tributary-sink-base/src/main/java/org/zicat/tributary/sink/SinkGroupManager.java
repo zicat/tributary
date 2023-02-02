@@ -27,12 +27,16 @@ import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
 
 import java.io.Closeable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.*;
+import static org.zicat.tributary.sink.handler.PartitionHandlerFactory.findPartitionHandlerFactory;
 
 /**
  * One SinkGroupManager Instance maintain a group consumer one {@link Channel} with {@link
@@ -60,7 +64,7 @@ public class SinkGroupManager implements Closeable {
             return;
         }
         final PartitionHandlerFactory partitionHandlerFactory =
-                findPartitionHandlerFactory(sinkGroupConfig);
+                findPartitionHandlerFactory(sinkGroupConfig.handlerIdentity());
         for (int partitionId = 0; partitionId < channel.partition(); partitionId++) {
             final AbstractPartitionHandler sinkHandler =
                     partitionHandlerFactory.createHandler(
@@ -128,25 +132,6 @@ public class SinkGroupManager implements Closeable {
         } finally {
             handlers.forEach(IOUtils::closeQuietly);
         }
-    }
-
-    /**
-     * use java spi find {@link PartitionHandlerFactory} by identity.
-     *
-     * @param sinkGroupConfig sinkGroupConfig
-     * @return SinkHandlerFactory
-     */
-    private static PartitionHandlerFactory findPartitionHandlerFactory(
-            SinkGroupConfig sinkGroupConfig) {
-        final String identity = sinkGroupConfig.handlerIdentity();
-        final ServiceLoader<PartitionHandlerFactory> loader =
-                ServiceLoader.load(PartitionHandlerFactory.class);
-        for (PartitionHandlerFactory partitionHandlerFactory : loader) {
-            if (identity.equals(partitionHandlerFactory.identity())) {
-                return partitionHandlerFactory;
-            }
-        }
-        throw new RuntimeException("identity not found," + identity);
     }
 
     /**
