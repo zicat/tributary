@@ -18,27 +18,88 @@
 
 package org.zicat.tributary.source.test.netty;
 
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
+import org.apache.commons.net.telnet.TelnetClient;
 import org.junit.Assert;
 import org.junit.Test;
+import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.MockChannel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.netty.DefaultNettySource;
+import org.zicat.tributary.source.netty.FileChannelHandler;
 import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.util.concurrent.TimeUnit;
+
+import static org.zicat.tributary.source.netty.NettyDecoder.lineDecoder;
 
 /** DefaultNettySourceTest. */
 public class DefaultNettySourceTest {
 
     @Test
-    public void test() throws InterruptedException, IOException {
+    public void testLineDecoder() throws Exception {
+        final MockChannel channel = new MockChannel();
+        final int freePort = getFreeTcpPort();
+        try (Source source =
+                new DefaultNettySource(freePort, channel) {
+                    @Override
+                    protected void initChannel(SocketChannel ch, Channel channel) {
+                        ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
+                        ch.pipeline().addLast(lineDecoder.createSourceDecoder());
+                        ch.pipeline().addLast(new FileChannelHandler(channel, true));
+                    }
+                }) {
+
+            source.listen();
+
+            final String data1 = "lynn";
+            final TelnetClient telnet = new TelnetClient();
+            try {
+                telnet.connect(Inet4Address.getLocalHost(), freePort);
+                telnet.getOutputStream().write(data1.getBytes());
+                telnet.getOutputStream().write("\r".getBytes());
+                telnet.getOutputStream().write("zhangjun".getBytes());
+                telnet.getOutputStream().write("\r".getBytes());
+                telnet.getOutputStream().write("quit".getBytes());
+                telnet.getOutputStream().write("\r".getBytes());
+                telnet.getOutputStream().flush();
+                // block reading 2 length response
+                Assert.assertEquals(telnet.getInputStream().read(new byte[8]), 8);
+            } finally {
+                telnet.disconnect();
+            }
+
+            channel.flush();
+            final RecordsResultSet recordsResultSet =
+                    channel.poll(0, new RecordsOffset(0, 0), 10, TimeUnit.MILLISECONDS);
+            Assert.assertEquals("lynn", new String(recordsResultSet.next()));
+
+            final RecordsResultSet recordsResultSet2 =
+                    channel.poll(0, recordsResultSet.nexRecordsOffset(), 10, TimeUnit.MILLISECONDS);
+            Assert.assertEquals("zhangjun", new String(recordsResultSet2.next()));
+            System.out.println(source);
+        }
+    }
+
+    @Test
+    public void testLengthDecoder() throws Exception {
         final MockChannel channel = new MockChannel();
         final int port = getFreeTcpPort();
-        try (DefaultNettySource server = new DefaultNettySource(port, channel)) {
-            server.listen();
+        try (Source source =
+                new DefaultNettySource(port, channel) {
+                    @Override
+                    protected void initChannel(SocketChannel ch, Channel channel) {
+                        super.initChannel(ch, channel);
+                    }
+                }) {
+
+            source.listen();
 
             final byte[] data1 = "lyn".getBytes();
             final byte[] data2 = "zhangjun".getBytes();
@@ -46,12 +107,13 @@ public class DefaultNettySourceTest {
                 Assert.assertEquals(data1.length, client.append(data1));
                 Assert.assertEquals(data2.length, client.append(data2));
             }
+            channel.flush();
 
-            RecordsResultSet recordsResultSet =
+            final RecordsResultSet recordsResultSet =
                     channel.poll(0, new RecordsOffset(0, 0), 10, TimeUnit.MILLISECONDS);
             Assert.assertArrayEquals(data1, recordsResultSet.next());
 
-            RecordsResultSet recordsResultSet2 =
+            final RecordsResultSet recordsResultSet2 =
                     channel.poll(0, recordsResultSet.nexRecordsOffset(), 10, TimeUnit.MILLISECONDS);
             Assert.assertArrayEquals(data2, recordsResultSet2.next());
         }

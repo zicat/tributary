@@ -27,7 +27,7 @@ import java.util.Map;
 /** AbstractNettySourceFactory. */
 public abstract class AbstractNettySourceFactory implements SourceFactory {
 
-    private static final String KEY_NETTY_PORT = "netty.port";
+    public static final String KEY_NETTY_PORT = "netty.port";
 
     public static final String DEFAULT_NETTY_THREADS = "10";
     private static final String KEY_NETTY_THREADS = "netty.threads";
