@@ -10,12 +10,13 @@ It is also supported the transaction operation helping sinks promise to consume 
 successfully at least once.
 
 In [Tributary Channel Module](../tributary-channel), the interface of
-[Channel](../tributary-channel/src/main/java/org/zicat/tributary/channel/Channel.java) is designed.
+[Channel](../tributary-channel/tributary-channel-base/src/main/java/org/zicat/tributary/channel/Channel.java) is
+designed.
 
 ## FileChannel Design
 
-To meet above requirements, we need to design a reliable file channel. The file channel depends on disk for persistence, which
-ensures the reliability of records and improves the scale of unconsumed records for failure.
+To meet above requirements, we need to design a reliable file channel. The file channel depends on disk for persistence,
+which ensures the reliability of records and improves the scale of unconsumed records for failure.
 
 When a large amount of records needs to be temporarily stored, the implementation of channel based on memory may cause
 serious GC, which may affect the efficiency of records sinking and even cause program crash.
@@ -25,8 +26,9 @@ to design their own failure strategy, which will not affect the source and other
 
 ## FileChannel Implement
 
-In open source products, it is relatively simple to implement the file channel based on [Apache Kafka](https://kafka.apache.org/), which basically meets the
-requirements for channel isolation and reliability. However [Apache Kafka](https://kafka.apache.org/) also has some features not match, including:
+In open source products, it is relatively simple to implement the file channel based
+on [Apache Kafka](https://kafka.apache.org/), which basically meets the requirements for channel isolation and
+reliability. However [Apache Kafka](https://kafka.apache.org/) also has some features not match, including:
 
 1. The design of offset and index
 
@@ -40,7 +42,8 @@ requirements for channel isolation and reliability. However [Apache Kafka](https
 
    Kafka provide the log operation service, so that each batch of records needs to be transmitted through the network.
 
-   In tributary, the channel is designed to write the records to the local disk reducing the cost of network transmission.
+   In tributary, the channel is designed to write the records to the local disk reducing the cost of network
+   transmission.
 
 3. Data lifecycle
 
@@ -54,11 +57,11 @@ requirements for channel isolation and reliability. However [Apache Kafka](https
 
 For the above reasons, the [Tributary-Channel](../tributary-channel)
 implements the
-[FileChannel](../tributary-channel/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
-based on disk. 
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
+based on disk.
 
-This design ensures that the deployment of the tributary does not require additional external
-dependencies, but has certain requirements on the disk space and storage efficiency of the machine.
+This design ensures that the deployment of the tributary does not require additional external dependencies, but has
+certain requirements on the disk space and storage efficiency of the machine.
 
 ### Tributary FileChannel Implement
 
@@ -67,13 +70,13 @@ dependencies, but has certain requirements on the disk space and storage efficie
 Because the records in the distribution system often exists in a short life cycle, in theory a record can be deleted
 from the disk after it is consumed successfully by all sinks. However, in order to meet the basic characteristics of the
 disk, the
-[FileChannel](../tributary-channel/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
 manage files in the form of segments.
 
 Segments should not be too small, because frequent creation and deletion will introduce additional performance overhead.
 
 Similarly, segments should not be too large, because too large segments cannot be deleted in time, which will occupy too
-many operating system page cache resources. 
+many operating system page cache resources.
 
 The reasonable size of the segment file is about 2G-4G.
 
@@ -92,7 +95,8 @@ Segment supports compression(snappy, zstd) based on block granularity. The full 
 written to page cache. Therefore, the size of the block written to disk is different from that in memory.
 
 Go to the source code of
-[Segment](../tributary-channel/src/main/java/org/zicat/tributary/channel/file/Segment.java) for more details.
+[Segment](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/Segment.java) for
+more details.
 
 #### About FileChannel
 
@@ -126,9 +130,10 @@ group management and persistence.
    currently consumed. The cleanup thread marks the expired segment according to the offset and cleans it up.
 
 Go to the source code of
-[FileChannel](../tributary-channel/src/main/java/org/zicat/tributary/channel/file/FileChannel.java),
-[PartitionFileChannel](../tributary-channel/src/main/java/org/zicat/tributary/channel/file/PartitionFileChannel.java),
-for more details.
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
+,
+[PartitionFileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/PartitionFileChannel.java)
+, for more details.
 
 ## Sink
 

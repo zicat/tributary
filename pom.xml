@@ -9,11 +9,12 @@
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>tributary-source</module>
-        <module>tributary-channel</module>
-        <module>tributary-sink</module>
-        <module>spring-boot-starter-tributary</module>
         <module>sample-code</module>
+        <module>spring-boot-starter-tributary</module>
+        <module>tributary-channel</module>
+        <module>tributary-common</module>
+        <module>tributary-sink</module>
+        <module>tributary-source</module>
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>

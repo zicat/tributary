@@ -21,10 +21,10 @@ package org.zicat.tributary.sink.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.MockChannel;
-import org.zicat.tributary.channel.test.file.FileChannelTest;
-import org.zicat.tributary.channel.test.file.SourceThread;
-import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
+import org.zicat.tributary.channle.file.test.FileChannelTest;
+import org.zicat.tributary.channle.file.test.SourceThread;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -32,7 +32,9 @@ import org.zicat.tributary.sink.test.function.AssertCountFunction;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** SinkManager test. */
 public class SinkManagerTest {
@@ -58,11 +60,11 @@ public class SinkManagerTest {
     public static void test(int partitionCount, long dataSize, int sinkGroups, int maxRecordLength)
             throws IOException {
 
-        final List<String> consumerGroup = new ArrayList<>(sinkGroups);
+        final Set<String> consumerGroup = new HashSet<>(sinkGroups);
         for (int i = 0; i < sinkGroups; i++) {
             consumerGroup.add("consumer_group_" + i);
         }
-        final Channel channel = new MockChannel("voqa", partitionCount);
+        final Channel channel = new PartitionMemoryChannel("voqa", partitionCount, consumerGroup);
 
         // create sources
         final List<Thread> sourceThread = new ArrayList<>();

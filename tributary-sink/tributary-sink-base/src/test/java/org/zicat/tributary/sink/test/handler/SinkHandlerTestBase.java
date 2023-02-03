@@ -20,8 +20,8 @@ package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.MockChannel;
-import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -31,12 +31,13 @@ import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** SinkHandlerTestBase. */
 public class SinkHandlerTestBase {
 
-    private static final String groupId = "test_group";
+    private static final String groupId = "base_test_group";
 
     /**
      * test sink handler.
@@ -49,7 +50,8 @@ public class SinkHandlerTestBase {
 
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;
-        final Channel channel = new MockChannel(partitionCount);
+        final Channel channel =
+                new PartitionMemoryChannel("t1", partitionCount, Collections.singleton(groupId));
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentity(handlerIdentity)
@@ -66,7 +68,7 @@ public class SinkHandlerTestBase {
         channel.flush();
 
         IOUtils.closeQuietly(sinkManager);
-        Assert.assertTrue(testData.isEmpty());
         IOUtils.closeQuietly(channel);
+        Assert.assertEquals(0, testData.size());
     }
 }

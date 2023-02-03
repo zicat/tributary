@@ -21,7 +21,7 @@ package org.zicat.tributary.service.component;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;

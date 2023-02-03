@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
 
@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zicat.tributary.channel.utils.Threads.joinQuietly;
+import static org.zicat.tributary.common.Threads.joinQuietly;
 import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
 
 /** PartitionHandler. */

@@ -15,14 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>tributary-channel</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.zicat</groupId>
-            <artifactId>tributary-channel</artifactId>
+            <artifactId>tributary-channel-base</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

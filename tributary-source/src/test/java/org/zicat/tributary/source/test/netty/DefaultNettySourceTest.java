@@ -24,9 +24,9 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.MockChannel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.FileChannelHandler;
@@ -35,6 +35,7 @@ import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.ServerSocket;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.source.netty.NettyDecoder.lineDecoder;
@@ -44,7 +45,8 @@ public class DefaultNettySourceTest {
 
     @Test
     public void testLineDecoder() throws Exception {
-        final MockChannel channel = new MockChannel();
+        final PartitionMemoryChannel channel =
+                new PartitionMemoryChannel("t1", Collections.singleton("test_group"));
         final int freePort = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(freePort, channel) {
@@ -70,7 +72,13 @@ public class DefaultNettySourceTest {
                 telnet.getOutputStream().write("\r".getBytes());
                 telnet.getOutputStream().flush();
                 // block reading 2 length response
-                Assert.assertEquals(telnet.getInputStream().read(new byte[8]), 8);
+                int totalCount = 0;
+                int readCount;
+                while (totalCount < 8
+                        && (readCount = telnet.getInputStream().read(new byte[8])) != -1) {
+                    totalCount += readCount;
+                }
+                Assert.assertEquals(8, totalCount);
             } finally {
                 telnet.disconnect();
             }
@@ -89,7 +97,8 @@ public class DefaultNettySourceTest {
 
     @Test
     public void testLengthDecoder() throws Exception {
-        final MockChannel channel = new MockChannel();
+        final PartitionMemoryChannel channel =
+                new PartitionMemoryChannel("t1", Collections.singleton("test_group"));
         final int port = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(port, channel) {

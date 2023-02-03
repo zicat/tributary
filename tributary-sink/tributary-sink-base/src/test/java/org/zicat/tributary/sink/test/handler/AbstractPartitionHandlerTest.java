@@ -23,9 +23,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.MockChannel;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -40,10 +40,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zicat.tributary.channel.test.file.SegmentTest.createStringByLength;
+import static org.zicat.tributary.channle.file.test.SegmentTest.createStringByLength;
 
 /** AbstractSinkHandlerTest. */
 public class AbstractPartitionHandlerTest {
@@ -54,7 +55,8 @@ public class AbstractPartitionHandlerTest {
     @Test
     public void testIdleTrigger() throws InterruptedException {
         final int partitionCount = 1;
-        final Channel channel = new MockChannel(partitionCount);
+        final Channel channel =
+                new PartitionMemoryChannel("t1", partitionCount, Collections.singleton(groupId));
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity(MockIdleTriggerFactory.ID);
         final SinkGroupConfig sinkGroupConfig = builder.build();
@@ -64,7 +66,7 @@ public class AbstractPartitionHandlerTest {
            Using SimpleSinkHandler & DisruptorMultiSinkHandler test idle trigger
         */
         final DirectPartitionHandler handler =
-                new DirectPartitionHandler(groupId, channel, partitionCount, sinkGroupConfig);
+                new DirectPartitionHandler(groupId, channel, 0, sinkGroupConfig);
         handler.open();
         handler.start();
         // wait for idle trigger
@@ -75,7 +77,7 @@ public class AbstractPartitionHandlerTest {
         IOUtils.closeQuietly(handler);
 
         final MultiThreadPartitionHandler handler2 =
-                new MultiThreadPartitionHandler(groupId, channel, partitionCount, sinkGroupConfig);
+                new MultiThreadPartitionHandler(groupId, channel, 0, sinkGroupConfig);
         handler2.open();
         handler2.start();
         Thread.sleep(100);
@@ -106,7 +108,8 @@ public class AbstractPartitionHandlerTest {
         final SinkGroupConfig sinkGroupConfig = builder.build();
 
         final int partitionCount = 2;
-        final Channel channel = new MockChannel(partitionCount);
+        final Channel channel =
+                new PartitionMemoryChannel("t1", partitionCount, Collections.singleton(groupId));
         final int partitionId = 0;
         final AbstractPartitionHandler handler =
                 new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
@@ -117,8 +120,6 @@ public class AbstractPartitionHandlerTest {
                     public List<AbstractFunction> getFunctions() {
                         return null;
                     }
-
-                    private RecordsOffset recordsOffset;
 
                     @Override
                     public long idleTimeMillis() {
@@ -132,13 +133,11 @@ public class AbstractPartitionHandlerTest {
                     public void open() {}
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
-                        this.recordsOffset = recordsOffset;
-                    }
+                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
 
                     @Override
                     public RecordsOffset committableOffset() {
-                        return recordsOffset;
+                        return new RecordsOffset(0, 0);
                     }
                 };
         handler.start();
@@ -165,7 +164,8 @@ public class AbstractPartitionHandlerTest {
     public void testMaxRetainPerPartition() throws IOException {
 
         final int partitionCount = 2;
-        final Channel channel = new MockChannel(partitionCount);
+        final Channel channel =
+                new PartitionMemoryChannel("t1", partitionCount, Collections.singleton(groupId));
 
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
@@ -247,7 +247,8 @@ public class AbstractPartitionHandlerTest {
     public void testRun() throws IOException, InterruptedException {
 
         final int partitionCount = 2;
-        final Channel channel = new MockChannel(partitionCount);
+        final Channel channel =
+                new PartitionMemoryChannel("t1", partitionCount, Collections.singleton(groupId));
 
         final SinkGroupConfig sinkGroupConfig =
                 SinkGroupConfigBuilder.newBuilder()
@@ -318,6 +319,7 @@ public class AbstractPartitionHandlerTest {
         }
 
         countDownLatch.await();
+        Assert.assertTrue(countDownLatch.await(10, TimeUnit.SECONDS));
         IOUtils.closeQuietly(handler);
         IOUtils.closeQuietly(channel);
     }

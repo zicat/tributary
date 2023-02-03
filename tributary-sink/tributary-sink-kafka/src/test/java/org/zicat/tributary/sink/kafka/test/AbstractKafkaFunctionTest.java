@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.kafka.AbstractKafkaFunction;

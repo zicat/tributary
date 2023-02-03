@@ -32,7 +32,7 @@ import org.zicat.tributary.sink.function.FunctionFactory;
 import java.io.IOException;
 import java.util.List;
 
-import static org.zicat.tributary.channel.utils.Threads.sleepQuietly;
+import static org.zicat.tributary.common.Threads.sleepQuietly;
 
 /**
  * AbstractPartitionHandler.

@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.file.FileChannelFactory;
-import org.zicat.tributary.channel.utils.IOUtils;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 
 import javax.annotation.PostConstruct;
