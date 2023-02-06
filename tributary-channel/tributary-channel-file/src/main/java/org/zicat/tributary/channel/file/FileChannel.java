@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.Functions;
 import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryException;
+import org.zicat.tributary.common.TributaryIOException;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.Closeable;
@@ -276,7 +276,7 @@ public class FileChannel implements OnePartitionChannel, Closeable {
                         ? lastSegment
                         : segmentCache.get(recordsOffset.segmentId());
         if (segment == null) {
-            throw new TributaryException(
+            throw new TributaryIOException(
                     "segment not found segment id = " + recordsOffset.segmentId());
         }
         // try read it first

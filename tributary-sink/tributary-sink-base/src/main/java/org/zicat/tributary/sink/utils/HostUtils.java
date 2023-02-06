@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink.utils;
 
+import org.zicat.tributary.common.TributaryRuntimeException;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -46,7 +48,7 @@ public class HostUtils {
         try {
             it = NetworkInterface.getNetworkInterfaces();
         } catch (SocketException e) {
-            throw new RuntimeException(e);
+            throw new TributaryRuntimeException(e);
         }
         while (it.hasMoreElements()) {
             final NetworkInterface networkInterface = it.nextElement();
@@ -61,6 +63,6 @@ public class HostUtils {
                 }
             }
         }
-        throw new RuntimeException("local ip not found");
+        throw new TributaryRuntimeException("local ip not found");
     }
 }

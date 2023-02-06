@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +91,7 @@ public class SinkThread extends Thread {
             }
             channel.commit(groupName, partitionId, recordsOffset);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new TributaryRuntimeException(e);
         }
     }
 }

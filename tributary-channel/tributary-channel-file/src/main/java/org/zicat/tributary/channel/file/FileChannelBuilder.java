@@ -21,6 +21,7 @@ package org.zicat.tributary.channel.file;
 import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
 import org.zicat.tributary.channel.OnePartitionGroupManager;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class FileChannelBuilder extends ChannelBuilder {
         try {
             this.dir = dir.getCanonicalFile();
         } catch (IOException e) {
-            throw new RuntimeException("get canonical file fail", e);
+            throw new TributaryRuntimeException("get canonical file fail", e);
         }
         return this;
     }

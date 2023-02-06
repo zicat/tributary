@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
@@ -144,7 +145,8 @@ public class SegmentBuilder {
             if (file.exists() && !file.delete()) {
                 LOG.warn("delete file fail, file id {}", file.getPath());
             }
-            throw new RuntimeException("create log segment error, file path " + file.getPath(), e);
+            throw new TributaryRuntimeException(
+                    "create log segment error, file path " + file.getPath(), e);
         }
     }
 

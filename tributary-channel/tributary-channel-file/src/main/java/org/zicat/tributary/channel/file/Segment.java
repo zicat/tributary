@@ -21,7 +21,7 @@ package org.zicat.tributary.channel.file;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryException;
+import org.zicat.tributary.common.TributaryIOException;
 
 import java.io.Closeable;
 import java.io.File;
@@ -197,7 +197,7 @@ public final class Segment implements Closeable, Comparable<Segment> {
      */
     private void checkOpen() throws IOException {
         if (!fileChannel.isOpen()) {
-            throw new TributaryException("file is close, file path = " + filePath());
+            throw new TributaryIOException("file is close, file path = " + filePath());
         }
     }
 

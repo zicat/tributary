@@ -20,14 +20,14 @@ package org.zicat.tributary.common;
 
 import java.io.IOException;
 
-/** TributaryChannelException. */
-public class TributaryException extends IOException {
+/** TributaryIOException. */
+public class TributaryIOException extends IOException {
 
-    public TributaryException(String message) {
+    public TributaryIOException(String message) {
         super(message);
     }
 
-    public TributaryException(String message, Throwable cause) {
+    public TributaryIOException(String message, Throwable cause) {
         super(message, cause);
     }
 }

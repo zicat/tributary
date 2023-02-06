@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -64,7 +65,8 @@ public abstract class AbstractHBaseWriter implements HBaseWriter {
             LOG.info("Create hbase writer succeed {} ", hTableEntity);
             return this;
         } catch (IOException ioe) {
-            throw new RuntimeException("open HBaseWriter fail, table = " + hTableEntity, ioe);
+            throw new TributaryRuntimeException(
+                    "open HBaseWriter fail, table = " + hTableEntity, ioe);
         }
     }
 
@@ -106,7 +108,7 @@ public abstract class AbstractHBaseWriter implements HBaseWriter {
     private void checkErrorAndRethrow() {
         final Throwable cause = failureThrowable.get();
         if (cause != null && failureThrowable.compareAndSet(cause, null)) {
-            throw new RuntimeException("An error occurred in HBaseSink.", cause);
+            throw new TributaryRuntimeException("An error occurred in HBaseSink.", cause);
         }
     }
 

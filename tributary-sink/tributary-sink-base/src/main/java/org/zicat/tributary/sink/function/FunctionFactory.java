@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink.function;
 
+import org.zicat.tributary.common.TributaryRuntimeException;
+
 import java.util.ServiceLoader;
 
 /** FunctionFactory create function. */
@@ -46,6 +48,6 @@ public interface FunctionFactory {
                 return functionFactory;
             }
         }
-        throw new RuntimeException("identity not found, " + identity);
+        throw new TributaryRuntimeException("identity not found, " + identity);
     }
 }

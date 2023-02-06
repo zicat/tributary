@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.source.netty.client;
 
+import org.zicat.tributary.common.TributaryIOException;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -55,7 +57,7 @@ public class LengthDecoderClient implements Closeable {
      */
     public int append(byte[] record) throws IOException {
         if (!isOpen()) {
-            throw new IOException("channel " + address + " closed");
+            throw new TributaryIOException("channel " + address + " closed");
         }
         return writeData(socketChannel, record);
     }

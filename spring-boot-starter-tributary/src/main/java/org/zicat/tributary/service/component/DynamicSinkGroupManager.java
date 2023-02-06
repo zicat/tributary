@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -73,7 +74,8 @@ public class DynamicSinkGroupManager implements Closeable {
             final String groupId = entry.getKey();
             final List<Channel> channels = dynamicChannel.findChannels(groupId);
             if (channels.isEmpty()) {
-                throw new RuntimeException("group id not found channel, groupId = " + groupId);
+                throw new TributaryRuntimeException(
+                        "group id not found channel, groupId = " + groupId);
             }
             for (Channel channel : channels) {
                 final SinkGroupConfigBuilder sinkGroupConfigBuilder = entry.getValue();

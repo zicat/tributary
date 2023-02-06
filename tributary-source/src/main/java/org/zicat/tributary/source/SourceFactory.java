@@ -19,6 +19,7 @@
 package org.zicat.tributary.source;
 
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -55,6 +56,6 @@ public interface SourceFactory {
                 return sourceFactory;
             }
         }
-        throw new RuntimeException("identity not found," + identity);
+        throw new TributaryRuntimeException("identity not found," + identity);
     }
 }

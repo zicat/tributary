@@ -29,6 +29,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.source.Source;
 
 import java.util.ArrayList;
@@ -114,7 +115,7 @@ public abstract class AbstractNettySource implements Source {
             LOG.info(">>> TcpServer started on ip {}, port {} ", realHost, port);
         } else {
             final String message = "TcpServer started fail on port " + port;
-            throw new RuntimeException(message, syncFuture.cause());
+            throw new TributaryRuntimeException(message, syncFuture.cause());
         }
         return syncFuture.channel();
     }

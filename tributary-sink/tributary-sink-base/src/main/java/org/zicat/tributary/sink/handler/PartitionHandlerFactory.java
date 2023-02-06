@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.sink.SinkGroupConfig;
 
 import java.util.ServiceLoader;
@@ -59,6 +60,6 @@ public interface PartitionHandlerFactory {
                 return partitionHandlerFactory;
             }
         }
-        throw new RuntimeException("identity not found," + identity);
+        throw new TributaryRuntimeException("identity not found," + identity);
     }
 }

@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.common.TributaryRuntimeException;
+
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -54,6 +56,6 @@ public interface ChannelFactory {
                 return channelFactory;
             }
         }
-        throw new RuntimeException("channel type not found," + type);
+        throw new TributaryRuntimeException("channel type not found," + type);
     }
 }

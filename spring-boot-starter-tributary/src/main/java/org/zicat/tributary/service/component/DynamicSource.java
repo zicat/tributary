@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;
@@ -117,7 +118,7 @@ public class DynamicSource {
         final String realKey = String.join(SPLIT, sourceId, key);
         final String value = sourceConfiguration.getSource().get(realKey);
         if (value == null && defaultValue == null) {
-            throw new RuntimeException("key not configuration, key = " + realKey);
+            throw new TributaryRuntimeException("key not configuration, key = " + realKey);
         }
         return value == null ? defaultValue : value;
     }

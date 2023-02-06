@@ -18,11 +18,15 @@
 
 package org.zicat.tributary.common;
 
-/** TributaryChannelRuntimeException. */
+/** TributaryRuntimeException. */
 public class TributaryRuntimeException extends RuntimeException {
 
     public TributaryRuntimeException(String message) {
         super(message);
+    }
+
+    public TributaryRuntimeException(Throwable cause) {
+        super(cause);
     }
 
     public TributaryRuntimeException(String message, Throwable cause) {

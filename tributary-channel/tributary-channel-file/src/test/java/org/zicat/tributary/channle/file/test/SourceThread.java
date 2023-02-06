@@ -21,6 +21,7 @@ package org.zicat.tributary.channle.file.test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -83,7 +84,7 @@ public class SourceThread extends Thread {
                     start = System.currentTimeMillis();
                 }
             } catch (IOException ioException) {
-                throw new RuntimeException(ioException);
+                throw new TributaryRuntimeException(ioException);
             }
         }
     }

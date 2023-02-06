@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.common.test;
 
+import org.zicat.tributary.common.TributaryRuntimeException;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,7 +39,7 @@ public class FileUtils {
         try {
             return Files.createTempDirectory(prefix, attrs).toFile();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new TributaryRuntimeException(e);
         }
     }
 }
