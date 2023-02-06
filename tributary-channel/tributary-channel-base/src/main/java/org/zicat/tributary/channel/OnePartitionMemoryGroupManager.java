@@ -31,12 +31,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * MemoryOnePartitionGroupManager.
+ * OnePartitionMemoryGroupManager.
  *
  * <p>Store commit offset in memory cache, Override flush(String groupId, RecordsOffset
  * recordsOffset) to storage.
  */
-public abstract class MemoryOnePartitionGroupManager implements OnePartitionGroupManager {
+public abstract class OnePartitionMemoryGroupManager implements OnePartitionGroupManager {
 
     public static final long DEFAULT_GROUP_PERSIST_PERIOD_SECOND = 30;
 
@@ -47,7 +47,7 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
     private final String topic;
     protected ScheduledExecutorService schedule;
 
-    public MemoryOnePartitionGroupManager(
+    public OnePartitionMemoryGroupManager(
             String topic, Map<String, RecordsOffset> groupOffsets, long periodSecond) {
         this.topic = topic;
         this.cache.putAll(groupOffsets);
@@ -177,9 +177,9 @@ public abstract class MemoryOnePartitionGroupManager implements OnePartitionGrou
      * @param groupOffsets groupOffsets
      * @return MemoryOnePartitionGroupManager
      */
-    public static MemoryOnePartitionGroupManager createUnPersistGroupManager(
+    public static OnePartitionMemoryGroupManager createUnPersistGroupManager(
             String topic, Map<String, RecordsOffset> groupOffsets) {
-        return new MemoryOnePartitionGroupManager(topic, groupOffsets, -1) {
+        return new OnePartitionMemoryGroupManager(topic, groupOffsets, -1) {
             @Override
             public void persist() {}
         };

@@ -45,7 +45,7 @@ public class MemoryChannelFactory implements ChannelFactory {
         final int partitionCounts =
                 Integer.parseInt(params.getOrDefault(KEY_PARTITIONS, DEFAULT_PARTITIONS));
         final String groups = params.get(KEY_GROUPS);
-        return new PartitionMemoryChannel(
+        return new MemoryChannel(
                 topic,
                 partitionCounts,
                 Arrays.stream(groups.split(",")).collect(Collectors.toSet()));

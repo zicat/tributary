@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
+import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
@@ -43,7 +43,7 @@ public class MultiThreadPartitionHandlerTest {
         MultiThreadPartitionHandler handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new PartitionMemoryChannel("t1", Collections.singleton("g1")),
+                        new MemoryChannel("t1", Collections.singleton("g1")),
                         0,
                         builder.build());
         try {
@@ -58,7 +58,7 @@ public class MultiThreadPartitionHandlerTest {
         handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new PartitionMemoryChannel("t1", Collections.singleton("g1")),
+                        new MemoryChannel("t1", Collections.singleton("g1")),
                         0,
                         builder.build());
         handler.open();
@@ -75,7 +75,7 @@ public class MultiThreadPartitionHandlerTest {
         MultiThreadPartitionHandler handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new PartitionMemoryChannel("t1", Collections.singleton("g1")),
+                        new MemoryChannel("t1", Collections.singleton("g1")),
                         0,
                         builder.build());
         handler.open();

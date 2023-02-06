@@ -20,7 +20,7 @@ package org.zicat.tributary.channel.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
+import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
 
 import java.util.HashMap;
@@ -28,16 +28,16 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** MemoryOnePartitionGroupManagerTest. */
-public class MemoryOnePartitionGroupManagerTest {
+/** OnePartitionMemoryGroupManagerTest. */
+public class OnePartitionMemoryGroupManagerTest {
 
     @Test
     public void testPersist() throws InterruptedException {
         final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", new RecordsOffset(2, 100));
         groupOffsets.put("g2", new RecordsOffset(3, 25));
-        final MemoryOnePartitionGroupManagerMock manager =
-                new MemoryOnePartitionGroupManagerMock("t1", groupOffsets) {
+        final OnePartitionMemoryGroupManagerMock manager =
+                new OnePartitionMemoryGroupManagerMock("t1", groupOffsets) {
                     @Override
                     public void schedule() {
                         schedule.scheduleWithFixedDelay(
@@ -56,8 +56,8 @@ public class MemoryOnePartitionGroupManagerTest {
         final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", new RecordsOffset(2, 100));
         groupOffsets.put("g2", new RecordsOffset(3, 25));
-        final MemoryOnePartitionGroupManager manager =
-                new MemoryOnePartitionGroupManagerMock("t1", groupOffsets);
+        final OnePartitionMemoryGroupManager manager =
+                new OnePartitionMemoryGroupManagerMock("t1", groupOffsets);
         manager.commit("g1", new RecordsOffset(1, 101));
         manager.commit("g2", new RecordsOffset(3, 75));
         try {
@@ -85,11 +85,11 @@ public class MemoryOnePartitionGroupManagerTest {
     }
 
     /** MemoryOnePartitionGroupManagerMock. */
-    private static class MemoryOnePartitionGroupManagerMock extends MemoryOnePartitionGroupManager {
+    private static class OnePartitionMemoryGroupManagerMock extends OnePartitionMemoryGroupManager {
 
         private final AtomicInteger persistCount = new AtomicInteger(0);
 
-        public MemoryOnePartitionGroupManagerMock(
+        public OnePartitionMemoryGroupManagerMock(
                 String topic, Map<String, RecordsOffset> groupOffsets) {
             super(topic, groupOffsets, DEFAULT_GROUP_PERSIST_PERIOD_SECOND);
         }

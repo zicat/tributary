@@ -130,10 +130,7 @@ group management and persistence.
    currently consumed. The cleanup thread marks the expired segment according to the offset and cleans it up.
 
 Go to the source code of
-[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
-,
-[PartitionFileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/PartitionFileChannel.java)
-, for more details.
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java) for more details.
 
 ## Sink
 

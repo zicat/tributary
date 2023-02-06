@@ -21,24 +21,25 @@ package org.zicat.tributary.channel;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** AbstractChannel. */
-public abstract class AbstractPartitionChannel<C extends OnePartitionChannel> implements Channel {
+public abstract class AbstractChannel<C extends OnePartitionChannel> implements Channel {
 
-    protected final List<C> channels;
+    protected final C[] channels;
     protected final String topic;
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     protected final Set<String> groups;
 
-    public AbstractPartitionChannel(List<C> channels) {
-        this.topic = channels.get(0).topic();
-        this.groups = channels.get(0).groups();
-        this.channels = Collections.unmodifiableList(channels);
+    public AbstractChannel(C[] channels) {
+        if (channels == null || channels.length == 0) {
+            throw new IllegalArgumentException("channels is null or empty");
+        }
+        this.topic = channels[0].topic();
+        this.groups = channels[0].groups();
+        this.channels = channels;
     }
 
     @Override
@@ -82,12 +83,16 @@ public abstract class AbstractPartitionChannel<C extends OnePartitionChannel> im
 
     @Override
     public int partition() {
-        return channels.size();
+        return channels.length;
     }
 
     @Override
     public int activeSegment() {
-        return channels.stream().mapToInt(Channel::activeSegment).sum();
+        int segments = 0;
+        for (C channel : channels) {
+            segments += channel.activeSegment();
+        }
+        return segments;
     }
 
     @Override
@@ -105,10 +110,13 @@ public abstract class AbstractPartitionChannel<C extends OnePartitionChannel> im
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            for (Channel channel : channels) {
-                IOUtils.closeQuietly(channel);
+            try {
+                for (Channel channel : channels) {
+                    IOUtils.closeQuietly(channel);
+                }
+            } finally {
+                closeCallback();
             }
-            closeCallback();
         }
     }
 
@@ -117,17 +125,29 @@ public abstract class AbstractPartitionChannel<C extends OnePartitionChannel> im
 
     @Override
     public long writeBytes() {
-        return channels.stream().mapToLong(Channel::writeBytes).sum();
+        int writeBytes = 0;
+        for (C channel : channels) {
+            writeBytes += channel.writeBytes();
+        }
+        return writeBytes;
     }
 
     @Override
     public long readBytes() {
-        return channels.stream().mapToLong(Channel::readBytes).sum();
+        int readBytes = 0;
+        for (C channel : channels) {
+            readBytes += channel.readBytes();
+        }
+        return readBytes;
     }
 
     @Override
     public long pageCache() {
-        return channels.stream().mapToLong(Channel::pageCache).sum();
+        int pageCache = 0;
+        for (C channel : channels) {
+            pageCache += channel.pageCache();
+        }
+        return pageCache;
     }
 
     @Override
@@ -141,13 +161,10 @@ public abstract class AbstractPartitionChannel<C extends OnePartitionChannel> im
      * @param partition partition
      */
     private C getPartitionChannel(int partition) {
-        if (partition >= channels.size()) {
+        if (partition >= channels.length) {
             throw new IllegalArgumentException(
-                    "partition out of range, max partition "
-                            + (channels.size() - 1)
-                            + " input partition "
-                            + partition);
+                    "partition over, partition is " + partition + ", size is " + channels.length);
         }
-        return channels.get(partition);
+        return channels[partition];
     }
 }

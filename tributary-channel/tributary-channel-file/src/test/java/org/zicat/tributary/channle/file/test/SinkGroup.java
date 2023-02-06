@@ -19,12 +19,13 @@
 package org.zicat.tributary.channle.file.test;
 
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.Threads;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** Sink. */
+/** SinkGroup. */
 public class SinkGroup extends Thread {
 
     private final int partitionCount;
@@ -49,7 +50,7 @@ public class SinkGroup extends Thread {
             sinkThreads.add(new SinkThread(channel, j, groupName, consumerCount, totalSize));
         }
         sinkThreads.forEach(Thread::start);
-        sinkThreads.forEach(FileChannelTest::join);
+        sinkThreads.forEach(Threads::joinQuietly);
     }
 
     public final long getConsumerCount() {

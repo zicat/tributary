@@ -21,7 +21,7 @@ package org.zicat.tributary.channel.file;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
+import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
 
 import java.io.File;
 import java.util.*;
@@ -105,11 +105,11 @@ public class FileChannelFactory implements ChannelFactory {
                         params.getOrDefault(
                                 KEY_GROUP_PERSIST_PERIOD_SECOND,
                                 String.valueOf(
-                                        MemoryOnePartitionGroupManager
+                                        OnePartitionMemoryGroupManager
                                                 .DEFAULT_GROUP_PERSIST_PERIOD_SECOND)));
 
-        final PartitionFileChannelBuilder builder =
-                PartitionFileChannelBuilder.newBuilder()
+        final FileChannelBuilder builder =
+                FileChannelBuilder.newBuilder()
                         .dirs(createDir(dirs))
                         .groupPersistPeriodSecond(groupPersist);
         builder.blockSize(blockSize)

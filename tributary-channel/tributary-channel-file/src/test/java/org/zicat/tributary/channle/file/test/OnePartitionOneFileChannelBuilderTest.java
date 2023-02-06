@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.file.FileChannelBuilder;
-import org.zicat.tributary.channel.file.PartitionFileChannelBuilder;
+import org.zicat.tributary.channel.file.OnePartitionFileChannelBuilder;
 import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
@@ -35,8 +35,8 @@ import java.util.Collections;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
-/** FileChannelBuilderTest. */
-public class FileChannelBuilderTest {
+/** OnePartitionOneFileChannelBuilderTest. */
+public class OnePartitionOneFileChannelBuilderTest {
 
     private static final File DIR = FileUtils.createTmpDir("file_channel_builder_test");
 
@@ -55,14 +55,14 @@ public class FileChannelBuilderTest {
 
     @Test
     public void testFileChannelBuild() {
-        FileChannelBuilder builder = new FileChannelBuilder();
+        OnePartitionFileChannelBuilder builder = new OnePartitionFileChannelBuilder();
         try {
             builder.build();
             Assert.fail();
         } catch (Exception e) {
             Assert.assertTrue(true);
         }
-        builder = new FileChannelBuilder().dir(DIR);
+        builder = new OnePartitionFileChannelBuilder().dir(DIR);
         try {
             builder.build();
             Assert.fail();
@@ -70,7 +70,7 @@ public class FileChannelBuilderTest {
             Assert.assertTrue(true);
         }
 
-        builder = new FileChannelBuilder().dir(DIR);
+        builder = new OnePartitionFileChannelBuilder().dir(DIR);
         builder.consumerGroups(Arrays.asList("1", "2"))
                 .blockSize(100)
                 .segmentSize(10000L)
@@ -82,7 +82,7 @@ public class FileChannelBuilderTest {
 
     @Test
     public void testPartitionFileChannel() {
-        PartitionFileChannelBuilder builder = new PartitionFileChannelBuilder();
+        FileChannelBuilder builder = new FileChannelBuilder();
         builder.dirs(Collections.singletonList(DIR));
         builder.consumerGroups(Arrays.asList("3", "2"))
                 .blockSize(200)

@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
+import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -51,7 +51,7 @@ public class SinkHandlerTestBase {
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;
         final Channel channel =
-                new PartitionMemoryChannel("t1", partitionCount, Collections.singleton(groupId));
+                new MemoryChannel("t1", partitionCount, Collections.singleton(groupId));
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentity(handlerIdentity)

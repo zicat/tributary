@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
+import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.FileChannelHandler;
@@ -45,8 +45,7 @@ public class DefaultNettySourceTest {
 
     @Test
     public void testLineDecoder() throws Exception {
-        final PartitionMemoryChannel channel =
-                new PartitionMemoryChannel("t1", Collections.singleton("test_group"));
+        final MemoryChannel channel = new MemoryChannel("t1", Collections.singleton("test_group"));
         final int freePort = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(freePort, channel) {
@@ -97,8 +96,7 @@ public class DefaultNettySourceTest {
 
     @Test
     public void testLengthDecoder() throws Exception {
-        final PartitionMemoryChannel channel =
-                new PartitionMemoryChannel("t1", Collections.singleton("test_group"));
+        final MemoryChannel channel = new MemoryChannel("t1", Collections.singleton("test_group"));
         final int port = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(port, channel) {

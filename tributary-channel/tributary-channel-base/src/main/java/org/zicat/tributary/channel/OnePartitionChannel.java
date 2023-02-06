@@ -29,17 +29,17 @@ public interface OnePartitionChannel extends Channel, OnePartitionGroupManager {
         return lastSegmentId();
     }
 
-    @Override
-    default int partition() {
-        return 1;
-    }
-
     /**
      * last segment id without lag.
      *
      * @return last id
      */
     long lastSegmentId();
+
+    @Override
+    default int partition() {
+        return 1;
+    }
 
     @Override
     default long lag(int partition, RecordsOffset recordsOffset) {

@@ -28,7 +28,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.file.PartitionFileChannelBuilder;
+import org.zicat.tributary.channel.file.FileChannelBuilder;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -42,10 +42,10 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/** Test. */
-public class FileChannelTest {
+/** OneFileChannelTest. */
+public class OneFileChannelTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileChannelTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OneFileChannelTest.class);
     private static final File PARENT_DIR = FileUtils.createTmpDir("file_channel_test");
 
     @Test
@@ -284,9 +284,9 @@ public class FileChannelTest {
         }
         writeThreads.forEach(Thread::start);
         readTreads.forEach(Thread::start);
-        writeThreads.forEach(FileChannelTest::join);
+        writeThreads.forEach(OneFileChannelTest::join);
         channel.flush();
-        readTreads.forEach(FileChannelTest::join);
+        readTreads.forEach(OneFileChannelTest::join);
         channel.close();
     }
 
@@ -301,7 +301,7 @@ public class FileChannelTest {
             final String consumerGroup = "consumer_group";
             final int maxRecordLength = 1024;
             final Channel channel =
-                    FileChannelTest.createChannel(
+                    OneFileChannelTest.createChannel(
                             "event",
                             Collections.singletonList(consumerGroup),
                             partitionCount,
@@ -324,9 +324,9 @@ public class FileChannelTest {
             }
             sinkGroup.start();
 
-            sourceThreads.forEach(FileChannelTest::join);
+            sourceThreads.forEach(OneFileChannelTest::join);
             channel.flush();
-            FileChannelTest.join(sinkGroup);
+            OneFileChannelTest.join(sinkGroup);
             channel.close();
             Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup.getConsumerCount());
         }
@@ -374,12 +374,12 @@ public class FileChannelTest {
         sinGroup.forEach(Thread::start);
 
         // waiting source threads finish and flush
-        sourceThread.forEach(FileChannelTest::join);
+        sourceThread.forEach(OneFileChannelTest::join);
         channel.flush();
         long writeSpend = System.currentTimeMillis() - start;
 
         // waiting sink threads finish.
-        sinGroup.forEach(FileChannelTest::join);
+        sinGroup.forEach(OneFileChannelTest::join);
         Assert.assertEquals(totalSize, dataSize * partitionCount);
         Assert.assertEquals(
                 sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum(),
@@ -426,7 +426,7 @@ public class FileChannelTest {
         for (int i = 0; i < partitionCount; i++) {
             dirs.add(new File(dir + i));
         }
-        final PartitionFileChannelBuilder builder = PartitionFileChannelBuilder.newBuilder();
+        final FileChannelBuilder builder = FileChannelBuilder.newBuilder();
         builder.segmentSize(segmentSize)
                 .blockSize(blockSize)
                 .consumerGroups(consumerGroup)

@@ -18,78 +18,76 @@
 
 package org.zicat.tributary.channel.file;
 
-import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
-import org.zicat.tributary.channel.OnePartitionGroupManager;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.List;
 
 /** FileChannelBuilder for {@link FileChannel}. */
 public class FileChannelBuilder extends ChannelBuilder {
 
-    private File dir;
+    private List<File> dirs;
     private long groupPersistPeriodSecond =
-            MemoryOnePartitionGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
+            OnePartitionMemoryGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
 
-    public FileChannelBuilder dir(File dir) {
-        try {
-            this.dir = dir.getCanonicalFile();
-        } catch (IOException e) {
-            throw new TributaryRuntimeException("get canonical file fail", e);
-        }
+    /**
+     * set dir list.
+     *
+     * @param dirs dirs.
+     * @return this
+     */
+    public FileChannelBuilder dirs(List<File> dirs) {
+        this.dirs = dirs;
         return this;
     }
 
+    /**
+     * set group persist period second.
+     *
+     * @param groupPersistPeriodSecond groupPersistPeriodSecond.
+     * @return this
+     */
     public FileChannelBuilder groupPersistPeriodSecond(long groupPersistPeriodSecond) {
         this.groupPersistPeriodSecond = groupPersistPeriodSecond;
         return this;
     }
 
     /**
-     * build by customer groupManager.
+     * build to channel.
      *
-     * @param groupManager groupManager
-     * @return FileChannel
-     */
-    public FileChannel build(OnePartitionGroupManager groupManager) {
-        if (dir == null) {
-            throw new IllegalStateException("dir is null");
-        }
-        if (!dir.exists() && !IOUtils.makeDir(dir)) {
-            throw new IllegalStateException(
-                    "dir not exist and try to create fail " + dir.getPath());
-        }
-        if (consumerGroups == null || consumerGroups.isEmpty()) {
-            throw new IllegalStateException("file channel must has at least one consumer group");
-        }
-        return new FileChannel(
-                topic,
-                groupManager,
-                dir,
-                blockSize,
-                segmentSize,
-                compressionType,
-                flushPeriod,
-                flushTimeUnit,
-                flushPageCacheSize,
-                flushForce);
-    }
-
-    /**
-     * build file channel.
-     *
-     * @return return
+     * @return PartitionFileChannel
      */
     public FileChannel build() {
-        return build(new FileGroupManager(dir, topic, consumerGroups, groupPersistPeriodSecond));
+
+        if (dirs == null || dirs.isEmpty()) {
+            throw new IllegalStateException("dir list is null or empty");
+        }
+        if (consumerGroups == null || consumerGroups.isEmpty()) {
+            throw new IllegalStateException("consumer group is null or empty");
+        }
+
+        final OnePartitionFileChannelBuilder builder = OnePartitionFileChannelBuilder.newBuilder();
+        builder.segmentSize(segmentSize)
+                .blockSize(blockSize)
+                .compressionType(compressionType)
+                .flushPeriod(0, flushTimeUnit)
+                .flushPageCacheSize(flushPageCacheSize)
+                .topic(topic)
+                .consumerGroups(consumerGroups)
+                .flushForce(flushForce);
+        final OnePartitionFileChannel[] fileChannels = new OnePartitionFileChannel[dirs.size()];
+        for (int i = 0; i < dirs.size(); i++) {
+            builder.dir(dirs.get(i));
+            builder.groupPersistPeriodSecond(groupPersistPeriodSecond);
+            fileChannels[i] = builder.build();
+        }
+        return new FileChannel(fileChannels, flushPeriod, flushTimeUnit);
     }
 
     /**
      * create new builder.
      *
-     * @return FileChannelBuilder
+     * @return PartitionFileChannelBuilder
      */
     public static FileChannelBuilder newBuilder() {
         return new FileChannelBuilder();

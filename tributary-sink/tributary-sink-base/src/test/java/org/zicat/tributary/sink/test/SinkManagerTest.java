@@ -21,10 +21,10 @@ package org.zicat.tributary.sink.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.memory.PartitionMemoryChannel;
-import org.zicat.tributary.channle.file.test.FileChannelTest;
+import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.channle.file.test.SourceThread;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -64,7 +64,7 @@ public class SinkManagerTest {
         for (int i = 0; i < sinkGroups; i++) {
             consumerGroup.add("consumer_group_" + i);
         }
-        final Channel channel = new PartitionMemoryChannel("voqa", partitionCount, consumerGroup);
+        final Channel channel = new MemoryChannel("voqa", partitionCount, consumerGroup);
 
         // create sources
         final List<Thread> sourceThread = new ArrayList<>();
@@ -92,7 +92,7 @@ public class SinkManagerTest {
                 });
 
         groupManagers.forEach(SinkGroupManager::createPartitionHandlesAndStart);
-        sourceThread.forEach(FileChannelTest::join);
+        sourceThread.forEach(Threads::joinQuietly);
         channel.flush();
         groupManagers.forEach(IOUtils::closeQuietly);
         groupManagers.forEach(manager -> Assert.assertEquals(0, manager.lag()));

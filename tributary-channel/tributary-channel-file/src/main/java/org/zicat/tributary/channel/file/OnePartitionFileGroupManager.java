@@ -20,7 +20,7 @@ package org.zicat.tributary.channel.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.MemoryOnePartitionGroupManager;
+import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
@@ -34,18 +34,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * FileGroupManager.
+ * OnePartitionFileGroupManager.
  *
- * <p>Store RecordsOffset in local {@link FileGroupManager#groupIndexFile}.
+ * <p>Store RecordsOffset in local {@link OnePartitionFileGroupManager#groupIndexFile}.
  *
  * <p>File name example: {myTopic}_group_id.index
  *
  * <p>file content: 4 bytes(Int, GroupLength) + group body + 8 Bytes(Long, segmentId) + 8
  * Bytes(Long, segmentId).
  */
-public class FileGroupManager extends MemoryOnePartitionGroupManager {
+public class OnePartitionFileGroupManager extends OnePartitionMemoryGroupManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OnePartitionFileGroupManager.class);
     private static final int RECORD_LENGTH = 20;
 
     public static final String FILE_SUFFIX = "_group_id.index";
@@ -54,15 +54,12 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
     private final File groupIndexFile;
     private ByteBuffer byteBuffer;
 
-    public FileGroupManager(File dir, String topic, List<String> groupIds) {
-        this(
-                dir,
-                topic,
-                groupIds,
-                MemoryOnePartitionGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND);
+    public OnePartitionFileGroupManager(File dir, String topic, List<String> groupIds) {
+        this(dir, topic, groupIds, DEFAULT_GROUP_PERSIST_PERIOD_SECOND);
     }
 
-    public FileGroupManager(File dir, String topic, List<String> groupIds, long periodSecond) {
+    public OnePartitionFileGroupManager(
+            File dir, String topic, List<String> groupIds, long periodSecond) {
         super(topic, getGroupOffsets(new File(dir, createFileName(topic)), groupIds), periodSecond);
         this.groupIndexFile = new File(dir, createFileName(topic));
     }
@@ -169,11 +166,7 @@ public class FileGroupManager extends MemoryOnePartitionGroupManager {
         final Map<String, RecordsOffset> result = new HashMap<>(existsGroups);
         // AllGroups only contains new groups after call method parseExistsGroups.
         // Add new group with default offset to result ensure all groupIds has one offset.
-        allGroups.forEach(
-                groupId ->
-                        result.put(
-                                groupId,
-                                MemoryOnePartitionGroupManager.createNewGroupRecordsOffset()));
+        allGroups.forEach(groupId -> result.put(groupId, createNewGroupRecordsOffset()));
         if (result.size() != cacheExpectedSize) {
             throw new TributaryRuntimeException(
                     "cache size must equal groupIds size, expected size = "
