@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.file;
+package org.zicat.tributary.channel;
 
 import java.nio.ByteBuffer;
 

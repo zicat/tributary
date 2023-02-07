@@ -20,6 +20,7 @@ package org.zicat.tributary.channel.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
@@ -30,13 +31,13 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import static org.zicat.tributary.channel.file.SegmentUtil.SEGMENT_HEAD_SIZE;
-import static org.zicat.tributary.channel.file.SegmentUtil.getNameById;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
 
-/** LogSegmentBuilder for {@link Segment}. */
-public class SegmentBuilder {
+/** LogSegmentBuilder for {@link FileSegment}. */
+public class FileSegmentBuilder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SegmentBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileSegmentBuilder.class);
 
     private Long fileId;
     private long segmentSize = 2L * 1024L * 1024L * 1024L;
@@ -50,7 +51,7 @@ public class SegmentBuilder {
      * @param fileId fileId
      * @return LogSegmentBuilder
      */
-    public SegmentBuilder fileId(long fileId) {
+    public FileSegmentBuilder fileId(long fileId) {
         this.fileId = fileId;
         return this;
     }
@@ -61,7 +62,7 @@ public class SegmentBuilder {
      * @param compressionType compressionType
      * @return LogSegmentBuilder
      */
-    public SegmentBuilder compressionType(CompressionType compressionType) {
+    public FileSegmentBuilder compressionType(CompressionType compressionType) {
         if (compressionType != null) {
             this.compressionType = compressionType;
         }
@@ -74,7 +75,7 @@ public class SegmentBuilder {
      * @param filePrefix filePrefix
      * @return LogSegmentBuilder
      */
-    public SegmentBuilder filePrefix(String filePrefix) {
+    public FileSegmentBuilder filePrefix(String filePrefix) {
         this.filePrefix = filePrefix;
         return this;
     }
@@ -85,7 +86,7 @@ public class SegmentBuilder {
      * @param segmentSize segmentSize
      * @return LogSegmentBuilder
      */
-    public SegmentBuilder segmentSize(Long segmentSize) {
+    public FileSegmentBuilder segmentSize(Long segmentSize) {
         if (segmentSize != null) {
             this.segmentSize = segmentSize;
         }
@@ -98,7 +99,7 @@ public class SegmentBuilder {
      * @param dir dir
      * @return LogSegmentBuilder
      */
-    public SegmentBuilder dir(File dir) {
+    public FileSegmentBuilder dir(File dir) {
         this.dir = dir;
         return this;
     }
@@ -108,7 +109,7 @@ public class SegmentBuilder {
      *
      * @return LogSegment
      */
-    public Segment build(BlockWriter blockWriter) {
+    public FileSegment build(BlockWriter blockWriter) {
         if (fileId == null) {
             throw new NullPointerException("segment file id is null");
         }
@@ -161,7 +162,7 @@ public class SegmentBuilder {
      * @param position position
      * @return LogSegment
      */
-    private Segment create(
+    private FileSegment create(
             File file,
             FileChannel channel,
             BlockWriter writer,
@@ -169,19 +170,28 @@ public class SegmentBuilder {
             CompressionType compressionType,
             long position)
             throws IOException {
+
         channel.position(position);
+        if (segmentSize - SEGMENT_HEAD_SIZE < writer.capacity()) {
+            throw new IllegalArgumentException(
+                    "segment size must over block size, segment size = "
+                            + segmentSize
+                            + ",block size = "
+                            + writer.capacity());
+        }
         LOG.info(
                 "create new segment fileId:{}, segmentSize:{}, blockSize:{}",
                 file,
                 segmentSize,
                 blockSize);
-        return new Segment(
+
+        return new FileSegment(
                 fileId,
-                file,
-                channel,
                 writer.reAllocate(blockSize),
-                segmentSize,
                 compressionType,
-                position);
+                segmentSize,
+                position,
+                file,
+                channel);
     }
 }

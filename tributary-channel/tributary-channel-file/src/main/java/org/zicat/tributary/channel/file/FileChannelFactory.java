@@ -27,6 +27,8 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zicat.tributary.channel.memory.MemoryChannelFactory.*;
+
 /** FileChannelFactory. */
 public class FileChannelFactory implements ChannelFactory {
 
@@ -37,27 +39,12 @@ public class FileChannelFactory implements ChannelFactory {
 
     public static final String KEY_GROUP_PERSIST_PERIOD_SECOND = "groupPersistPeriodSecond";
 
-    public static final String KEY_FILE_BLOCK_SIZE = "blockSize";
-    public static final String DEFAULT_FILE_BLOCK_SIZE = String.valueOf(32 * 1024);
-
-    public static final String KEY_FILE_SEGMENT_SIZE = "segmentSize";
-    public static final String DEFAULT_FILE_SEGMENT_SIZE =
-            String.valueOf(4L * 1024L * 1024L * 1024L);
-
     public static final String KEY_FILE_FLUSH_PERIOD_MILLS = "flushPeriodMills";
     public static final String DEFAULT_FILE_FLUSH_PERIOD_MILLS = String.valueOf(500);
-
-    public static final String KEY_FILE_FLUSH_FORCE = "flushForce";
-    public static final String DEFAULT_FILE_FLUSH_FORCE = "false";
-
-    public static final String KEY_FILE_COMPRESSION = "compression";
-    public static final String DEFAULT_FILE_COMPRESSION = "none";
 
     public static final String KEY_FILE_FLUSH_PAGE_CACHE_SIZE = "flushPageCacheSize";
     public static final String DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE =
             String.valueOf(1024L * 1024L * 32L);
-
-    public static final String KEY_GROUPS = "groups";
 
     @Override
     public String type() {

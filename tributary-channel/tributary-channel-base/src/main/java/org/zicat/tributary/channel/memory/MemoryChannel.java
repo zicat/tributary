@@ -18,19 +18,42 @@
 
 package org.zicat.tributary.channel.memory;
 
-import org.zicat.tributary.channel.AbstractChannel;
+import org.zicat.tributary.channel.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /** MemoryChannel. */
 public class MemoryChannel extends AbstractChannel<OnePartitionMemoryChannel> {
 
-    public MemoryChannel(String topic, Set<String> groups) {
-        this(topic, 1, groups);
+    public MemoryChannel(
+            String topic,
+            Set<String> groups,
+            Integer blockSize,
+            Long segmentSize,
+            CompressionType compressionType,
+            boolean flushForce) {
+        this(topic, 1, groups, blockSize, segmentSize, compressionType, flushForce);
     }
 
-    public MemoryChannel(String topic, int partitionCount, Set<String> groups) {
-        super(createChannels(topic, partitionCount, groups));
+    public MemoryChannel(
+            String topic,
+            int partitionCount,
+            Set<String> groups,
+            Integer blockSize,
+            Long segmentSize,
+            CompressionType compressionType,
+            boolean flushForce) {
+        super(
+                createChannels(
+                        topic,
+                        partitionCount,
+                        groups,
+                        blockSize,
+                        segmentSize,
+                        compressionType,
+                        flushForce));
     }
 
     /**
@@ -42,10 +65,30 @@ public class MemoryChannel extends AbstractChannel<OnePartitionMemoryChannel> {
      * @return list
      */
     private static OnePartitionMemoryChannel[] createChannels(
-            String topic, int partitionCount, Set<String> groups) {
+            String topic,
+            int partitionCount,
+            Set<String> groups,
+            Integer blockSize,
+            Long segmentSize,
+            CompressionType compressionType,
+            boolean flushForce) {
+
         final OnePartitionMemoryChannel[] channels = new OnePartitionMemoryChannel[partitionCount];
+        final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
+        for (String group : groups) {
+            groupOffsets.put(group, RecordsOffset.startRecordOffset());
+        }
         for (int i = 0; i < partitionCount; i++) {
-            channels[i] = new OnePartitionMemoryChannel(topic, groups);
+            final OnePartitionGroupManager groupManager =
+                    OnePartitionMemoryGroupManager.createUnPersistGroupManager(topic, groupOffsets);
+            channels[i] =
+                    new OnePartitionMemoryChannel(
+                            topic,
+                            groupManager,
+                            blockSize,
+                            segmentSize,
+                            compressionType,
+                            flushForce);
         }
         return channels;
     }

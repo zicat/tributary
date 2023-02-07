@@ -20,6 +20,7 @@ package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -43,7 +44,13 @@ public class MultiThreadPartitionHandlerTest {
         MultiThreadPartitionHandler handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new MemoryChannel("t1", Collections.singleton("g1")),
+                        new MemoryChannel(
+                                "t1",
+                                Collections.singleton("g1"),
+                                1024 * 3,
+                                102400L,
+                                CompressionType.SNAPPY,
+                                true),
                         0,
                         builder.build());
         try {
@@ -58,7 +65,13 @@ public class MultiThreadPartitionHandlerTest {
         handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new MemoryChannel("t1", Collections.singleton("g1")),
+                        new MemoryChannel(
+                                "t1",
+                                Collections.singleton("g1"),
+                                1024 * 3,
+                                102400L,
+                                CompressionType.SNAPPY,
+                                true),
                         0,
                         builder.build());
         handler.open();
@@ -75,7 +88,13 @@ public class MultiThreadPartitionHandlerTest {
         MultiThreadPartitionHandler handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new MemoryChannel("t1", Collections.singleton("g1")),
+                        new MemoryChannel(
+                                "t1",
+                                Collections.singleton("g1"),
+                                1024 * 3,
+                                102400L,
+                                CompressionType.SNAPPY,
+                                true),
                         0,
                         builder.build());
         handler.open();

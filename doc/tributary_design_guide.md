@@ -95,7 +95,7 @@ Segment supports compression(snappy, zstd) based on block granularity. The full 
 written to page cache. Therefore, the size of the block written to disk is different from that in memory.
 
 Go to the source code of
-[Segment](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/Segment.java) for
+[Segment](../tributary-channel/tributary-channel-base/src/main/java/org/zicat/tributary/channel/Segment.java) for
 more details.
 
 #### About FileChannel

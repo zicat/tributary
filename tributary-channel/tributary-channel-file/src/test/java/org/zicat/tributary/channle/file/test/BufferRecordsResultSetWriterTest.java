@@ -22,12 +22,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.file.Block;
-import org.zicat.tributary.channel.file.BlockRecordsOffset;
-import org.zicat.tributary.channel.file.BlockWriter;
+import org.zicat.tributary.channel.*;
+import org.zicat.tributary.channel.file.FileSegment;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -38,9 +34,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
-import static org.zicat.tributary.channel.file.FileBlockReaderUtil.readChannel;
-import static org.zicat.tributary.channel.file.SegmentUtil.SEGMENT_HEAD_SIZE;
-import static org.zicat.tributary.channel.file.SegmentUtil.legalOffset;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.legalOffset;
 import static org.zicat.tributary.common.VIntUtil.putVInt;
 
 /** BufferReaderWriterTest. */
@@ -66,19 +61,19 @@ public class BufferRecordsResultSetWriterTest {
         IOUtils.deleteDir(dir);
     }
 
-    static final class MockClearHandler implements BlockWriter.ClearHandler {
+    static final class MockBlockFlushHandler implements BlockWriter.BlockFlushHandler {
 
         public int count;
         private final FileChannel fileChannel;
         private final CompressionType compressionType;
 
-        public MockClearHandler(FileChannel fileChannel, CompressionType compressionType) {
+        public MockBlockFlushHandler(FileChannel fileChannel, CompressionType compressionType) {
             this.fileChannel = fileChannel;
             this.compressionType = compressionType;
         }
 
         @Override
-        public void clearCallback(Block block) throws IOException {
+        public void callback(Block block) throws IOException {
             block.reusedBuf(compressionType.compression(block.resultBuf(), block.reusedBuf()));
             count = IOUtils.writeFull(fileChannel, block.reusedBuf());
         }
@@ -88,7 +83,8 @@ public class BufferRecordsResultSetWriterTest {
     public void test() throws IOException {
 
         // test writer. append "foo"
-        final MockClearHandler handler = new MockClearHandler(fileChannel, CompressionType.SNAPPY);
+        final MockBlockFlushHandler handler =
+                new MockBlockFlushHandler(fileChannel, CompressionType.SNAPPY);
         final BlockWriter writer = new BlockWriter(6);
         final byte[] bs = "foo".getBytes(StandardCharsets.UTF_8);
         Assert.assertTrue(writer.put(bs, 0, bs.length));
@@ -123,50 +119,37 @@ public class BufferRecordsResultSetWriterTest {
         Assert.assertTrue(offset >= 2);
         Assert.assertFalse(offset >= 10);
 
+        FileSegment fileSegment =
+                new FileSegment(
+                        1L,
+                        new BlockWriter(1024),
+                        CompressionType.SNAPPY,
+                        10240,
+                        SEGMENT_HEAD_SIZE,
+                        file,
+                        fileChannel);
         RecordsResultSet resultSet =
-                readChannel(
-                                bufferRecordsResultSet,
-                                fileChannel,
-                                CompressionType.SNAPPY,
-                                fileChannel.position())
-                        .toResultSet();
+                fileSegment.read(bufferRecordsResultSet, fileChannel.position()).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
         bufferRecordsResultSet = BlockRecordsOffset.cast(resultSet.nexRecordsOffset());
         Assert.assertSame(bufferRecordsResultSet, resultSet.nexRecordsOffset());
-        resultSet =
-                readChannel(
-                                bufferRecordsResultSet,
-                                fileChannel,
-                                CompressionType.SNAPPY,
-                                fileChannel.position())
-                        .toResultSet();
+        resultSet = fileSegment.read(bufferRecordsResultSet, fileChannel.position()).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
         bufferRecordsResultSet = BlockRecordsOffset.cast(resultSet.nexRecordsOffset());
-        resultSet =
-                readChannel(
-                                bufferRecordsResultSet,
-                                fileChannel,
-                                CompressionType.SNAPPY,
-                                fileChannel.position())
-                        .toResultSet();
+        resultSet = fileSegment.read(bufferRecordsResultSet, fileChannel.position()).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
         // test over flow.
         resultSet =
-                readChannel(
-                                bufferRecordsResultSet,
-                                fileChannel,
-                                CompressionType.SNAPPY,
-                                fileChannel.position() - 1)
-                        .toResultSet();
+                fileSegment.read(bufferRecordsResultSet, fileChannel.position() - 1).toResultSet();
         Assert.assertFalse(resultSet.hasNext());
 
         BlockWriter writer4 = writer.reAllocate(6);
@@ -181,11 +164,8 @@ public class BufferRecordsResultSetWriterTest {
                                 resultSet.nexRecordsOffset().segmentId(),
                                 resultSet.nexRecordsOffset().offset() + 1);
         resultSet =
-                readChannel(
-                                BlockRecordsOffset.cast(newOffset),
-                                fileChannel,
-                                CompressionType.SNAPPY,
-                                fileChannel.position())
+                fileSegment
+                        .read(BlockRecordsOffset.cast(newOffset), fileChannel.position())
                         .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
@@ -199,10 +179,9 @@ public class BufferRecordsResultSetWriterTest {
         fileChannel.force(false);
 
         resultSet =
-                readChannel(
+                fileSegment
+                        .read(
                                 BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
-                                fileChannel,
-                                CompressionType.SNAPPY,
                                 fileChannel.position())
                         .toResultSet();
         Assert.assertFalse(resultSet.hasNext());
@@ -213,10 +192,9 @@ public class BufferRecordsResultSetWriterTest {
         fileChannel.force(false);
 
         resultSet =
-                readChannel(
+                fileSegment
+                        .read(
                                 BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
-                                fileChannel,
-                                CompressionType.SNAPPY,
                                 fileChannel.position())
                         .toResultSet();
         Assert.assertTrue(resultSet.hasNext());

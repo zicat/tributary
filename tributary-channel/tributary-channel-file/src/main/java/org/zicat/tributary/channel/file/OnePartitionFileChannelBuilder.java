@@ -67,14 +67,14 @@ public class OnePartitionFileChannelBuilder extends ChannelBuilder {
         return new OnePartitionFileChannel(
                 topic,
                 groupManager,
-                dir,
                 blockSize,
                 segmentSize,
                 compressionType,
+                flushForce,
                 flushPeriod,
                 flushTimeUnit,
                 flushPageCacheSize,
-                flushForce);
+                dir);
     }
 
     /**

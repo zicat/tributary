@@ -24,6 +24,7 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.memory.MemoryChannel;
@@ -33,7 +34,6 @@ import org.zicat.tributary.source.netty.FileChannelHandler;
 import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +45,14 @@ public class DefaultNettySourceTest {
 
     @Test
     public void testLineDecoder() throws Exception {
-        final MemoryChannel channel = new MemoryChannel("t1", Collections.singleton("test_group"));
+        final MemoryChannel channel =
+                new MemoryChannel(
+                        "t1",
+                        Collections.singleton("test_group"),
+                        1024 * 3,
+                        102400L,
+                        CompressionType.SNAPPY,
+                        true);
         final int freePort = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(freePort, channel) {
@@ -62,7 +69,7 @@ public class DefaultNettySourceTest {
             final String data1 = "lynn";
             final TelnetClient telnet = new TelnetClient();
             try {
-                telnet.connect(Inet4Address.getLocalHost(), freePort);
+                telnet.connect("localhost", freePort);
                 telnet.getOutputStream().write(data1.getBytes());
                 telnet.getOutputStream().write("\r".getBytes());
                 telnet.getOutputStream().write("zhangjun".getBytes());
@@ -86,17 +93,21 @@ public class DefaultNettySourceTest {
             final RecordsResultSet recordsResultSet =
                     channel.poll(0, new RecordsOffset(0, 0), 10, TimeUnit.MILLISECONDS);
             Assert.assertEquals("lynn", new String(recordsResultSet.next()));
-
-            final RecordsResultSet recordsResultSet2 =
-                    channel.poll(0, recordsResultSet.nexRecordsOffset(), 10, TimeUnit.MILLISECONDS);
-            Assert.assertEquals("zhangjun", new String(recordsResultSet2.next()));
+            Assert.assertEquals("zhangjun", new String(recordsResultSet.next()));
             System.out.println(source);
         }
     }
 
     @Test
     public void testLengthDecoder() throws Exception {
-        final MemoryChannel channel = new MemoryChannel("t1", Collections.singleton("test_group"));
+        final MemoryChannel channel =
+                new MemoryChannel(
+                        "t1",
+                        Collections.singleton("test_group"),
+                        1024 * 3,
+                        102400L,
+                        CompressionType.SNAPPY,
+                        true);
         final int port = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(port, channel) {
@@ -119,10 +130,7 @@ public class DefaultNettySourceTest {
             final RecordsResultSet recordsResultSet =
                     channel.poll(0, new RecordsOffset(0, 0), 10, TimeUnit.MILLISECONDS);
             Assert.assertArrayEquals(data1, recordsResultSet.next());
-
-            final RecordsResultSet recordsResultSet2 =
-                    channel.poll(0, recordsResultSet.nexRecordsOffset(), 10, TimeUnit.MILLISECONDS);
-            Assert.assertArrayEquals(data2, recordsResultSet2.next());
+            Assert.assertArrayEquals(data2, recordsResultSet.next());
         }
     }
 

@@ -22,10 +22,10 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.file.BlockWriter;
-import org.zicat.tributary.channel.file.Segment;
-import org.zicat.tributary.channel.file.SegmentBuilder;
-import org.zicat.tributary.channel.file.SegmentUtil;
+import org.zicat.tributary.channel.BlockWriter;
+import org.zicat.tributary.channel.SegmentUtil;
+import org.zicat.tributary.channel.file.FileSegment;
+import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
@@ -56,12 +56,12 @@ public class SegmentUtilTest {
     public void testMinMax() {
         final File childDir = new File(DIR, "test_min_max");
         makeDir(childDir);
-        final SegmentBuilder builder = new SegmentBuilder();
-        final Segment segment1 =
+        final FileSegmentBuilder builder = new FileSegmentBuilder();
+        final FileSegment segment1 =
                 builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
-        final Segment segment2 =
+        final FileSegment segment2 =
                 builder.segmentSize(64L).fileId(2).dir(childDir).build(new BlockWriter(16));
-        final Segment segment3 =
+        final FileSegment segment3 =
                 builder.segmentSize(64L).fileId(3).dir(childDir).build(new BlockWriter(16));
 
         Assert.assertSame(segment1, SegmentUtil.min(segment1, segment2));

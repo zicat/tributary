@@ -16,10 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.file;
-
-import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.RecordsResultSet;
+package org.zicat.tributary.channel;
 
 /** BlockRecordsOffset. */
 public class BlockRecordsOffset extends RecordsOffset {

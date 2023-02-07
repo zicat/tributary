@@ -22,12 +22,12 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.zicat.tributary.channel.BlockRecordsOffset;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.file.BlockRecordsOffset;
-import org.zicat.tributary.channel.file.BlockWriter;
-import org.zicat.tributary.channel.file.Segment;
-import org.zicat.tributary.channel.file.SegmentBuilder;
+import org.zicat.tributary.channel.file.FileSegment;
+import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -50,8 +50,8 @@ public class SegmentTest {
     public void testAppend() throws IOException {
         final File childDir = new File(DIR, "test_append");
         makeDir(childDir);
-        final SegmentBuilder builder = new SegmentBuilder();
-        final Segment segment =
+        final FileSegmentBuilder builder = new FileSegmentBuilder();
+        final FileSegment segment =
                 builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
         Assert.assertTrue(segment.append("".getBytes(), 0, 0));
 
@@ -70,9 +70,9 @@ public class SegmentTest {
     public void testMultiThread() throws InterruptedException, IOException {
         final File childDir = new File(DIR, "test_multi_thread");
         makeDir(childDir);
-        final SegmentBuilder builder = new SegmentBuilder();
+        final FileSegmentBuilder builder = new FileSegmentBuilder();
         final int fileId = 1;
-        final Segment segment =
+        final FileSegment segment =
                 builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));
         Thread writerThread =
                 new Thread(
@@ -127,9 +127,9 @@ public class SegmentTest {
     public void testRead() throws IOException, InterruptedException {
         final File childDir = new File(DIR, "test_read");
         makeDir(childDir);
-        final SegmentBuilder builder = new SegmentBuilder();
+        final FileSegmentBuilder builder = new FileSegmentBuilder();
         final int fileId = 1;
-        final Segment segment =
+        final FileSegment segment =
                 builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));
         Assert.assertTrue(segment.append("".getBytes(), 0, 0));
         testAppend(6, segment);
@@ -185,7 +185,7 @@ public class SegmentTest {
      * @param segment segment
      * @throws IOException IOException
      */
-    private void testAppend(int length, Segment segment) throws IOException {
+    private void testAppend(int length, FileSegment segment) throws IOException {
         Assert.assertTrue(
                 segment.append(
                         createStringByLength(length).getBytes(StandardCharsets.UTF_8), 0, length));

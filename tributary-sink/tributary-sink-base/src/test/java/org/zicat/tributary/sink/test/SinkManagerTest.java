@@ -21,6 +21,7 @@ package org.zicat.tributary.sink.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.channle.file.test.SourceThread;
 import org.zicat.tributary.common.IOUtils;
@@ -64,7 +65,15 @@ public class SinkManagerTest {
         for (int i = 0; i < sinkGroups; i++) {
             consumerGroup.add("consumer_group_" + i);
         }
-        final Channel channel = new MemoryChannel("voqa", partitionCount, consumerGroup);
+        final Channel channel =
+                new MemoryChannel(
+                        "voqa",
+                        partitionCount,
+                        consumerGroup,
+                        1024 * 3,
+                        1024 * 4L,
+                        CompressionType.SNAPPY,
+                        true);
 
         // create sources
         final List<Thread> sourceThread = new ArrayList<>();

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.file;
+package org.zicat.tributary.channel;
 
 import org.zicat.tributary.common.IOUtils;
 
@@ -98,27 +98,27 @@ public final class BlockWriter extends Block {
     /**
      * clear block writer.
      *
-     * @param clearHandler consumerHandler
+     * @param blockFlushHandler blockFlushHandler
      */
-    public final void clear(ClearHandler clearHandler) throws IOException {
+    public final void clear(BlockFlushHandler blockFlushHandler) throws IOException {
         if (isEmpty()) {
             return;
         }
         resultBuf.flip();
-        clearHandler.clearCallback(this);
+        blockFlushHandler.callback(this);
         resultBuf.clear();
     }
 
     /** ClearHandler. */
-    public interface ClearHandler {
+    public interface BlockFlushHandler {
 
         /**
-         * clearCallback.
+         * callback.
          *
          * @param block block
          * @throws IOException IOException
          */
-        void clearCallback(Block block) throws IOException;
+        void callback(Block block) throws IOException;
     }
 
     /**

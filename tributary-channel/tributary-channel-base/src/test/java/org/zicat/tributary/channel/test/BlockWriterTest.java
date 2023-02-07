@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channle.file.test;
+package org.zicat.tributary.channel.test;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.file.BlockWriter;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;

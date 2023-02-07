@@ -18,12 +18,11 @@
 
 package org.zicat.tributary.channel.file;
 
-/** LogSegmentUtil. */
-public class SegmentUtil {
+/** FileSegmentUtil. */
+public class FileSegmentUtil {
 
     public static final String FILE_DEFAULT_PREFIX = "segment_";
     public static final String FILE_DEFAULT_SUFFIX = ".log";
-    public static final int BLOCK_HEAD_SIZE = 4;
     public static final int SEGMENT_HEAD_SIZE = 8;
 
     /**
@@ -86,34 +85,5 @@ public class SegmentUtil {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    /**
-     * find max LogSegment.
-     *
-     * @param s1 s1
-     * @param s2 s2
-     * @return LogSegment.
-     */
-    public static Segment max(Segment s1, Segment s2) {
-        if (s1 == null) {
-            return s2;
-        }
-        if (s2 == null) {
-            return s1;
-        }
-        return s1.compareTo(s2) > 0 ? s1 : s2;
-    }
-
-    /**
-     * find min log segment.
-     *
-     * @param s1 s1
-     * @param s2 s2
-     * @return LogSegment
-     */
-    public static Segment min(Segment s1, Segment s2) {
-        final Segment max = max(s1, s2);
-        return max == s1 ? s2 : s1;
     }
 }

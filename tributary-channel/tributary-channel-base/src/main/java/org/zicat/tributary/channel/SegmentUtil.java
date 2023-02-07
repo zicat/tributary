@@ -16,37 +16,39 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.memory;
+package org.zicat.tributary.channel;
 
-import org.zicat.tributary.channel.RecordsOffset;
+/** LogSegmentUtil. */
+public class SegmentUtil {
 
-/** Element. */
-public class Element {
-    private final byte[] record;
-    private final int offset;
-    private final int length;
-    private final RecordsOffset recordsOffset;
+    public static final int BLOCK_HEAD_SIZE = 4;
 
-    Element(byte[] record, int offset, int length, RecordsOffset recordsOffset) {
-        this.record = record;
-        this.offset = offset;
-        this.length = length;
-        this.recordsOffset = recordsOffset;
+    /**
+     * find max LogSegment.
+     *
+     * @param s1 s1
+     * @param s2 s2
+     * @return LogSegment.
+     */
+    public static <S extends Segment> S max(S s1, S s2) {
+        if (s1 == null) {
+            return s2;
+        }
+        if (s2 == null) {
+            return s1;
+        }
+        return s1.compareTo(s2) > 0 ? s1 : s2;
     }
 
-    public byte[] record() {
-        return record;
-    }
-
-    public int offset() {
-        return offset;
-    }
-
-    public int length() {
-        return length;
-    }
-
-    public RecordsOffset recordsOffset() {
-        return recordsOffset;
+    /**
+     * find min log segment.
+     *
+     * @param s1 s1
+     * @param s2 s2
+     * @return LogSegment
+     */
+    public static <S extends Segment> S min(S s1, S s2) {
+        final Segment max = max(s1, s2);
+        return max == s1 ? s2 : s1;
     }
 }
