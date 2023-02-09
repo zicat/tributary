@@ -53,7 +53,7 @@ public class FunctionTest {
         Assert.assertEquals(context.groupId(), function.context().groupId());
         Assert.assertEquals(context.partitionId(), function.context().partitionId());
         Assert.assertNull(context.topic(), function.context().topic());
-        Assert.assertEquals(context.customConfig(), function.context().customConfig());
+        Assert.assertEquals(context, function.context());
 
         RecordsOffset newRecordsOffset = recordsOffset.skipNextSegmentHead();
         function.flush(newRecordsOffset, null);

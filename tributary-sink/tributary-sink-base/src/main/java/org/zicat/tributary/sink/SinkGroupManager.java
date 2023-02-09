@@ -35,7 +35,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.*;
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_RETAIN_SIZE_CHECK_PERIOD_MILLI;
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.parseMaxRetainSize;
 import static org.zicat.tributary.sink.handler.PartitionHandlerFactory.findPartitionHandlerFactory;
 
 /**
@@ -80,10 +81,7 @@ public class SinkGroupManager implements Closeable {
     private void supportMaxRetainSize() {
         final Long maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
         if (maxRetainSize != null) {
-            final long periodMill =
-                    sinkGroupConfig.getCustomProperty(
-                            KEY_RETAIN_SIZE_CHECK_PERIOD_MILLI,
-                            DEFAULT_RETAIN_SIZE_CHECK_PERIOD_MILLI);
+            final long periodMill = sinkGroupConfig.get(OPTION_RETAIN_SIZE_CHECK_PERIOD_MILLI);
             service = Executors.newSingleThreadScheduledExecutor();
             service.scheduleWithFixedDelay(
                     () -> {

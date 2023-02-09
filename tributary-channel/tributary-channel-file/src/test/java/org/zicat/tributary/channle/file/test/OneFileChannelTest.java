@@ -403,7 +403,8 @@ public class OneFileChannelTest {
             int partitionCount,
             String dir,
             long segmentSize,
-            int blockSize) {
+            int blockSize)
+            throws IOException {
         return createChannel(
                 topic,
                 consumerGroup,
@@ -421,18 +422,19 @@ public class OneFileChannelTest {
             String dir,
             long segmentSize,
             int blockSize,
-            CompressionType compressionType) {
+            CompressionType compressionType)
+            throws IOException {
         final List<File> dirs = new ArrayList<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             dirs.add(new File(dir + i));
         }
-        final FileChannelBuilder builder = FileChannelBuilder.newBuilder();
+        final FileChannelBuilder builder =
+                FileChannelBuilder.newBuilder().flushPeriod(500, TimeUnit.MILLISECONDS);
         builder.segmentSize(segmentSize)
                 .blockSize(blockSize)
                 .consumerGroups(consumerGroup)
                 .topic(topic)
-                .compressionType(compressionType)
-                .flushPeriod(500, TimeUnit.MILLISECONDS);
+                .compressionType(compressionType);
         return builder.dirs(dirs).build();
     }
 

@@ -22,6 +22,8 @@ import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import org.apache.hadoop.fs.FileSystem;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.Trigger;
 
@@ -31,11 +33,17 @@ import java.util.Iterator;
 /** DefaultHDFSFunction. */
 public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements Trigger {
 
-    public static final String KEY_IDLE_MILLIS = "idleTriggerMillis";
-    public static final int DEFAULT_IDLE_MILLIS = 30 * 1000;
+    public static final ConfigOption<Integer> OPTION_IDLE_MILLIS =
+            ConfigOptions.key("idleTriggerMillis")
+                    .integerType()
+                    .description("idle trigger, default 30s")
+                    .defaultValue(30 * 1000);
 
-    public static final String KEY_BUCKET_DATE_FORMAT = "bucketDateFormat";
-    public static final String DEFAULT_BUCKET_DATE_FORMAT = "yyyyMMdd_HH";
+    public static final ConfigOption<String> OPTION_BUCKET_DATE_FORMAT =
+            ConfigOptions.key("bucketDateFormat")
+                    .stringType()
+                    .description("set process time bucket format")
+                    .defaultValue("yyyyMMdd_HH");
 
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
@@ -58,9 +66,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     @Override
     public void open(Context context) {
         super.open(context);
-        idleTriggerMillis = context.getCustomProperty(KEY_IDLE_MILLIS, DEFAULT_IDLE_MILLIS);
-        bucketDateFormat =
-                context.getCustomProperty(KEY_BUCKET_DATE_FORMAT, DEFAULT_BUCKET_DATE_FORMAT);
+        idleTriggerMillis = context.get(OPTION_IDLE_MILLIS);
+        bucketDateFormat = context.get(OPTION_BUCKET_DATE_FORMAT);
         timeBucket = clock.currentTime(bucketDateFormat);
     }
 

@@ -22,20 +22,23 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.memory.MemoryChannel;
+import org.zicat.tributary.channel.DefaultChannel;
+import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.channle.file.test.SourceThread;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
-import org.zicat.tributary.sink.test.function.AssertCountFunction;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static org.zicat.tributary.sink.test.function.AssertCountFunction.OPTION_ASSERT_COUNT;
 
 /** SinkManager test. */
 public class SinkManagerTest {
@@ -66,14 +69,16 @@ public class SinkManagerTest {
             consumerGroup.add("consumer_group_" + i);
         }
         final Channel channel =
-                new MemoryChannel(
-                        "voqa",
-                        partitionCount,
-                        consumerGroup,
-                        1024 * 3,
-                        1024 * 4L,
-                        CompressionType.SNAPPY,
-                        true);
+                new DefaultChannel<>(
+                        MemoryChannelFactory.createChannels(
+                                "voqa",
+                                partitionCount,
+                                consumerGroup,
+                                1024 * 3,
+                                1024 * 4L,
+                                CompressionType.SNAPPY),
+                        0,
+                        TimeUnit.SECONDS);
 
         // create sources
         final List<Thread> sourceThread = new ArrayList<>();
@@ -89,7 +94,7 @@ public class SinkManagerTest {
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentity("direct")
                         .functionIdentity("assertCount");
-        builder.addCustomProperty(AssertCountFunction.KEY_ASSERT_COUNT, dataSize);
+        builder.addCustomProperty(OPTION_ASSERT_COUNT.key(), dataSize);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         // waiting source threads finish and flush
         final List<SinkGroupManager> groupManagers = new ArrayList<>();

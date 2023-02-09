@@ -26,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -50,18 +52,27 @@ import static org.zicat.tributary.sink.utils.Collections.copy;
  * <p>Multi Threads mode, One ${@link MultiThreadPartitionHandler} instance bind with at least one
  * {@link Function} instance
  *
- * <p>Set threads and {@link Function} count by ${@link MultiThreadPartitionHandler#KEY_THREADS} .
+ * <p>Set threads and {@link Function} count by ${@link MultiThreadPartitionHandler#OPTION_THREADS}
+ * .
  */
 public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiThreadPartitionHandler.class);
 
-    public static final String KEY_THREADS = "threads";
-    public static final String KEY_BUFFER_SIZE = "bufferSize";
+    public static final ConfigOption<Integer> OPTION_THREADS =
+            ConfigOptions.key("threads")
+                    .integerType()
+                    .description("consume threads per partition")
+                    .defaultValue(2);
+
+    public static final ConfigOption<Integer> OPTION_BUFFER_SIZE =
+            ConfigOptions.key("bufferSize")
+                    .integerType()
+                    .description("the buffer size of memory queue")
+                    .defaultValue(128);
 
     private static final int MAX_CAPACITY = 128;
     private static final int MIN_CAPACITY = 4;
-    private static final int DEFAULT_THREADS = 2;
 
     private Disruptor<Block> disruptor;
     private DataHandler[] handlers;
@@ -75,11 +86,11 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     @Override
     public void open() {
 
-        final int workerNumber = sinkGroupConfig.getCustomProperty(KEY_THREADS, DEFAULT_THREADS);
+        final int workerNumber = sinkGroupConfig.get(OPTION_THREADS);
         if (workerNumber <= 1) {
-            throw new IllegalStateException(KEY_THREADS + " must over 1");
+            throw new IllegalStateException(OPTION_THREADS.key() + " must over 1");
         }
-        this.disruptor = createDisruptor(workerNumber);
+        this.disruptor = createDisruptor();
         this.handlers = new DataHandler[workerNumber];
         for (int i = 0; i < workerNumber; i++) {
             handlers[i] = new DataHandler(createFunction(createFunctionId(i)), error);
@@ -111,13 +122,12 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     /**
      * create disruptor, subclass can override this function.
      *
-     * @param workNumber work number
      * @return disruptor
      */
-    protected Disruptor<Block> createDisruptor(int workNumber) {
+    protected Disruptor<Block> createDisruptor() {
         return new Disruptor<>(
                 Block::new,
-                formatCap(sinkGroupConfig.getCustomProperty(KEY_BUFFER_SIZE, workNumber * 3)),
+                formatCap(sinkGroupConfig.get(OPTION_BUFFER_SIZE)),
                 Threads.createThreadFactoryByName(threadName() + "-", true),
                 ProducerType.SINGLE,
                 new TimeoutBlockingWaitStrategy(30, TimeUnit.SECONDS));

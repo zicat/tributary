@@ -30,8 +30,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.zicat.tributary.sink.kafka.DefaultKafkaFunction.KEY_TOPIC;
-
 /** DefaultKafkaFunctionTest. */
 public class DefaultKafkaFunctionTest {
 
@@ -48,7 +46,7 @@ public class DefaultKafkaFunctionTest {
                         .startRecordsOffset(null)
                         .topic("t2");
 
-        builder.addCustomProperty("kafka." + KEY_TOPIC, "kt1");
+        builder.addCustomProperty("kafka.topic", "kt1");
 
         kafkaFunction.open(builder.build());
 

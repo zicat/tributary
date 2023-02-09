@@ -19,13 +19,19 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.utils.HostUtils;
 
 /** AbstractFunction. */
 public abstract class AbstractFunction implements Function {
 
-    public static final String KEY_METRICS_HOST = "metricsHost";
-    public static final String DEFAULT_METRICS_HOST = HostUtils.getLocalHostString(".*");
+    public static final ConfigOption<String> OPTION_METRICS_HOST =
+            ConfigOptions.key("metricsHost")
+                    .stringType()
+                    .description(
+                            "export the dimension value of metrics, default the first network card ip")
+                    .defaultValue(HostUtils.getLocalHostString(".*"));
 
     protected Context context;
     protected Clock clock;
@@ -37,8 +43,8 @@ public abstract class AbstractFunction implements Function {
     public void open(Context context) {
         this.context = context;
         this.committableOffset = context.startRecordsOffset();
-        this.clock = context.getOrCreateDefaultClock();
-        this.metricsHost = context.getCustomProperty(KEY_METRICS_HOST, DEFAULT_METRICS_HOST);
+        this.clock = context.getOrGetDefaultClock();
+        this.metricsHost = context.get(OPTION_METRICS_HOST);
     }
 
     @Override

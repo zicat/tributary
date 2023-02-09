@@ -21,6 +21,7 @@ package org.zicat.tributary.service.component;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
@@ -129,8 +130,8 @@ public class DynamicSource {
      * @param sourceId sourceId
      * @return new map
      */
-    private Map<String, String> getSubKeyConfig(String sourceId) {
-        Map<String, String> result = new HashMap<>();
+    private DefaultReadableConfig getSubKeyConfig(String sourceId) {
+        final DefaultReadableConfig result = new DefaultReadableConfig();
         final String prefix = sourceId + SPLIT;
         for (Map.Entry<String, String> entry : sourceConfiguration.getSource().entrySet()) {
             final String key = entry.getKey();

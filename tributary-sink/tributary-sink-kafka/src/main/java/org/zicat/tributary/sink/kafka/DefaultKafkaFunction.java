@@ -21,6 +21,8 @@ package org.zicat.tributary.sink.kafka;
 import io.prometheus.client.Counter;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.Context;
 
 import java.util.Iterator;
@@ -34,14 +36,18 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                     .help("sink kafka counter")
                     .labelNames("host", "groupId", "topic")
                     .register();
-    public static final String KEY_TOPIC = "topic";
+
+    private static final ConfigOption<String> OPTION_TOPIC =
+            ConfigOptions.key("topic")
+                    .stringType()
+                    .description("the kafka topic to send data")
+                    .defaultValue("sink_kafka_channel");
     protected String customTopic;
 
     @Override
     public void open(Context context) {
         super.open(context);
-        this.customTopic =
-                context.getCustomProperty(getKafkaKeyPrefix(null) + KEY_TOPIC).toString();
+        this.customTopic = context.get(OPTION_TOPIC.changeKey(getKafkaKeyPrefix(null) + "topic"));
     }
 
     @Override

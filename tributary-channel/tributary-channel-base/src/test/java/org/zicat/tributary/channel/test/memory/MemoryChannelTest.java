@@ -21,29 +21,29 @@ package org.zicat.tributary.channel.test.memory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.channel.memory.OnePartitionMemoryChannel;
+import org.zicat.tributary.channel.memory.MemoryChannel;
+import org.zicat.tributary.channel.memory.MemoryGroupManager;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
+
 /** OnePartitionMemoryChannelTest. */
-public class OnePartitionMemoryChannelTest {
+public class MemoryChannelTest {
 
     @Test
     public void test() throws IOException, InterruptedException {
-        final String topic = "t1";
+
         final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", RecordsOffset.startRecordOffset());
-        final OnePartitionMemoryGroupManager groupManager =
-                OnePartitionMemoryGroupManager.createUnPersistGroupManager(topic, groupOffsets);
-        final OnePartitionMemoryChannel channel =
-                new OnePartitionMemoryChannel(
-                        "t1", groupManager, 1024 * 4, 102400L, CompressionType.NONE, true);
-
+        final MemoryGroupManager groupManager =
+                MemoryGroupManager.createUnPersistGroupManager(groupOffsets);
+        final MemoryChannel channel =
+                createMemoryChannel("t1", groupManager, 1024 * 4, 102400L, CompressionType.NONE);
         final Random random = new Random(1023312);
         final List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < 200000; i++) {

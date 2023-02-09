@@ -23,7 +23,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.file.OnePartitionFileGroupManager;
+import org.zicat.tributary.channel.file.FileGroupManager;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -31,7 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.zicat.tributary.channel.file.OnePartitionFileGroupManager.createNewGroupRecordsOffset;
+import static org.zicat.tributary.channel.file.FileGroupManager.createFileName;
+import static org.zicat.tributary.channel.file.FileGroupManager.createNewGroupRecordsOffset;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
@@ -48,8 +49,8 @@ public class OnePartitionFileGroupManagerTest {
         // test new group ids
         final Random random = new Random();
         final List<String> groupIds = Arrays.asList("g1", "g2", "g3");
-        final OnePartitionFileGroupManager manager =
-                new OnePartitionFileGroupManager(DIR, topic, groupIds);
+        final FileGroupManager manager =
+                new FileGroupManager(new File(DIR, createFileName(topic)), groupIds);
         final Map<String, RecordsOffset> cache = new HashMap<>();
         Assert.assertEquals(createNewGroupRecordsOffset(), manager.getMinRecordsOffset());
 
@@ -70,8 +71,8 @@ public class OnePartitionFileGroupManagerTest {
 
         // test exist group id and new ids
         final List<String> groupIds2 = Arrays.asList("g2", "g3", "g4");
-        final OnePartitionFileGroupManager manager2 =
-                new OnePartitionFileGroupManager(DIR, topic, groupIds2);
+        final FileGroupManager manager2 =
+                new FileGroupManager(new File(DIR, createFileName(topic)), groupIds2);
         Assert.assertEquals(createNewGroupRecordsOffset(), manager2.getMinRecordsOffset());
 
         for (String group : groupIds2) {
@@ -106,8 +107,8 @@ public class OnePartitionFileGroupManagerTest {
         // test single exist groups
         final String singleGroup = "g2";
         final List<String> groupIds3 = Collections.singletonList(singleGroup);
-        final OnePartitionFileGroupManager manager3 =
-                new OnePartitionFileGroupManager(DIR, topic, groupIds3);
+        final FileGroupManager manager3 =
+                new FileGroupManager(new File(DIR, createFileName(topic)), groupIds3);
         Assert.assertEquals(cache.get(singleGroup), manager3.getMinRecordsOffset());
         Assert.assertEquals(cache.get(singleGroup), manager3.getRecordsOffset(singleGroup));
         manager3.commit(singleGroup, cache.get(singleGroup).skipNextSegmentHead());
@@ -129,8 +130,8 @@ public class OnePartitionFileGroupManagerTest {
         IOUtils.closeQuietly(manager3);
 
         // test new topics
-        final OnePartitionFileGroupManager manager4 =
-                new OnePartitionFileGroupManager(DIR, topic + "_new", groupIds);
+        final FileGroupManager manager4 =
+                new FileGroupManager(new File(DIR, createFileName(topic + "_new")), groupIds);
         Assert.assertEquals(createNewGroupRecordsOffset(), manager4.getMinRecordsOffset());
         for (String group : groupIds) {
             RecordsOffset recordsOffset = manager4.getRecordsOffset(group);

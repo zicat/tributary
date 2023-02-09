@@ -16,24 +16,20 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.demo.source;
+package org.zicat.tributary.demo;
 
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.netty.AbstractNettySource;
-import org.zicat.tributary.source.netty.AbstractNettySourceFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.core.env.AbstractEnvironment;
 
-/** HttpSourceFactory. */
-public class HttpSourceFactory extends AbstractNettySourceFactory {
+/** CommonDemoApplication. */
+@SpringBootApplication
+public class SinkKafkaDemoApplication {
 
-    @Override
-    public String identity() {
-        return "http";
-    }
+    private static final String ACTIVE_PROFILE = "kafka-demo";
 
-    @Override
-    public AbstractNettySource createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, ReadableConfig config) {
-        return new HttpSource(host, port, eventThreads, channel);
+    public static void main(String[] args) {
+        System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
+        SpringApplication.run(SinkKafkaDemoApplication.class, args);
     }
 }

@@ -280,7 +280,7 @@ public class IOUtils {
                     closeable.close();
                 }
             } catch (Exception e) {
-                LOG.warn("close error", e);
+                LOG.debug("close error", e);
             }
         }
     }

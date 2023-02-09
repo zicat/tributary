@@ -22,14 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.*;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
-import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
 import org.zicat.tributary.sink.utils.HostUtils;
 
@@ -38,15 +35,25 @@ import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_MAX_RETAIN_SIZE;
+
 /** DynamicSinkGroupManager. */
 @Component
 public class DynamicSinkGroupManager implements Closeable {
 
-    private static final String KEY_SINK_HANDLER_IDENTITY = "partitionHandlerIdentity";
-    private static final String DEFAULT_SINK_HANDLER_IDENTITY =
-            DirectPartitionHandlerFactory.IDENTITY;
+    public static final ConfigOption<String> OPTION_SINK_HANDLER_ID =
+            ConfigOptions.key("partitionHandlerIdentity")
+                    .stringType()
+                    .description(
+                            "the id of partition handler, support [direct,multi_thread], default direct")
+                    .defaultValue(DirectPartitionHandlerFactory.IDENTITY);
 
-    private static final String KEY_SINK_FUNCTION_IDENTITY = "functionIdentity";
+    public static final ConfigOption<String> OPTION_FUNCTION_ID =
+            ConfigOptions.key("functionIdentity")
+                    .stringType()
+                    .description("the id of function")
+                    .noDefaultValue();
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -59,8 +66,12 @@ public class DynamicSinkGroupManager implements Closeable {
     @Value("${server.metrics.ip.pattern:.*}")
     String metricsIpPattern;
 
+    DefaultReadableConfig readableConfig;
+
     @PostConstruct
     public void init() {
+        readableConfig = new DefaultReadableConfig();
+        readableConfig.putAll(sinkGroupManagerConfiguration.getSink());
         initSinkGroupManagers();
     }
 
@@ -79,18 +90,10 @@ public class DynamicSinkGroupManager implements Closeable {
             }
             for (Channel channel : channels) {
                 final SinkGroupConfigBuilder sinkGroupConfigBuilder = entry.getValue();
-                final String maxRetainPerPartition =
-                        dynamicSinkValue(
-                                groupId,
-                                AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
-                                AbstractPartitionHandler.DEFAULT_MAX_RETAIN_SIZE);
                 sinkGroupConfigBuilder.addCustomProperty(
-                        AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE,
-                        maxRetainPerPartition.isEmpty()
-                                ? null
-                                : Long.parseLong(maxRetainPerPartition));
-                sinkGroupConfigBuilder.addCustomProperty(
-                        AbstractFunction.KEY_METRICS_HOST, metricsHost);
+                        OPTION_MAX_RETAIN_SIZE.key(),
+                        dynamicSinkValue(groupId, OPTION_MAX_RETAIN_SIZE));
+                sinkGroupConfigBuilder.addCustomProperty(OPTION_METRICS_HOST.key(), metricsHost);
 
                 final SinkGroupConfig sinkGroupConfig = sinkGroupConfigBuilder.build();
                 final SinkGroupManager sinkGroupManager =
@@ -112,17 +115,13 @@ public class DynamicSinkGroupManager implements Closeable {
      */
     private SinkGroupConfigBuilder createSinkGroupConfigBuilderByGroupId(String groupId) {
 
-        final String sinkHandlerIdentity =
-                dynamicSinkValue(groupId, KEY_SINK_HANDLER_IDENTITY, DEFAULT_SINK_HANDLER_IDENTITY);
-        final String functionIdentity = dynamicSinkValue(groupId, KEY_SINK_FUNCTION_IDENTITY, null);
         final SinkGroupConfigBuilder configBuilder =
                 SinkGroupConfigBuilder.newBuilder()
-                        .functionIdentity(functionIdentity)
-                        .handlerIdentity(sinkHandlerIdentity);
-
+                        .functionIdentity(dynamicSinkValue(groupId, OPTION_FUNCTION_ID))
+                        .handlerIdentity(dynamicSinkValue(groupId, OPTION_SINK_HANDLER_ID));
         // add custom property.
         final String keyPrefix = groupId + ".";
-        for (Map.Entry<String, String> entry : sinkGroupManagerConfiguration.getSink().entrySet()) {
+        for (Map.Entry<String, Object> entry : readableConfig.entrySet()) {
             final String key = entry.getKey();
             final int index = key.indexOf(keyPrefix);
             if (index == 0) {
@@ -134,34 +133,16 @@ public class DynamicSinkGroupManager implements Closeable {
     }
 
     /**
-     * get dynamic sink value.
-     *
-     * @param groupId groupId
-     * @param key key
-     * @param defaultValue defaultValue
-     * @return string value
-     */
-    private String dynamicSinkValue(String groupId, String key, String defaultValue) {
-        final String value = dynamicNullableSinkValue(groupId, key, defaultValue);
-        if (value == null) {
-            throw new IllegalStateException(
-                    "sink key not exist in configuration " + groupId + "." + key);
-        }
-        return value;
-    }
-
-    /**
      * get dynamic nullable sink value.
      *
      * @param groupId groupId
-     * @param key key
-     * @param defaultValue defaultValue
+     * @param configOption configOption
      * @return string value
      */
-    private String dynamicNullableSinkValue(String groupId, String key, String defaultValue) {
-        final String realKey = String.join(".", groupId, key);
-        final String value = sinkGroupManagerConfiguration.getSink().get(realKey);
-        return value == null ? defaultValue : value;
+    private <T> T dynamicSinkValue(String groupId, ConfigOption<T> configOption) {
+        final String realKey = String.join(".", groupId, configOption.key());
+        final ConfigOption<T> newConfigOption = configOption.changeKey(realKey);
+        return readableConfig.get(newConfigOption);
     }
 
     /** init sink group configs. */
@@ -180,7 +161,7 @@ public class DynamicSinkGroupManager implements Closeable {
      */
     private Set<String> getAllGroups() {
         final Set<String> topics = new HashSet<>();
-        for (Map.Entry<String, String> entry : sinkGroupManagerConfiguration.getSink().entrySet()) {
+        for (Map.Entry<String, Object> entry : readableConfig.entrySet()) {
             final String key = entry.getKey();
             final String[] keySplit = key.split("\\.");
             topics.add(keySplit[0]);

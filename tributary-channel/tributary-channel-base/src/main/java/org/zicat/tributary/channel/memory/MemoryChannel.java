@@ -18,81 +18,37 @@
 
 package org.zicat.tributary.channel.memory;
 
-import org.zicat.tributary.channel.*;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import org.zicat.tributary.channel.AbstractChannel;
+import org.zicat.tributary.channel.BlockWriter;
+import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.channel.SingleGroupManager;
 
 /** MemoryChannel. */
-public class MemoryChannel extends AbstractChannel<OnePartitionMemoryChannel> {
+public class MemoryChannel extends AbstractChannel<MemorySegment> {
 
-    public MemoryChannel(
+    private final Long segmentSize;
+    private final CompressionType compressionType;
+    private final BlockWriter blockWriter;
+
+    protected MemoryChannel(
             String topic,
-            Set<String> groups,
-            Integer blockSize,
+            SingleGroupManager groupManager,
+            int blockSize,
             Long segmentSize,
-            CompressionType compressionType,
-            boolean flushForce) {
-        this(topic, 1, groups, blockSize, segmentSize, compressionType, flushForce);
-    }
-
-    public MemoryChannel(
-            String topic,
-            int partitionCount,
-            Set<String> groups,
-            Integer blockSize,
-            Long segmentSize,
-            CompressionType compressionType,
-            boolean flushForce) {
-        super(
-                createChannels(
-                        topic,
-                        partitionCount,
-                        groups,
-                        blockSize,
-                        segmentSize,
-                        compressionType,
-                        flushForce));
-    }
-
-    /**
-     * create channels.
-     *
-     * @param topic topic
-     * @param partitionCount partitionCount
-     * @param groups groups
-     * @return list
-     */
-    private static OnePartitionMemoryChannel[] createChannels(
-            String topic,
-            int partitionCount,
-            Set<String> groups,
-            Integer blockSize,
-            Long segmentSize,
-            CompressionType compressionType,
-            boolean flushForce) {
-
-        final OnePartitionMemoryChannel[] channels = new OnePartitionMemoryChannel[partitionCount];
-        final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
-        for (String group : groups) {
-            groupOffsets.put(group, RecordsOffset.startRecordOffset());
-        }
-        for (int i = 0; i < partitionCount; i++) {
-            final OnePartitionGroupManager groupManager =
-                    OnePartitionMemoryGroupManager.createUnPersistGroupManager(topic, groupOffsets);
-            channels[i] =
-                    new OnePartitionMemoryChannel(
-                            topic,
-                            groupManager,
-                            blockSize,
-                            segmentSize,
-                            compressionType,
-                            flushForce);
-        }
-        return channels;
+            CompressionType compressionType) {
+        super(topic, groupManager);
+        this.segmentSize = segmentSize;
+        this.compressionType = compressionType;
+        this.blockWriter = new BlockWriter(blockSize);
     }
 
     @Override
-    public void closeCallback() {}
+    protected MemorySegment createSegment(long id) {
+        return new MemorySegment(id, blockWriter, compressionType, segmentSize);
+    }
+
+    /** load last segment. */
+    protected void loadLastSegment() {
+        initLastSegment(createSegment(0L));
+    }
 }

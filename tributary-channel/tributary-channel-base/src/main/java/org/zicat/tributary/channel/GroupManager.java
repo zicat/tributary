@@ -26,13 +26,6 @@ import java.util.Set;
 public interface GroupManager extends Closeable {
 
     /**
-     * get topic.
-     *
-     * @return topic
-     */
-    String topic();
-
-    /**
      * get all group consume this topic.
      *
      * @return groups

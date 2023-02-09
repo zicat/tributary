@@ -18,51 +18,119 @@
 
 package org.zicat.tributary.channel.file;
 
-import org.zicat.tributary.channel.AbstractChannel;
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.Functions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.zicat.tributary.channel.*;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
-import java.util.concurrent.TimeUnit;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.isLogSegment;
 
 /**
- * FileChannel implements {@link Channel} to Storage records by wrapper multi {@link
- * OnePartitionFileChannel}. Each {@link OnePartitionFileChannel} store one partition data
+ * FileChannel implements {@link Channel} to Storage records and {@link RecordsOffset} in local file
+ * system.
  *
- * <p>All public methods in PartitionFileChannel are @ThreadSafe.
+ * <p>All public methods in FileChannel are @ThreadSafe.
+ *
+ * <p>FileChannel ignore partition params and append/pull all records in the {@link
+ * FileChannel#dir}. {@link Channel} support multi partitions operations.
+ *
+ * <p>Data files {@link FileSegment} name start with {@link FileChannel#topic}
+ *
+ * <p>Only one {@link FileSegment} is writeable and support multi threads write it, multi threads
+ * can read writable segment or other segments tagged as finished(not writable).
+ *
+ * <p>FileChannel support commit RecordsOffset by {@link FileChannel#groupManager} and support clean
+ * up expired segments(all group ids has commit the offset over this segments) async}
  */
-public class FileChannel extends AbstractChannel<OnePartitionFileChannel> {
+public class FileChannel extends AbstractChannel<FileSegment> {
 
-    private Thread flushSegmentThread;
-    private long flushPeriodMill;
+    private static final Logger LOG = LoggerFactory.getLogger(FileChannel.class);
+    private final File dir;
+    private final Long segmentSize;
+    private final CompressionType compressionType;
+    private final BlockWriter blockWriter;
+    private final long flushPageCacheSize;
 
     protected FileChannel(
-            OnePartitionFileChannel[] fileChannels, long flushPeriod, TimeUnit flushUnit) {
-        super(fileChannels);
-        if (flushPeriod > 0) {
-            flushPeriodMill = flushUnit.toMillis(flushPeriod);
-            flushSegmentThread = new Thread(this::periodForceSegment, "segment_flush_thread");
-            flushSegmentThread.start();
-        }
-    }
-
-    /** force segment to dish. */
-    protected void periodForceSegment() {
-        Functions.loopCloseableFunction(
-                t -> {
-                    boolean success = true;
-                    for (OnePartitionFileChannel fileChannel : channels) {
-                        success = success && fileChannel.periodFlush();
-                    }
-                    return success;
-                },
-                flushPeriodMill,
-                closed);
+            String topic,
+            SingleGroupManager groupManager,
+            int blockSize,
+            Long segmentSize,
+            CompressionType compressionType,
+            long flushPageCacheSize,
+            File dir) {
+        super(topic, groupManager);
+        this.dir = dir;
+        this.flushPageCacheSize = flushPageCacheSize;
+        this.compressionType = compressionType;
+        this.segmentSize = segmentSize;
+        this.blockWriter = new BlockWriter(blockSize);
     }
 
     @Override
-    public void closeCallback() {
-        if (flushSegmentThread != null) {
-            flushSegmentThread.interrupt();
+    protected FileSegment createSegment(long id) {
+        return new FileSegmentBuilder()
+                .fileId(id)
+                .dir(dir)
+                .segmentSize(segmentSize)
+                .filePrefix(topic)
+                .compressionType(compressionType)
+                .build(blockWriter);
+    }
+
+    @Override
+    protected boolean append2Segment(Segment segment, byte[] record, int offset, int length)
+            throws IOException {
+        final boolean appendSuccess = super.append2Segment(segment, record, offset, length);
+        if (appendSuccess && segment.cacheUsed() >= flushPageCacheSize) {
+            segment.flush(false);
         }
+        return appendSuccess;
+    }
+
+    @Override
+    protected void recycleSegment(FileSegment segment) {
+        if (segment.recycle()) {
+            LOG.info("expired file " + segment.filePath() + " deleted success");
+        } else {
+            LOG.info("expired file " + segment.filePath() + " deleted fail");
+        }
+    }
+
+    /** load segments. */
+    protected void createLastSegment() {
+
+        final File[] files = dir.listFiles(file -> isLogSegment(topic, file.getName()));
+        if (files == null || files.length == 0) {
+            initLastSegment(createSegment(0));
+            return;
+        }
+
+        // load segment and find max.
+        FileSegment maxSegment = null;
+        final List<FileSegment> remainingSegment = new ArrayList<>();
+        for (File file : files) {
+            final String fileName = file.getName();
+            final long id = getIdByName(topic, fileName);
+            final FileSegment segment = createSegment(id);
+            addSegment(segment);
+            remainingSegment.add(segment);
+            maxSegment = SegmentUtil.max(segment, maxSegment);
+        }
+        for (FileSegment fileSegment : remainingSegment) {
+            try {
+                fileSegment.finish();
+            } catch (IOException e) {
+                throw new TributaryRuntimeException("finish history segment fail", e);
+            }
+        }
+        initLastSegment(createSegment(maxSegment.segmentId() + 1));
+        cleanUp();
     }
 }

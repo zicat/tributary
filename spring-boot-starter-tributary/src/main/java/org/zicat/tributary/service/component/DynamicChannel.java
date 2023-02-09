@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.file.FileChannelFactory;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.*;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 
 import javax.annotation.PostConstruct;
@@ -40,7 +40,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DynamicChannel implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DynamicChannel.class);
-    private static final String KEY_TYPE = "type";
+
+    private static final ConfigOption<String> OPTION_TYPE =
+            ConfigOptions.key("type")
+                    .stringType()
+                    .description("channel type")
+                    .defaultValue(FileChannelFactory.TYPE);
 
     @Autowired ChannelConfiguration channelConfiguration;
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -55,11 +60,11 @@ public class DynamicChannel implements Closeable {
             return;
         }
         try {
-            for (String channel : getAllChannels()) {
-                final Map<String, String> params = getChannelParams(channel);
-                final String type = params.getOrDefault(KEY_TYPE, FileChannelFactory.TYPE);
+            for (String topic : getAllTopics()) {
+                final ReadableConfig readableConfig = getTopicParams(topic);
+                final String type = readableConfig.get(OPTION_TYPE);
                 final ChannelFactory factory = ChannelFactory.findChannelFactory(type);
-                channels.put(channel, factory.createChannel(channel, params));
+                channels.put(topic, factory.createChannel(topic, readableConfig));
             }
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
@@ -71,19 +76,19 @@ public class DynamicChannel implements Closeable {
      * get channel params.
      *
      * @param channel channel
-     * @return map
+     * @return ReadableConfig
      */
-    private Map<String, String> getChannelParams(String channel) {
-        final Map<String, String> result = new HashMap<>();
+    private ReadableConfig getTopicParams(String channel) {
+        final DefaultReadableConfig config = new DefaultReadableConfig();
         final String prefix = channel + ".";
         for (Map.Entry<String, String> entry : channelConfiguration.getChannel().entrySet()) {
             final String key = entry.getKey();
             final int index = key.indexOf(prefix);
             if (index != -1) {
-                result.put(key.substring(index + prefix.length()), entry.getValue());
+                config.put(key.substring(index + prefix.length()), entry.getValue());
             }
         }
-        return result;
+        return config;
     }
 
     /**
@@ -91,24 +96,24 @@ public class DynamicChannel implements Closeable {
      *
      * @return topic list
      */
-    private Set<String> getAllChannels() {
-        final Set<String> channels = new HashSet<>();
+    private Set<String> getAllTopics() {
+        final Set<String> topics = new HashSet<>();
         for (Map.Entry<String, String> entry : channelConfiguration.getChannel().entrySet()) {
             final String key = entry.getKey();
             final String[] keySplit = key.split("\\.");
-            channels.add(keySplit[0]);
+            topics.add(keySplit[0]);
         }
-        return channels;
+        return topics;
     }
 
     /**
      * get channel by topic.
      *
-     * @param channel channel
+     * @param topic topic
      * @return Channel
      */
-    public Channel getChannel(String channel) {
-        return channels.get(channel);
+    public Channel getChannel(String topic) {
+        return channels.get(topic);
     }
 
     /**

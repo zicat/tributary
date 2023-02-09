@@ -21,8 +21,8 @@ package org.zicat.tributary.channel;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-/** OnePartitionChannel for {@link Channel} without partition. @ThreadSafe */
-public interface OnePartitionChannel extends Channel, OnePartitionGroupManager {
+/** SingleChannel for {@link Channel} without partition. @ThreadSafe */
+public interface SingleChannel extends Channel, SingleGroupManager {
 
     @Override
     default long lastSegmentId(int partition) {

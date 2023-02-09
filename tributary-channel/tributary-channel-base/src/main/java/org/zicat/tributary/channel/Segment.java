@@ -60,11 +60,17 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     protected final CompressionType compressionType;
     protected long cacheUsed = 0;
 
-    public Segment(long id, BlockWriter writer, CompressionType compressionType, long segmentSize) {
+    public Segment(
+            long id,
+            BlockWriter writer,
+            CompressionType compressionType,
+            long segmentSize,
+            long position) {
         this.id = id;
         this.segmentSize = segmentSize;
         this.writer = writer;
         this.compressionType = compressionType;
+        this.position.set(position);
         this.blockFlushHandler =
                 (block) -> {
                     block.reusedBuf(
@@ -340,16 +346,9 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     @Override
     public synchronized void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
-            try {
-                finish();
-            } finally {
-                closeCallback();
-            }
+            finish();
         }
     }
-
-    /** close callback. */
-    public abstract void closeCallback() throws IOException;
 
     @Override
     public int compareTo(Segment o) {

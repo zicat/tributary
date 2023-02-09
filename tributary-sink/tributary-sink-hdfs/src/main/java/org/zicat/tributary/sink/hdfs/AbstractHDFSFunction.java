@@ -23,6 +23,8 @@ import org.apache.hadoop.io.compress.SnappyCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -41,17 +43,29 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     public static final String DIRECTORY_DELIMITER = System.getProperty("file.separator");
     public static final String BASE_SINK_PATH = "sinkPath";
 
-    public static final String KEY_KEYTAB = "keytab";
-    public static final String DEFAULT_KEYTAB = null;
+    public static final ConfigOption<String> OPTION_KEYTAB =
+            ConfigOptions.key("keytab")
+                    .stringType()
+                    .description("kerberos keytab")
+                    .defaultValue(null);
 
-    public static final String KEY_PRINCIPLE = "principle";
-    public static final String DEFAULT_PRINCIPLE = null;
+    public static final ConfigOption<String> OPTION_PRINCIPLE =
+            ConfigOptions.key("principle")
+                    .stringType()
+                    .description("kerberos principle")
+                    .defaultValue(null);
 
-    public static final String KEY_ROLL_SIZE = "roll.size";
-    public static final long DEFAULT_ROLL_SIZE = 1024 * 1024 * 256L;
+    public static final ConfigOption<Long> OPTION_ROLL_SIZE =
+            ConfigOptions.key("roll.size")
+                    .longType()
+                    .description("roll new file if file size over this param")
+                    .defaultValue(1024 * 1024 * 256L);
 
-    public static final String KEY_MAX_RETRIES = "maxRetries";
-    public static final int DEFAULT_MAX_RETRIES = 3;
+    public static final ConfigOption<Integer> OPTION_MAX_RETRIES =
+            ConfigOptions.key("maxRetries")
+                    .integerType()
+                    .description("max retries times if operation fail")
+                    .defaultValue(3);
 
     protected PrivilegedExecutor privilegedExecutor;
     protected String basePath;
@@ -66,17 +80,16 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
 
         super.open(context);
         this.snappyCodec.setConf(new Configuration());
-        final String basePath = context.getCustomProperty(BASE_SINK_PATH).toString().trim();
+        final String basePath = context.get(BASE_SINK_PATH).toString().trim();
         this.basePath =
                 basePath.endsWith(DIRECTORY_DELIMITER)
                         ? basePath.substring(0, basePath.length() - 1)
                         : basePath;
         this.privilegedExecutor =
                 TributaryAuthenticationUtil.getAuthenticator(
-                        context.getCustomProperty(KEY_PRINCIPLE, DEFAULT_KEYTAB),
-                        context.getCustomProperty(KEY_KEYTAB, DEFAULT_PRINCIPLE));
-        this.rollSize = context.getCustomProperty(KEY_ROLL_SIZE, DEFAULT_ROLL_SIZE);
-        this.maxRetry = context.getCustomProperty(KEY_MAX_RETRIES, DEFAULT_MAX_RETRIES);
+                        context.get(OPTION_PRINCIPLE), context.get(OPTION_KEYTAB));
+        this.rollSize = context.get(OPTION_ROLL_SIZE);
+        this.maxRetry = context.get(OPTION_MAX_RETRIES);
         this.prefixFileName = prefixFileNameInBucket();
     }
 

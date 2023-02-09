@@ -16,24 +16,22 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.demo.source;
+package org.zicat.tributary.common;
 
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.netty.AbstractNettySource;
-import org.zicat.tributary.source.netty.AbstractNettySourceFactory;
+import java.util.HashMap;
 
-/** HttpSourceFactory. */
-public class HttpSourceFactory extends AbstractNettySourceFactory {
+/** DefaultReadableConfig. */
+public class DefaultReadableConfig extends HashMap<String, Object> implements ReadableConfig {
 
     @Override
-    public String identity() {
-        return "http";
-    }
-
-    @Override
-    public AbstractNettySource createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, ReadableConfig config) {
-        return new HttpSource(host, port, eventThreads, channel);
+    public <T> T get(ConfigOption<T> configOption) {
+        final Object value = get(configOption.key());
+        if (value != null) {
+            return configOption.parseValue(value);
+        }
+        if (configOption.hasDefaultValue()) {
+            return configOption.defaultValue();
+        }
+        throw new IllegalStateException("config option not config " + configOption);
     }
 }

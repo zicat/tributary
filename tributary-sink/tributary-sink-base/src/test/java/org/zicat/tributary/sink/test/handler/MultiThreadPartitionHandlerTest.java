@@ -21,7 +21,8 @@ package org.zicat.tributary.sink.test.handler;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.memory.MemoryChannel;
+import org.zicat.tributary.channel.DefaultChannel;
+import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
@@ -29,8 +30,9 @@ import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-import static org.zicat.tributary.sink.handler.MultiThreadPartitionHandler.KEY_THREADS;
+import static org.zicat.tributary.sink.handler.MultiThreadPartitionHandler.OPTION_THREADS;
 
 /** DisruptorMultiSinkHandlerTest. */
 public class MultiThreadPartitionHandlerTest {
@@ -40,17 +42,20 @@ public class MultiThreadPartitionHandlerTest {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         int threads = 0;
-        builder.addCustomProperty(KEY_THREADS, threads);
+        builder.addCustomProperty(OPTION_THREADS.key(), threads);
         MultiThreadPartitionHandler handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new MemoryChannel(
-                                "t1",
-                                Collections.singleton("g1"),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY,
-                                true),
+                        new DefaultChannel<>(
+                                MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        1,
+                                        Collections.singleton("g1"),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY),
+                                0,
+                                TimeUnit.SECONDS),
                         0,
                         builder.build());
         try {
@@ -61,17 +66,20 @@ public class MultiThreadPartitionHandlerTest {
         }
 
         threads = 10;
-        builder.addCustomProperty(KEY_THREADS, threads);
+        builder.addCustomProperty(OPTION_THREADS.key(), threads);
         handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new MemoryChannel(
-                                "t1",
-                                Collections.singleton("g1"),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY,
-                                true),
+                        new DefaultChannel<>(
+                                MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        1,
+                                        Collections.singleton("g1"),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY),
+                                0,
+                                TimeUnit.SECONDS),
                         0,
                         builder.build());
         handler.open();
@@ -84,17 +92,20 @@ public class MultiThreadPartitionHandlerTest {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         final int threads = 4;
-        builder.addCustomProperty(KEY_THREADS, threads);
+        builder.addCustomProperty(OPTION_THREADS.key(), threads);
         MultiThreadPartitionHandler handler =
                 new MultiThreadPartitionHandler(
                         "g1",
-                        new MemoryChannel(
-                                "t1",
-                                Collections.singleton("g1"),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY,
-                                true),
+                        new DefaultChannel<>(
+                                MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        1,
+                                        Collections.singleton("g1"),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY),
+                                0,
+                                TimeUnit.SECONDS),
                         0,
                         builder.build());
         handler.open();

@@ -20,6 +20,7 @@ package org.zicat.tributary.sink.test;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
@@ -50,19 +51,29 @@ public class SinkGroupConfigTest {
         Assert.assertEquals(
                 DirectPartitionHandlerFactory.IDENTITY, sinkGroupConfig.handlerIdentity());
         Assert.assertEquals(AssertFunctionFactory.IDENTITY, sinkGroupConfig.functionIdentity());
-        Assert.assertEquals("bb", sinkGroupConfig.getCustomProperty("aa"));
-        Assert.assertEquals("dd", sinkGroupConfig.getCustomProperty("cc"));
-        Assert.assertNull(sinkGroupConfig.getCustomProperty("ee"));
+        Assert.assertEquals("bb", sinkGroupConfig.get("aa"));
+        Assert.assertEquals("dd", sinkGroupConfig.get("cc"));
+        Assert.assertNull(sinkGroupConfig.get("ee"));
         final Properties properties = sinkGroupConfig.filterPropertyByPrefix("kafka.");
         Assert.assertEquals("hh", properties.getProperty("aa"));
         Assert.assertEquals("jj", properties.getProperty("bb"));
 
-        Assert.assertEquals(3, sinkGroupConfig.getCustomProperty("kk", 4));
-        Assert.assertEquals(5, sinkGroupConfig.getCustomProperty("empty", 5));
+        int value = sinkGroupConfig.get(ConfigOptions.key("kk").integerType().defaultValue(4));
+        Assert.assertEquals(3, value);
 
-        Assert.assertNull(sinkGroupConfig.getCustomProperty("ks", null));
-        Assert.assertEquals("aaa", sinkGroupConfig.getCustomProperty("ks", "aaa"));
-        Assert.assertEquals("bb", sinkGroupConfig.getCustomProperty("aa", "aaa"));
-        Assert.assertEquals("m_v_1", sinkGroupConfig.getCustomProperty("m_1", "aaa"));
+        value = sinkGroupConfig.get(ConfigOptions.key("empty").integerType().defaultValue(5));
+        Assert.assertEquals(5, value);
+
+        Assert.assertNull(
+                sinkGroupConfig.get(ConfigOptions.key("ks").stringType().defaultValue(null)));
+        Assert.assertEquals(
+                "aaa",
+                sinkGroupConfig.get(ConfigOptions.key("ks").stringType().defaultValue("aaa")));
+        Assert.assertEquals(
+                "bb",
+                sinkGroupConfig.get(ConfigOptions.key("aa").stringType().defaultValue("aaa")));
+        Assert.assertEquals(
+                "m_v_1",
+                sinkGroupConfig.get(ConfigOptions.key("m_1").stringType().defaultValue("aaa")));
     }
 }

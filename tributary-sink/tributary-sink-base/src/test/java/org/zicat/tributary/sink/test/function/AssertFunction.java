@@ -37,7 +37,7 @@ public class AssertFunction extends AbstractFunction {
     public void open(Context context) {
         super.open(context);
         // important: assert data list must thread safe.
-        assertData = (List<?>) context.getCustomProperty(KEY_ASSERT_DATA);
+        assertData = (List<?>) context.get(KEY_ASSERT_DATA);
     }
 
     @Override

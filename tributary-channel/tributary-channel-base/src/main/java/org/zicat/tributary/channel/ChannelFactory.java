@@ -18,9 +18,9 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
-import java.util.Map;
 import java.util.ServiceLoader;
 
 /** ChannelFactory. */
@@ -37,11 +37,11 @@ public interface ChannelFactory {
      * create channel.
      *
      * @param topic topic
-     * @param params params
+     * @param readableConfig readableConfig
      * @throws Exception exception
      * @return Channel
      */
-    Channel createChannel(String topic, Map<String, String> params) throws Exception;
+    Channel createChannel(String topic, ReadableConfig readableConfig) throws Exception;
 
     /**
      * find channel factory.

@@ -18,17 +18,46 @@
 
 package org.zicat.tributary.channel.file;
 
-import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.channel.DefaultChannel;
+import org.zicat.tributary.channel.SingleGroupManager;
+import org.zicat.tributary.common.IOUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-/** FileChannelBuilder for {@link FileChannel}. */
-public class FileChannelBuilder extends ChannelBuilder {
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
+import static org.zicat.tributary.channel.file.FileGroupManager.createFileName;
+
+/** FileChannelBuilder. */
+public class FileChannelBuilder {
 
     private List<File> dirs;
-    private long groupPersistPeriodSecond =
-            OnePartitionMemoryGroupManager.DEFAULT_GROUP_PERSIST_PERIOD_SECOND;
+    private long groupPersistPeriodSecond = OPTION_GROUP_PERSIST_PERIOD_SECOND.defaultValue();
+    protected String topic;
+    protected Long segmentSize;
+    protected Integer blockSize;
+    protected CompressionType compressionType;
+    protected long flushPageCacheSize = 1024L * 1024L * 32L;
+    protected List<String> consumerGroups;
+    protected long flushPeriod = 1;
+    protected TimeUnit flushTimeUnit = TimeUnit.SECONDS;
+
+    /**
+     * set flush period .
+     *
+     * @param flushPeriod flushPeriod
+     * @param flushTimeUnit flushTimeUnit
+     * @return this
+     */
+    public FileChannelBuilder flushPeriod(long flushPeriod, TimeUnit flushTimeUnit) {
+        this.flushPeriod = flushPeriod;
+        this.flushTimeUnit = flushTimeUnit;
+        return this;
+    }
 
     /**
      * set dir list.
@@ -53,35 +82,118 @@ public class FileChannelBuilder extends ChannelBuilder {
     }
 
     /**
+     * set compression type.
+     *
+     * @param compressionType compressionType
+     * @return this
+     */
+    public FileChannelBuilder compressionType(CompressionType compressionType) {
+        if (compressionType != null) {
+            this.compressionType = compressionType;
+        }
+        return this;
+    }
+
+    /**
+     * set flush page cache size.
+     *
+     * @param flushPageCacheSize flushPageCacheSize
+     * @return this
+     */
+    public FileChannelBuilder flushPageCacheSize(long flushPageCacheSize) {
+        this.flushPageCacheSize = flushPageCacheSize;
+        return this;
+    }
+
+    /**
+     * set segment size.
+     *
+     * @param segmentSize segmentSize
+     * @return this
+     */
+    public FileChannelBuilder segmentSize(Long segmentSize) {
+        this.segmentSize = segmentSize;
+        return this;
+    }
+
+    /**
+     * set block size.
+     *
+     * @param blockSize blockSize
+     * @return this
+     */
+    public FileChannelBuilder blockSize(Integer blockSize) {
+        this.blockSize = blockSize;
+        return this;
+    }
+
+    /**
+     * set topic.
+     *
+     * @param topic topic
+     * @return this
+     */
+    public FileChannelBuilder topic(String topic) {
+        this.topic = topic;
+        return this;
+    }
+
+    /**
+     * set consumer groups.
+     *
+     * @param consumerGroups consumerGroups
+     * @return this
+     */
+    public FileChannelBuilder consumerGroups(List<String> consumerGroups) {
+        this.consumerGroups = consumerGroups;
+        return this;
+    }
+
+    /**
      * build to channel.
      *
      * @return PartitionFileChannel
      */
-    public FileChannel build() {
+    public Channel build() throws IOException {
 
         if (dirs == null || dirs.isEmpty()) {
             throw new IllegalStateException("dir list is null or empty");
         }
         if (consumerGroups == null || consumerGroups.isEmpty()) {
-            throw new IllegalStateException("consumer group is null or empty");
+            throw new IllegalStateException("file channel must has at least one consumer group");
         }
-
-        final OnePartitionFileChannelBuilder builder = OnePartitionFileChannelBuilder.newBuilder();
-        builder.segmentSize(segmentSize)
-                .blockSize(blockSize)
-                .compressionType(compressionType)
-                .flushPeriod(0, flushTimeUnit)
-                .flushPageCacheSize(flushPageCacheSize)
-                .topic(topic)
-                .consumerGroups(consumerGroups)
-                .flushForce(flushForce);
-        final OnePartitionFileChannel[] fileChannels = new OnePartitionFileChannel[dirs.size()];
+        final FileChannel[] fileChannels = new FileChannel[dirs.size()];
         for (int i = 0; i < dirs.size(); i++) {
-            builder.dir(dirs.get(i));
-            builder.groupPersistPeriodSecond(groupPersistPeriodSecond);
-            fileChannels[i] = builder.build();
+            final File dir = dirs.get(i).getCanonicalFile();
+            if (!dir.exists() && !IOUtils.makeDir(dir)) {
+                throw new IllegalStateException("try to create fail " + dir.getPath());
+            }
+            fileChannels[i] = createFileChannel(dir);
         }
-        return new FileChannel(fileChannels, flushPeriod, flushTimeUnit);
+        return new DefaultChannel<>(fileChannels, flushPeriod, flushTimeUnit);
+    }
+
+    /**
+     * file channel dir.
+     *
+     * @param dir dir
+     * @return FileChannel
+     */
+    private FileChannel createFileChannel(File dir) {
+        final File groupIndexFile = new File(dir, createFileName(topic));
+        final SingleGroupManager singleGroupManager =
+                new FileGroupManager(groupIndexFile, consumerGroups, groupPersistPeriodSecond);
+        final FileChannel channel =
+                new FileChannel(
+                        topic,
+                        singleGroupManager,
+                        blockSize,
+                        segmentSize,
+                        compressionType,
+                        flushPageCacheSize,
+                        dir);
+        channel.createLastSegment();
+        return channel;
     }
 
     /**

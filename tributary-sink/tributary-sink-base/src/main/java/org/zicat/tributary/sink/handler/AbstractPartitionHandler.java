@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Clock;
@@ -50,12 +52,18 @@ import static org.zicat.tributary.common.Threads.sleepQuietly;
 public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPartitionHandler.class);
-    public static final String KEY_MAX_RETAIN_SIZE = "maxRetainPerPartitionBytes";
-    public static final String DEFAULT_MAX_RETAIN_SIZE = "";
 
-    public static final String KEY_RETAIN_SIZE_CHECK_PERIOD_MILLI =
-            "retainPerPartitionCheckPeriodMilli";
-    public static final int DEFAULT_RETAIN_SIZE_CHECK_PERIOD_MILLI = 30 * 1000;
+    public static final ConfigOption<Long> OPTION_MAX_RETAIN_SIZE =
+            ConfigOptions.key("maxRetainPerPartitionBytes")
+                    .longType()
+                    .description("delete oldest segment if one partition lag over this param")
+                    .defaultValue(null);
+
+    public static final ConfigOption<Integer> OPTION_RETAIN_SIZE_CHECK_PERIOD_MILLI =
+            ConfigOptions.key("retainPerPartitionCheckPeriodMilli")
+                    .integerType()
+                    .description("check retain thread check period, default 30s")
+                    .defaultValue(30 * 1000);
 
     private static final long DEFAULT_MIN_WAIT_TIME = 500;
 
@@ -73,7 +81,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         this.commitOffsetWaterMark = startOffset;
         this.fetchOffset = startOffset;
         this.maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
-        this.clock = sinkGroupConfig.getOrCreateDefaultClock();
+        this.clock = sinkGroupConfig.getOrGetDefaultClock();
         this.preTriggerMillis = clock.currentTimeMillis();
     }
 
@@ -218,12 +226,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      * @return value
      */
     public static Long parseMaxRetainSize(SinkGroupConfig sinkGroupConfig) {
-        final Object maxRetainSize = sinkGroupConfig.getCustomProperty(KEY_MAX_RETAIN_SIZE);
-        if (maxRetainSize != null) {
-            LOG.info("param {} value = {}", KEY_MAX_RETAIN_SIZE, maxRetainSize);
-            return (Long) maxRetainSize;
-        }
-        return null;
+        return sinkGroupConfig.get(OPTION_MAX_RETAIN_SIZE);
     }
 
     @Override

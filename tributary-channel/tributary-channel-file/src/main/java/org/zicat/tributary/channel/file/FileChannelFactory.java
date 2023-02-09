@@ -21,30 +21,21 @@ package org.zicat.tributary.channel.file;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
+import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.zicat.tributary.channel.memory.MemoryChannelFactory.*;
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.*;
+import static org.zicat.tributary.channel.memory.MemoryChannelFactory.SPLIT_STR;
 
 /** FileChannelFactory. */
 public class FileChannelFactory implements ChannelFactory {
 
     public static final String TYPE = "file";
-
-    public static final String SPLIT_STR = ",";
-    public static final String KEY_FILE_DIRS = "dirs";
-
-    public static final String KEY_GROUP_PERSIST_PERIOD_SECOND = "groupPersistPeriodSecond";
-
-    public static final String KEY_FILE_FLUSH_PERIOD_MILLS = "flushPeriodMills";
-    public static final String DEFAULT_FILE_FLUSH_PERIOD_MILLS = String.valueOf(500);
-
-    public static final String KEY_FILE_FLUSH_PAGE_CACHE_SIZE = "flushPageCacheSize";
-    public static final String DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE =
-            String.valueOf(1024L * 1024L * 32L);
 
     @Override
     public String type() {
@@ -52,59 +43,29 @@ public class FileChannelFactory implements ChannelFactory {
     }
 
     @Override
-    public Channel createChannel(String topic, Map<String, String> params) {
-        if (topic == null) {
-            throw new IllegalStateException("topic name not configuration");
-        }
-        final String groupIds = params.get(KEY_GROUPS);
-        if (groupIds == null) {
-            throw new IllegalStateException("topic has no sink group " + topic);
-        }
-        final String dirsStr = params.get(KEY_FILE_DIRS);
-        if (dirsStr == null) {
-            throw new IllegalStateException("dirs not configuration");
-        }
-        final Set<String> groupSet = new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
+    public Channel createChannel(String topic, ReadableConfig config) throws IOException {
+
+        final String dirsStr = config.get(OPTION_DIR);
         final List<String> dirs = Arrays.asList(dirsStr.split(SPLIT_STR));
-        final int blockSize =
-                Integer.parseInt(params.getOrDefault(KEY_FILE_BLOCK_SIZE, DEFAULT_FILE_BLOCK_SIZE));
-        final long segmentSize =
-                Long.parseLong(
-                        params.getOrDefault(KEY_FILE_SEGMENT_SIZE, DEFAULT_FILE_SEGMENT_SIZE));
-        final int flushPeriodMills =
-                Integer.parseInt(
-                        params.getOrDefault(
-                                KEY_FILE_FLUSH_PERIOD_MILLS, DEFAULT_FILE_FLUSH_PERIOD_MILLS));
-        final long flushPageCacheSize =
-                Long.parseLong(
-                        params.getOrDefault(
-                                KEY_FILE_FLUSH_PAGE_CACHE_SIZE,
-                                DEFAULT_FILE_FLUSH_PAGE_CACHE_SIZE));
-        final String compression =
-                params.getOrDefault(KEY_FILE_COMPRESSION, DEFAULT_FILE_COMPRESSION);
 
-        final boolean flushForce =
-                Boolean.parseBoolean(
-                        params.getOrDefault(KEY_FILE_FLUSH_FORCE, DEFAULT_FILE_FLUSH_FORCE));
+        final String groupIds = config.get(OPTION_GROUPS);
+        final Set<String> groupSet = new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
 
-        final long groupPersist =
-                Long.parseLong(
-                        params.getOrDefault(
-                                KEY_GROUP_PERSIST_PERIOD_SECOND,
-                                String.valueOf(
-                                        OnePartitionMemoryGroupManager
-                                                .DEFAULT_GROUP_PERSIST_PERIOD_SECOND)));
-
+        final int blockSize = config.get(OPTION_BLOCK_SIZE);
+        final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
+        final int flushPeriodMills = config.get(OPTION_FLUSH_PERIOD_MILLS);
+        final long flushPageCacheSize = config.get(OPTION_FLUSH_PAGE_CACHE_SIZE);
+        final String compression = config.get(OPTION_COMPRESSION);
+        final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD_SECOND);
         final FileChannelBuilder builder =
                 FileChannelBuilder.newBuilder()
                         .dirs(createDir(dirs))
+                        .flushPeriod(flushPeriodMills, TimeUnit.MILLISECONDS)
                         .groupPersistPeriodSecond(groupPersist);
         builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(CompressionType.getByName(compression))
-                .flushPeriod(flushPeriodMills, TimeUnit.MILLISECONDS)
                 .flushPageCacheSize(flushPageCacheSize)
-                .flushForce(flushForce)
                 .topic(topic)
                 .consumerGroups(new ArrayList<>(groupSet));
         return builder.build();

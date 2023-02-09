@@ -16,24 +16,17 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.demo.source;
+package org.zicat.tributary.common;
 
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.netty.AbstractNettySource;
-import org.zicat.tributary.source.netty.AbstractNettySourceFactory;
+/** ReadableConfig. */
+public interface ReadableConfig {
 
-/** HttpSourceFactory. */
-public class HttpSourceFactory extends AbstractNettySourceFactory {
-
-    @Override
-    public String identity() {
-        return "http";
-    }
-
-    @Override
-    public AbstractNettySource createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, ReadableConfig config) {
-        return new HttpSource(host, port, eventThreads, channel);
-    }
+    /**
+     * get value by config option.
+     *
+     * @param configOption configOption
+     * @param <T> type of value
+     * @return value
+     */
+    <T> T get(ConfigOption<T> configOption);
 }

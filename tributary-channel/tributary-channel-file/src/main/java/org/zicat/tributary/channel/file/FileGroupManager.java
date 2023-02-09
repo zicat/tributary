@@ -20,8 +20,8 @@ package org.zicat.tributary.channel.file;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.memory.MemoryGroupManager;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
@@ -33,19 +33,21 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
+
 /**
- * OnePartitionFileGroupManager.
+ * FileGroupManager.
  *
- * <p>Store RecordsOffset in local {@link OnePartitionFileGroupManager#groupIndexFile}.
+ * <p>Store RecordsOffset in local {@link FileGroupManager#groupIndexFile}.
  *
  * <p>File name example: {myTopic}_group_id.index
  *
  * <p>file content: 4 bytes(Int, GroupLength) + group body + 8 Bytes(Long, segmentId) + 8
  * Bytes(Long, segmentId).
  */
-public class OnePartitionFileGroupManager extends OnePartitionMemoryGroupManager {
+public class FileGroupManager extends MemoryGroupManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OnePartitionFileGroupManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
     private static final int RECORD_LENGTH = 20;
 
     public static final String FILE_SUFFIX = "_group_id.index";
@@ -54,14 +56,13 @@ public class OnePartitionFileGroupManager extends OnePartitionMemoryGroupManager
     private final File groupIndexFile;
     private ByteBuffer byteBuffer;
 
-    public OnePartitionFileGroupManager(File dir, String topic, List<String> groupIds) {
-        this(dir, topic, groupIds, DEFAULT_GROUP_PERSIST_PERIOD_SECOND);
+    public FileGroupManager(File groupIndexFile, List<String> groupIds) {
+        this(groupIndexFile, groupIds, OPTION_GROUP_PERSIST_PERIOD_SECOND.defaultValue());
     }
 
-    public OnePartitionFileGroupManager(
-            File dir, String topic, List<String> groupIds, long periodSecond) {
-        super(topic, getGroupOffsets(new File(dir, createFileName(topic)), groupIds), periodSecond);
-        this.groupIndexFile = new File(dir, createFileName(topic));
+    public FileGroupManager(File groupIndexFile, List<String> groupIds, long periodSecond) {
+        super(getGroupOffsets(groupIndexFile, groupIds), periodSecond);
+        this.groupIndexFile = groupIndexFile;
     }
 
     @Override

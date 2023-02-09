@@ -16,8 +16,10 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel;
+package org.zicat.tributary.channel.memory;
 
+import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.SingleGroupManager;
 import org.zicat.tributary.common.Threads;
 
 import java.io.IOException;
@@ -31,25 +33,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * OnePartitionMemoryGroupManager.
+ * MemoryGroupManager.
  *
  * <p>Store commit offset in memory cache, Override flush(String groupId, RecordsOffset
  * recordsOffset) to storage.
  */
-public abstract class OnePartitionMemoryGroupManager implements OnePartitionGroupManager {
-
-    public static final long DEFAULT_GROUP_PERSIST_PERIOD_SECOND = 30;
+public abstract class MemoryGroupManager implements SingleGroupManager {
 
     private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final long periodSecond;
-    private final String topic;
     protected ScheduledExecutorService schedule;
 
-    public OnePartitionMemoryGroupManager(
-            String topic, Map<String, RecordsOffset> groupOffsets, long periodSecond) {
-        this.topic = topic;
+    public MemoryGroupManager(Map<String, RecordsOffset> groupOffsets, long periodSecond) {
         this.cache.putAll(groupOffsets);
         this.groups.addAll(groupOffsets.keySet());
         this.periodSecond = periodSecond;
@@ -93,11 +90,6 @@ public abstract class OnePartitionMemoryGroupManager implements OnePartitionGrou
             return;
         }
         cache.put(groupId, recordsOffset);
-    }
-
-    @Override
-    public String topic() {
-        return topic;
     }
 
     @Override
@@ -173,13 +165,12 @@ public abstract class OnePartitionMemoryGroupManager implements OnePartitionGrou
     /**
      * create not persist memory group manager.
      *
-     * @param topic topic
      * @param groupOffsets groupOffsets
      * @return MemoryOnePartitionGroupManager
      */
-    public static OnePartitionMemoryGroupManager createUnPersistGroupManager(
-            String topic, Map<String, RecordsOffset> groupOffsets) {
-        return new OnePartitionMemoryGroupManager(topic, groupOffsets, -1) {
+    public static MemoryGroupManager createUnPersistGroupManager(
+            Map<String, RecordsOffset> groupOffsets) {
+        return new MemoryGroupManager(groupOffsets, -1) {
             @Override
             public void persist() {}
         };

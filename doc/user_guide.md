@@ -64,7 +64,6 @@ channel.c1.type=file
 channel.c1.dirs=/tmp/tributary/p1
 channel.c1.groups=group_1
 channel.c1.compression=snappy
-channel.c1.flushForce=true
 sink.group_1.maxRetainPerPartitionBytes=9663676414
 sink.group_1.partitionHandlerIdentity=direct
 sink.group_1.functionIdentity=print

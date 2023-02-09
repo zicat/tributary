@@ -18,62 +18,278 @@
 
 package org.zicat.tributary.channel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.TributaryIOException;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /** AbstractChannel. */
-public abstract class AbstractChannel<C extends OnePartitionChannel> implements Channel {
+public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
 
-    protected final C[] channels;
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractChannel.class);
+
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition newSegmentCondition = lock.newCondition();
+    private final Map<Long, S> segmentCache = new ConcurrentHashMap<>();
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private final AtomicLong writeBytes = new AtomicLong();
+    private final AtomicLong readBytes = new AtomicLong();
+
+    protected final SingleGroupManager groupManager;
     protected final String topic;
-    protected final AtomicBoolean closed = new AtomicBoolean(false);
-    protected final Set<String> groups;
 
-    public AbstractChannel(C[] channels) {
-        if (channels == null || channels.length == 0) {
-            throw new IllegalArgumentException("channels is null or empty");
+    protected long minCommitSegmentId;
+    protected volatile S lastSegment;
+
+    protected AbstractChannel(String topic, SingleGroupManager groupManager) {
+        this.topic = topic;
+        this.groupManager = groupManager;
+        this.minCommitSegmentId = groupManager.getMinRecordsOffset().segmentId();
+    }
+
+    /**
+     * init last segment.
+     *
+     * @param lastSegment lastSegment
+     */
+    protected void initLastSegment(S lastSegment) {
+        this.lastSegment = lastSegment;
+        addSegment(lastSegment);
+    }
+
+    /**
+     * create segment by id.
+     *
+     * @param id id
+     * @return LogSegment
+     */
+    protected abstract S createSegment(long id);
+
+    /**
+     * append record data without partition.
+     *
+     * @param record record
+     * @throws IOException IOException
+     */
+    @Override
+    public void append(byte[] record, int offset, int length) throws IOException {
+
+        final S segment = this.lastSegment;
+        if (append2Segment(segment, record, offset, length)) {
+            return;
         }
-        this.topic = channels[0].topic();
-        this.groups = channels[0].groups();
-        this.channels = channels;
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            segment.finish();
+            final S retrySegment = this.lastSegment;
+            if (!retrySegment.append(record, offset, length)) {
+                retrySegment.finish();
+                final long newSegmentId = retrySegment.segmentId() + 1L;
+                final S newSegment = createSegment(newSegmentId);
+                append2Segment(newSegment, record, offset, length);
+                writeBytes.addAndGet(lastSegment.position());
+                addSegment(newSegment);
+                this.lastSegment = newSegment;
+                newSegmentCondition.signalAll();
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * append record 2 segment.
+     *
+     * @param segment segment
+     * @param record record
+     * @param offset offset
+     * @param length length
+     * @return boolean append
+     * @throws IOException IOException
+     */
+    protected boolean append2Segment(Segment segment, byte[] record, int offset, int length)
+            throws IOException {
+        return segment.append(record, offset, length);
+    }
+
+    /**
+     * add segment.
+     *
+     * @param segment segment
+     */
+    public void addSegment(S segment) {
+        this.segmentCache.put(segment.segmentId(), segment);
     }
 
     @Override
-    public RecordsOffset getRecordsOffset(String groupId, int partition) {
-        final C channel = getPartitionChannel(partition);
-        return channel.getRecordsOffset(groupId);
+    public long lag(RecordsOffset recordsOffset) {
+        return lastSegment.lag(recordsOffset);
+    }
+
+    @Override
+    public long lastSegmentId() {
+        return lastSegment.segmentId();
+    }
+
+    @Override
+    public long writeBytes() {
+        return writeBytes.get() + lastSegment.position();
+    }
+
+    @Override
+    public long readBytes() {
+        return readBytes.get();
+    }
+
+    @Override
+    public long pageCache() {
+        return lastSegment.cacheUsed();
+    }
+
+    @Override
+    public RecordsResultSet poll(RecordsOffset recordsOffset, long time, TimeUnit unit)
+            throws IOException, InterruptedException {
+        final RecordsResultSet resultSet = read(recordsOffset, time, unit);
+        readBytes.addAndGet(resultSet.readBytes());
+        return resultSet;
+    }
+
+    @Override
+    public RecordsOffset getRecordsOffset(String groupId) {
+        return groupManager.getRecordsOffset(groupId);
+    }
+
+    @Override
+    public synchronized void commit(String groupId, RecordsOffset recordsOffset)
+            throws IOException {
+        groupManager.commit(groupId, recordsOffset);
+        final RecordsOffset min = groupManager.getMinRecordsOffset();
+        if (min != null && minCommitSegmentId < min.segmentId()) {
+            minCommitSegmentId = min.segmentId();
+            cleanUp();
+        }
+    }
+
+    @Override
+    public RecordsOffset getMinRecordsOffset() {
+        return groupManager.getMinRecordsOffset();
+    }
+
+    /**
+     * read file log.
+     *
+     * @param originalRecordsOffset originalRecordsOffset
+     * @param time time
+     * @param unit unit
+     * @return LogResult
+     * @throws IOException IOException
+     * @throws InterruptedException InterruptedException
+     */
+    private RecordsResultSet read(RecordsOffset originalRecordsOffset, long time, TimeUnit unit)
+            throws IOException, InterruptedException {
+
+        final S lastSegment = this.lastSegment;
+        final BlockRecordsOffset recordsOffset = cast(originalRecordsOffset);
+        final S segment =
+                lastSegment.matchSegment(recordsOffset)
+                        ? lastSegment
+                        : segmentCache.get(recordsOffset.segmentId());
+        if (segment == null) {
+            throw new TributaryIOException(
+                    "segment not found segment id = " + recordsOffset.segmentId());
+        }
+        // try read it first
+        final RecordsResultSet recordsResultSet =
+                segment.readBlock(recordsOffset, time, unit).toResultSet();
+        if (!segment.isFinish() || !recordsResultSet.isEmpty()) {
+            return recordsResultSet;
+        }
+
+        // searchSegment is full
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            // searchSegment point to currentSegment, await new segment
+            if (segment == this.lastSegment) {
+                if (time == 0) {
+                    newSegmentCondition.await();
+                } else if (!newSegmentCondition.await(time, unit)) {
+                    return recordsOffset.reset().toResultSet();
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+        return read(recordsOffset.skipNextSegmentHead(), time, unit);
+    }
+
+    /**
+     * read from last segment at beginning if null or over lastSegment.
+     *
+     * @param recordsOffset recordsOffset
+     * @return BlockRecordsOffset
+     */
+    protected BlockRecordsOffset cast(RecordsOffset recordsOffset) {
+        if (recordsOffset == null) {
+            return BlockRecordsOffset.cast(lastSegment.segmentId());
+        }
+        final BlockRecordsOffset newRecordOffset = BlockRecordsOffset.cast(recordsOffset);
+        return recordsOffset.segmentId() < 0 || recordsOffset.segmentId() > lastSegment.segmentId()
+                ? newRecordOffset.skip2TargetHead(lastSegment.segmentId())
+                : newRecordOffset;
+    }
+
+    @Override
+    public void close() {
+        if (closed.compareAndSet(false, true)) {
+            IOUtils.closeQuietly(groupManager);
+            segmentCache.forEach((k, v) -> IOUtils.closeQuietly(v));
+            segmentCache.clear();
+        }
     }
 
     @Override
     public void flush() throws IOException {
-        for (C channel : channels) {
-            channel.flush();
+        lastSegment.flush();
+    }
+
+    /** clean up old segment. */
+    protected void cleanUp() {
+
+        if (minCommitSegmentId <= 0) {
+            return;
+        }
+        final List<S> expiredSegments = new ArrayList<>();
+        for (Map.Entry<Long, S> entry : segmentCache.entrySet()) {
+            final S segment = entry.getValue();
+            if (segment.segmentId() < minCommitSegmentId
+                    && segment.segmentId() < lastSegment.segmentId()) {
+                expiredSegments.add(segment);
+            }
+        }
+        for (S segment : expiredSegments) {
+            segmentCache.remove(segment.segmentId());
+            recycleSegment(segment);
         }
     }
 
-    @Override
-    public void append(int partition, byte[] record, int offset, int length) throws IOException {
-        final C channel = getPartitionChannel(partition);
-        channel.append(record, offset, length);
-    }
-
-    @Override
-    public RecordsResultSet poll(
-            int partition, RecordsOffset recordsOffset, long time, TimeUnit unit)
-            throws IOException, InterruptedException {
-        final C channel = getPartitionChannel(partition);
-        return channel.poll(recordsOffset, time, unit);
-    }
-
-    @Override
-    public void commit(String groupId, int partition, RecordsOffset recordsOffset)
-            throws IOException {
-        final C channel = getPartitionChannel(partition);
-        channel.commit(groupId, recordsOffset);
+    /** recycle segment. */
+    protected void recycleSegment(S segment) {
+        segment.recycle();
     }
 
     @Override
@@ -82,89 +298,27 @@ public abstract class AbstractChannel<C extends OnePartitionChannel> implements 
     }
 
     @Override
-    public int partition() {
-        return channels.length;
+    public Set<String> groups() {
+        return groupManager.groups();
     }
 
     @Override
     public int activeSegment() {
-        int segments = 0;
-        for (C channel : channels) {
-            segments += channel.activeSegment();
-        }
-        return segments;
-    }
-
-    @Override
-    public long lag(int partition, RecordsOffset recordsOffset) {
-        final C channel = getPartitionChannel(partition);
-        return channel.lag(recordsOffset);
-    }
-
-    @Override
-    public long lastSegmentId(int partition) {
-        final C fileChannel = getPartitionChannel(partition);
-        return fileChannel.lastSegmentId();
-    }
-
-    @Override
-    public void close() {
-        if (closed.compareAndSet(false, true)) {
-            try {
-                for (Channel channel : channels) {
-                    IOUtils.closeQuietly(channel);
-                }
-            } finally {
-                closeCallback();
-            }
-        }
-    }
-
-    /** callback once when close. */
-    public abstract void closeCallback();
-
-    @Override
-    public long writeBytes() {
-        int writeBytes = 0;
-        for (C channel : channels) {
-            writeBytes += channel.writeBytes();
-        }
-        return writeBytes;
-    }
-
-    @Override
-    public long readBytes() {
-        int readBytes = 0;
-        for (C channel : channels) {
-            readBytes += channel.readBytes();
-        }
-        return readBytes;
-    }
-
-    @Override
-    public long pageCache() {
-        int pageCache = 0;
-        for (C channel : channels) {
-            pageCache += channel.pageCache();
-        }
-        return pageCache;
-    }
-
-    @Override
-    public Set<String> groups() {
-        return groups;
+        return segmentCache.size();
     }
 
     /**
-     * check partition valid.
+     * flush quietly.
      *
-     * @param partition partition
+     * @return true if flush success
      */
-    private C getPartitionChannel(int partition) {
-        if (partition >= channels.length) {
-            throw new IllegalArgumentException(
-                    "partition over, partition is " + partition + ", size is " + channels.length);
+    public boolean flushQuietly() {
+        try {
+            flush();
+            return true;
+        } catch (Throwable e) {
+            LOG.warn("period flush error", e);
+            return false;
         }
-        return channels[partition];
     }
 }

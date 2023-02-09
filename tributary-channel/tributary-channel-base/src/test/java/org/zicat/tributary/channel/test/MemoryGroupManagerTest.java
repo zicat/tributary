@@ -20,8 +20,8 @@ package org.zicat.tributary.channel.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.OnePartitionMemoryGroupManager;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.memory.MemoryGroupManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,19 +29,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** OnePartitionMemoryGroupManagerTest. */
-public class OnePartitionMemoryGroupManagerTest {
+public class MemoryGroupManagerTest {
 
     @Test
     public void testPersist() throws InterruptedException {
         final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", new RecordsOffset(2, 100));
         groupOffsets.put("g2", new RecordsOffset(3, 25));
-        final OnePartitionMemoryGroupManagerMock manager =
-                new OnePartitionMemoryGroupManagerMock("t1", groupOffsets) {
+        final MemoryGroupManagerMock manager =
+                new MemoryGroupManagerMock(groupOffsets) {
                     @Override
                     public void schedule() {
                         schedule.scheduleWithFixedDelay(
-                                this::persist, 10, 10, TimeUnit.MILLISECONDS);
+                                this::persist, 10, 1000, TimeUnit.MILLISECONDS);
                     }
                 };
         Thread.sleep(15);
@@ -56,8 +56,7 @@ public class OnePartitionMemoryGroupManagerTest {
         final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", new RecordsOffset(2, 100));
         groupOffsets.put("g2", new RecordsOffset(3, 25));
-        final OnePartitionMemoryGroupManager manager =
-                new OnePartitionMemoryGroupManagerMock("t1", groupOffsets);
+        final MemoryGroupManager manager = new MemoryGroupManagerMock(groupOffsets);
         manager.commit("g1", new RecordsOffset(1, 101));
         manager.commit("g2", new RecordsOffset(3, 75));
         try {
@@ -79,19 +78,17 @@ public class OnePartitionMemoryGroupManagerTest {
         manager.commit("g2", new RecordsOffset(3, 90));
         Assert.assertEquals(new RecordsOffset(3, 80), manager.getMinRecordsOffset());
 
-        Assert.assertEquals("t1", manager.topic());
         Assert.assertEquals(2, manager.groups().size());
         manager.close();
     }
 
     /** MemoryOnePartitionGroupManagerMock. */
-    private static class OnePartitionMemoryGroupManagerMock extends OnePartitionMemoryGroupManager {
+    private static class MemoryGroupManagerMock extends MemoryGroupManager {
 
         private final AtomicInteger persistCount = new AtomicInteger(0);
 
-        public OnePartitionMemoryGroupManagerMock(
-                String topic, Map<String, RecordsOffset> groupOffsets) {
-            super(topic, groupOffsets, DEFAULT_GROUP_PERSIST_PERIOD_SECOND);
+        public MemoryGroupManagerMock(Map<String, RecordsOffset> groupOffsets) {
+            super(groupOffsets, 30);
         }
 
         @Override

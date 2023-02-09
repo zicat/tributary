@@ -22,6 +22,8 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
@@ -34,12 +36,14 @@ public class AssertCountFunction extends AbstractFunction {
 
     private long count;
     private long offset = 0;
-    public static final String KEY_ASSERT_COUNT = "count";
+
+    public static final ConfigOption<Long> OPTION_ASSERT_COUNT =
+            ConfigOptions.key("count").longType().defaultValue(-1L);
 
     @Override
     public void open(Context context) {
         super.open(context);
-        count = context.getCustomProperty(KEY_ASSERT_COUNT, -1);
+        count = context.get(OPTION_ASSERT_COUNT);
     }
 
     @Override

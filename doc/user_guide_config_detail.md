@@ -97,7 +97,6 @@ channel.c1.blockSize=262144
 channel.c1.segmentSize=4294967296
 channel.c1.flushPeriodMills=1000
 channel.c1.flushPageCacheSize=67108864
-channel.c1.flushForce=true
 channel.c1.groupPersistPeriodSecond=40
 channel.c2.type=file
 channel.c2.dirs=/tmp/tributary/p2
@@ -107,7 +106,6 @@ channel.c2.blockSize=262144
 channel.c2.segmentSize=4294967296
 channel.c2.flushPeriodMills=1000
 channel.c2.flushPageCacheSize=67108864
-channel.c2.flushForce=true
 channel.c2.groupPersistPeriodSecond=50
 ```
 
@@ -123,7 +121,6 @@ We define two channels named c1, c2 with params.
 | segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new file if the size of current segment file in the channel is over this param |
 | flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period|
 | flushPageCacheSize| 33554432(32M)  | long value(unit: byte)       | sync flush page cache to disk|
-| flushForce        | false          | [false,true] | whether records in the block flush to page cache first when trigger async/sync flush page cache, suggest to set false on production|
 |groupPersistPeriodSecond| 30 |long value:(unit: second)|long to persist the committed group offset to disk|     
 
 Note:
@@ -131,9 +128,7 @@ Note:
 1. Using suitable blockSize, Lower value may cause disk iops high.
 2. Using suitable segmentSize like 4294967296. Lower value cause frequent file creation/deletion, higher value cause
    deleting expired files not timely.
-3. The purpose of setting flushForce=true is to reduce consumption delay, If the size of receive records is lower than
-   blockSize, sinks cannot consume these records because the block is unreadable.
-4. If we define multi channels, please set different values of the dir, set same values may cause unknown exceptions.
+3. If we define multi channels, please set different values of the dir, set same values may cause unknown exceptions.
 
 ## Sink Detail
 
@@ -230,7 +225,6 @@ channel.c1.groups=group_1,group_2
 channel.c1.compression=snappy
 channel.c1.blockSize=262144
 channel.c1.segmentSize=4294967296
-channel.c1.flushForce=true
 channel.c1.flushPeriodMills=1000
 channel.c1.flushPageCacheSize=67108864
 
@@ -239,7 +233,6 @@ channel.c2.groups=group_2
 channel.c2.compression=snappy
 channel.c2.blockSize=262144
 channel.c2.segmentSize=4294967296
-channel.c2.flushForce=true
 channel.c2.flushPeriodMills=1000
 channel.c2.flushPageCacheSize=67108864
 

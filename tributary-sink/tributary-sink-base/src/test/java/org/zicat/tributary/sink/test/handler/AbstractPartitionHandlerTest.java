@@ -24,8 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.channel.DefaultChannel;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.memory.MemoryChannel;
+import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -46,6 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zicat.tributary.channle.file.test.SegmentTest.createStringByLength;
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_MAX_RETAIN_SIZE;
 
 /** AbstractSinkHandlerTest. */
 public class AbstractPartitionHandlerTest {
@@ -57,14 +59,16 @@ public class AbstractPartitionHandlerTest {
     public void testIdleTrigger() throws InterruptedException {
         final int partitionCount = 1;
         final Channel channel =
-                new MemoryChannel(
-                        "t1",
-                        partitionCount,
-                        Collections.singleton(groupId),
-                        1024 * 3,
-                        102400L,
-                        CompressionType.SNAPPY,
-                        true);
+                new DefaultChannel<>(
+                        MemoryChannelFactory.createChannels(
+                                "t1",
+                                partitionCount,
+                                Collections.singleton(groupId),
+                                1024 * 3,
+                                102400L,
+                                CompressionType.SNAPPY),
+                        0,
+                        TimeUnit.SECONDS);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity(MockIdleTriggerFactory.ID);
         final SinkGroupConfig sinkGroupConfig = builder.build();
@@ -112,19 +116,21 @@ public class AbstractPartitionHandlerTest {
                 SinkGroupConfigBuilder.newBuilder()
                         .functionIdentity(AssertFunctionFactory.IDENTITY);
         // configuration maxRetainSize = 80 to skip segment
-        builder.addCustomProperty(AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE, 80L);
+        builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE.key(), 80L);
         final SinkGroupConfig sinkGroupConfig = builder.build();
 
         final int partitionCount = 2;
         final Channel channel =
-                new MemoryChannel(
-                        "t1",
-                        partitionCount,
-                        Collections.singleton(groupId),
-                        50,
-                        50L,
-                        CompressionType.NONE,
-                        true);
+                new DefaultChannel<>(
+                        MemoryChannelFactory.createChannels(
+                                "t1",
+                                partitionCount,
+                                Collections.singleton(groupId),
+                                50,
+                                50L,
+                                CompressionType.NONE),
+                        0,
+                        TimeUnit.SECONDS);
         final int partitionId = 0;
         final AbstractPartitionHandler handler =
                 new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
@@ -180,20 +186,22 @@ public class AbstractPartitionHandlerTest {
 
         final int partitionCount = 2;
         final Channel channel =
-                new MemoryChannel(
-                        "t1",
-                        partitionCount,
-                        Collections.singleton(groupId),
-                        50,
-                        50L,
-                        CompressionType.NONE,
-                        true);
+                new DefaultChannel<>(
+                        MemoryChannelFactory.createChannels(
+                                "t1",
+                                partitionCount,
+                                Collections.singleton(groupId),
+                                50,
+                                50L,
+                                CompressionType.NONE),
+                        0,
+                        TimeUnit.SECONDS);
 
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .functionIdentity(AssertFunctionFactory.IDENTITY);
         // configuration maxRetainSize = 80 to skip segment
-        builder.addCustomProperty(AbstractPartitionHandler.KEY_MAX_RETAIN_SIZE, 80L);
+        builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE.key(), 80L);
 
         final SinkGroupConfig sinkGroupConfig = builder.build();
 
@@ -270,14 +278,16 @@ public class AbstractPartitionHandlerTest {
 
         final int partitionCount = 2;
         final Channel channel =
-                new MemoryChannel(
-                        "t1",
-                        partitionCount,
-                        Collections.singleton(groupId),
-                        1024 * 3,
-                        102400L,
-                        CompressionType.SNAPPY,
-                        true);
+                new DefaultChannel<>(
+                        MemoryChannelFactory.createChannels(
+                                "t1",
+                                partitionCount,
+                                Collections.singleton(groupId),
+                                1024 * 3,
+                                102400L,
+                                CompressionType.SNAPPY),
+                        0,
+                        TimeUnit.SECONDS);
 
         final SinkGroupConfig sinkGroupConfig =
                 SinkGroupConfigBuilder.newBuilder()

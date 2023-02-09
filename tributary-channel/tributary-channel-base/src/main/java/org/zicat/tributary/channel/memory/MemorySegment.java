@@ -37,7 +37,7 @@ public class MemorySegment extends Segment {
 
     public MemorySegment(
             long id, BlockWriter writer, CompressionType compressionType, long segmentSize) {
-        super(id, writer, compressionType, segmentSize);
+        super(id, writer, compressionType, segmentSize, 0);
         this.chunkSize = (int) Math.min(CHUNK_SIZE, segmentSize);
         newChunk();
     }
@@ -122,7 +122,4 @@ public class MemorySegment extends Segment {
         chunkChain.clear();
         return true;
     }
-
-    @Override
-    public void closeCallback() {}
 }

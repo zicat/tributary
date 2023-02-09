@@ -177,7 +177,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
                             .partitionId(partitionId)
                             .startRecordsOffset(startOffset)
                             .topic(channel.topic());
-            builder.addAll(sinkGroupConfig.customConfig());
+            builder.addAll(sinkGroupConfig);
             function.open(builder.build());
             return (AbstractFunction) function;
         } catch (Exception e) {

@@ -18,36 +18,19 @@
 
 package org.zicat.tributary.channel.memory;
 
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.ChannelFactory;
-import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.channel.*;
+import org.zicat.tributary.common.ReadableConfig;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
 
-    public static final String KEY_FILE_BLOCK_SIZE = "blockSize";
-    public static final String DEFAULT_FILE_BLOCK_SIZE = String.valueOf(32 * 1024);
-
-    public static final String KEY_FILE_SEGMENT_SIZE = "segmentSize";
-    public static final String DEFAULT_FILE_SEGMENT_SIZE =
-            String.valueOf(4L * 1024L * 1024L * 1024L);
-
-    public static final String KEY_FILE_FLUSH_FORCE = "flushForce";
-    public static final String DEFAULT_FILE_FLUSH_FORCE = "false";
-
-    public static final String KEY_FILE_COMPRESSION = "compression";
-    public static final String DEFAULT_FILE_COMPRESSION = "none";
-
+    public static final String SPLIT_STR = ",";
     public static final String TYPE = "memory";
-
-    public static final String KEY_PARTITIONS = "partitions";
-    public static final String DEFAULT_PARTITIONS = "1";
-
-    public static final String KEY_GROUPS = "groups";
 
     @Override
     public String type() {
@@ -55,28 +38,74 @@ public class MemoryChannelFactory implements ChannelFactory {
     }
 
     @Override
-    public Channel createChannel(String topic, Map<String, String> params) {
+    public Channel createChannel(String topic, ReadableConfig config) {
+        final String groupIds = config.get(OPTION_GROUPS);
+        final Set<String> groupSet = new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
+        final int partitionCounts = config.get(OPTION_PARTITIONS);
+        final int blockSize = config.get(OPTION_BLOCK_SIZE);
+        final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
+        final CompressionType compression =
+                CompressionType.getByName(config.get(OPTION_COMPRESSION));
+        final int flushPeriodMills = config.get(OPTION_FLUSH_PERIOD_MILLS);
+        final MemoryChannel[] channels =
+                createChannels(
+                        topic, partitionCounts, groupSet, blockSize, segmentSize, compression);
+        return new DefaultChannel<>(channels, flushPeriodMills, TimeUnit.MILLISECONDS);
+    }
 
-        final int partitionCounts =
-                Integer.parseInt(params.getOrDefault(KEY_PARTITIONS, DEFAULT_PARTITIONS));
-        final String groups = params.get(KEY_GROUPS);
-        final int blockSize =
-                Integer.parseInt(params.getOrDefault(KEY_FILE_BLOCK_SIZE, DEFAULT_FILE_BLOCK_SIZE));
-        final long segmentSize =
-                Long.parseLong(
-                        params.getOrDefault(KEY_FILE_SEGMENT_SIZE, DEFAULT_FILE_SEGMENT_SIZE));
-        final String compression =
-                params.getOrDefault(KEY_FILE_COMPRESSION, DEFAULT_FILE_COMPRESSION);
-        final boolean flushForce =
-                Boolean.parseBoolean(
-                        params.getOrDefault(KEY_FILE_FLUSH_FORCE, DEFAULT_FILE_FLUSH_FORCE));
-        return new MemoryChannel(
-                topic,
-                partitionCounts,
-                Arrays.stream(groups.split(",")).collect(Collectors.toSet()),
-                blockSize,
-                segmentSize,
-                CompressionType.getByName(compression),
-                flushForce);
+    /**
+     * create channels.
+     *
+     * @param topic topic
+     * @param partitionCount partitionCount
+     * @param groups groups
+     * @param blockSize blockSize
+     * @param segmentSize segmentSize
+     * @param compressionType compressionType
+     * @return MemoryChannel arrays
+     */
+    public static MemoryChannel[] createChannels(
+            String topic,
+            int partitionCount,
+            Set<String> groups,
+            Integer blockSize,
+            Long segmentSize,
+            CompressionType compressionType) {
+
+        final MemoryChannel[] channels = new MemoryChannel[partitionCount];
+        final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
+        for (String group : groups) {
+            groupOffsets.put(group, RecordsOffset.startRecordOffset());
+        }
+        for (int i = 0; i < partitionCount; i++) {
+            final SingleGroupManager groupManager =
+                    MemoryGroupManager.createUnPersistGroupManager(groupOffsets);
+            channels[i] =
+                    createMemoryChannel(
+                            topic, groupManager, blockSize, segmentSize, compressionType);
+        }
+        return channels;
+    }
+
+    /**
+     * create memory channel.
+     *
+     * @param topic topic
+     * @param groupManager groupManager
+     * @param blockSize blockSize
+     * @param segmentSize segmentSize
+     * @param compressionType compressionType
+     * @return MemoryChannel
+     */
+    public static MemoryChannel createMemoryChannel(
+            String topic,
+            SingleGroupManager groupManager,
+            int blockSize,
+            long segmentSize,
+            CompressionType compressionType) {
+        final MemoryChannel memoryChannel =
+                new MemoryChannel(topic, groupManager, blockSize, segmentSize, compressionType);
+        memoryChannel.loadLastSegment();
+        return memoryChannel;
     }
 }

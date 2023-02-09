@@ -20,106 +20,32 @@ package org.zicat.tributary.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.SystemClock;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
 /** Config. */
-public class Config {
+public class Config extends DefaultReadableConfig {
 
-    public static final String CLOCK = "clock";
+    public static final ConfigOption<Clock> OPTION_CLOCK =
+            ConfigOptions.key("clock")
+                    .<Clock>objectType()
+                    .description("set clock instance")
+                    .defaultValue(new SystemClock());
+
     protected static final Logger LOG = LoggerFactory.getLogger(Config.class);
-    protected final Map<String, Object> customConfig;
 
     protected Config(Map<String, Object> customConfig) {
-        this.customConfig = Collections.unmodifiableMap(customConfig);
+        putAll(customConfig);
     }
 
-    public Clock getOrCreateDefaultClock() {
-        final Object clock = getCustomProperty(CLOCK);
-        return clock instanceof Clock ? (Clock) clock : new SystemClock();
-    }
-
-    /**
-     * get custom property.
-     *
-     * @param key key
-     * @param defaultValue defaultValue if not contains.
-     * @param converter converter
-     * @param <T> T
-     * @return T
-     */
-    public <T> T getCustomProperty(String key, T defaultValue, ObjectConverter<T> converter) {
-        final Object value = getCustomProperty(key);
-        if (value == null) {
-            LOG.info("{} not found, use default value {}", key, defaultValue);
-            return defaultValue;
-        }
-        try {
-            return converter.toValue(value);
-        } catch (Exception e) {
-            LOG.warn(
-                    "parser {} params as error, value = {}, use default value {}",
-                    key,
-                    value,
-                    defaultValue);
-            return defaultValue;
-        }
-    }
-
-    /**
-     * get string property value.
-     *
-     * @param key key
-     * @param defaultValue defaultValue
-     * @return string value
-     */
-    public String getCustomProperty(String key, String defaultValue) {
-        return getCustomProperty(key, defaultValue, Object::toString);
-    }
-
-    /**
-     * get int property.
-     *
-     * @param key key
-     * @param defaultValue defaultValue
-     * @return value
-     */
-    public int getCustomProperty(String key, int defaultValue) {
-        return getCustomProperty(key, defaultValue, t -> Integer.parseInt(t.toString()));
-    }
-
-    /**
-     * get long property.
-     *
-     * @param key key
-     * @param defaultValue defaultValue
-     * @return value
-     */
-    public long getCustomProperty(String key, long defaultValue) {
-        return getCustomProperty(key, defaultValue, t -> Long.parseLong(t.toString()));
-    }
-
-    /**
-     * get custom config.
-     *
-     * @return map
-     */
-    public final Map<String, Object> customConfig() {
-        return customConfig;
-    }
-
-    /**
-     * get property value.
-     *
-     * @param key key
-     * @return object value
-     */
-    public Object getCustomProperty(String key) {
-        return customConfig.get(key);
+    public Clock getOrGetDefaultClock() {
+        return get(OPTION_CLOCK);
     }
 
     /**
@@ -134,7 +60,7 @@ public class Config {
      */
     public Properties filterPropertyByPrefix(String prefix) {
         final Properties properties = new Properties();
-        for (Map.Entry<String, Object> entry : customConfig.entrySet()) {
+        for (Map.Entry<String, Object> entry : entrySet()) {
             final String key = entry.getKey();
             final int index = key.indexOf(prefix);
             if (index == 0) {
@@ -148,21 +74,5 @@ public class Config {
             }
         }
         return properties;
-    }
-
-    /**
-     * ObjectConverter.
-     *
-     * @param <T>
-     */
-    public interface ObjectConverter<T> {
-
-        /**
-         * obj to t.
-         *
-         * @param t t is not null
-         * @return t
-         */
-        T toValue(Object t);
     }
 }

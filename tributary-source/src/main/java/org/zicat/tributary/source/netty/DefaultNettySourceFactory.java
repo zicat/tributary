@@ -21,18 +21,24 @@ package org.zicat.tributary.source.netty;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
-
-import java.util.Map;
-
-import static org.zicat.tributary.source.netty.NettyDecoder.lengthDecoder;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.ReadableConfig;
 
 /** DefaultNettySourceFactory. */
 public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
 
-    public static final String KEY_NETTY_IDLE_SECOND = "netty.idle.second";
-    public static final String DEFAULT_NETTY_IDLE_SECOND = "120";
+    public static final ConfigOption<Integer> OPTION_NETTY_IDLE_SECOND =
+            ConfigOptions.key("netty.idle.second")
+                    .integerType()
+                    .description("max wait to close when channel idle over this param")
+                    .defaultValue(120);
 
-    public static final String KEY_NETTY_DECODER = "netty.decoder";
+    public static final ConfigOption<String> OPTION_NETTY_DECODER =
+            ConfigOptions.key("netty.decoder")
+                    .stringType()
+                    .description("set netty streaming decoder, values[lengthDecoder,lineDecoder]")
+                    .defaultValue("lengthDecoder");
 
     @Override
     public String identity() {
@@ -41,16 +47,10 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
 
     @Override
     public AbstractNettySource createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, Map<String, String> config) {
-        final int idleSecond =
-                Integer.parseInt(
-                        config.getOrDefault(KEY_NETTY_IDLE_SECOND, DEFAULT_NETTY_IDLE_SECOND));
+            String host, int port, int eventThreads, Channel channel, ReadableConfig config) {
 
-        final NettyDecoder nettyDecoder =
-                config.get(KEY_NETTY_DECODER) == null
-                        ? lengthDecoder
-                        : NettyDecoder.valueOf(config.get(KEY_NETTY_DECODER));
-
+        final int idleSecond = config.get(OPTION_NETTY_IDLE_SECOND);
+        final NettyDecoder nettyDecoder = NettyDecoder.valueOf(config.get(OPTION_NETTY_DECODER));
         return new DefaultNettySource(host, port, eventThreads, channel, idleSecond) {
             @Override
             protected void initChannel(SocketChannel ch, Channel channel) {

@@ -19,28 +19,38 @@
 package org.zicat.tributary.source.netty;
 
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;
-
-import java.util.Map;
 
 /** AbstractNettySourceFactory. */
 public abstract class AbstractNettySourceFactory implements SourceFactory {
 
-    public static final String KEY_NETTY_PORT = "netty.port";
+    public static final ConfigOption<Integer> OPTION_NETTY_PORT =
+            ConfigOptions.key("netty.port")
+                    .integerType()
+                    .description("netty port")
+                    .noDefaultValue();
 
-    public static final String DEFAULT_NETTY_THREADS = "10";
-    private static final String KEY_NETTY_THREADS = "netty.threads";
+    public static final ConfigOption<Integer> OPTION_NETTY_THREADS =
+            ConfigOptions.key("netty.threads")
+                    .integerType()
+                    .description("netty event loop threads count")
+                    .defaultValue(10);
 
-    private static final String DEFAULT_NETTY_HOST = "";
-    private static final String KEY_NETTY_HOST = "netty.host";
+    public static final ConfigOption<String> OPTION_NETTY_HOST =
+            ConfigOptions.key("netty.host")
+                    .stringType()
+                    .description("netty host to register")
+                    .defaultValue("");
 
     @Override
-    public final Source createTributaryServer(Channel channel, Map<String, String> config) {
-        final String host = config.getOrDefault(KEY_NETTY_HOST, DEFAULT_NETTY_HOST);
-        final int port = Integer.parseInt(config.get(KEY_NETTY_PORT));
-        final int threads =
-                Integer.parseInt(config.getOrDefault(KEY_NETTY_THREADS, DEFAULT_NETTY_THREADS));
+    public final Source createTributaryServer(Channel channel, ReadableConfig config) {
+        final String host = config.get(OPTION_NETTY_HOST);
+        final int port = config.get(OPTION_NETTY_PORT);
+        final int threads = config.get(OPTION_NETTY_THREADS);
         return createAbstractTributaryServer(host, port, threads, channel, config);
     }
 
@@ -55,5 +65,5 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
      * @return AbstractTributaryServer
      */
     public abstract AbstractNettySource createAbstractTributaryServer(
-            String host, int port, int eventThreads, Channel channel, Map<String, String> config);
+            String host, int port, int eventThreads, Channel channel, ReadableConfig config);
 }

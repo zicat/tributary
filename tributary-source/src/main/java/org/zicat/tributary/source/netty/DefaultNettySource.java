@@ -22,14 +22,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
 
-import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.DEFAULT_NETTY_THREADS;
-import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.DEFAULT_NETTY_IDLE_SECOND;
+import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
+import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;
+import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE_SECOND;
 
 /** DefaultNettySource. */
 public class DefaultNettySource extends AbstractNettySource {
 
-    private static final int DEFAULT_EVENT_THREADS = Integer.parseInt(DEFAULT_NETTY_THREADS);
-    private static final int DEFAULT_IDLE_SECOND = Integer.parseInt(DEFAULT_NETTY_IDLE_SECOND);
     protected final int idleSecond;
 
     public DefaultNettySource(
@@ -39,7 +38,12 @@ public class DefaultNettySource extends AbstractNettySource {
     }
 
     public DefaultNettySource(int port, Channel channel) {
-        this(null, port, DEFAULT_EVENT_THREADS, channel, DEFAULT_IDLE_SECOND);
+        this(
+                OPTION_NETTY_HOST.defaultValue(),
+                port,
+                OPTION_NETTY_THREADS.defaultValue(),
+                channel,
+                OPTION_NETTY_IDLE_SECOND.defaultValue());
     }
 
     /**

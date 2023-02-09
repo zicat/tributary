@@ -28,7 +28,7 @@ import org.zicat.tributary.sink.function.ContextBuilder;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zicat.tributary.sink.function.Context.CLOCK;
+import static org.zicat.tributary.sink.Config.OPTION_CLOCK;
 
 /** AbstractFunctionTest. */
 public class AbstractFunctionTest {
@@ -74,7 +74,7 @@ public class AbstractFunctionTest {
                         .startRecordsOffset(startRecordsOffset)
                         .groupId("g1")
                         .partitionId(1);
-        builder.addCustomProperty(CLOCK, clock);
+        builder.addCustomProperty(OPTION_CLOCK.key(), clock);
         final Context context = builder.build();
         clock.setCurrentTimeMillis(0);
         function.open(context);

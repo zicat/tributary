@@ -19,9 +19,9 @@
 package org.zicat.tributary.source;
 
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
-import java.util.Map;
 import java.util.ServiceLoader;
 
 /** SourceFactory. */
@@ -41,7 +41,7 @@ public interface SourceFactory {
      * @param config config
      * @return TributaryServer
      */
-    Source createTributaryServer(Channel channel, Map<String, String> config);
+    Source createTributaryServer(Channel channel, ReadableConfig config);
 
     /**
      * find tributary server factory by id.

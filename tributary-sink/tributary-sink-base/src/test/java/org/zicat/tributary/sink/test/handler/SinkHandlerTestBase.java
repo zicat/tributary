@@ -21,7 +21,8 @@ package org.zicat.tributary.sink.test.handler;
 import org.junit.Assert;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.memory.MemoryChannel;
+import org.zicat.tributary.channel.DefaultChannel;
+import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -34,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /** SinkHandlerTestBase. */
 public class SinkHandlerTestBase {
@@ -52,14 +54,16 @@ public class SinkHandlerTestBase {
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;
         final Channel channel =
-                new MemoryChannel(
-                        "t1",
-                        partitionCount,
-                        Collections.singleton(groupId),
-                        1024 * 3,
-                        102400L,
-                        CompressionType.SNAPPY,
-                        true);
+                new DefaultChannel<>(
+                        MemoryChannelFactory.createChannels(
+                                "t1",
+                                partitionCount,
+                                Collections.singleton(groupId),
+                                1024 * 3,
+                                102400L,
+                                CompressionType.SNAPPY),
+                        0,
+                        TimeUnit.SECONDS);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentity(handlerIdentity)

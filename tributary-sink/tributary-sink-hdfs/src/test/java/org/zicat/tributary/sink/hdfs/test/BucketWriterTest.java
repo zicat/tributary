@@ -43,8 +43,6 @@ import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.DEFAULT_MAX_RETRIES;
-
 /** BucketWriterTest. */
 public class BucketWriterTest {
     private static final Logger logger = LoggerFactory.getLogger(BucketWriterTest.class);
@@ -261,7 +259,7 @@ public class BucketWriterTest {
         private Clock clock = null;
         private FileSystem fileSystem;
 
-        private int maxRetries = DEFAULT_MAX_RETRIES;
+        private int maxRetries = 3;
         private String inUseSuffix = BucketWriter.IN_USE_SUFFIX;
         private AtomicInteger renameCount = new AtomicInteger();
 

@@ -42,8 +42,7 @@ public class FileSegment extends Segment {
             long position,
             File file,
             FileChannel fileChannel) {
-        super(id, writer, compressionType, segmentSize);
-        this.position.set(position);
+        super(id, writer, compressionType, segmentSize, position);
         this.file = file;
         this.fileChannel = fileChannel;
     }
@@ -73,7 +72,7 @@ public class FileSegment extends Segment {
     }
 
     @Override
-    public synchronized boolean recycle() {
+    public boolean recycle() {
         IOUtils.closeQuietly(this);
         return file.delete();
     }
@@ -84,7 +83,13 @@ public class FileSegment extends Segment {
     }
 
     @Override
-    public void closeCallback() {
-        IOUtils.closeQuietly(fileChannel);
+    public void close() throws IOException {
+        try {
+            super.close();
+        } finally {
+            if (fileChannel.isOpen()) {
+                IOUtils.closeQuietly(fileChannel);
+            }
+        }
     }
 }
