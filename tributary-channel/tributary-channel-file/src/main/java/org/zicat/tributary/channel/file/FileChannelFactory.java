@@ -55,7 +55,8 @@ public class FileChannelFactory implements ChannelFactory {
         final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
         final int flushPeriodMills = config.get(OPTION_FLUSH_PERIOD_MILLS);
         final long flushPageCacheSize = config.get(OPTION_FLUSH_PAGE_CACHE_SIZE);
-        final String compression = config.get(OPTION_COMPRESSION);
+        final CompressionType compression =
+                CompressionType.getByName(config.get(OPTION_COMPRESSION));
         final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD_SECOND);
         final FileChannelBuilder builder =
                 FileChannelBuilder.newBuilder()
@@ -64,10 +65,10 @@ public class FileChannelFactory implements ChannelFactory {
                         .groupPersistPeriodSecond(groupPersist);
         builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
-                .compressionType(CompressionType.getByName(compression))
+                .compressionType(compression)
                 .flushPageCacheSize(flushPageCacheSize)
                 .topic(topic)
-                .consumerGroups(new ArrayList<>(groupSet));
+                .consumerGroups(groupSet);
         return builder.build();
     }
 

@@ -35,10 +35,7 @@ import org.zicat.tributary.common.test.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -57,7 +54,7 @@ public class OneFileChannelTest {
         final String topic = "topic_21";
         createChannel(
                         topic,
-                        Collections.singletonList(groupId),
+                        Collections.singleton(groupId),
                         1,
                         dir,
                         segmentSize,
@@ -66,7 +63,7 @@ public class OneFileChannelTest {
                 .close();
         createChannel(
                         topic,
-                        Collections.singletonList(groupId),
+                        Collections.singleton(groupId),
                         1,
                         dir,
                         segmentSize,
@@ -75,7 +72,7 @@ public class OneFileChannelTest {
                 .close();
         createChannel(
                         topic,
-                        Collections.singletonList(groupId),
+                        Collections.singleton(groupId),
                         1,
                         dir,
                         segmentSize,
@@ -86,7 +83,7 @@ public class OneFileChannelTest {
         Channel channel =
                 createChannel(
                         topic,
-                        Collections.singletonList(groupId),
+                        Collections.singleton(groupId),
                         1,
                         dir,
                         segmentSize,
@@ -114,7 +111,7 @@ public class OneFileChannelTest {
         final Channel channel =
                 createChannel(
                         topic,
-                        Collections.singletonList(groupId),
+                        Collections.singleton(groupId),
                         1,
                         dir,
                         segmentSize,
@@ -145,7 +142,7 @@ public class OneFileChannelTest {
         final String topic = "topic_21";
         final Channel channel =
                 createChannel(
-                        topic, Collections.singletonList(groupId), 1, dir, segmentSize, blockSize);
+                        topic, Collections.singleton(groupId), 1, dir, segmentSize, blockSize);
         final String value = "test_data";
         channel.append(0, value.getBytes(StandardCharsets.UTF_8));
         channel.flush();
@@ -224,7 +221,7 @@ public class OneFileChannelTest {
         final int blockSize = 32 * 1024;
         final long segmentSize = 1024L * 1024L * 125;
         final int consumerGroupCount = 5;
-        final List<String> consumerGroups = new ArrayList<>();
+        final Set<String> consumerGroups = new HashSet<>();
         for (int i = 0; i < consumerGroupCount; i++) {
             consumerGroups.add("group_" + i);
         }
@@ -303,7 +300,7 @@ public class OneFileChannelTest {
             final Channel channel =
                     OneFileChannelTest.createChannel(
                             "event",
-                            Collections.singletonList(consumerGroup),
+                            Collections.singleton(consumerGroup),
                             partitionCount,
                             dir,
                             segmentSize,
@@ -344,7 +341,7 @@ public class OneFileChannelTest {
             throws IOException {
 
         final long totalSize = dataSize * partitionCount;
-        List<String> consumerGroup = new ArrayList<>(sinkGroups);
+        Set<String> consumerGroup = new HashSet<>(sinkGroups);
         for (int i = 0; i < sinkGroups; i++) {
             consumerGroup.add("consumer_group_" + i);
         }
@@ -399,7 +396,7 @@ public class OneFileChannelTest {
 
     public static Channel createChannel(
             String topic,
-            List<String> consumerGroup,
+            Set<String> consumerGroup,
             int partitionCount,
             String dir,
             long segmentSize,
@@ -417,7 +414,7 @@ public class OneFileChannelTest {
 
     public static Channel createChannel(
             String topic,
-            List<String> consumerGroup,
+            Set<String> consumerGroup,
             int partitionCount,
             String dir,
             long segmentSize,

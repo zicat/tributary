@@ -48,7 +48,7 @@ public class OnePartitionFileGroupManagerTest {
 
         // test new group ids
         final Random random = new Random();
-        final List<String> groupIds = Arrays.asList("g1", "g2", "g3");
+        final Set<String> groupIds = new HashSet<>(Arrays.asList("g1", "g2", "g3"));
         final FileGroupManager manager =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds);
         final Map<String, RecordsOffset> cache = new HashMap<>();
@@ -70,7 +70,7 @@ public class OnePartitionFileGroupManagerTest {
         IOUtils.closeQuietly(manager);
 
         // test exist group id and new ids
-        final List<String> groupIds2 = Arrays.asList("g2", "g3", "g4");
+        final Set<String> groupIds2 = new HashSet<>(Arrays.asList("g2", "g3", "g4"));
         final FileGroupManager manager2 =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds2);
         Assert.assertEquals(createNewGroupRecordsOffset(), manager2.getMinRecordsOffset());
@@ -106,7 +106,7 @@ public class OnePartitionFileGroupManagerTest {
 
         // test single exist groups
         final String singleGroup = "g2";
-        final List<String> groupIds3 = Collections.singletonList(singleGroup);
+        final Set<String> groupIds3 = Collections.singleton(singleGroup);
         final FileGroupManager manager3 =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds3);
         Assert.assertEquals(cache.get(singleGroup), manager3.getMinRecordsOffset());

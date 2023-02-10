@@ -27,6 +27,7 @@ import org.zicat.tributary.common.IOUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
@@ -42,7 +43,7 @@ public class FileChannelBuilder {
     protected Integer blockSize;
     protected CompressionType compressionType;
     protected long flushPageCacheSize = 1024L * 1024L * 32L;
-    protected List<String> consumerGroups;
+    protected Set<String> consumerGroups;
     protected long flushPeriod = 1;
     protected TimeUnit flushTimeUnit = TimeUnit.SECONDS;
 
@@ -144,7 +145,7 @@ public class FileChannelBuilder {
      * @param consumerGroups consumerGroups
      * @return this
      */
-    public FileChannelBuilder consumerGroups(List<String> consumerGroups) {
+    public FileChannelBuilder consumerGroups(Set<String> consumerGroups) {
         this.consumerGroups = consumerGroups;
         return this;
     }

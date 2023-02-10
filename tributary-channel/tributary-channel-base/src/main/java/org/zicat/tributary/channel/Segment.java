@@ -315,7 +315,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      *
      * @throws IOException IOException
      */
-    public synchronized void finish() throws IOException {
+    public void finish() throws IOException {
 
         if (isFinish()) {
             return;
@@ -344,7 +344,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
             finish();
         }
@@ -427,7 +427,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * @param reusedBuf reusedBuf
      * @return BlockRecordsOffset
      */
-    public static BlockRecordsOffset skip2TargetOffset(
+    private static BlockRecordsOffset skip2TargetOffset(
             BlockRecordsOffset blockRecordsOffset, long newOffset, ByteBuffer reusedBuf) {
         blockRecordsOffset.block().reset().reusedBuf(reusedBuf);
         return blockRecordsOffset.skip2TargetOffset(newOffset);

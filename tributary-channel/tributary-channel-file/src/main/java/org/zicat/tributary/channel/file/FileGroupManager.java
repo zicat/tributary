@@ -56,11 +56,11 @@ public class FileGroupManager extends MemoryGroupManager {
     private final File groupIndexFile;
     private ByteBuffer byteBuffer;
 
-    public FileGroupManager(File groupIndexFile, List<String> groupIds) {
+    public FileGroupManager(File groupIndexFile, Set<String> groupIds) {
         this(groupIndexFile, groupIds, OPTION_GROUP_PERSIST_PERIOD_SECOND.defaultValue());
     }
 
-    public FileGroupManager(File groupIndexFile, List<String> groupIds, long periodSecond) {
+    public FileGroupManager(File groupIndexFile, Set<String> groupIds, long periodSecond) {
         super(getGroupOffsets(groupIndexFile, groupIds), periodSecond);
         this.groupIndexFile = groupIndexFile;
     }
@@ -158,7 +158,7 @@ public class FileGroupManager extends MemoryGroupManager {
      * @return group records offset
      */
     private static Map<String, RecordsOffset> getGroupOffsets(
-            File groupIndexFile, List<String> groupIds) {
+            File groupIndexFile, Set<String> groupIds) {
 
         final int cacheExpectedSize = groupIds.size();
         final List<String> allGroups = new ArrayList<>(groupIds);
