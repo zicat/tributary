@@ -63,11 +63,10 @@ public class FileChannel extends AbstractChannel<FileSegment> {
             int blockSize,
             Long segmentSize,
             CompressionType compressionType,
-            long flushPageCacheSize,
             File dir) {
         super(topic, groupManager);
         this.dir = dir;
-        this.flushPageCacheSize = flushPageCacheSize;
+        this.flushPageCacheSize = blockSize * 10L;
         this.compressionType = compressionType;
         this.segmentSize = segmentSize;
         this.blockWriter = new BlockWriter(blockSize);

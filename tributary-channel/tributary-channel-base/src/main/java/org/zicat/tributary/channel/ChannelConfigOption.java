@@ -42,7 +42,7 @@ public class ChannelConfigOption {
                     .description("compression type [none,snappy,zstd]")
                     .defaultValue("none");
 
-    public static final ConfigOption<Integer> OPTION_PARTITIONS =
+    public static final ConfigOption<Integer> OPTION_PARTITION_COUNT =
             ConfigOptions.key("partitions")
                     .integerType()
                     .description("partition count")

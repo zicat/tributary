@@ -136,13 +136,13 @@ public class FileGroupManager extends MemoryGroupManager {
     private void swapIndexFileQuietly(File tmpFile) {
         try {
             if (deleteGroupIndexFile() && !tmpFile.renameTo(groupIndexFile)) {
-                LOG.error(
+                LOG.warn(
                         "rename tmp file to group index file fail, tmp file {}, group index file {}",
                         tmpFile.getPath(),
                         groupIndexFile.getPath());
             }
         } catch (Throwable e) {
-            LOG.error(
+            LOG.warn(
                     "rename tmp file to group index file fail, tmp file {}, group index file {}",
                     tmpFile.getPath(),
                     groupIndexFile.getPath(),

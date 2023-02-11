@@ -42,7 +42,6 @@ public class FileChannelBuilder {
     protected Long segmentSize;
     protected Integer blockSize;
     protected CompressionType compressionType;
-    protected long flushPageCacheSize = 1024L * 1024L * 32L;
     protected Set<String> consumerGroups;
     protected long flushPeriod = 1;
     protected TimeUnit flushTimeUnit = TimeUnit.SECONDS;
@@ -92,17 +91,6 @@ public class FileChannelBuilder {
         if (compressionType != null) {
             this.compressionType = compressionType;
         }
-        return this;
-    }
-
-    /**
-     * set flush page cache size.
-     *
-     * @param flushPageCacheSize flushPageCacheSize
-     * @return this
-     */
-    public FileChannelBuilder flushPageCacheSize(long flushPageCacheSize) {
-        this.flushPageCacheSize = flushPageCacheSize;
         return this;
     }
 
@@ -186,13 +174,7 @@ public class FileChannelBuilder {
                 new FileGroupManager(groupIndexFile, consumerGroups, groupPersistPeriodSecond);
         final FileChannel channel =
                 new FileChannel(
-                        topic,
-                        singleGroupManager,
-                        blockSize,
-                        segmentSize,
-                        compressionType,
-                        flushPageCacheSize,
-                        dir);
+                        topic, singleGroupManager, blockSize, segmentSize, compressionType, dir);
         channel.createLastSegment();
         return channel;
     }

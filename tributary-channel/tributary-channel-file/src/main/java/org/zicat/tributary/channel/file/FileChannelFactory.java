@@ -29,7 +29,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.file.FileChannelConfigOption.*;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.SPLIT_STR;
 
 /** FileChannelFactory. */
@@ -45,8 +46,8 @@ public class FileChannelFactory implements ChannelFactory {
     @Override
     public Channel createChannel(String topic, ReadableConfig config) throws IOException {
 
-        final String dirsStr = config.get(OPTION_DIR);
-        final List<String> dirs = Arrays.asList(dirsStr.split(SPLIT_STR));
+        final String partitionPath = config.get(OPTION_PARTITION_PATHS);
+        final List<String> dirs = Arrays.asList(partitionPath.split(SPLIT_STR));
 
         final String groupIds = config.get(OPTION_GROUPS);
         final Set<String> groupSet = new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
@@ -54,7 +55,6 @@ public class FileChannelFactory implements ChannelFactory {
         final int blockSize = config.get(OPTION_BLOCK_SIZE);
         final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
         final int flushPeriodMills = config.get(OPTION_FLUSH_PERIOD_MILLS);
-        final long flushPageCacheSize = config.get(OPTION_FLUSH_PAGE_CACHE_SIZE);
         final CompressionType compression =
                 CompressionType.getByName(config.get(OPTION_COMPRESSION));
         final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD_SECOND);
@@ -66,7 +66,6 @@ public class FileChannelFactory implements ChannelFactory {
         builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(compression)
-                .flushPageCacheSize(flushPageCacheSize)
                 .topic(topic)
                 .consumerGroups(groupSet);
         return builder.build();

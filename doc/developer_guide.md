@@ -18,7 +18,7 @@ Before developing custom components, loading the project to IDE, we recommend de
 
 Goto [Intellij Plugin Install and Config](intellij_plugin.md) for more details.
 
-To show the demo code conveniently, we create the module [sample-code](../sample-code).
+Note: The code shown below can be found in the [sample-code-module](../sample-code).
 
 ## Developing custom sources
 

@@ -25,10 +25,10 @@ import org.zicat.tributary.common.ConfigOptions;
 /** FileChannelConfigOption. */
 public class FileChannelConfigOption extends ChannelConfigOption {
 
-    public static final ConfigOption<String> OPTION_DIR =
-            ConfigOptions.key("dirs")
+    public static final ConfigOption<String> OPTION_PARTITION_PATHS =
+            ConfigOptions.key("partitions")
                     .stringType()
-                    .description("dirs path, must allow read and write, split by ','")
+                    .description("partition paths, must allow read and write, split by ','")
                     .noDefaultValue();
 
     public static final ConfigOption<Long> OPTION_GROUP_PERSIST_PERIOD_SECOND =
@@ -36,11 +36,4 @@ public class FileChannelConfigOption extends ChannelConfigOption {
                     .longType()
                     .description("how long to persist group offset to storage, default 30")
                     .defaultValue(30L);
-
-    public static final ConfigOption<Long> OPTION_FLUSH_PAGE_CACHE_SIZE =
-            ConfigOptions.key("flushPageCacheSize")
-                    .longType()
-                    .description(
-                            "sync flush page cache to disk if over this param, default 33554432 (30MB) ")
-                    .defaultValue(1024L * 1024L * 32L);
 }

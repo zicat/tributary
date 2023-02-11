@@ -61,7 +61,7 @@ source.s1.netty.port=8200
 source.s1.netty.decoder=lineDecoder
 source.s1.implement=netty
 channel.c1.type=file
-channel.c1.dirs=/tmp/tributary/p1
+channel.c1.partitions=/tmp/tributary/p1
 channel.c1.groups=group_1
 channel.c1.compression=snappy
 sink.group_1.maxRetainPerPartitionBytes=9663676414
@@ -69,8 +69,8 @@ sink.group_1.partitionHandlerIdentity=direct
 sink.group_1.functionIdentity=print
 ```
 
-Note that server.port and source.s1.netty.port is not be used and same, channel.c1.dirs must exist and allow reading and
-writing.
+Note that server.port and source.s1.netty.port is not be used and same, channel.c1.partitions must exist and allow
+reading and writing.
 
 Given the application.properties, we can start the tributary service as follows:
 

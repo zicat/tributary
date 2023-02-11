@@ -41,7 +41,7 @@ public class MemoryChannelFactory implements ChannelFactory {
     public Channel createChannel(String topic, ReadableConfig config) {
         final String groupIds = config.get(OPTION_GROUPS);
         final Set<String> groupSet = new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
-        final int partitionCounts = config.get(OPTION_PARTITIONS);
+        final int partitionCounts = config.get(OPTION_PARTITION_COUNT);
         final int blockSize = config.get(OPTION_BLOCK_SIZE);
         final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
         final CompressionType compression =

@@ -68,8 +68,9 @@ certain requirements on the disk space and storage efficiency of the machine.
 #### About Segment
 
 Because the records in the distribution system often exists in a short life cycle, in theory a record can be deleted
-from the disk after it is consumed successfully by all sinks. However, in order to meet the basic characteristics of the
-disk, the
+from the disk after it is consumed successfully by all sinks.
+
+However, in order to meet the basic characteristics of the disk, the
 [FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
 manage files in the form of segments.
 
@@ -95,8 +96,8 @@ Segment supports compression(snappy, zstd) based on block granularity. The full 
 written to page cache. Therefore, the size of the block written to disk is different from that in memory.
 
 Go to the source code of
-[Segment](../tributary-channel/tributary-channel-base/src/main/java/org/zicat/tributary/channel/Segment.java) for
-more details.
+[Segment](../tributary-channel/tributary-channel-base/src/main/java/org/zicat/tributary/channel/Segment.java) for more
+details.
 
 #### About FileChannel
 
@@ -130,7 +131,8 @@ group management and persistence.
    currently consumed. The cleanup thread marks the expired segment according to the offset and cleans it up.
 
 Go to the source code of
-[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java) for more details.
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
+for more details.
 
 ## Sink
 

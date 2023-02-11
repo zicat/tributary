@@ -91,13 +91,12 @@ Tributary service support to define multi channels in the application.properties
 
 ```properties
 channel.c1.type=file
-channel.c1.dirs=/tmp/tributary/p1,/tmp/tributary/p3
+channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.groups=group_1,group_2
 channel.c1.compression=snappy
 channel.c1.blockSize=262144
 channel.c1.segmentSize=4294967296
 channel.c1.flushPeriodMills=1000
-channel.c1.flushPageCacheSize=67108864
 channel.c1.groupPersistPeriodSecond=40
 channel.c2.type=memory
 channel.c2.partitions=2
@@ -106,7 +105,6 @@ channel.c2.compression=snappy
 channel.c2.blockSize=262144
 channel.c2.segmentSize=4294967296
 channel.c2.flushPeriodMills=1000
-channel.c2.flushPageCacheSize=67108864
 ```
 
 We define two channels named c1, c2 with params.
@@ -114,14 +112,13 @@ We define two channels named c1, c2 with params.
 |  key              |  default       | valid value                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
 | type              | file           | [file,memory]                | the implement type of the channel, only support file or memory | 
-| dir               |                | valid absolute path          | the dir to store records, dir is allowed reading and writing, using ',' config multi partitions, only support in file channel  |
-| partitions        | 1              | int value                    | set partitions, only support in memory channel
+| partitions(memory type)        | 1              | int value                    | set partitions, only support in memory channel
+| partitions(file type)|                | valid absolute path          | the dir to store records, dir is allowed reading and writing, using ',' config multi partitions, only support in file channel  |
 | groups            |                | string value                 | the group list that consume this channel                             |
 | compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache |
 | blockSize         | 32768(32K)     | long value(unit: byte)       | records are appended to the memory block first, after the block over this param the channel flush the block to page cache|
 | segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new file if the size of current segment file in the channel is over this param |
 | flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period|
-| flushPageCacheSize| 33554432(32M)  | long value(unit: byte)       | sync flush page cache to disk|
 | groupPersistPeriodSecond| 30 |long value:(unit: second)|long to persist the committed group offset to disk, only support in file channel|     
 
 Note:
@@ -129,7 +126,8 @@ Note:
 1. Using suitable blockSize, Lower value may cause disk iops high.
 2. Using suitable segmentSize like 4294967296 for file channel. Lower value cause frequent file creation/deletion,
    higher value cause deleting expired files not timely.
-3. If we define multi channels, please set different values of the dir, set same values may cause unknown exceptions.
+3. If we define multi file channels, please set different values of the partitions, set same values may cause unknown
+   exceptions.
 
 ## Sink Detail
 
@@ -222,13 +220,12 @@ source.s2.netty.idle.second=120
 source.s2.netty.decoder=lineDecoder
 
 channel.c1.type=file
-channel.c1.dirs=/tmp/tributary/p1,/tmp/tributary/p3
+channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.groups=group_1,group_2
 channel.c1.compression=snappy
 channel.c1.blockSize=262144
 channel.c1.segmentSize=4294967296
 channel.c1.flushPeriodMills=1000
-channel.c1.flushPageCacheSize=67108864
 
 channel.c2.type=memory
 channel.c2.partitions=2
@@ -237,7 +234,6 @@ channel.c2.compression=snappy
 channel.c2.blockSize=262144
 channel.c2.segmentSize=4294967296
 channel.c2.flushPeriodMills=1000
-channel.c2.flushPageCacheSize=67108864
 
 sink.group_1.maxRetainPerPartitionBytes=9663676414
 sink.group_1.partitionHandlerIdentity=direct
