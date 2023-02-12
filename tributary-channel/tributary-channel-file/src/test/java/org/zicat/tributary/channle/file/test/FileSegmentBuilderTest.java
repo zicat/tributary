@@ -41,7 +41,7 @@ public class FileSegmentBuilderTest {
     private static final File DIR = FileUtils.createTmpDir("log_segment_builder_test");
 
     @Test
-    public void test() {
+    public void test() throws IOException {
 
         final FileSegmentBuilder builder = new FileSegmentBuilder();
         try {

@@ -21,7 +21,12 @@ package org.zicat.tributary.channel.memory;
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.SingleGroupManager;
+import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.common.IOUtils;
+
+import java.util.Map;
+
+import static org.zicat.tributary.channel.memory.MemoryGroupManager.createUnPersistGroupManager;
 
 /** MemoryChannel. */
 public class MemoryChannel extends AbstractChannel<MemorySegment> {
@@ -32,11 +37,11 @@ public class MemoryChannel extends AbstractChannel<MemorySegment> {
 
     protected MemoryChannel(
             String topic,
-            SingleGroupManager groupManager,
+            Map<String, RecordsOffset> groupOffsets,
             int blockSize,
             Long segmentSize,
             CompressionType compressionType) {
-        super(topic, groupManager);
+        super(topic, createUnPersistGroupManager(groupOffsets));
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;
         this.blockWriter = new BlockWriter(blockSize);
@@ -45,6 +50,15 @@ public class MemoryChannel extends AbstractChannel<MemorySegment> {
     @Override
     protected MemorySegment createSegment(long id) {
         return new MemorySegment(id, blockWriter, compressionType, segmentSize);
+    }
+
+    @Override
+    public void close() {
+        try {
+            IOUtils.closeQuietly(groupManager);
+        } finally {
+            super.close();
+        }
     }
 
     /** load last segment. */

@@ -21,7 +21,6 @@ package org.zicat.tributary.channel.file;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.DefaultChannel;
-import org.zicat.tributary.channel.SingleGroupManager;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.File;
@@ -31,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
-import static org.zicat.tributary.channel.file.FileGroupManager.createFileName;
 
 /** FileChannelBuilder. */
 public class FileChannelBuilder {
@@ -169,12 +167,15 @@ public class FileChannelBuilder {
      * @return FileChannel
      */
     private FileChannel createFileChannel(File dir) {
-        final File groupIndexFile = new File(dir, createFileName(topic));
-        final SingleGroupManager singleGroupManager =
-                new FileGroupManager(groupIndexFile, consumerGroups, groupPersistPeriodSecond);
         final FileChannel channel =
                 new FileChannel(
-                        topic, singleGroupManager, blockSize, segmentSize, compressionType, dir);
+                        topic,
+                        consumerGroups,
+                        groupPersistPeriodSecond,
+                        blockSize,
+                        segmentSize,
+                        compressionType,
+                        dir);
         channel.createLastSegment();
         return channel;
     }

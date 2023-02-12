@@ -78,11 +78,9 @@ public class MemoryChannelFactory implements ChannelFactory {
             groupOffsets.put(group, RecordsOffset.startRecordOffset());
         }
         for (int i = 0; i < partitionCount; i++) {
-            final SingleGroupManager groupManager =
-                    MemoryGroupManager.createUnPersistGroupManager(groupOffsets);
             channels[i] =
                     createMemoryChannel(
-                            topic, groupManager, blockSize, segmentSize, compressionType);
+                            topic, groupOffsets, blockSize, segmentSize, compressionType);
         }
         return channels;
     }
@@ -91,7 +89,7 @@ public class MemoryChannelFactory implements ChannelFactory {
      * create memory channel.
      *
      * @param topic topic
-     * @param groupManager groupManager
+     * @param groupOffsets groupOffset
      * @param blockSize blockSize
      * @param segmentSize segmentSize
      * @param compressionType compressionType
@@ -99,12 +97,12 @@ public class MemoryChannelFactory implements ChannelFactory {
      */
     public static MemoryChannel createMemoryChannel(
             String topic,
-            SingleGroupManager groupManager,
+            Map<String, RecordsOffset> groupOffsets,
             int blockSize,
             long segmentSize,
             CompressionType compressionType) {
         final MemoryChannel memoryChannel =
-                new MemoryChannel(topic, groupManager, blockSize, segmentSize, compressionType);
+                new MemoryChannel(topic, groupOffsets, blockSize, segmentSize, compressionType);
         memoryChannel.loadLastSegment();
         return memoryChannel;
     }

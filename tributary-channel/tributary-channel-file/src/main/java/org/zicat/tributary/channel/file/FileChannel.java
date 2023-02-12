@@ -21,13 +21,16 @@ package org.zicat.tributary.channel.file;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import static org.zicat.tributary.channel.file.FileGroupManager.createFileName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.isLogSegment;
 
@@ -59,17 +62,33 @@ public class FileChannel extends AbstractChannel<FileSegment> {
 
     protected FileChannel(
             String topic,
-            SingleGroupManager groupManager,
+            Set<String> consumerGroups,
+            long groupPersistPeriodSecond,
             int blockSize,
             Long segmentSize,
             CompressionType compressionType,
             File dir) {
-        super(topic, groupManager);
+        super(topic, createGroupManager(dir, topic, consumerGroups, groupPersistPeriodSecond));
         this.dir = dir;
         this.flushPageCacheSize = blockSize * 10L;
         this.compressionType = compressionType;
         this.segmentSize = segmentSize;
         this.blockWriter = new BlockWriter(blockSize);
+    }
+
+    /**
+     * create group manager.
+     *
+     * @param dir dir
+     * @param topic topic
+     * @param consumerGroups consumerGroups
+     * @param groupPersistPeriodSecond groupPersistPeriodSecond
+     * @return SingleGroupManager
+     */
+    private static SingleGroupManager createGroupManager(
+            File dir, String topic, Set<String> consumerGroups, long groupPersistPeriodSecond) {
+        return new FileGroupManager(
+                new File(dir, createFileName(topic)), consumerGroups, groupPersistPeriodSecond);
     }
 
     @Override
@@ -99,6 +118,15 @@ public class FileChannel extends AbstractChannel<FileSegment> {
             LOG.info("expired file " + segment.filePath() + " deleted success");
         } else {
             LOG.info("expired file " + segment.filePath() + " deleted fail");
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            IOUtils.closeQuietly(groupManager);
+        } finally {
+            super.close();
         }
     }
 

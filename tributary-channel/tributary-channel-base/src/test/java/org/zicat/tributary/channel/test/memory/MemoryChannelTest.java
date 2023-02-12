@@ -24,7 +24,6 @@ import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.memory.MemoryChannel;
-import org.zicat.tributary.channel.memory.MemoryGroupManager;
 
 import java.io.IOException;
 import java.util.*;
@@ -40,10 +39,8 @@ public class MemoryChannelTest {
 
         final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", RecordsOffset.startRecordOffset());
-        final MemoryGroupManager groupManager =
-                MemoryGroupManager.createUnPersistGroupManager(groupOffsets);
         final MemoryChannel channel =
-                createMemoryChannel("t1", groupManager, 1024 * 4, 102400L, CompressionType.NONE);
+                createMemoryChannel("t1", groupOffsets, 1024 * 4, 102400L, CompressionType.NONE);
         final Random random = new Random(1023312);
         final List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < 200000; i++) {
@@ -57,7 +54,7 @@ public class MemoryChannelTest {
         }
         channel.flush();
         Assert.assertTrue(channel.activeSegment() > 1);
-        RecordsOffset recordsOffset = groupManager.getRecordsOffset("g1");
+        RecordsOffset recordsOffset = channel.getRecordsOffset("g1");
         RecordsResultSet recordsResultSet;
         int offset = 0;
         while (offset < result.size()) {

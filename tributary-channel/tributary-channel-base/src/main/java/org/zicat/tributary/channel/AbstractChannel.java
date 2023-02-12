@@ -76,7 +76,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @param id id
      * @return LogSegment
      */
-    protected abstract S createSegment(long id);
+    protected abstract S createSegment(long id) throws IOException;
 
     /**
      * append record data without partition.
@@ -256,7 +256,6 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            IOUtils.closeQuietly(groupManager);
             segmentCache.forEach((k, v) -> IOUtils.closeQuietly(v));
             segmentCache.clear();
         }
