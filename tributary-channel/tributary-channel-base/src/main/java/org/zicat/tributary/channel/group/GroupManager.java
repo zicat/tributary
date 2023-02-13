@@ -35,13 +35,13 @@ public interface GroupManager extends Closeable {
     Set<String> groups();
 
     /**
-     * get current group offset by group id & partition. return (-1, -1) if first consume
+     * get committed group offset by group id & partition. return (-1, -1) if first consume
      *
      * @param groupId groupId
      * @param partition partition
      * @return GroupOffset
      */
-    GroupOffset getGroupOffset(String groupId, int partition);
+    GroupOffset committedGroupOffset(String groupId, int partition);
 
     /**
      * commit group offset.

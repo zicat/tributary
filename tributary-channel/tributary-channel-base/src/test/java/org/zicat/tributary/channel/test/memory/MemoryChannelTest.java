@@ -20,21 +20,35 @@ package org.zicat.tributary.channel.test.memory;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.GroupOffset;
-import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.memory.MemoryChannel;
+import org.zicat.tributary.channel.memory.MemoryChannelFactory;
+import org.zicat.tributary.common.DefaultReadableConfig;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createUnPersistGroupManagerFactory;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
+import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 
 /** OnePartitionMemoryChannelTest. */
 public class MemoryChannelTest {
+
+    @Test
+    public void testBaseCorrect() throws Exception {
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put(OPTION_PARTITION_COUNT, 4);
+        config.put(OPTION_GROUPS, "g1,g2,g3");
+        config.put(OPTION_COMPRESSION, "zstd");
+        final ChannelFactory factory = new MemoryChannelFactory();
+        try (Channel channel = factory.createChannel("t1", config)) {
+            testChannelCorrect(channel);
+        }
+    }
 
     @Test
     public void test() throws IOException, InterruptedException {
@@ -48,7 +62,7 @@ public class MemoryChannelTest {
                         1024 * 4,
                         102400L,
                         CompressionType.NONE);
-        GroupOffset groupOffset = channel.getGroupOffset("g1");
+        GroupOffset groupOffset = channel.committedGroupOffset("g1");
         final Random random = new Random(1023312);
         final List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < 200000; i++) {

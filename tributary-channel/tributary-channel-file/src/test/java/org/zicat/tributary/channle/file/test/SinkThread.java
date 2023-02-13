@@ -50,7 +50,7 @@ public class SinkThread extends Thread {
         this.partitionId = partitionId;
         this.readSize = readSize;
         this.totalSize = totalSize;
-        this.startOffset = channel.getGroupOffset(groupName, partitionId);
+        this.startOffset = channel.committedGroupOffset(groupName, partitionId);
     }
 
     @Override

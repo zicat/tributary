@@ -16,28 +16,31 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channle.file.test;
+package org.zicat.tributary.channel.kafka.test;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.BlockWriter;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.file.FileSegment;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.kafka.KafkaChannel;
 import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 
+import static org.zicat.tributary.channel.kafka.test.EmbeddedKafkaHandler.startEmbeddedKafka;
+import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
-/** FileSegmentBuilderTest. */
-public class FileSegmentBuilderTest {
+/** KafkaChannelTest. */
+public class KafkaChannelTest {
 
-    private static final File DIR = FileUtils.createTmpDir("log_segment_builder_test");
+    private static final File DIR = FileUtils.createTmpDir("kafka_channel_test");
 
     @BeforeClass
     public static void before() throws IOException {
@@ -53,26 +56,16 @@ public class FileSegmentBuilderTest {
     }
 
     @Test
-    public void test() {
-
-        final FileSegment.Builder builder = new FileSegment.Builder();
-        try {
-            builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BlockWriter(1024));
-            Assert.fail();
-        } catch (RuntimeException e) {
-            Assert.assertTrue(true);
-        }
-
-        final int blockSize = 1024;
-        final BlockWriter bw1 = new BlockWriter(blockSize);
-        final FileSegment segment =
-                builder.segmentSize(1024000L).compressionType(CompressionType.SNAPPY).build(bw1);
-        Assert.assertNotNull(segment);
-        IOUtils.closeQuietly(segment);
-
-        final BlockWriter bw2 = new BlockWriter(blockSize * 2);
-        final FileSegment segment2 = builder.compressionType(CompressionType.ZSTD).build(bw2);
-        Assert.assertEquals(CompressionType.SNAPPY, segment2.compressionType());
-        Assert.assertEquals(1024, segment2.blockSize());
+    public void testCorrection() throws Exception {
+        startEmbeddedKafka(
+                kafka -> {
+                    final Set<String> groups = new HashSet<>(Arrays.asList("g1", "g2"));
+                    final Properties properties = new Properties();
+                    properties.put("bootstrap.servers", kafka.getBrokerList());
+                    try (Channel channel =
+                            new KafkaChannel("test_topic_t1", 2, groups, properties)) {
+                        testChannelCorrect(channel);
+                    }
+                });
     }
 }

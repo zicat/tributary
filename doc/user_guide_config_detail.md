@@ -24,8 +24,8 @@ Got the metrics of the tributary service as follows, attend to the port if serve
 
 |  Key                          |  default       | valid value                  | describe                                             |
 |  ----                         | ----           | ---                          | ---                                                  |
-| server.port                   |                | 1000-65535                   | port to bind                                         |
-| server.metrics.ip.pattern     | .*             | pattern rule                 | filter expected host as metrics dimension value      |
+| server.port                   |                | int(unit: number)                  | the port to bind, range 1000-65535                                         |
+| server.metrics.ip.pattern     | .*             | string                | the pattern to filter expected host as the metrics value of host dimension      |
 
 ## Source Detail
 
@@ -60,12 +60,12 @@ source.s1.netty.idle.second=60
 source.s1.netty.decoder=lineDecoder
 ```
 
-|  key              |  default       | valid value                  | describe                                             |
+|  key              |  default       | type                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| netty.port        |                | 1000-65535                   | port to bind                                         |
-| netty.threads     | 10             | > 0                           | netty event loop threads                             |
-| netty.idle.second | 120            | > 0                           | how long wait to close the idle channel |
-| netty.decoder     | lengthDecoder  | [lengthDecoder,lineDecoder]  |  streaming decode                                 |
+| netty.port        |                | int(unit: number)                   | the port to bind, range 1000-65535                                        |
+| netty.threads     | 10             | int(unit: number)                   | the count of netty event loop threads                             |
+| netty.idle.second | 120            | int(unit: second)                   | the idle second of the channel to close |
+| netty.decoder     | lengthDecoder  | enum[lengthDecoder,lineDecoder]  |  the parser of streaming                                 |
 
 Note：
 
@@ -91,33 +91,61 @@ Tributary service support to define multi channels in the application.properties
 
 ```properties
 channel.c1.type=file
-channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.groups=group_1,group_2
+channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.compression=snappy
 channel.c1.blockSize=262144
 channel.c1.segmentSize=4294967296
 channel.c1.flushPeriodMills=1000
 channel.c1.groupPersistPeriodSecond=40
 channel.c2.type=memory
-channel.c2.partitions=2
 channel.c2.groups=group_2
+channel.c2.partitions=2
 channel.c2.compression=snappy
 channel.c2.blockSize=262144
 channel.c2.segmentSize=4294967296
 channel.c2.flushPeriodMills=1000
+channel.c3.type=kafka
+channel.c3.groups=group_3
+channel.c3.partitions=4
+channel.c3.topicDir=/tmp/tributary/topic_dir
+channel.c3.kafka.bootstrap.servers=127.0.0.1:9092
 ```
 
-|  key              |  default       | valid value                  | describe                                             |
+### Common Config
+
+|  key              |  default       | type                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| type              | file           | [file,memory]                | the implement type of the channel, only support file or memory | 
-| partitions(memory type)        | 1              | int value                    | set partitions, only support in memory channel
-| partitions(file type)|                | valid absolute path          | the dir to store records, dir is allowed reading and writing, using ',' config multi partitions, only support in file channel  |
-| groups            |                | string value                 | the group list that consume this channel                             |
-| compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache |
-| blockSize         | 32768(32K)     | long value(unit: byte)       | records are appended to the memory block first, after the block over this param the channel flush the block to page cache|
-| segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new segment if the size of current segment in the channel is over this param |
-| flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period, only support in file channel|
-| groupPersistPeriodSecond| 30 |long value:(unit: second)|long to persist the committed group offset to disk, only support in file channel|     
+| type              | file           | enum[file,memory,kafka]          | the implement type of the channel, only support file or memory or kafka | 
+| groups            |                | string                 | the group list that consume this channel, split by ',' |
+
+### File Config
+
+|  key              |  default       | type                  | describe                                             |
+|  ----             | ----           | ---                          | ---                                                  |
+| blockSize         | 32768(32K)     | long(unit: byte)       | the size of memory to store records|
+| compression       | none           | enum[none,zstd,snappy]           | the type of compression to compress the block before writing block to page cache |
+| segmentSize       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
+| partitions        |                | string          | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by ','  |
+| flushPeriodMills  | 500            | long(unit: ms)         | the period time to async flush page cache to disk|
+| groupPersistPeriodSecond| 30       | long(unit: second)| the period time to async persist the committed group offset to disk|     
+
+
+### Memory Config
+
+|  key              |  default       | type                  | describe                                             |
+|  ----             | ----           | ---                          | ---                                                  |
+| blockSize         | 32768(32K)     | long(unit: byte)       | the size of memory to store records|
+| compression       | none           | enum[none,zstd,snappy]           | the type of compression to compress the block before writing block to page cache |
+| segmentSize       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
+| partitions        | 1              | int(unit: number)      | the number of partitions|
+
+### Kafka Config
+|  key              |  default       | type                  | describe                                             |
+|  ----             | ----           | ---                          | ---                                                  |
+| partitions        | 1              | int(unit: number)                    | the number of partitions|
+| topicDir          |                | string  | the directory to restore kafka topic, each tributary instance create diff kafka topic name using channel topic as prefix and store it in the file ${topicDir}/${channel_topic}, read it again after restart and reconsume this topic| 
+| kafka.*           | | string| the config of all [kafka properties](https://kafka.apache.org/26/documentation.html#configuration) |        
 
 Note:
 
@@ -126,6 +154,7 @@ Note:
    higher value cause deleting expired files not timely.
 3. If we define multi file channels, please set different paths of the partitions, set same paths may cause unknown
    exceptions.
+4. Setting some kafka properties is useless including key.deserializer, value.deserializer, key.serializer, value.serializer, group.id, enable.auto.commit.  
 
 ## Sink Detail
 
@@ -141,12 +170,12 @@ sink.group_2.threads=3
 sink.group_2.functionIdentity=kafka
 ``` 
 
-key                               |  default       | valid value                  | describe                                                                  |
+key                               |  default       | type                 | describe                                                                  |
 |  ----                             | ----           | ---                          | ---                                                                       |
-| maxRetainPerPartitionBytes        |                | long value                   | sink expired the oldest segment file in the channel if sink lag is over maxRetainPerPartitionBytes, the param may cause data lost, be careful     |
-| partitionHandlerIdentity          | direct         | [direct,multi_thread]        | set sink model, direct model combine one channel's partition with one thread, multi_thread model combine one channel's partition with multi threads|
-| threads                           | 2              |int value | set multi_thread model thread count, only valid when partitionHandlerIdentity=multi_thread |  
-| functionIdentity                  |                | [print,kafka,hdfs]           | set the function identity that configure how to consume records  |
+| maxRetainPerPartitionBytes        |                | long(unit: bytes)  | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful     |
+| partitionHandlerIdentity          | direct         | enum[direct,multi_thread]  | the sink model, direct model combine one channel's partition with one thread, multi_thread model combine one channel's partition with multi threads|
+| threads                           | 2              | int(unit: number) | the thread count, only valid when the value of partitionHandlerIdentity is multi_thread |  
+| functionIdentity                  |                | enum[print,kafka,hdfs]     | the function identity that configure how to consume records  |
 
 Note:
 
@@ -167,15 +196,15 @@ sink.group_1.principle=
 sink.group_1.idleTriggerMillis=60000
 ```
 
-key                               |  default       | valid value                  | describe    |
+key                               |  default       | type                 | describe    |
 |  ----                             | ----           | ---                          | ---                                                                       
-| sinkPath                          |                | valid path                   | the root path to sink |
-| roll.size                         |268435456(256M) | long value(unit: byte)       | roll a new file if the file size over roll.size|
-| bucketDateFormat                  |yyyyMMdd_HH     | string data format  |hdfs sink use bucketDateFormat(process time) to create bucketId, the real path is ${sinkPath}/${bucketId}/ |   
-| maxRetries                        |3               | int value| retry times when operate hdfs fail|
-| keytab                            |                | string value|            set keytab if hdfs use kerberos authenticator|
-| principle                         |                | string value|            set principle if hdfs use kerberos authenticator|
-| idleTriggerMillis                 |60000           | long value(unit: millis)| when function not receive records after idleTriggerMillis, trigger idle function callback|
+| sinkPath                          |                | string                   | the root path to sink |
+| roll.size                         |268435456(256M) | long(unit: byte)       | the max size of the file|
+| bucketDateFormat                  |yyyyMMdd_HH     | string  | the part of the bucket, the bucket is composed of ${sinkPath}/${bucketDateFormat}/ |   
+| maxRetries                        |3               | int(unit: number)| the max retry times when operate hdfs fail|
+| keytab                            |                | string|            the keytab if hdfs use kerberos authenticator|
+| principle                         |                | string|            the principle if hdfs use kerberos authenticator|
+| idleTriggerMillis                 |60000           | long(unit: millis)| the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java)|
 
 ### Sink Kafka Detail
 
@@ -191,9 +220,9 @@ sink.group_2.kafka.compression.type=snappy
 sink.group_2.kafka.flushMill=60000
 ```
 
-|key                               |  default       | valid value                  | describe                                                                  |
+|key                               |  default       | type                 | describe                                                                  |
 |  ----                             | ----           | ---                          | ---                                                                       |
-| kafka.topic                       |                | string value                 | kafka topic name|
+| kafka.topic                       |                | string                 | the name of kafka topic|
 
 Tributary support all kafka producer params,
 [apache kafka producer config](https://kafka.apache.org/documentation/#producerconfigs) .

@@ -56,7 +56,7 @@ public class DefaultNettySourceTest {
                                         CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
-        final GroupOffset groupOffset = channel.getGroupOffset(groupId, 0);
+        final GroupOffset groupOffset = channel.committedGroupOffset(groupId, 0);
         final int freePort = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(freePort, channel) {
@@ -117,7 +117,7 @@ public class DefaultNettySourceTest {
                                         CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
-        final GroupOffset groupOffset = channel.getGroupOffset(groupId, 0);
+        final GroupOffset groupOffset = channel.committedGroupOffset(groupId, 0);
         final int port = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(port, channel) {

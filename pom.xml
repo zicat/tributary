@@ -19,6 +19,7 @@
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>
         <hbase-version>2.2.5</hbase-version>
+        <kafka-version>2.5.0</kafka-version>
     </properties>
     <build>
         <plugins>

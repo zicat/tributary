@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.common;
 
+import java.util.Properties;
+
 /** ReadableConfig. */
 public interface ReadableConfig {
 
@@ -29,4 +31,19 @@ public interface ReadableConfig {
      * @return value
      */
     <T> T get(ConfigOption<T> configOption);
+
+    /**
+     * filter and remove prefix key.
+     *
+     * @param prefixKey prefixKey
+     * @return ReadableConfig
+     */
+    ReadableConfig filterAndRemovePrefixKey(String prefixKey);
+
+    /**
+     * to properties.
+     *
+     * @return properties.
+     */
+    Properties toProperties();
 }

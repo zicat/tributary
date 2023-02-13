@@ -398,7 +398,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * @return long
      */
     public final long cacheUsed() {
-        return cacheUsed;
+        return cacheUsed + writer.position();
     }
 
     /**

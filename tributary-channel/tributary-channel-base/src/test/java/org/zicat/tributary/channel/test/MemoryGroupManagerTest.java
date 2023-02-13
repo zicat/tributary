@@ -65,8 +65,8 @@ public class MemoryGroupManagerTest {
         } catch (RuntimeException e) {
             Assert.assertTrue(true);
         }
-        Assert.assertEquals(new GroupOffset(2, 100, "g1"), manager.getGroupOffset("g1"));
-        Assert.assertEquals(new GroupOffset(3, 75, "g2"), manager.getGroupOffset("g2"));
+        Assert.assertEquals(new GroupOffset(2, 100, "g1"), manager.committedGroupOffset("g1"));
+        Assert.assertEquals(new GroupOffset(3, 75, "g2"), manager.committedGroupOffset("g2"));
         Assert.assertEquals(new GroupOffset(2, 100, "g1"), manager.getMinGroupOffset());
 
         manager.commit(new GroupOffset(3, 25, "g1"));

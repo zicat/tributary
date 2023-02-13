@@ -110,7 +110,7 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
     }
 
     @Override
-    public GroupOffset getGroupOffset(String groupId) {
+    public GroupOffset committedGroupOffset(String groupId) {
         isOpen();
         return cache.get(groupId);
     }

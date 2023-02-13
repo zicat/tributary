@@ -74,9 +74,9 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public GroupOffset getGroupOffset(String groupId, int partition) {
+    public GroupOffset committedGroupOffset(String groupId, int partition) {
         final C channel = getPartitionChannel(partition);
-        return channel.getGroupOffset(groupId);
+        return channel.committedGroupOffset(groupId);
     }
 
     @Override

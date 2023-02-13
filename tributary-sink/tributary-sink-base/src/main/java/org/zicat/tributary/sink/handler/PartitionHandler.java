@@ -57,7 +57,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
         this.functionFactory = findFunctionFactory(sinkGroupConfig.functionIdentity());
-        this.startOffset = channel.getGroupOffset(groupId, partitionId);
+        this.startOffset = channel.committedGroupOffset(groupId, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
     }

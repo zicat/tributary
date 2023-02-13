@@ -103,5 +103,5 @@ public interface Channel extends Closeable, ChannelMeta, GroupManager {
      * @param groupId groupId
      * @return GroupOffset
      */
-    GroupOffset getGroupOffset(String groupId, int partition);
+    GroupOffset committedGroupOffset(String groupId, int partition);
 }

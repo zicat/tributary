@@ -22,7 +22,6 @@ import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -47,9 +46,7 @@ public class MemoryChannelFactory implements ChannelFactory {
         return new DefaultChannel<>(
                 (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
                         () -> {
-                            final String groupIds = config.get(OPTION_GROUPS);
-                            final Set<String> groupSet =
-                                    new HashSet<>(Arrays.asList(groupIds.split(SPLIT_STR)));
+                            final Set<String> groupSet = groupSet(config);
                             final int partitionCounts = config.get(OPTION_PARTITION_COUNT);
                             final int blockSize = config.get(OPTION_BLOCK_SIZE);
                             final long segmentSize = config.get(OPTION_SEGMENT_SIZE);

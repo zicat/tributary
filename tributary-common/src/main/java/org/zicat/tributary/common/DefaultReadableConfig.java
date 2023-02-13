@@ -19,9 +19,21 @@
 package org.zicat.tributary.common;
 
 import java.util.HashMap;
+import java.util.Properties;
 
 /** DefaultReadableConfig. */
 public class DefaultReadableConfig extends HashMap<String, Object> implements ReadableConfig {
+
+    /**
+     * put options to value.
+     *
+     * @param configOption configOption
+     * @param value value
+     * @param <T> T
+     */
+    public <T> void put(ConfigOption<T> configOption, T value) {
+        put(configOption.key(), value);
+    }
 
     @Override
     public <T> T get(ConfigOption<T> configOption) {
@@ -33,5 +45,26 @@ public class DefaultReadableConfig extends HashMap<String, Object> implements Re
             return configOption.defaultValue();
         }
         throw new IllegalStateException("config option not config " + configOption);
+    }
+
+    @Override
+    public ReadableConfig filterAndRemovePrefixKey(String prefixKey) {
+        final DefaultReadableConfig newConfig = new DefaultReadableConfig();
+        for (Entry<String, Object> entry : entrySet()) {
+            final int indexOf = entry.getKey().indexOf(prefixKey);
+            if (indexOf == 0) {
+                newConfig.put(entry.getKey().substring(prefixKey.length()), entry.getValue());
+            }
+        }
+        return newConfig;
+    }
+
+    @Override
+    public Properties toProperties() {
+        final Properties properties = new Properties();
+        for (Entry<String, Object> entry : entrySet()) {
+            properties.put(entry.getKey(), entry.getValue());
+        }
+        return properties;
     }
 }

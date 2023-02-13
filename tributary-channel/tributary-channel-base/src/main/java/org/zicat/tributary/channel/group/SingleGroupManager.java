@@ -26,16 +26,16 @@ import java.io.IOException;
 public interface SingleGroupManager extends GroupManager {
 
     /**
-     * get group offset without partition. return (-1, -1) if first consume
+     * get committed group offset without partition. return (-1, -1) if first consume
      *
      * @param groupId groupId
      * @return GroupOffset
      */
-    GroupOffset getGroupOffset(String groupId);
+    GroupOffset committedGroupOffset(String groupId);
 
     @Override
-    default GroupOffset getGroupOffset(String groupId, int partition) {
-        return getGroupOffset(groupId);
+    default GroupOffset committedGroupOffset(String groupId, int partition) {
+        return committedGroupOffset(groupId);
     }
 
     /**

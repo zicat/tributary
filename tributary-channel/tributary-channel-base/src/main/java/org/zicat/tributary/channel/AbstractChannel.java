@@ -171,8 +171,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public GroupOffset getGroupOffset(String groupId) {
-        final GroupOffset groupOffset = groupManager.getGroupOffset(groupId);
+    public GroupOffset committedGroupOffset(String groupId) {
+        final GroupOffset groupOffset = groupManager.committedGroupOffset(groupId);
         return defaultGroupOffset(groupId).equals(groupOffset)
                 ? new GroupOffset(latestSegment.segmentId(), latestSegment.position(), groupId)
                 : groupOffset;

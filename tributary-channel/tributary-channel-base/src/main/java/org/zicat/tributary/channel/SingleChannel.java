@@ -83,15 +83,16 @@ public interface SingleChannel extends Channel, SingleGroupManager {
             throws IOException, InterruptedException;
 
     /**
-     * get group offset without partition. if group id is new, return the latest offset in channel
+     * get committed group offset without partition. if group id is new, return the latest offset in
+     * channel
      *
      * @param groupId groupId
      * @return GroupOffset
      */
-    GroupOffset getGroupOffset(String groupId);
+    GroupOffset committedGroupOffset(String groupId);
 
     @Override
-    default GroupOffset getGroupOffset(String groupId, int partition) {
-        return getGroupOffset(groupId);
+    default GroupOffset committedGroupOffset(String groupId, int partition) {
+        return committedGroupOffset(groupId);
     }
 }

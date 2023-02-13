@@ -30,6 +30,7 @@ import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.file.FileChannelBuilder;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
@@ -39,11 +40,30 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/** OneFileChannelTest. */
-public class OneFileChannelTest {
+import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 
-    private static final Logger LOG = LoggerFactory.getLogger(OneFileChannelTest.class);
+/** OneFileChannelTest. */
+public class FileChannelTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FileChannelTest.class);
     private static final File PARENT_DIR = FileUtils.createTmpDir("file_channel_test");
+
+    @Test
+    public void testBaseCorrect() throws Exception {
+
+        final String dir = new File(PARENT_DIR, "test_base_correct/partition-").getPath();
+        try (Channel channel =
+                createChannel(
+                        "t1",
+                        new HashSet<>(Arrays.asList("g1", "g2")),
+                        1,
+                        dir,
+                        102400,
+                        1024,
+                        CompressionType.SNAPPY)) {
+            testChannelCorrect(channel);
+        }
+    }
 
     @Test
     public void testEmptySegment() throws IOException, InterruptedException {
@@ -124,7 +144,7 @@ public class OneFileChannelTest {
         channel.flush();
         Assert.assertEquals(2, channel.activeSegment());
         RecordsResultSet recordsResultSet =
-                channel.poll(0, channel.getGroupOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
+                channel.poll(0, channel.committedGroupOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
         channel.commit(0, recordsResultSet.nexGroupOffset());
         Assert.assertEquals(1, channel.activeSegment());
 
@@ -146,7 +166,7 @@ public class OneFileChannelTest {
         final String value = "test_data";
         channel.append(0, value.getBytes(StandardCharsets.UTF_8));
         channel.flush();
-        GroupOffset offset = channel.getGroupOffset(groupId, 0);
+        GroupOffset offset = channel.committedGroupOffset(groupId, 0);
         RecordsResultSet resultSet = channel.poll(0, offset, 1, TimeUnit.MILLISECONDS);
         Assert.assertTrue(resultSet.isEmpty());
 
@@ -256,7 +276,7 @@ public class OneFileChannelTest {
 
         List<Thread> readTreads = new ArrayList<>();
         for (String groupId : consumerGroups) {
-            final GroupOffset startOffset = channel.getGroupOffset(groupId, 0);
+            final GroupOffset startOffset = channel.committedGroupOffset(groupId, 0);
             final Thread readTread =
                     new Thread(
                             () -> {
@@ -285,9 +305,9 @@ public class OneFileChannelTest {
         }
         writeThreads.forEach(Thread::start);
         readTreads.forEach(Thread::start);
-        writeThreads.forEach(OneFileChannelTest::join);
+        writeThreads.forEach(Threads::joinQuietly);
         channel.flush();
-        readTreads.forEach(OneFileChannelTest::join);
+        readTreads.forEach(Threads::joinQuietly);
         channel.close();
     }
 
@@ -302,7 +322,7 @@ public class OneFileChannelTest {
             final String consumerGroup = "consumer_group";
             final int maxRecordLength = 1024;
             final Channel channel =
-                    OneFileChannelTest.createChannel(
+                    FileChannelTest.createChannel(
                             "event",
                             Collections.singleton(consumerGroup),
                             partitionCount,
@@ -325,9 +345,9 @@ public class OneFileChannelTest {
                 thread.start();
             }
             sinkGroup.start();
-            sourceThreads.forEach(OneFileChannelTest::join);
+            sourceThreads.forEach(Threads::joinQuietly);
             channel.flush();
-            OneFileChannelTest.join(sinkGroup);
+            Threads.joinQuietly(sinkGroup);
             channel.close();
             Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup.getConsumerCount());
         }
@@ -375,12 +395,12 @@ public class OneFileChannelTest {
         sinGroup.forEach(Thread::start);
 
         // waiting source threads finish and flush
-        sourceThread.forEach(OneFileChannelTest::join);
+        sourceThread.forEach(Threads::joinQuietly);
         channel.flush();
         long writeSpend = System.currentTimeMillis() - start;
 
         // waiting sink threads finish.
-        sinGroup.forEach(OneFileChannelTest::join);
+        sinGroup.forEach(Threads::joinQuietly);
         Assert.assertEquals(totalSize, dataSize * partitionCount);
         Assert.assertEquals(
                 sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum(),
@@ -447,13 +467,5 @@ public class OneFileChannelTest {
     @BeforeClass
     public static void beforeTest() {
         IOUtils.deleteDir(PARENT_DIR);
-    }
-
-    public static void join(Thread t) {
-        try {
-            t.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 }
