@@ -84,7 +84,7 @@ for reference.
 
 ## Channel Detail
 
-A channel like data streaming can be appended records and consumed records by sinks repeatedly, the channel also has the
+A channel like data streaming can be appended records and consumed records by sinks repeatedly, some types of channels like file has the
 ability of persistence.
 
 Tributary service support to define multi channels in the application.properties.
@@ -107,8 +107,6 @@ channel.c2.segmentSize=4294967296
 channel.c2.flushPeriodMills=1000
 ```
 
-We define two channels named c1, c2 with params.
-
 |  key              |  default       | valid value                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
 | type              | file           | [file,memory]                | the implement type of the channel, only support file or memory | 
@@ -117,16 +115,16 @@ We define two channels named c1, c2 with params.
 | groups            |                | string value                 | the group list that consume this channel                             |
 | compression       | none           | [none,zstd,snappy]           | compress records before writing records to page cache |
 | blockSize         | 32768(32K)     | long value(unit: byte)       | records are appended to the memory block first, after the block over this param the channel flush the block to page cache|
-| segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new file if the size of current segment file in the channel is over this param |
-| flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period|
+| segmentSize       | 4294967296(4G) | long value(unit: byte)       | roll new segment if the size of current segment in the channel is over this param |
+| flushPeriodMills  | 500            | long value(unit: ms)         | async flush page cache to disk period, only support in file channel|
 | groupPersistPeriodSecond| 30 |long value:(unit: second)|long to persist the committed group offset to disk, only support in file channel|     
 
 Note:
 
-1. Using suitable blockSize, Lower value may cause disk iops high.
-2. Using suitable segmentSize like 4294967296 for file channel. Lower value cause frequent file creation/deletion,
+1. In file channel, using suitable blockSize, lower value may cause disk iops high.
+2. In file channel, using suitable segmentSize like 4294967296, lower value cause frequent file creation/deletion,
    higher value cause deleting expired files not timely.
-3. If we define multi file channels, please set different values of the partitions, set same values may cause unknown
+3. If we define multi file channels, please set different paths of the partitions, set same paths may cause unknown
    exceptions.
 
 ## Sink Detail

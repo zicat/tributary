@@ -8,9 +8,9 @@ records. It has a simple and flexible architecture based on streaming records fl
 # Why Choose Tributary
     
 Tributary is specially designed to solve the reliability and isolation of multiple sinks consuming the same data,
-a common need is that we want to send the data to hdfs system and kafka together for batch computing and streaming computing.
+a common need is to send the data to hdfs system and kafka together for batching and streaming computing.
 
-In fact, it is very challenging because we have to think about how to save received data when the failure occurs on hdfs, kafka or other external system.
+In fact, it's challenging because how to save received data when the failure occurs on hdfs, kafka or other external system must be resolved.
 
 The current mainstream solution like [Apache Flume](https://flume.apache.org/) is saving received data to multiple channels, each sink consume one channel (write-amplification). 
 

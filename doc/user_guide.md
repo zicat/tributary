@@ -2,11 +2,8 @@
 
 ## Overview
 
-Tributary is a reliable, stateless, fault-tolerance service for efficiently collecting and moving huge amounts of
-records. It has a simple and flexible architecture based on streaming records flows. It is robust and fault tolerant.
-
 The duty of tributary is to provide records uploading network interface, ensure records integrity and sink records to
-multi external systems, ensure not to affect other sinks and sources when some external systems crash.
+multi external systems, ensure the failure of some sinks not to affect other sinks.
 
 ## Architecture
 
@@ -23,11 +20,10 @@ how records in Tributary provide end-to-end reliability of the flow.
 ### Recoverability
 
 If the channel crash e.g., disk full, source report the exception to the client. Because tributary service is stateless,
-client can switch to other tributary services until this service recover.
+client need to switch to other tributary services and switch back after this service recover.
 
 If the external sink system crash, the sink will roll up to the previous committed RecordsOffset and reconsume records(
-at least once). The crash of some sink systems not affect the others that sink records to theirs healthy external
-systems.
+at least once). The failure of some sink systems not affect others sinking records.
 
 ## Setting up a tributary service
 
@@ -36,8 +32,7 @@ tributary application using Spring Boot.
 
 ### Build package
 
-Before start the tributary service, we should compile and package it from source code with java and maven, please
-install JDK8 and Maven3 first on your macOS or linux pc.
+Before start the tributary service, please compile and package it from source code with java and maven (jdk8 & maven3).
 
 Download source code using Git or other tools.
 
@@ -51,7 +46,7 @@ If expected, the current dir is the release dir named tributary which contains d
 
 ### A simple example
 
-Here, we give an example in config/application.properties as follows:
+Here, the demo config of application.properties in config dir is shown as follows:
 
 ```properties
 server.port=8765
@@ -69,10 +64,10 @@ sink.group_1.partitionHandlerIdentity=direct
 sink.group_1.functionIdentity=print
 ```
 
-Note that server.port and source.s1.netty.port is not be used and same, channel.c1.partitions must exist and allow
+Note that server.port and source.s1.netty.port is not conflicting and used, channel.c1.partitions must exist and allow
 reading and writing.
 
-Given the application.properties, we can start the tributary service as follows:
+Given the application.properties, start the tributary service as follows:
 
 ```shell
 $ bash bin/tributary.sh start

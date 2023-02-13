@@ -14,7 +14,7 @@ $ mvn clean install
 
 ## Preparing
 
-Before developing custom components, loading the project to IDE, we recommend developing tributary by Intellij.
+Before developing custom components, loading the project to IDE, recommend developing tributary by Intellij.
 
 Goto [Intellij Plugin Install and Config](intellij_plugin.md) for more details.
 
@@ -22,14 +22,14 @@ Note: The code shown below can be found in the [sample-code-module](../sample-co
 
 ## Developing custom sources
 
-In the document [Tributary User Guide of Config Details](user_guide_config_detail.md), we have introduced how to use the
-default implement of netty.
+In the document [Tributary User Guide of Config Details](user_guide_config_detail.md), how to use the
+default implement of netty has been introduced.
 
-Now we try to develop a simple http source and use it.
+Now let's try to develop a simple http source and use it.
 
 ### Coding
 
-Http protocol is a complicated protocol, we use netty framework helping to finish http decoder and encoder.
+Http protocol is a complicated protocol, Using netty framework to finish http decoder and encoder.
 
 Tributary provide
 [AbstractNettySource](../tributary-source/src/main/java/org/zicat/tributary/source/netty/AbstractNettySource.java)
