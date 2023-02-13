@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.common.Factory;
 import org.zicat.tributary.common.Functions;
 import org.zicat.tributary.common.IOUtils;
 
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** DefaultChannel. */
 public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
+    protected final AbstractChannelArrayFactory<C> factory;
     protected final C[] channels;
     protected final String topic;
     protected final AtomicBoolean closed = new AtomicBoolean(false);
@@ -36,10 +38,15 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     private Thread flushSegmentThread;
     private long flushPeriodMill;
 
-    public DefaultChannel(C[] channels, long flushPeriod, TimeUnit flushUnit) {
+    public DefaultChannel(
+            AbstractChannelArrayFactory<C> factory, long flushPeriod, TimeUnit flushUnit)
+            throws IOException {
+
+        final C[] channels = factory.create();
         if (channels == null || channels.length == 0) {
             throw new IllegalArgumentException("channels is null or empty");
         }
+        this.factory = factory;
         this.topic = channels[0].topic();
         this.groups = channels[0].groups();
         this.channels = channels;
@@ -47,6 +54,22 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
             flushPeriodMill = flushUnit.toMillis(flushPeriod);
             flushSegmentThread = new Thread(this::periodForceSegment, "segment_flush_thread");
             flushSegmentThread.start();
+        }
+    }
+
+    /**
+     * AbstractChannelArrayFactory.
+     *
+     * @param <C> type channel
+     */
+    public interface AbstractChannelArrayFactory<C extends AbstractChannel<?>>
+            extends Factory<C[]> {
+
+        @Override
+        default void destroy(C[] cs) {
+            for (C c : cs) {
+                IOUtils.closeQuietly(c);
+            }
         }
     }
 
@@ -119,9 +142,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                for (Channel channel : channels) {
-                    IOUtils.closeQuietly(channel);
-                }
+                factory.destroy(channels);
             } finally {
                 if (flushSegmentThread != null) {
                     flushSegmentThread.interrupt();

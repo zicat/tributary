@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
+import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.DefaultChannel;
@@ -55,13 +56,15 @@ public class SinkHandlerTestBase {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        MemoryChannelFactory.createChannels(
-                                "t1",
-                                partitionCount,
-                                Collections.singleton(groupId),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY),
+                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
+                                () ->
+                                        MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                partitionCount,
+                                                Collections.singleton(groupId),
+                                                1024 * 3,
+                                                102400L,
+                                                CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
         final SinkGroupConfigBuilder builder =

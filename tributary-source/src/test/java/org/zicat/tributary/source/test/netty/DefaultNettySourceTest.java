@@ -45,13 +45,14 @@ public class DefaultNettySourceTest {
     public void testLineDecoder() throws Exception {
         final DefaultChannel<MemoryChannel> channel =
                 new DefaultChannel<>(
-                        MemoryChannelFactory.createChannels(
-                                "t1",
-                                1,
-                                Collections.singleton("test_group"),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY),
+                        () ->
+                                MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        1,
+                                        Collections.singleton("test_group"),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
         final int freePort = getFreeTcpPort();
@@ -110,13 +111,14 @@ public class DefaultNettySourceTest {
                 CompressionType.SNAPPY);
         final DefaultChannel<MemoryChannel> channel =
                 new DefaultChannel<>(
-                        MemoryChannelFactory.createChannels(
-                                "t1",
-                                1,
-                                Collections.singleton("test_group"),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY),
+                        () ->
+                                MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        1,
+                                        Collections.singleton("test_group"),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
         final int port = getFreeTcpPort();

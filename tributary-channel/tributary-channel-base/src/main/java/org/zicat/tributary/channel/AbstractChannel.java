@@ -21,6 +21,7 @@ package org.zicat.tributary.channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.SafeFactory;
 import org.zicat.tributary.common.TributaryIOException;
 
 import java.io.Closeable;
@@ -47,16 +48,17 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicLong writeBytes = new AtomicLong();
     private final AtomicLong readBytes = new AtomicLong();
-
-    protected final SingleGroupManager groupManager;
-    protected final String topic;
+    private final SingleGroupManagerFactory groupManagerFactory;
+    private final SingleGroupManager groupManager;
+    private final String topic;
 
     protected long minCommitSegmentId;
     protected volatile S lastSegment;
 
-    protected AbstractChannel(String topic, SingleGroupManager groupManager) {
+    protected AbstractChannel(String topic, SingleGroupManagerFactory groupManagerFactory) {
         this.topic = topic;
-        this.groupManager = groupManager;
+        this.groupManagerFactory = groupManagerFactory;
+        this.groupManager = groupManagerFactory.create();
         this.minCommitSegmentId = groupManager.getMinRecordsOffset().segmentId();
     }
 
@@ -69,6 +71,9 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         this.lastSegment = lastSegment;
         addSegment(lastSegment);
     }
+
+    /** SingleGroupManagerFactory. */
+    public interface SingleGroupManagerFactory extends SafeFactory<SingleGroupManager> {}
 
     /**
      * create segment by id.
@@ -256,6 +261,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            groupManagerFactory.destroy(groupManager);
             segmentCache.forEach((k, v) -> IOUtils.closeQuietly(v));
             segmentCache.clear();
         }

@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.file.FileSegment;
-import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -43,7 +42,7 @@ public class FileSegmentBuilderTest {
     @Test
     public void test() throws IOException {
 
-        final FileSegmentBuilder builder = new FileSegmentBuilder();
+        final FileSegment.Builder builder = new FileSegment.Builder();
         try {
             builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BlockWriter(1024));
             Assert.fail();

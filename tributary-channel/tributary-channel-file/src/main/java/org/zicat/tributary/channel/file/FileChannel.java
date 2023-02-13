@@ -21,16 +21,13 @@ package org.zicat.tributary.channel.file;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
-import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import static org.zicat.tributary.channel.file.FileGroupManager.createFileName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.isLogSegment;
 
@@ -43,13 +40,13 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.isLogSegment;
  * <p>FileChannel ignore partition params and append/pull all records in the {@link
  * FileChannel#dir}. {@link Channel} support multi partitions operations.
  *
- * <p>Data files {@link FileSegment} name start with {@link FileChannel#topic}
+ * <p>Data files {@link FileSegment} name start with {@link FileChannel#topic()}
  *
  * <p>Only one {@link FileSegment} is writeable and support multi threads write it, multi threads
  * can read writable segment or other segments tagged as finished(not writable).
  *
- * <p>FileChannel support commit RecordsOffset by {@link FileChannel#groupManager} and support clean
- * up expired segments(all group ids has commit the offset over this segments) async}
+ * <p>FileChannel support commit RecordsOffset and support clean up expired segments(all group ids
+ * has commit the offset over this segments) async}
  */
 public class FileChannel extends AbstractChannel<FileSegment> {
 
@@ -62,42 +59,26 @@ public class FileChannel extends AbstractChannel<FileSegment> {
 
     protected FileChannel(
             String topic,
-            Set<String> consumerGroups,
-            long groupPersistPeriodSecond,
+            SingleGroupManagerFactory factory,
             int blockSize,
             Long segmentSize,
             CompressionType compressionType,
             File dir) {
-        super(topic, createGroupManager(dir, topic, consumerGroups, groupPersistPeriodSecond));
-        this.dir = dir;
-        this.flushPageCacheSize = blockSize * 10L;
-        this.compressionType = compressionType;
-        this.segmentSize = segmentSize;
+        super(topic, factory);
         this.blockWriter = new BlockWriter(blockSize);
-    }
-
-    /**
-     * create group manager.
-     *
-     * @param dir dir
-     * @param topic topic
-     * @param consumerGroups consumerGroups
-     * @param groupPersistPeriodSecond groupPersistPeriodSecond
-     * @return SingleGroupManager
-     */
-    private static SingleGroupManager createGroupManager(
-            File dir, String topic, Set<String> consumerGroups, long groupPersistPeriodSecond) {
-        return new FileGroupManager(
-                new File(dir, createFileName(topic)), consumerGroups, groupPersistPeriodSecond);
+        this.flushPageCacheSize = blockSize * 10L;
+        this.segmentSize = segmentSize;
+        this.compressionType = compressionType;
+        this.dir = dir;
     }
 
     @Override
     protected FileSegment createSegment(long id) {
-        return new FileSegmentBuilder()
+        return new FileSegment.Builder()
                 .fileId(id)
                 .dir(dir)
                 .segmentSize(segmentSize)
-                .filePrefix(topic)
+                .filePrefix(topic())
                 .compressionType(compressionType)
                 .build(blockWriter);
     }
@@ -121,19 +102,10 @@ public class FileChannel extends AbstractChannel<FileSegment> {
         }
     }
 
-    @Override
-    public void close() {
-        try {
-            IOUtils.closeQuietly(groupManager);
-        } finally {
-            super.close();
-        }
-    }
-
     /** load segments. */
     protected void createLastSegment() {
 
-        final File[] files = dir.listFiles(file -> isLogSegment(topic, file.getName()));
+        final File[] files = dir.listFiles(file -> isLogSegment(topic(), file.getName()));
         if (files == null || files.length == 0) {
             initLastSegment(createSegment(0));
             return;
@@ -144,7 +116,7 @@ public class FileChannel extends AbstractChannel<FileSegment> {
         final List<FileSegment> remainingSegment = new ArrayList<>();
         for (File file : files) {
             final String fileName = file.getName();
-            final long id = getIdByName(topic, fileName);
+            final long id = getIdByName(topic(), fileName);
             final FileSegment segment = createSegment(id);
             addSegment(segment);
             remainingSegment.add(segment);

@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channel.memory;
 
+import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.SingleGroupManager;
 import org.zicat.tributary.common.Threads;
@@ -168,11 +169,12 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
      * @param groupOffsets groupOffsets
      * @return MemoryOnePartitionGroupManager
      */
-    public static MemoryGroupManager createUnPersistGroupManager(
+    public static AbstractChannel.SingleGroupManagerFactory createUnPersistGroupManagerFactory(
             Map<String, RecordsOffset> groupOffsets) {
-        return new MemoryGroupManager(groupOffsets, -1) {
-            @Override
-            public void persist() {}
-        };
+        return () ->
+                new MemoryGroupManager(groupOffsets, -1) {
+                    @Override
+                    public void persist() {}
+                };
     }
 }

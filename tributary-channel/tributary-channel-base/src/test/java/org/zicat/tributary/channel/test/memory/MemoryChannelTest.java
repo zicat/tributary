@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
+import static org.zicat.tributary.channel.memory.MemoryGroupManager.createUnPersistGroupManagerFactory;
 
 /** OnePartitionMemoryChannelTest. */
 public class MemoryChannelTest {
@@ -40,7 +41,12 @@ public class MemoryChannelTest {
         final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", RecordsOffset.startRecordOffset());
         final MemoryChannel channel =
-                createMemoryChannel("t1", groupOffsets, 1024 * 4, 102400L, CompressionType.NONE);
+                createMemoryChannel(
+                        "t1",
+                        createUnPersistGroupManagerFactory(groupOffsets),
+                        1024 * 4,
+                        102400L,
+                        CompressionType.NONE);
         final Random random = new Random(1023312);
         final List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < 200000; i++) {

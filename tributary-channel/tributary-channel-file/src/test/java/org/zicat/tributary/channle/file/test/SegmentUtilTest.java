@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.SegmentUtil;
 import org.zicat.tributary.channel.file.FileSegment;
-import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
@@ -56,7 +55,7 @@ public class SegmentUtilTest {
     public void testMinMax() {
         final File childDir = new File(DIR, "test_min_max");
         makeDir(childDir);
-        final FileSegmentBuilder builder = new FileSegmentBuilder();
+        final FileSegment.Builder builder = new FileSegment.Builder();
         final FileSegment segment1 =
                 builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
         final FileSegment segment2 =

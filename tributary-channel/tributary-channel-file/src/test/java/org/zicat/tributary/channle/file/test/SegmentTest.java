@@ -27,7 +27,6 @@ import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.file.FileSegment;
-import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -50,7 +49,7 @@ public class SegmentTest {
     public void testAppend() throws IOException {
         final File childDir = new File(DIR, "test_append");
         makeDir(childDir);
-        final FileSegmentBuilder builder = new FileSegmentBuilder();
+        final FileSegment.Builder builder = new FileSegment.Builder();
         final FileSegment segment =
                 builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
         Assert.assertTrue(segment.append("".getBytes(), 0, 0));
@@ -70,7 +69,7 @@ public class SegmentTest {
     public void testMultiThread() throws InterruptedException, IOException {
         final File childDir = new File(DIR, "test_multi_thread");
         makeDir(childDir);
-        final FileSegmentBuilder builder = new FileSegmentBuilder();
+        final FileSegment.Builder builder = new FileSegment.Builder();
         final int fileId = 1;
         final FileSegment segment =
                 builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));
@@ -127,7 +126,7 @@ public class SegmentTest {
     public void testRead() throws IOException, InterruptedException {
         final File childDir = new File(DIR, "test_read");
         makeDir(childDir);
-        final FileSegmentBuilder builder = new FileSegmentBuilder();
+        final FileSegment.Builder builder = new FileSegment.Builder();
         final int fileId = 1;
         final FileSegment segment =
                 builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));

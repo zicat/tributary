@@ -22,10 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.DefaultChannel;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -56,17 +53,19 @@ public class AbstractPartitionHandlerTest {
     final String groupId = "test_group";
 
     @Test
-    public void testIdleTrigger() throws InterruptedException {
+    public void testIdleTrigger() throws InterruptedException, IOException {
         final int partitionCount = 1;
         final Channel channel =
                 new DefaultChannel<>(
-                        MemoryChannelFactory.createChannels(
-                                "t1",
-                                partitionCount,
-                                Collections.singleton(groupId),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY),
+                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
+                                () ->
+                                        MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                partitionCount,
+                                                Collections.singleton(groupId),
+                                                1024 * 3,
+                                                102400L,
+                                                CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
         final SinkGroupConfigBuilder builder =
@@ -122,13 +121,15 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        MemoryChannelFactory.createChannels(
-                                "t1",
-                                partitionCount,
-                                Collections.singleton(groupId),
-                                50,
-                                50L,
-                                CompressionType.NONE),
+                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
+                                () ->
+                                        MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                partitionCount,
+                                                Collections.singleton(groupId),
+                                                50,
+                                                50L,
+                                                CompressionType.NONE),
                         0,
                         TimeUnit.SECONDS);
         final int partitionId = 0;
@@ -187,13 +188,15 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        MemoryChannelFactory.createChannels(
-                                "t1",
-                                partitionCount,
-                                Collections.singleton(groupId),
-                                50,
-                                50L,
-                                CompressionType.NONE),
+                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
+                                () ->
+                                        MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                partitionCount,
+                                                Collections.singleton(groupId),
+                                                50,
+                                                50L,
+                                                CompressionType.NONE),
                         0,
                         TimeUnit.SECONDS);
 
@@ -279,13 +282,15 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        MemoryChannelFactory.createChannels(
-                                "t1",
-                                partitionCount,
-                                Collections.singleton(groupId),
-                                1024 * 3,
-                                102400L,
-                                CompressionType.SNAPPY),
+                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
+                                () ->
+                                        MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                partitionCount,
+                                                Collections.singleton(groupId),
+                                                1024 * 3,
+                                                102400L,
+                                                CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
 

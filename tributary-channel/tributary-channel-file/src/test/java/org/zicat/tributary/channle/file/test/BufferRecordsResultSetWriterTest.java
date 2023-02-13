@@ -120,7 +120,7 @@ public class BufferRecordsResultSetWriterTest {
         Assert.assertFalse(offset >= 10);
 
         FileSegment fileSegment =
-                new FileSegment(
+                new MockFileSegment(
                         1L,
                         new BlockWriter(1024),
                         CompressionType.SNAPPY,
@@ -203,5 +203,20 @@ public class BufferRecordsResultSetWriterTest {
 
         Assert.assertEquals(fileChannel.position(), fileChannel.size());
         Assert.assertEquals(resultSet.nexRecordsOffset().offset(), fileChannel.position());
+    }
+
+    /** MockFileSegment. */
+    private static class MockFileSegment extends FileSegment {
+
+        MockFileSegment(
+                long id,
+                BlockWriter writer,
+                CompressionType compressionType,
+                long segmentSize,
+                long position,
+                File file,
+                FileChannel fileChannel) {
+            super(id, writer, compressionType, segmentSize, position, file, fileChannel);
+        }
     }
 }
