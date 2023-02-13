@@ -55,6 +55,6 @@ public class DefaultNettySource extends AbstractNettySource {
     protected void initChannel(SocketChannel ch, Channel channel) {
         ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
         ch.pipeline().addLast(new LengthDecoder());
-        ch.pipeline().addLast(new FileChannelHandler(channel, true));
+        ch.pipeline().addLast(new ChannelHandler(channel, true));
     }
 }

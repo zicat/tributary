@@ -32,10 +32,10 @@ import org.zicat.tributary.channel.Channel;
 import java.net.InetSocketAddress;
 import java.util.Random;
 
-/** FileChannelHandler. */
-public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
+/** ChannelHandler. */
+public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileChannelHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ChannelHandler.class);
     private static final String FAIL_RES_FORMAT =
             "failed response pong to host:{}, port:{}, cause:{}";
     private static final int CHANNEL_ERROR_CODE = -1;
@@ -44,7 +44,7 @@ public class FileChannelHandler extends SimpleChannelInboundHandler<byte[]> {
     private final Channel channel;
     private final boolean ack;
 
-    public FileChannelHandler(Channel channel, boolean ack) {
+    public ChannelHandler(Channel channel, boolean ack) {
         this.channel = channel;
         this.ack = ack;
     }

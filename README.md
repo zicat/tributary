@@ -17,7 +17,7 @@ The current mainstream solution like [Apache Flume](https://flume.apache.org/) i
 Tributary support multiple sinks to consume one channel together with the design of groupId and offset (read-amplification).
 
 The benefits of read-amplification not only guarantee isolation but also reduce a lot of overhead 
-especially the increase in the amount of data and sinks. This is the biggest advantage of tributary.
+especially the increase in the amount of data and sinks. This is the greatest advantage of tributary.
 
 ## Documentation
 
