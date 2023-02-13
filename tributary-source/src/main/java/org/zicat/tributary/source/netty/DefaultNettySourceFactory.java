@@ -46,7 +46,7 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
     }
 
     @Override
-    public AbstractNettySource createAbstractTributaryServer(
+    public AbstractNettySource createAbstractNettySource(
             String host, int port, int eventThreads, Channel channel, ReadableConfig config) {
 
         final int idleSecond = config.get(OPTION_NETTY_IDLE_SECOND);

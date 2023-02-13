@@ -66,7 +66,7 @@ public class DefaultNettySourceTest {
                     }
                 }) {
 
-            source.listen();
+            source.start();
 
             final String data1 = "lynn";
             final TelnetClient telnet = new TelnetClient();
@@ -130,7 +130,7 @@ public class DefaultNettySourceTest {
                     }
                 }) {
 
-            source.listen();
+            source.start();
 
             final byte[] data1 = "lyn".getBytes();
             final byte[] data2 = "zhangjun".getBytes();

@@ -35,21 +35,21 @@ public interface SourceFactory {
     String identity();
 
     /**
-     * create server.
+     * create source.
      *
      * @param channel channel
      * @param config config
-     * @return TributaryServer
+     * @return Source
      */
-    Source createTributaryServer(Channel channel, ReadableConfig config);
+    Source createSource(Channel channel, ReadableConfig config);
 
     /**
-     * find tributary server factory by id.
+     * find tsource factory by id.
      *
      * @param identity identity
-     * @return TributaryServerFactory
+     * @return SourceFactory
      */
-    static SourceFactory findTributaryServerFactory(String identity) {
+    static SourceFactory findSourceFactoryFactory(String identity) {
         final ServiceLoader<SourceFactory> loader = ServiceLoader.load(SourceFactory.class);
         for (SourceFactory sourceFactory : loader) {
             if (identity.equals(sourceFactory.identity())) {

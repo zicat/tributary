@@ -47,23 +47,23 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
                     .defaultValue("");
 
     @Override
-    public final Source createTributaryServer(Channel channel, ReadableConfig config) {
+    public final Source createSource(Channel channel, ReadableConfig config) {
         final String host = config.get(OPTION_NETTY_HOST);
         final int port = config.get(OPTION_NETTY_PORT);
         final int threads = config.get(OPTION_NETTY_THREADS);
-        return createAbstractTributaryServer(host, port, threads, channel, config);
+        return createAbstractNettySource(host, port, threads, channel, config);
     }
 
     /**
-     * create abstract tributary server instance.
+     * create netty source instance.
      *
      * @param host host
      * @param port port
      * @param eventThreads eventThreads.
      * @param channel channel
      * @param config config
-     * @return AbstractTributaryServer
+     * @return AbstractNettySource
      */
-    public abstract AbstractNettySource createAbstractTributaryServer(
+    public abstract AbstractNettySource createAbstractNettySource(
             String host, int port, int eventThreads, Channel channel, ReadableConfig config);
 }

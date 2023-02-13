@@ -65,7 +65,7 @@ public abstract class AbstractNettySource implements Source {
     }
 
     @Override
-    public void listen() throws InterruptedException {
+    public void start() throws InterruptedException {
         initOptions();
         initHandlers();
         channelList = createChannelList();

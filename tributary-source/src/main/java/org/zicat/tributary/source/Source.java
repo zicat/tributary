@@ -23,6 +23,10 @@ import java.io.Closeable;
 /** Source. */
 public interface Source extends Closeable {
 
-    /** start listen to one port . */
-    void listen() throws Exception;
+    /**
+     * start the source to receive records.
+     *
+     * @throws Exception Exception
+     */
+    void start() throws Exception;
 }

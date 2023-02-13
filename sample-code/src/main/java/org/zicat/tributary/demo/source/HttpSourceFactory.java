@@ -32,7 +32,7 @@ public class HttpSourceFactory extends AbstractNettySourceFactory {
     }
 
     @Override
-    public AbstractNettySource createAbstractTributaryServer(
+    public AbstractNettySource createAbstractNettySource(
             String host, int port, int eventThreads, Channel channel, ReadableConfig config) {
         return new HttpSource(host, port, eventThreads, channel);
     }
