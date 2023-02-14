@@ -189,11 +189,22 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     /** skip commit offset watermark by max retain size. */
     protected void skipCommitOffsetWaterMarkByMaxRetainSize() {
 
+        if (maxRetainSize == null) {
+            return;
+        }
         RecordsOffset newRecordsOffset = this.commitOffsetWaterMark;
-        while (maxRetainSize != null
-                && newRecordsOffset.segmentId() < channel.lastSegmentId(partitionId)
-                && channel.lag(partitionId, newRecordsOffset) > maxRetainSize) {
-            newRecordsOffset = newRecordsOffset.skipNextSegmentHead();
+        RecordsOffset preRecordsOffset = this.commitOffsetWaterMark;
+        while (true) {
+            final long lag = channel.lag(partitionId, newRecordsOffset);
+            if (lag > maxRetainSize) {
+                preRecordsOffset = newRecordsOffset;
+                newRecordsOffset = newRecordsOffset.skipNextSegmentHead();
+                continue;
+            }
+            if (lag <= 0) {
+                newRecordsOffset = preRecordsOffset;
+            }
+            break;
         }
 
         if (newRecordsOffset == this.commitOffsetWaterMark) {

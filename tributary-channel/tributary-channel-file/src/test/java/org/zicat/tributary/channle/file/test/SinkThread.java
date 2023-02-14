@@ -39,6 +39,7 @@ public class SinkThread extends Thread {
     private final String groupName;
     private final AtomicLong readSize;
     private final long totalSize;
+    private final RecordsOffset startOffset;
 
     public SinkThread(
             Channel channel,
@@ -51,13 +52,14 @@ public class SinkThread extends Thread {
         this.groupName = groupName;
         this.readSize = readSize;
         this.totalSize = totalSize;
+        this.startOffset = channel.getRecordsOffset(groupName, partitionId);
     }
 
     @Override
     public void run() {
 
         try {
-            RecordsOffset recordsOffset = channel.getRecordsOffset(groupName, partitionId);
+            RecordsOffset recordsOffset = startOffset;
             RecordsResultSet result = null;
             long readLength = 0;
             long start = System.currentTimeMillis();

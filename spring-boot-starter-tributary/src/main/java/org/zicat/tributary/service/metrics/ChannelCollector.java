@@ -89,14 +89,13 @@ public class ChannelCollector extends Collector {
      */
     private MetricFamilySamples collectionPageCacheUsage() {
         final GaugeMetricFamily labeledGauge =
-                new GaugeMetricFamily(
-                        "channel_page_cache_usage", "channel_page cache usage", labels);
+                new GaugeMetricFamily("channel_buffer_usage", "channel buffer usage", labels);
         dynamicChannel
                 .getChannels()
                 .forEach(
                         (topic, channel) ->
                                 labeledGauge.addMetric(
-                                        Arrays.asList(topic, metricsIp), channel.pageCache()));
+                                        Arrays.asList(topic, metricsIp), channel.bufferUsage()));
         return labeledGauge;
     }
 

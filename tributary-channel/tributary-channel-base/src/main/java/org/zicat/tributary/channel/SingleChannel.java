@@ -25,18 +25,6 @@ import java.util.concurrent.TimeUnit;
 public interface SingleChannel extends Channel, SingleGroupManager {
 
     @Override
-    default long lastSegmentId(int partition) {
-        return lastSegmentId();
-    }
-
-    /**
-     * last segment id without lag.
-     *
-     * @return last id
-     */
-    long lastSegmentId();
-
-    @Override
     default int partition() {
         return 1;
     }
@@ -50,7 +38,7 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      * estimate the lag between records offset and write position without partition.
      *
      * @param recordsOffset recordsOffset
-     * @return long lag
+     * @return long lag return 0 if records offset over
      */
     long lag(RecordsOffset recordsOffset);
 
@@ -92,4 +80,17 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      */
     RecordsResultSet poll(RecordsOffset recordsOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException;
+
+    /**
+     * get records offset without partition. if group id is new, return the latest offset in channel
+     *
+     * @param groupId groupId
+     * @return RecordsOffset
+     */
+    RecordsOffset getRecordsOffset(String groupId);
+
+    @Override
+    default RecordsOffset getRecordsOffset(String groupId, int partition) {
+        return getRecordsOffset(groupId);
+    }
 }

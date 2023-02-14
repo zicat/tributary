@@ -153,7 +153,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
         checkOpen();
 
-        if (!matchSegment(blockRecordsOffset)) {
+        if (!match(blockRecordsOffset)) {
             throw new IllegalStateException(
                     "segment match fail, want "
                             + blockRecordsOffset.segmentId()
@@ -261,7 +261,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * @param recordsOffset recordsOffset
      * @return boolean match
      */
-    public final boolean matchSegment(RecordsOffset recordsOffset) {
+    public final boolean match(RecordsOffset recordsOffset) {
         return recordsOffset != null && this.segmentId() == recordsOffset.segmentId();
     }
 
@@ -356,7 +356,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     /**
-     * estimate lag, the lag not contains data in block.
+     * estimate lag, the lag not contains data in block. if records offset over return 0
      *
      * @param recordsOffset recordsOffset
      * @return long lag
@@ -365,9 +365,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
         final long offset =
                 recordsOffset == null ? legalOffset(0) : legalOffset(recordsOffset.offset());
-        if (recordsOffset == null
-                || recordsOffset.segmentId() == -1
-                || matchSegment(recordsOffset)) {
+        if (recordsOffset == null || recordsOffset.segmentId() == -1 || match(recordsOffset)) {
             final long lag = position() - offset;
             return lag < 0 ? 0 : lag;
         } else {

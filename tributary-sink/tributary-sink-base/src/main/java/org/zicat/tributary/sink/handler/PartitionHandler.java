@@ -57,7 +57,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
         this.functionFactory = findFunctionFactory(sinkGroupConfig.functionIdentity());
-        this.startOffset = getRecordsOffset(groupId, channel, partitionId);
+        this.startOffset = channel.getRecordsOffset(groupId, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
     }
@@ -69,21 +69,6 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      */
     public final int partitionId() {
         return partitionId;
-    }
-
-    /**
-     * get records offset.
-     *
-     * @param groupId groupId
-     * @param channel channel
-     * @param partitionId partitionId
-     * @return RecordsOffset
-     */
-    private RecordsOffset getRecordsOffset(String groupId, Channel channel, int partitionId) {
-        final RecordsOffset recordsOffset = channel.getRecordsOffset(groupId, partitionId);
-        return recordsOffset.segmentId() == -1
-                ? recordsOffset.skip2TargetHead(channel.lastSegmentId(partitionId))
-                : recordsOffset;
     }
 
     /** open sink handler. */

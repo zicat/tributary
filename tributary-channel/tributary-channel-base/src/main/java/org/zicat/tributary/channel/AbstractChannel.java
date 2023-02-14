@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
-import org.zicat.tributary.common.TributaryIOException;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,6 +36,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.zicat.tributary.channel.memory.MemoryGroupManager.DEFAULT_RECORDS_OFFSET;
+
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
 
@@ -44,7 +45,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition newSegmentCondition = lock.newCondition();
-    private final Map<Long, S> segmentCache = new ConcurrentHashMap<>();
+    private final Map<Long, S> cache = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicLong writeBytes = new AtomicLong();
     private final AtomicLong readBytes = new AtomicLong();
@@ -53,7 +54,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private final String topic;
 
     protected long minCommitSegmentId;
-    protected volatile S lastSegment;
+    protected volatile S latestSegment;
 
     protected AbstractChannel(String topic, SingleGroupManagerFactory groupManagerFactory) {
         this.topic = topic;
@@ -68,7 +69,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @param lastSegment lastSegment
      */
     protected void initLastSegment(S lastSegment) {
-        this.lastSegment = lastSegment;
+        this.latestSegment = lastSegment;
         addSegment(lastSegment);
     }
 
@@ -92,7 +93,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public void append(byte[] record, int offset, int length) throws IOException {
 
-        final S segment = this.lastSegment;
+        final S segment = this.latestSegment;
         if (append2Segment(segment, record, offset, length)) {
             return;
         }
@@ -100,15 +101,15 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         lock.lock();
         try {
             segment.finish();
-            final S retrySegment = this.lastSegment;
+            final S retrySegment = this.latestSegment;
             if (!retrySegment.append(record, offset, length)) {
                 retrySegment.finish();
                 final long newSegmentId = retrySegment.segmentId() + 1L;
                 final S newSegment = createSegment(newSegmentId);
                 append2Segment(newSegment, record, offset, length);
-                writeBytes.addAndGet(lastSegment.position());
+                writeBytes.addAndGet(latestSegment.position());
                 addSegment(newSegment);
-                this.lastSegment = newSegment;
+                this.latestSegment = newSegment;
                 newSegmentCondition.signalAll();
             }
         } finally {
@@ -137,22 +138,17 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @param segment segment
      */
     public void addSegment(S segment) {
-        this.segmentCache.put(segment.segmentId(), segment);
+        this.cache.put(segment.segmentId(), segment);
     }
 
     @Override
     public long lag(RecordsOffset recordsOffset) {
-        return lastSegment.lag(recordsOffset);
-    }
-
-    @Override
-    public long lastSegmentId() {
-        return lastSegment.segmentId();
+        return latestSegment.lag(recordsOffset);
     }
 
     @Override
     public long writeBytes() {
-        return writeBytes.get() + lastSegment.position();
+        return writeBytes.get() + latestSegment.position();
     }
 
     @Override
@@ -161,8 +157,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public long pageCache() {
-        return lastSegment.cacheUsed();
+    public long bufferUsage() {
+        return latestSegment.cacheUsed();
     }
 
     @Override
@@ -175,12 +171,19 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     @Override
     public RecordsOffset getRecordsOffset(String groupId) {
-        return groupManager.getRecordsOffset(groupId);
+        final RecordsOffset recordsOffset = groupManager.getRecordsOffset(groupId);
+        return DEFAULT_RECORDS_OFFSET.equals(recordsOffset)
+                ? new RecordsOffset(latestSegment.segmentId(), latestSegment.position())
+                : recordsOffset;
     }
 
     @Override
     public synchronized void commit(String groupId, RecordsOffset recordsOffset)
             throws IOException {
+        if (latestSegment.segmentId() < recordsOffset.segmentId()) {
+            LOG.warn("commit records offset {} over latest segment", recordsOffset);
+            return;
+        }
         groupManager.commit(groupId, recordsOffset);
         final RecordsOffset min = groupManager.getMinRecordsOffset();
         if (min != null && minCommitSegmentId < min.segmentId()) {
@@ -207,21 +210,17 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private RecordsResultSet read(RecordsOffset originalRecordsOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
 
-        final S lastSegment = this.lastSegment;
-        final BlockRecordsOffset recordsOffset = cast(originalRecordsOffset);
-        final S segment =
-                lastSegment.matchSegment(recordsOffset)
-                        ? lastSegment
-                        : segmentCache.get(recordsOffset.segmentId());
+        final S latest = this.latestSegment;
+        final BlockRecordsOffset offset = cast(originalRecordsOffset);
+        S segment = latest.match(offset) ? latest : cache.get(offset.segmentId());
         if (segment == null) {
-            throw new TributaryIOException(
-                    "segment not found segment id = " + recordsOffset.segmentId());
+            LOG.warn("segment id {} not found, start to consume from latest offset", offset);
+            segment = latest;
         }
         // try read it first
-        final RecordsResultSet recordsResultSet =
-                segment.readBlock(recordsOffset, time, unit).toResultSet();
-        if (!segment.isFinish() || !recordsResultSet.isEmpty()) {
-            return recordsResultSet;
+        final RecordsResultSet resultSet = segment.readBlock(offset, time, unit).toResultSet();
+        if (!segment.isFinish() || !resultSet.isEmpty()) {
+            return resultSet;
         }
 
         // searchSegment is full
@@ -229,32 +228,33 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         lock.lock();
         try {
             // searchSegment point to currentSegment, await new segment
-            if (segment == this.lastSegment) {
+            if (segment == this.latestSegment) {
                 if (time == 0) {
                     newSegmentCondition.await();
                 } else if (!newSegmentCondition.await(time, unit)) {
-                    return recordsOffset.reset().toResultSet();
+                    return offset.reset().toResultSet();
                 }
             }
         } finally {
             lock.unlock();
         }
-        return read(recordsOffset.skipNextSegmentHead(), time, unit);
+        return read(offset.skipNextSegmentHead(), time, unit);
     }
 
     /**
-     * read from last segment at beginning if null or over lastSegment.
+     * read from last segment if null or over lastSegment.
      *
      * @param recordsOffset recordsOffset
      * @return BlockRecordsOffset
      */
     protected BlockRecordsOffset cast(RecordsOffset recordsOffset) {
         if (recordsOffset == null) {
-            return BlockRecordsOffset.cast(lastSegment.segmentId());
+            return BlockRecordsOffset.cast(latestSegment.segmentId(), latestSegment.position());
         }
         final BlockRecordsOffset newRecordOffset = BlockRecordsOffset.cast(recordsOffset);
-        return recordsOffset.segmentId() < 0 || recordsOffset.segmentId() > lastSegment.segmentId()
-                ? newRecordOffset.skip2TargetHead(lastSegment.segmentId())
+        return newRecordOffset.segmentId() < minCommitSegmentId
+                        || newRecordOffset.segmentId() > latestSegment.segmentId()
+                ? newRecordOffset.skip2Target(latestSegment.segmentId(), latestSegment.position())
                 : newRecordOffset;
     }
 
@@ -262,14 +262,14 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     public void close() {
         if (closed.compareAndSet(false, true)) {
             groupManagerFactory.destroy(groupManager);
-            segmentCache.forEach((k, v) -> IOUtils.closeQuietly(v));
-            segmentCache.clear();
+            cache.forEach((k, v) -> IOUtils.closeQuietly(v));
+            cache.clear();
         }
     }
 
     @Override
     public void flush() throws IOException {
-        lastSegment.flush();
+        latestSegment.flush();
     }
 
     /** clean up old segment. */
@@ -279,15 +279,15 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             return;
         }
         final List<S> expiredSegments = new ArrayList<>();
-        for (Map.Entry<Long, S> entry : segmentCache.entrySet()) {
+        for (Map.Entry<Long, S> entry : cache.entrySet()) {
             final S segment = entry.getValue();
             if (segment.segmentId() < minCommitSegmentId
-                    && segment.segmentId() < lastSegment.segmentId()) {
+                    && segment.segmentId() < latestSegment.segmentId()) {
                 expiredSegments.add(segment);
             }
         }
         for (S segment : expiredSegments) {
-            segmentCache.remove(segment.segmentId());
+            cache.remove(segment.segmentId());
             recycleSegment(segment);
         }
     }
@@ -309,7 +309,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     @Override
     public int activeSegment() {
-        return segmentCache.size();
+        return cache.size();
     }
 
     /**

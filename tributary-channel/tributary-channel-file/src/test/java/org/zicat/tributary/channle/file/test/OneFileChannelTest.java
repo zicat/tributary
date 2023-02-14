@@ -147,7 +147,10 @@ public class OneFileChannelTest {
         channel.append(0, value.getBytes(StandardCharsets.UTF_8));
         channel.flush();
         RecordsOffset offset = channel.getRecordsOffset(groupId, 0);
-        RecordsResultSet resultSet = channel.take(0, offset);
+        RecordsResultSet resultSet = channel.poll(0, offset, 1, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(resultSet.isEmpty());
+
+        resultSet = channel.take(0, new RecordsOffset(0, 0));
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals(value, new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
@@ -253,12 +256,13 @@ public class OneFileChannelTest {
 
         List<Thread> readTreads = new ArrayList<>();
         for (String groupId : consumerGroups) {
+            final RecordsOffset startOffset = channel.getRecordsOffset(groupId, 0);
             final Thread readTread =
                     new Thread(
                             () -> {
-                                RecordsOffset recordsOffset = channel.getRecordsOffset(groupId, 0);
                                 RecordsResultSet result;
                                 int readSize = 0;
+                                RecordsOffset recordsOffset = startOffset;
                                 while (readSize < dataSize * writeThread) {
                                     try {
                                         result = channel.take(0, recordsOffset);
@@ -308,19 +312,19 @@ public class OneFileChannelTest {
 
             final long perThreadWriteCount = 100000;
             final int writeThread = 15;
-            List<Thread> sourceThreads = new ArrayList<>();
+            final List<Thread> sourceThreads = new ArrayList<>();
             for (int i = 0; i < writeThread; i++) {
                 SourceThread sourceThread =
                         new SourceThread(channel, 0, perThreadWriteCount, maxRecordLength, true);
                 sourceThreads.add(sourceThread);
             }
-            SinkGroup sinkGroup =
+            final SinkGroup sinkGroup =
                     new SinkGroup(1, channel, consumerGroup, writeThread * perThreadWriteCount);
+
             for (Thread thread : sourceThreads) {
                 thread.start();
             }
             sinkGroup.start();
-
             sourceThreads.forEach(OneFileChannelTest::join);
             channel.flush();
             OneFileChannelTest.join(sinkGroup);

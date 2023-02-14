@@ -24,7 +24,7 @@ import java.io.IOException;
 public interface SingleGroupManager extends GroupManager {
 
     /**
-     * get records offset without partition.
+     * get records offset without partition. return (-1, -1) if first consume
      *
      * @param groupId groupId
      * @return RecordsOffset

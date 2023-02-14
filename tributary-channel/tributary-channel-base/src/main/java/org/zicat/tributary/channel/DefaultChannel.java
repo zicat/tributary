@@ -133,12 +133,6 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public long lastSegmentId(int partition) {
-        final C fileChannel = getPartitionChannel(partition);
-        return fileChannel.lastSegmentId();
-    }
-
-    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
@@ -170,10 +164,10 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public long pageCache() {
+    public long bufferUsage() {
         int pageCache = 0;
         for (C channel : channels) {
-            pageCache += channel.pageCache();
+            pageCache += channel.bufferUsage();
         }
         return pageCache;
     }

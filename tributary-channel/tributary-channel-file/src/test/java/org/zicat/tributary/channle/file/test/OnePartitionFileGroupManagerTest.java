@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.zicat.tributary.channel.file.FileGroupManager.createFileName;
-import static org.zicat.tributary.channel.file.FileGroupManager.createNewGroupRecordsOffset;
+import static org.zicat.tributary.channel.memory.MemoryGroupManager.DEFAULT_RECORDS_OFFSET;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
@@ -52,11 +52,11 @@ public class OnePartitionFileGroupManagerTest {
         final FileGroupManager manager =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds);
         final Map<String, RecordsOffset> cache = new HashMap<>();
-        Assert.assertEquals(createNewGroupRecordsOffset(), manager.getMinRecordsOffset());
+        Assert.assertEquals(DEFAULT_RECORDS_OFFSET, manager.getMinRecordsOffset());
 
         for (String group : groupIds) {
             RecordsOffset recordsOffset = manager.getRecordsOffset(group);
-            Assert.assertEquals(createNewGroupRecordsOffset(), recordsOffset);
+            Assert.assertEquals(DEFAULT_RECORDS_OFFSET, recordsOffset);
 
             final RecordsOffset newRecordsOffset =
                     new RecordsOffset(random.nextInt(10) + 1, random.nextInt(100));
@@ -73,15 +73,11 @@ public class OnePartitionFileGroupManagerTest {
         final Set<String> groupIds2 = new HashSet<>(Arrays.asList("g2", "g3", "g4"));
         final FileGroupManager manager2 =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds2);
-        Assert.assertEquals(createNewGroupRecordsOffset(), manager2.getMinRecordsOffset());
+        Assert.assertEquals(DEFAULT_RECORDS_OFFSET, manager2.getMinRecordsOffset());
 
         for (String group : groupIds2) {
             RecordsOffset recordsOffset = manager2.getRecordsOffset(group);
-            if (cache.containsKey(group)) {
-                Assert.assertEquals(cache.get(group), recordsOffset);
-            } else {
-                Assert.assertEquals(createNewGroupRecordsOffset(), recordsOffset);
-            }
+            Assert.assertEquals(cache.getOrDefault(group, DEFAULT_RECORDS_OFFSET), recordsOffset);
             if (cache.containsKey(group)) {
                 final RecordsOffset cacheRecordsOffset = cache.get(group);
                 manager2.commit(group, cacheRecordsOffset.skipNextSegmentHead());
@@ -132,10 +128,10 @@ public class OnePartitionFileGroupManagerTest {
         // test new topics
         final FileGroupManager manager4 =
                 new FileGroupManager(new File(DIR, createFileName(topic + "_new")), groupIds);
-        Assert.assertEquals(createNewGroupRecordsOffset(), manager4.getMinRecordsOffset());
+        Assert.assertEquals(DEFAULT_RECORDS_OFFSET, manager4.getMinRecordsOffset());
         for (String group : groupIds) {
             RecordsOffset recordsOffset = manager4.getRecordsOffset(group);
-            Assert.assertEquals(createNewGroupRecordsOffset(), recordsOffset);
+            Assert.assertEquals(DEFAULT_RECORDS_OFFSET, recordsOffset);
             final RecordsOffset newRecordsOffset =
                     new RecordsOffset(random.nextInt(10) + 1, random.nextInt(100));
             manager4.commit(group, newRecordsOffset);

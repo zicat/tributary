@@ -28,27 +28,18 @@ import java.util.concurrent.atomic.AtomicLong;
 /** SinkGroup. */
 public class SinkGroup extends Thread {
 
-    private final int partitionCount;
-    private final Channel channel;
-    private final String groupName;
-    private final long totalSize;
+    private final List<Thread> sinkThreads = new ArrayList<>();
     private final AtomicLong consumerCount = new AtomicLong();
 
     public SinkGroup(int partitionCount, Channel channel, String groupName, long totalSize) {
-        this.partitionCount = partitionCount;
-        this.channel = channel;
-        this.groupName = groupName;
-        this.totalSize = totalSize;
-    }
-
-    @Override
-    public void run() {
-
-        List<Thread> sinkThreads = new ArrayList<>(partitionCount);
         for (int j = 0; j < partitionCount; j++) {
             // register group id to channel and start consumer each partition
             sinkThreads.add(new SinkThread(channel, j, groupName, consumerCount, totalSize));
         }
+    }
+
+    @Override
+    public void run() {
         sinkThreads.forEach(Thread::start);
         sinkThreads.forEach(Threads::joinQuietly);
     }

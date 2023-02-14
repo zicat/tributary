@@ -47,17 +47,9 @@ public interface ChannelMeta {
      *
      * @param partition partition
      * @param recordsOffset recordsOffset
-     * @return long lag
+     * @return long lag return 0 if records offset over latestRecordsOffset()
      */
     long lag(int partition, RecordsOffset recordsOffset);
-
-    /**
-     * last segment id.
-     *
-     * @param partition partition
-     * @return last id
-     */
-    long lastSegmentId(int partition);
 
     /**
      * return all write bytes.
@@ -74,9 +66,9 @@ public interface ChannelMeta {
     long readBytes();
 
     /**
-     * page cache.
+     * buffer usage, if file channel include dirty page cache and memory buffer.
      *
      * @return page cache.
      */
-    long pageCache();
+    long bufferUsage();
 }

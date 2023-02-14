@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class MemoryGroupManager implements SingleGroupManager {
 
+    public static final RecordsOffset DEFAULT_RECORDS_OFFSET = new RecordsOffset(-1, -1);
     private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -113,15 +114,6 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
             min = min == null ? recordsOffset : RecordsOffset.min(min, recordsOffset);
         }
         return min;
-    }
-
-    /**
-     * create new group records offset.
-     *
-     * @return RecordsOffset
-     */
-    public static RecordsOffset createNewGroupRecordsOffset() {
-        return new RecordsOffset(-1, 0);
     }
 
     /** check whether closed. */

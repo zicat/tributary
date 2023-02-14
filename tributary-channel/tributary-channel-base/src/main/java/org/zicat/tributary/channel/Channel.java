@@ -94,4 +94,12 @@ public interface Channel extends Closeable, ChannelMeta, GroupManager {
 
     /** flush block data and page cache data to disk. */
     void flush() throws IOException;
+
+    /**
+     * get records offset without partition. if group id is new, return the latest offset in channel
+     *
+     * @param groupId groupId
+     * @return RecordsOffset
+     */
+    RecordsOffset getRecordsOffset(String groupId, int partition);
 }

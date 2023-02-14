@@ -33,7 +33,7 @@ public interface GroupManager extends Closeable {
     Set<String> groups();
 
     /**
-     * get current records offset by group id & partition.
+     * get current records offset by group id & partition. return (-1, -1) if first consume
      *
      * @param groupId groupId
      * @param partition partition
