@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.memory;
+package org.zicat.tributary.channel.group;
 
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.SingleGroupManager;
 import org.zicat.tributary.common.Threads;
 
 import java.io.IOException;

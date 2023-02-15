@@ -30,10 +30,4 @@ public class FileChannelConfigOption extends ChannelConfigOption {
                     .stringType()
                     .description("partition paths, must allow read and write, split by ','")
                     .noDefaultValue();
-
-    public static final ConfigOption<Long> OPTION_GROUP_PERSIST_PERIOD_SECOND =
-            ConfigOptions.key("groupPersistPeriodSecond")
-                    .longType()
-                    .description("how long to persist group offset to storage, default 30")
-                    .defaultValue(30L);
 }

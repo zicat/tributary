@@ -16,11 +16,13 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel;
+package org.zicat.tributary.channel.group;
+
+import org.zicat.tributary.channel.RecordsOffset;
 
 import java.io.IOException;
 
-/** OnePartitionGroupManager for {@link GroupManager} offset without partition. */
+/** SingleGroupManager for {@link GroupManager} offset without partition. */
 public interface SingleGroupManager extends GroupManager {
 
     /**

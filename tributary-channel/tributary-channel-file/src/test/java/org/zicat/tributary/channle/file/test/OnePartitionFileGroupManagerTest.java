@@ -23,7 +23,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.file.FileGroupManager;
+import org.zicat.tributary.channel.group.FileGroupManager;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -31,8 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.zicat.tributary.channel.file.FileGroupManager.createFileName;
-import static org.zicat.tributary.channel.memory.MemoryGroupManager.defaultRecordsOffset;
+import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 

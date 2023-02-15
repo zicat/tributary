@@ -16,12 +16,13 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.file;
+package org.zicat.tributary.channel.group;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.memory.MemoryGroupManager;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
@@ -31,8 +32,6 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
-
-import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
 
 /**
  * FileGroupManager.
@@ -45,6 +44,12 @@ import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GR
  * Bytes(Long, segmentId).
  */
 public class FileGroupManager extends MemoryGroupManager {
+
+    public static final ConfigOption<Long> OPTION_GROUP_PERSIST_PERIOD_SECOND =
+            ConfigOptions.key("groupPersistPeriodSecond")
+                    .longType()
+                    .description("how long to persist group offset to storage, default 30")
+                    .defaultValue(30L);
 
     private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
 

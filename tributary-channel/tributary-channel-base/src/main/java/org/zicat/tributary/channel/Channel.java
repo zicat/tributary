@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.channel.group.GroupManager;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

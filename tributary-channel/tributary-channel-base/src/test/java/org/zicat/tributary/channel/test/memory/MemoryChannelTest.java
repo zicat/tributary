@@ -29,9 +29,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createUnPersistGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
-import static org.zicat.tributary.channel.memory.MemoryGroupManager.createUnPersistGroupManagerFactory;
-import static org.zicat.tributary.channel.memory.MemoryGroupManager.defaultRecordsOffset;
 
 /** OnePartitionMemoryChannelTest. */
 public class MemoryChannelTest {

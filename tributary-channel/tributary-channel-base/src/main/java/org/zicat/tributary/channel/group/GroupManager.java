@@ -16,7 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel;
+package org.zicat.tributary.channel.group;
+
+import org.zicat.tributary.channel.RecordsOffset;
 
 import java.io.Closeable;
 import java.io.IOException;

@@ -28,8 +28,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.memory.MemoryGroupManager.createUnPersistGroupManagerFactory;
-import static org.zicat.tributary.channel.memory.MemoryGroupManager.defaultRecordsOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createUnPersistGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {

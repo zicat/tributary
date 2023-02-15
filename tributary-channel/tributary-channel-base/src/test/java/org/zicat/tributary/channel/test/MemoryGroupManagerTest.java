@@ -21,7 +21,7 @@ package org.zicat.tributary.channel.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
-import org.zicat.tributary.channel.memory.MemoryGroupManager;
+import org.zicat.tributary.channel.group.MemoryGroupManager;
 
 import java.util.HashSet;
 import java.util.Set;

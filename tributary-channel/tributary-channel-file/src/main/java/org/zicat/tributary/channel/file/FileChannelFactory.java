@@ -29,8 +29,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
+import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD_SECOND;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.SPLIT_STR;
 
 /** FileChannelFactory. */

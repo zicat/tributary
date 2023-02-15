@@ -20,6 +20,7 @@ package org.zicat.tributary.channel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.channel.group.SingleGroupManager;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
 
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.zicat.tributary.channel.memory.MemoryGroupManager.defaultRecordsOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
 
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
