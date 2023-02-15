@@ -230,15 +230,15 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             return skip2TargetOffset(blockRecordsOffset, limitOffset, headBuf);
         }
 
-        final ByteBuffer bodyBuf =
+        final ByteBuffer reusedBuf =
                 IOUtils.reAllocate(block.reusedBuf(), dataLength << 1, dataLength);
-        readFull(bodyBuf, nextOffset);
-        bodyBuf.flip();
+        readFull(reusedBuf, nextOffset);
+        reusedBuf.flip();
 
         final BlockReader bufferReader =
                 new BlockReader(
-                        compressionType.decompression(bodyBuf, block.resultBuf()),
-                        bodyBuf,
+                        compressionType.decompression(reusedBuf, block.resultBuf()),
+                        reusedBuf,
                         dataLength + BLOCK_HEAD_SIZE);
         return new BlockRecordsOffset(
                 blockRecordsOffset.segmentId(),

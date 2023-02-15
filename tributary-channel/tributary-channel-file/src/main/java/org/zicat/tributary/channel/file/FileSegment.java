@@ -32,7 +32,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import static org.zicat.tributary.channel.file.FileSegmentUtil.SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
 
 /** FileSegment storage data to file. */
@@ -86,7 +86,7 @@ public class FileSegment extends Segment {
 
     @Override
     protected long legalOffset(long offset) {
-        return FileSegmentUtil.legalOffset(offset);
+        return FileSegmentUtil.legalFileOffset(offset);
     }
 
     @Override
@@ -114,7 +114,7 @@ public class FileSegment extends Segment {
          * set file id.
          *
          * @param fileId fileId
-         * @return LogSegmentBuilder
+         * @return Builder
          */
         public Builder fileId(long fileId) {
             this.fileId = fileId;
@@ -125,7 +125,7 @@ public class FileSegment extends Segment {
          * set compression type.
          *
          * @param compressionType compressionType
-         * @return LogSegmentBuilder
+         * @return Builder
          */
         public Builder compressionType(CompressionType compressionType) {
             if (compressionType != null) {
@@ -138,7 +138,7 @@ public class FileSegment extends Segment {
          * set file prefix.
          *
          * @param filePrefix filePrefix
-         * @return LogSegmentBuilder
+         * @return Builder
          */
         public Builder filePrefix(String filePrefix) {
             this.filePrefix = filePrefix;
@@ -149,7 +149,7 @@ public class FileSegment extends Segment {
          * set segment size.
          *
          * @param segmentSize segmentSize
-         * @return LogSegmentBuilder
+         * @return Builder
          */
         public Builder segmentSize(Long segmentSize) {
             if (segmentSize != null) {
@@ -162,7 +162,7 @@ public class FileSegment extends Segment {
          * set dir.
          *
          * @param dir dir
-         * @return LogSegmentBuilder
+         * @return Builder
          */
         public Builder dir(File dir) {
             this.dir = dir;
@@ -172,7 +172,7 @@ public class FileSegment extends Segment {
         /**
          * build log segment.
          *
-         * @return LogSegment
+         * @return FileSegment
          */
         public FileSegment build(BlockWriter blockWriter) {
             if (fileId == null) {
@@ -189,7 +189,7 @@ public class FileSegment extends Segment {
                 randomAccessFile = new RandomAccessFile(file, "rw");
                 fileChannel = randomAccessFile.getChannel();
                 long position = fileChannel.size();
-                final ByteBuffer byteBuffer = ByteBuffer.allocate(SEGMENT_HEAD_SIZE);
+                final ByteBuffer byteBuffer = ByteBuffer.allocate(FILE_SEGMENT_HEAD_SIZE);
                 CompressionType realCompressType = compressionType;
                 // read block size from segment head first
                 if (position == 0) {
@@ -226,7 +226,7 @@ public class FileSegment extends Segment {
          * @param blockSize blockSize
          * @param compressionType compressionType
          * @param position position
-         * @return LogSegment
+         * @return FileSegment
          */
         private FileSegment create(
                 File file,
@@ -238,7 +238,7 @@ public class FileSegment extends Segment {
                 throws IOException {
 
             channel.position(position);
-            if (segmentSize - SEGMENT_HEAD_SIZE < writer.capacity()) {
+            if (segmentSize - FILE_SEGMENT_HEAD_SIZE < writer.capacity()) {
                 throw new IllegalArgumentException(
                         "segment size must over block size, segment size = "
                                 + segmentSize

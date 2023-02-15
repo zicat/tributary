@@ -80,6 +80,7 @@ public class FileGroupManager extends MemoryGroupManager {
                     (group, recordsOffset) -> {
                         byteBuffer = IOUtils.reAllocate(byteBuffer, recordsOffset.size());
                         recordsOffset.fillBuffer(byteBuffer);
+                        byteBuffer.flip();
                         IOUtils.writeFull(channel, byteBuffer);
                     });
             channel.force(true);

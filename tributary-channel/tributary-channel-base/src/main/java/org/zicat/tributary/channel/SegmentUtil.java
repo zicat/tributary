@@ -18,17 +18,17 @@
 
 package org.zicat.tributary.channel;
 
-/** LogSegmentUtil. */
+/** SegmentUtil. */
 public class SegmentUtil {
 
     public static final int BLOCK_HEAD_SIZE = 4;
 
     /**
-     * find max LogSegment.
+     * find max Segment.
      *
      * @param s1 s1
      * @param s2 s2
-     * @return LogSegment.
+     * @return Segment.
      */
     public static <S extends Segment> S max(S s1, S s2) {
         if (s1 == null) {
@@ -45,7 +45,7 @@ public class SegmentUtil {
      *
      * @param s1 s1
      * @param s2 s2
-     * @return LogSegment
+     * @return Segment
      */
     public static <S extends Segment> S min(S s1, S s2) {
         final Segment max = max(s1, s2);

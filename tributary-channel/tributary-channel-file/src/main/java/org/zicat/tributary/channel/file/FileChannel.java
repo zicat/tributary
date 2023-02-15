@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
-import static org.zicat.tributary.channel.file.FileSegmentUtil.isLogSegment;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
 
 /**
  * FileChannel implements {@link Channel} to Storage records and {@link RecordsOffset} in local file
@@ -105,7 +105,7 @@ public class FileChannel extends AbstractChannel<FileSegment> {
     /** load segments. */
     protected void createLastSegment() {
 
-        final File[] files = dir.listFiles(file -> isLogSegment(topic(), file.getName()));
+        final File[] files = dir.listFiles(file -> isFileSegment(topic(), file.getName()));
         if (files == null || files.length == 0) {
             initLastSegment(createSegment(0));
             return;

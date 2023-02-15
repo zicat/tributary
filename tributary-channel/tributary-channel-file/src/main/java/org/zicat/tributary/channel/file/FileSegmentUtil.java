@@ -23,7 +23,7 @@ public class FileSegmentUtil {
 
     public static final String FILE_DEFAULT_PREFIX = "segment_";
     public static final String FILE_DEFAULT_SUFFIX = ".log";
-    public static final int SEGMENT_HEAD_SIZE = 8;
+    public static final int FILE_SEGMENT_HEAD_SIZE = 8;
 
     /**
      * legal offset, return SEGMENT_HEAD_SIZE if offset < 8.
@@ -31,8 +31,8 @@ public class FileSegmentUtil {
      * @param offset offset
      * @return offset
      */
-    public static long legalOffset(long offset) {
-        return offset < SEGMENT_HEAD_SIZE ? SEGMENT_HEAD_SIZE : offset;
+    public static long legalFileOffset(long offset) {
+        return offset < FILE_SEGMENT_HEAD_SIZE ? FILE_SEGMENT_HEAD_SIZE : offset;
     }
 
     /**
@@ -70,12 +70,12 @@ public class FileSegmentUtil {
     }
 
     /**
-     * check file is log file.
+     * check file is segment file.
      *
      * @param fileName fileName
      * @return true if log segment else false
      */
-    public static boolean isLogSegment(String filePrefix, String fileName) {
+    public static boolean isFileSegment(String filePrefix, String fileName) {
         if (!fileName.startsWith(realPrefix(filePrefix, FILE_DEFAULT_PREFIX))
                 || !fileName.endsWith(FILE_DEFAULT_SUFFIX)) {
             return false;

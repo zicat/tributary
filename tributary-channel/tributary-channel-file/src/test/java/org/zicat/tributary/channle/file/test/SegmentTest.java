@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
-/** LogSegment. */
+/** SegmentTest. */
 public class SegmentTest {
 
     private static final File DIR = FileUtils.createTmpDir("log_segment_test");

@@ -44,6 +44,7 @@ public class RecordsOffsetTest {
         final RecordsOffset recordsOffset = new RecordsOffset(2, 2, "g1");
         final ByteBuffer byteBuffer = ByteBuffer.allocate(100);
         recordsOffset.fillBuffer(byteBuffer);
+        byteBuffer.flip();
         final RecordsOffset convertRecordsOffset = RecordsOffset.parserByteBuffer(byteBuffer);
         Assert.assertEquals(recordsOffset, convertRecordsOffset);
     }

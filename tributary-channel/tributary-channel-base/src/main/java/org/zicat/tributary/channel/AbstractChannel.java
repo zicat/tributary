@@ -81,7 +81,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * create segment by id.
      *
      * @param id id
-     * @return LogSegment
+     * @return Segment
      */
     protected abstract S createSegment(long id) throws IOException;
 

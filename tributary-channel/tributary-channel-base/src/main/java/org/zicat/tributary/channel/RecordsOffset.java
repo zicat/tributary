@@ -93,7 +93,6 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
         byteBuffer.putLong(offset);
         byteBuffer.putInt(groupBs.length);
         byteBuffer.put(groupBs);
-        byteBuffer.flip();
     }
 
     /**

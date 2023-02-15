@@ -34,7 +34,7 @@ import java.io.IOException;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
-/** LogSegmentBuilderTest. */
+/** FileSegmentBuilderTest. */
 public class FileSegmentBuilderTest {
 
     private static final File DIR = FileUtils.createTmpDir("log_segment_builder_test");
