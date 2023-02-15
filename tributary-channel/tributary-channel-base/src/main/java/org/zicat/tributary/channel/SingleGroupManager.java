@@ -39,16 +39,14 @@ public interface SingleGroupManager extends GroupManager {
     /**
      * commit records offset without partition.
      *
-     * @param groupId groupId
      * @param recordsOffset recordsOffset
      * @throws IOException IOException
      */
-    void commit(String groupId, RecordsOffset recordsOffset) throws IOException;
+    void commit(RecordsOffset recordsOffset) throws IOException;
 
     @Override
-    default void commit(String groupId, int partition, RecordsOffset recordsOffset)
-            throws IOException {
-        commit(groupId, recordsOffset);
+    default void commit(int partition, RecordsOffset recordsOffset) throws IOException {
+        commit(recordsOffset);
     }
 
     /**

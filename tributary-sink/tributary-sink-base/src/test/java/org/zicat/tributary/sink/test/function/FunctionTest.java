@@ -41,12 +41,9 @@ public class FunctionTest {
                     @Override
                     public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
                 };
-        final RecordsOffset recordsOffset = new RecordsOffset(1, 0);
+        final RecordsOffset recordsOffset = new RecordsOffset(1, 0, "g1");
         final ContextBuilder builder =
-                ContextBuilder.newBuilder()
-                        .startRecordsOffset(recordsOffset)
-                        .partitionId(1)
-                        .groupId("g1");
+                ContextBuilder.newBuilder().startRecordsOffset(recordsOffset).partitionId(1);
         final Context context = builder.build();
         function.open(context);
         Assert.assertEquals(function.committableOffset(), recordsOffset);
@@ -64,12 +61,9 @@ public class FunctionTest {
     public void testDummyFunction() throws Exception {
 
         final Function function = new DummyFunction();
-        final RecordsOffset recordsOffset = new RecordsOffset(1, 0);
+        final RecordsOffset recordsOffset = new RecordsOffset(1, 0, "g1");
         final ContextBuilder builder =
-                ContextBuilder.newBuilder()
-                        .startRecordsOffset(recordsOffset)
-                        .groupId("g1")
-                        .partitionId(1);
+                ContextBuilder.newBuilder().startRecordsOffset(recordsOffset).partitionId(1);
         final Context context = builder.build();
         function.open(context);
 

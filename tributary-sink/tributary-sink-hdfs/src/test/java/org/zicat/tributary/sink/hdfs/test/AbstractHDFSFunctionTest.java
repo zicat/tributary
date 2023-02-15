@@ -99,10 +99,9 @@ public class AbstractHDFSFunctionTest {
                 };
         final ContextBuilder contextBuilder =
                 ContextBuilder.newBuilder()
-                        .groupId("g1")
                         .partitionId(0)
                         .topic("t1")
-                        .startRecordsOffset(RecordsOffset.startRecordOffset());
+                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"));
 
         contextBuilder.addCustomProperty(BASE_SINK_PATH, bucketPath);
         final Context context = contextBuilder.build();
@@ -112,9 +111,9 @@ public class AbstractHDFSFunctionTest {
                         "1".getBytes(StandardCharsets.UTF_8),
                         "2".getBytes(StandardCharsets.UTF_8),
                         "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new RecordsOffset(1, 1), testData.listIterator());
+        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
         Thread.sleep(1100);
-        function.process(new RecordsOffset(1, 1), testData.listIterator());
+        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
         function.close();
         Assert.assertEquals(2 * testData.size(), counter.get());
     }
@@ -159,10 +158,9 @@ public class AbstractHDFSFunctionTest {
                 };
         final ContextBuilder contextBuilder =
                 ContextBuilder.newBuilder()
-                        .groupId("g1")
                         .partitionId(0)
                         .topic("t1")
-                        .startRecordsOffset(RecordsOffset.startRecordOffset());
+                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"));
         contextBuilder.addCustomProperty(BASE_SINK_PATH, bucketPath);
         final Context context = contextBuilder.build();
         function.open(context);
@@ -171,8 +169,8 @@ public class AbstractHDFSFunctionTest {
                         "1".getBytes(StandardCharsets.UTF_8),
                         "2".getBytes(StandardCharsets.UTF_8),
                         "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new RecordsOffset(1, 1), testData.listIterator());
-        function.process(new RecordsOffset(1, 1), testData.listIterator());
+        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
+        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
         function.close();
 
         Assert.assertEquals(6, mockWriter.getEventsWritten());
@@ -217,10 +215,9 @@ public class AbstractHDFSFunctionTest {
                 };
         final ContextBuilder contextBuilder =
                 ContextBuilder.newBuilder()
-                        .groupId("g1")
                         .partitionId(0)
                         .topic("t1")
-                        .startRecordsOffset(RecordsOffset.startRecordOffset());
+                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"));
 
         contextBuilder.addCustomProperty(BASE_SINK_PATH, bucketPath);
         final Context context = contextBuilder.build();
@@ -230,9 +227,9 @@ public class AbstractHDFSFunctionTest {
                         "1".getBytes(StandardCharsets.UTF_8),
                         "2".getBytes(StandardCharsets.UTF_8),
                         "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new RecordsOffset(1, 1), testData.listIterator());
+        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
 
-        function.process(new RecordsOffset(1, 1), testData.listIterator());
+        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
         function.close();
         Assert.assertEquals(6, mockWriter.getEventsWritten());
     }

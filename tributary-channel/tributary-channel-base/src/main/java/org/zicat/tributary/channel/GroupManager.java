@@ -44,10 +44,9 @@ public interface GroupManager extends Closeable {
     /**
      * commit records offset.
      *
-     * @param groupId groupId
      * @param partition partition
      * @param recordsOffset recordsOffset
      * @throws IOException IOException
      */
-    void commit(String groupId, int partition, RecordsOffset recordsOffset) throws IOException;
+    void commit(int partition, RecordsOffset recordsOffset) throws IOException;
 }

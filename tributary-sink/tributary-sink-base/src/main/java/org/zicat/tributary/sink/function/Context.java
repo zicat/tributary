@@ -28,7 +28,6 @@ public class Context extends Config {
 
     private final String id;
     private final String topic;
-    private final String groupId;
     private final int partitionId;
     private final RecordsOffset startRecordsOffset;
 
@@ -36,13 +35,11 @@ public class Context extends Config {
             String id,
             Map<String, Object> customConfig,
             String topic,
-            String groupId,
             int partitionId,
             RecordsOffset startRecordsOffset) {
         super(customConfig);
         this.id = id;
         this.topic = topic;
-        this.groupId = groupId;
         this.partitionId = partitionId;
         this.startRecordsOffset = startRecordsOffset;
     }
@@ -52,7 +49,7 @@ public class Context extends Config {
     }
 
     public String groupId() {
-        return groupId;
+        return startRecordsOffset.groupId();
     }
 
     public int partitionId() {

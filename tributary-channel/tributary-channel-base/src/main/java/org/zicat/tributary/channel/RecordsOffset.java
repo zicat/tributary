@@ -20,6 +20,7 @@ package org.zicat.tributary.channel;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -37,10 +38,18 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
 
     protected final long segmentId;
     protected final long offset;
+    protected final String groupId;
+    protected final byte[] groupBs;
+    private static final int RECORD_LENGTH = 20;
 
-    public RecordsOffset(long segmentId, long offset) {
+    public RecordsOffset(long segmentId, long offset, String groupId) {
+        if (groupId == null) {
+            throw new IllegalArgumentException("group id not null");
+        }
         this.segmentId = segmentId;
         this.offset = offset;
+        this.groupId = groupId;
+        this.groupBs = groupId.getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -62,6 +71,19 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
     }
 
     /**
+     * group id.
+     *
+     * @return string group id
+     */
+    public String groupId() {
+        return groupId;
+    }
+
+    public int size() {
+        return RECORD_LENGTH + groupBs.length;
+    }
+
+    /**
      * put segment id offset to byte buffer.
      *
      * @param byteBuffer byte buffer
@@ -69,6 +91,8 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
     public void fillBuffer(ByteBuffer byteBuffer) {
         byteBuffer.putLong(segmentId);
         byteBuffer.putLong(offset);
+        byteBuffer.putInt(groupBs.length);
+        byteBuffer.put(groupBs);
         byteBuffer.flip();
     }
 
@@ -79,7 +103,11 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      * @return RecordOffset
      */
     public static RecordsOffset parserByteBuffer(ByteBuffer byteBuffer) {
-        return new RecordsOffset(byteBuffer.getLong(), byteBuffer.getLong());
+        final long segmentId = byteBuffer.getLong();
+        final long offset = byteBuffer.getLong();
+        final byte[] groupByte = new byte[byteBuffer.getInt()];
+        byteBuffer.get(groupByte);
+        return new RecordsOffset(segmentId, offset, new String(groupByte, StandardCharsets.UTF_8));
     }
 
     /**
@@ -98,7 +126,7 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      * @return RecordOffset
      */
     public RecordsOffset skip2TargetHead(long segmentId) {
-        return skip2Target(segmentId, 0);
+        return skip2Target(segmentId, 0, groupId);
     }
 
     /**
@@ -108,7 +136,8 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      * @return new recordOffset
      */
     public RecordsOffset skip2Target(RecordsOffset recordsOffset) {
-        return skip2Target(recordsOffset.segmentId(), recordsOffset.offset());
+        return skip2Target(
+                recordsOffset.segmentId(), recordsOffset.offset(), recordsOffset.groupId());
     }
 
     /**
@@ -116,10 +145,11 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      *
      * @param segmentId segmentId
      * @param offset offset
+     * @param groupId groupId
      * @return RecordOffset
      */
-    public RecordsOffset skip2Target(long segmentId, long offset) {
-        return new RecordsOffset(segmentId, offset);
+    public RecordsOffset skip2Target(long segmentId, long offset, String groupId) {
+        return new RecordsOffset(segmentId, offset, groupId);
     }
 
     /**
@@ -129,7 +159,7 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      * @return RecordsOffset
      */
     public RecordsOffset skip2TargetOffset(long newOffset) {
-        return new RecordsOffset(segmentId(), newOffset);
+        return new RecordsOffset(segmentId, newOffset, groupId);
     }
 
     @Override
@@ -174,7 +204,7 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
 
     @Override
     public String toString() {
-        return "[" + "segment=" + segmentId + ", offset=" + offset + ']';
+        return "[" + "segment=" + segmentId + ", offset=" + offset + ", groupId=" + groupId + ']';
     }
 
     @Override
@@ -186,20 +216,13 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
             return false;
         }
         final RecordsOffset that = (RecordsOffset) o;
-        return segmentId == that.segmentId && offset == that.offset;
+        return segmentId == that.segmentId
+                && offset == that.offset
+                && Objects.equals(groupId, that.groupId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(segmentId, offset);
-    }
-
-    /**
-     * create first record offset.
-     *
-     * @return RecordOffset
-     */
-    public static RecordsOffset startRecordOffset() {
-        return new RecordsOffset(0, 0);
+        return Objects.hash(segmentId, offset, groupId);
     }
 }

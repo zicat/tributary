@@ -23,13 +23,14 @@ public class BlockRecordsOffset extends RecordsOffset {
 
     protected final BlockReader blockReader;
 
-    public BlockRecordsOffset(long segmentId, long offset, BlockReader blockReader) {
-        super(segmentId, offset);
+    public BlockRecordsOffset(
+            long segmentId, long offset, String groupId, BlockReader blockReader) {
+        super(segmentId, offset, groupId);
         this.blockReader = blockReader == null ? new BlockReader(null, null, 0) : blockReader;
     }
 
-    private BlockRecordsOffset(long segmentId, long offset) {
-        this(segmentId, offset, null);
+    private BlockRecordsOffset(long segmentId, long offset, String groupId) {
+        this(segmentId, offset, groupId, null);
     }
 
     /**
@@ -54,10 +55,11 @@ public class BlockRecordsOffset extends RecordsOffset {
      * create block by segment id.
      *
      * @param segmentId segmentId
+     * @param groupId groupId
      * @return BlockRecordsOffset
      */
-    public static BlockRecordsOffset cast(long segmentId) {
-        return cast(segmentId, 0);
+    public static BlockRecordsOffset cast(long segmentId, String groupId) {
+        return cast(segmentId, 0, groupId);
     }
 
     /**
@@ -65,10 +67,11 @@ public class BlockRecordsOffset extends RecordsOffset {
      *
      * @param segmentId segmentId
      * @param offset offset
+     * @param groupId groupId
      * @return BlockRecordsOffset
      */
-    public static BlockRecordsOffset cast(long segmentId, long offset) {
-        return new BlockRecordsOffset(segmentId, offset);
+    public static BlockRecordsOffset cast(long segmentId, long offset, String groupId) {
+        return new BlockRecordsOffset(segmentId, offset, groupId);
     }
 
     /**
@@ -81,7 +84,8 @@ public class BlockRecordsOffset extends RecordsOffset {
         if (recordsOffset instanceof BlockRecordsOffset) {
             return (BlockRecordsOffset) recordsOffset;
         }
-        return new BlockRecordsOffset(recordsOffset.segmentId(), recordsOffset.offset());
+        return new BlockRecordsOffset(
+                recordsOffset.segmentId(), recordsOffset.offset(), recordsOffset.groupId());
     }
 
     /**
@@ -96,7 +100,7 @@ public class BlockRecordsOffset extends RecordsOffset {
 
     @Override
     public BlockRecordsOffset skip2TargetOffset(long newOffset) {
-        return skip2Target(segmentId(), newOffset);
+        return skip2Target(segmentId, newOffset, groupId);
     }
 
     @Override
@@ -106,17 +110,18 @@ public class BlockRecordsOffset extends RecordsOffset {
 
     @Override
     public BlockRecordsOffset skip2TargetHead(long segmentId) {
-        return skip2Target(segmentId, 0);
+        return skip2Target(segmentId, 0, groupId);
     }
 
     @Override
     public BlockRecordsOffset skip2Target(RecordsOffset recordsOffset) {
-        return skip2Target(recordsOffset.segmentId(), recordsOffset.offset());
+        return skip2Target(
+                recordsOffset.segmentId(), recordsOffset.offset(), recordsOffset.groupId);
     }
 
     @Override
-    public BlockRecordsOffset skip2Target(long segmentId, long offset) {
-        return new BlockRecordsOffset(segmentId, offset, blockReader);
+    public BlockRecordsOffset skip2Target(long segmentId, long offset, String groupId) {
+        return new BlockRecordsOffset(segmentId, offset, groupId, blockReader);
     }
 
     /** RecordsResultSetImpl. */

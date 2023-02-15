@@ -92,7 +92,7 @@ public class SegmentTest {
                             result.add(createStringByLength(20));
 
                             BlockRecordsOffset recordsOffset =
-                                    BlockRecordsOffset.cast(new RecordsOffset(fileId, 0));
+                                    BlockRecordsOffset.cast(new RecordsOffset(fileId, 0, "g1"));
                             while (!result.isEmpty()) {
                                 RecordsResultSet resultSet;
                                 try {
@@ -142,7 +142,7 @@ public class SegmentTest {
         result.add(createStringByLength(20));
         int i = 0;
 
-        final BlockRecordsOffset bufferRecordsOffset = BlockRecordsOffset.cast(fileId);
+        final BlockRecordsOffset bufferRecordsOffset = BlockRecordsOffset.cast(fileId, "g1");
 
         RecordsResultSet resultSet =
                 segment.readBlock(bufferRecordsOffset, 1, TimeUnit.MILLISECONDS).toResultSet();

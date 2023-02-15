@@ -30,9 +30,9 @@ public class RecordsOffsetTest {
     @Test
     public void testMin() {
 
-        final RecordsOffset f1 = new RecordsOffset(1, 1);
-        final RecordsOffset f2 = new RecordsOffset(2, 0);
-        final RecordsOffset f3 = new RecordsOffset(2, 2);
+        final RecordsOffset f1 = new RecordsOffset(1, 1, "g1");
+        final RecordsOffset f2 = new RecordsOffset(2, 0, "g1");
+        final RecordsOffset f3 = new RecordsOffset(2, 2, "g1");
         Assert.assertEquals(f1, RecordsOffset.min(f1, f2));
         Assert.assertEquals(f2, RecordsOffset.max(f1, f2));
         Assert.assertEquals(f2, RecordsOffset.min(f3, f2));
@@ -41,7 +41,7 @@ public class RecordsOffsetTest {
 
     @Test
     public void testByteBufferConvert() {
-        final RecordsOffset recordsOffset = new RecordsOffset(2, 2);
+        final RecordsOffset recordsOffset = new RecordsOffset(2, 2, "g1");
         final ByteBuffer byteBuffer = ByteBuffer.allocate(100);
         recordsOffset.fillBuffer(byteBuffer);
         final RecordsOffset convertRecordsOffset = RecordsOffset.parserByteBuffer(byteBuffer);
@@ -50,17 +50,17 @@ public class RecordsOffsetTest {
 
     @Test
     public void testSkip() {
-        final RecordsOffset recordsOffset = new RecordsOffset(2, 2);
+        final RecordsOffset recordsOffset = new RecordsOffset(2, 2, "g1");
         Assert.assertEquals(
-                new RecordsOffset(recordsOffset.segmentId() + 1, 0),
+                new RecordsOffset(recordsOffset.segmentId() + 1, 0, "g1"),
                 recordsOffset.skipNextSegmentHead());
-        Assert.assertEquals(new RecordsOffset(4, 0), recordsOffset.skip2TargetHead(4));
+        Assert.assertEquals(new RecordsOffset(4, 0, "g1"), recordsOffset.skip2TargetHead(4));
     }
 
     @Test
     public void testHashEquals() {
-        final RecordsOffset recordsOffset = new RecordsOffset(2, 2);
-        final RecordsOffset recordsOffset2 = new RecordsOffset(2, 2);
+        final RecordsOffset recordsOffset = new RecordsOffset(2, 2, "g1");
+        final RecordsOffset recordsOffset2 = new RecordsOffset(2, 2, "g1");
         Assert.assertEquals(recordsOffset.hashCode(), recordsOffset2.hashCode());
         Assert.assertEquals(recordsOffset, recordsOffset2);
     }

@@ -82,17 +82,6 @@ public class SinkManagerTest {
                                                 CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
-
-        // create sources
-        final List<Thread> sourceThread = new ArrayList<>();
-        for (int i = 0; i < partitionCount; i++) {
-            Thread t = new SourceThread(channel, i, dataSize, maxRecordLength);
-            sourceThread.add(t);
-        }
-
-        // start source and sink threads
-        sourceThread.forEach(Thread::start);
-
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentity("direct")
@@ -107,8 +96,17 @@ public class SinkManagerTest {
                             new SinkGroupManager(groupId, channel, sinkGroupConfig);
                     groupManagers.add(sinkManager);
                 });
-
         groupManagers.forEach(SinkGroupManager::createPartitionHandlesAndStart);
+
+        // create sources
+        final List<Thread> sourceThread = new ArrayList<>();
+        for (int i = 0; i < partitionCount; i++) {
+            Thread t = new SourceThread(channel, i, dataSize, maxRecordLength);
+            sourceThread.add(t);
+        }
+
+        // start source and sink threads
+        sourceThread.forEach(Thread::start);
         sourceThread.forEach(Threads::joinQuietly);
         channel.flush();
         groupManagers.forEach(IOUtils::closeQuietly);

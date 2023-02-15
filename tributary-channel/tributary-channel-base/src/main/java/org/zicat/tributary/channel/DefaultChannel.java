@@ -101,10 +101,9 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public void commit(String groupId, int partition, RecordsOffset recordsOffset)
-            throws IOException {
+    public void commit(int partition, RecordsOffset recordsOffset) throws IOException {
         final C channel = getPartitionChannel(partition);
-        channel.commit(groupId, recordsOffset);
+        channel.commit(recordsOffset);
     }
 
     @Override

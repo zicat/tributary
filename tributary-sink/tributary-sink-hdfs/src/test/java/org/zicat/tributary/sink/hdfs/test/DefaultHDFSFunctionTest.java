@@ -65,10 +65,9 @@ public class DefaultHDFSFunctionTest {
         mockClock.setCurrentTimeMillis(System.currentTimeMillis());
         final ContextBuilder builder =
                 new ContextBuilder()
-                        .groupId("g1")
                         .id("id1")
                         .partitionId(0)
-                        .startRecordsOffset(null)
+                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"))
                         .topic("t1");
         builder.addCustomProperty(BASE_SINK_PATH, DIR.getCanonicalFile().getPath())
                 .addCustomProperty(OPTION_IDLE_MILLIS.key(), 10000)
@@ -77,7 +76,7 @@ public class DefaultHDFSFunctionTest {
 
         defaultHDFSFunction.open(builder.build());
 
-        final RecordsOffset recordsOffset = new RecordsOffset(1, 0);
+        final RecordsOffset recordsOffset = new RecordsOffset(1, 0, "g1");
         defaultHDFSFunction.process(
                 recordsOffset, Arrays.asList("aa".getBytes(), "bb".getBytes()).listIterator());
         String currentBucketPath = currentBucketPath(defaultHDFSFunction);
@@ -94,7 +93,7 @@ public class DefaultHDFSFunctionTest {
                         .length);
         Assert.assertEquals(recordsOffset, defaultHDFSFunction.committableOffset());
 
-        final RecordsOffset recordsOffset2 = new RecordsOffset(2, 0);
+        final RecordsOffset recordsOffset2 = new RecordsOffset(2, 0, "g1");
         defaultHDFSFunction.process(
                 recordsOffset2, Arrays.asList("aa".getBytes(), "bb".getBytes()).listIterator());
         currentBucketPath = currentBucketPath(defaultHDFSFunction);

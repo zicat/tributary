@@ -109,7 +109,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
             return;
         }
         try {
-            channel.commit(groupId, partitionId, recordsOffset);
+            channel.commit(partitionId, recordsOffset);
         } catch (Throwable e) {
             LOG.warn("commit fail", e);
         }
@@ -158,7 +158,6 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
             final ContextBuilder builder =
                     ContextBuilder.newBuilder()
                             .id(id == null ? getSinHandlerId() : id)
-                            .groupId(groupId)
                             .partitionId(partitionId)
                             .startRecordsOffset(startOffset)
                             .topic(channel.topic());

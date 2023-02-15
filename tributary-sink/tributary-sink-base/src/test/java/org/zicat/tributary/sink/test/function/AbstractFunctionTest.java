@@ -34,11 +34,11 @@ import static org.zicat.tributary.sink.Config.OPTION_CLOCK;
 public class AbstractFunctionTest {
 
     final int fullMill = 10;
-    final RecordsOffset startRecordsOffset = RecordsOffset.startRecordOffset();
 
     @Test
     public void testFlush() {
 
+        final RecordsOffset startRecordsOffset = new RecordsOffset(0, 0, "g1");
         final MockClock clock = new MockClock();
         clock.setCurrentTimeMillis(0);
         final MockFunction function = createFunction(clock);
@@ -68,12 +68,9 @@ public class AbstractFunctionTest {
      */
     private MockFunction createFunction(MockClock clock) {
         final MockFunction function = new MockFunction();
-
+        final RecordsOffset startRecordsOffset = new RecordsOffset(0, 0, "g1");
         final ContextBuilder builder =
-                ContextBuilder.newBuilder()
-                        .startRecordsOffset(startRecordsOffset)
-                        .groupId("g1")
-                        .partitionId(1);
+                ContextBuilder.newBuilder().startRecordsOffset(startRecordsOffset).partitionId(1);
         builder.addCustomProperty(OPTION_CLOCK.key(), clock);
         final Context context = builder.build();
         clock.setCurrentTimeMillis(0);

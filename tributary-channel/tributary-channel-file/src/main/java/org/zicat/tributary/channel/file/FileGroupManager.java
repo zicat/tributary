@@ -30,7 +30,6 @@ import java.io.FileFilter;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GROUP_PERSIST_PERIOD_SECOND;
@@ -48,7 +47,6 @@ import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_GR
 public class FileGroupManager extends MemoryGroupManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
-    private static final int RECORD_LENGTH = 20;
 
     public static final String FILE_SUFFIX = "_group_id.index";
     public static final String TMP_SUFFIX = ".tmp";
@@ -75,11 +73,7 @@ public class FileGroupManager extends MemoryGroupManager {
                 FileChannel channel = randomAccessFile.getChannel()) {
             foreachGroup(
                     (group, recordsOffset) -> {
-                        final byte[] groupByteArray = group.getBytes(StandardCharsets.UTF_8);
-                        final int bufferSize = groupByteArray.length + RECORD_LENGTH;
-                        byteBuffer = IOUtils.reAllocate(byteBuffer, bufferSize);
-                        byteBuffer.putInt(groupByteArray.length);
-                        byteBuffer.put(groupByteArray);
+                        byteBuffer = IOUtils.reAllocate(byteBuffer, recordsOffset.size());
                         recordsOffset.fillBuffer(byteBuffer);
                         IOUtils.writeFull(channel, byteBuffer);
                     });
@@ -157,17 +151,15 @@ public class FileGroupManager extends MemoryGroupManager {
      * @param groupIds groupIds groupIds
      * @return group records offset
      */
-    private static Map<String, RecordsOffset> getGroupOffsets(
-            File groupIndexFile, Set<String> groupIds) {
+    private static Set<RecordsOffset> getGroupOffsets(File groupIndexFile, Set<String> groupIds) {
 
         final int cacheExpectedSize = groupIds.size();
         final List<String> allGroups = new ArrayList<>(groupIds);
-        final Map<String, RecordsOffset> existsGroups =
-                parseExistsGroups(groupIndexFile, allGroups);
-        final Map<String, RecordsOffset> result = new HashMap<>(existsGroups);
+        final Set<RecordsOffset> existsGroups = parseExistsGroups(groupIndexFile, allGroups);
+        final Set<RecordsOffset> result = new HashSet<>(existsGroups);
         // AllGroups only contains new groups after call method parseExistsGroups.
         // Add new group with default offset to result ensure all groupIds has one offset.
-        allGroups.forEach(groupId -> result.put(groupId, DEFAULT_RECORDS_OFFSET));
+        allGroups.forEach(groupId -> result.add(defaultRecordsOffset(groupId)));
         if (result.size() != cacheExpectedSize) {
             throw new TributaryRuntimeException(
                     "cache size must equal groupIds size, expected size = "
@@ -200,10 +192,10 @@ public class FileGroupManager extends MemoryGroupManager {
      * @param allGroups allGroups, allGroups will remove those groups that exits.
      * @return group offsets map
      */
-    private static Map<String, RecordsOffset> parseExistsGroups(
+    private static Set<RecordsOffset> parseExistsGroups(
             final File groupIndexFile, List<String> allGroups) {
 
-        final Map<String, RecordsOffset> existsGroups = new HashMap<>();
+        final Set<RecordsOffset> existsGroups = new HashSet<>();
 
         /*
          * Method {@link FileGroupManager#swapIndexFileQuietly} may cause delete groupIndexFile
@@ -217,13 +209,9 @@ public class FileGroupManager extends MemoryGroupManager {
         try {
             final ByteBuffer byteBuffer = ByteBuffer.wrap(IOUtils.readFull(realGroupIndexFile));
             while (byteBuffer.hasRemaining()) {
-                final int groupLength = byteBuffer.getInt();
-                final byte[] groupArray = new byte[groupLength];
-                byteBuffer.get(groupArray);
-                final String groupId = new String(groupArray, StandardCharsets.UTF_8);
                 final RecordsOffset offset = RecordsOffset.parserByteBuffer(byteBuffer);
-                if (allGroups.remove(groupId)) {
-                    existsGroups.put(groupId, offset);
+                if (allGroups.remove(offset.groupId())) {
+                    existsGroups.add(offset);
                 }
             }
         } catch (Exception e) {

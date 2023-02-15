@@ -241,7 +241,10 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
                         bodyBuf,
                         dataLength + BLOCK_HEAD_SIZE);
         return new BlockRecordsOffset(
-                blockRecordsOffset.segmentId(), finalNextOffset, bufferReader);
+                blockRecordsOffset.segmentId(),
+                finalNextOffset,
+                blockRecordsOffset.groupId(),
+                bufferReader);
     }
 
     /**

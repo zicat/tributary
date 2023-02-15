@@ -41,16 +41,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class MemoryGroupManager implements SingleGroupManager {
 
-    public static final RecordsOffset DEFAULT_RECORDS_OFFSET = new RecordsOffset(-1, -1);
     private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final long periodSecond;
     protected ScheduledExecutorService schedule;
 
-    public MemoryGroupManager(Map<String, RecordsOffset> groupOffsets, long periodSecond) {
-        this.cache.putAll(groupOffsets);
-        this.groups.addAll(groupOffsets.keySet());
+    public MemoryGroupManager(Set<RecordsOffset> groupOffsets, long periodSecond) {
+        for (RecordsOffset recordsOffset : groupOffsets) {
+            this.cache.put(recordsOffset.groupId(), recordsOffset);
+            this.groups.add(recordsOffset.groupId());
+        }
         this.periodSecond = periodSecond;
         if (periodSecond > 0) {
             this.schedule =
@@ -58,6 +59,16 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
                             Threads.createThreadFactoryByName("group_persist", true));
             schedule();
         }
+    }
+
+    /**
+     * create default records offset.
+     *
+     * @param groupId groupId
+     * @return RecordsOffset
+     */
+    public static RecordsOffset defaultRecordsOffset(String groupId) {
+        return new RecordsOffset(-1, -1, groupId);
     }
 
     /** schedule. */
@@ -81,17 +92,18 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
     }
 
     @Override
-    public synchronized void commit(String groupId, RecordsOffset recordsOffset) {
+    public synchronized void commit(RecordsOffset recordsOffset) {
 
         isOpen();
-        final RecordsOffset cachedRecordsOffset = cache.get(groupId);
+        final RecordsOffset cachedRecordsOffset = cache.get(recordsOffset.groupId());
         if (cachedRecordsOffset == null) {
-            throw new IllegalStateException("group id " + groupId + " not found in cache");
+            throw new IllegalStateException(
+                    "group id " + recordsOffset.groupId() + " not found in cache");
         }
         if (cachedRecordsOffset.compareTo(recordsOffset) >= 0) {
             return;
         }
-        cache.put(groupId, recordsOffset);
+        cache.put(recordsOffset.groupId(), recordsOffset);
     }
 
     @Override
@@ -162,7 +174,7 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
      * @return MemoryOnePartitionGroupManager
      */
     public static AbstractChannel.SingleGroupManagerFactory createUnPersistGroupManagerFactory(
-            Map<String, RecordsOffset> groupOffsets) {
+            Set<RecordsOffset> groupOffsets) {
         return () ->
                 new MemoryGroupManager(groupOffsets, -1) {
                     @Override

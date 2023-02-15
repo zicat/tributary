@@ -69,7 +69,7 @@ public class BlockWriterTest {
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
-                            new BlockRecordsOffsetTest.BlockRecordsOffsetMock(reusedBuffer)
+                            new BlockRecordsOffsetTest.BlockRecordsOffsetMock(reusedBuffer, "g1")
                                     .toResultSet();
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData, rs.next());
@@ -103,7 +103,7 @@ public class BlockWriterTest {
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
-                            new BlockRecordsOffsetTest.BlockRecordsOffsetMock(reusedBuffer)
+                            new BlockRecordsOffsetTest.BlockRecordsOffsetMock(reusedBuffer, "g1")
                                     .toResultSet();
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData.get(0), rs.next());

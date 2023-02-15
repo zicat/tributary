@@ -76,7 +76,6 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     public AbstractPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
-
         super(groupId, channel, partitionId, sinkGroupConfig);
         this.commitOffsetWaterMark = startOffset;
         this.fetchOffset = startOffset;

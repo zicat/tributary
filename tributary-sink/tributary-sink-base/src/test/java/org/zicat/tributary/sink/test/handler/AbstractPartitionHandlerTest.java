@@ -159,7 +159,7 @@ public class AbstractPartitionHandlerTest {
 
                     @Override
                     public RecordsOffset committableOffset() {
-                        return new RecordsOffset(0, 0);
+                        return new RecordsOffset(0, 0, groupId);
                     }
                 };
         handler.start();
@@ -244,7 +244,7 @@ public class AbstractPartitionHandlerTest {
 
                     @Override
                     public RecordsOffset committableOffset() {
-                        return RecordsOffset.startRecordOffset();
+                        return new RecordsOffset(0, 0, groupId);
                     }
 
                     @Override

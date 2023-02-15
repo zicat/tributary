@@ -114,7 +114,7 @@ public class BufferRecordsResultSetWriterTest {
 
         // test buffer reader
         BlockRecordsOffset bufferRecordsResultSet =
-                BlockRecordsOffset.cast(new RecordsOffset(0, 0));
+                BlockRecordsOffset.cast(new RecordsOffset(0, 0, "g1"));
         long offset = legalOffset(bufferRecordsResultSet.offset());
         Assert.assertTrue(offset >= 2);
         Assert.assertFalse(offset >= 10);
@@ -162,7 +162,8 @@ public class BufferRecordsResultSetWriterTest {
                         .nexRecordsOffset()
                         .skip2Target(
                                 resultSet.nexRecordsOffset().segmentId(),
-                                resultSet.nexRecordsOffset().offset() + 1);
+                                resultSet.nexRecordsOffset().offset() + 1,
+                                resultSet.nexRecordsOffset().groupId());
         resultSet =
                 fileSegment
                         .read(BlockRecordsOffset.cast(newOffset), fileChannel.position())

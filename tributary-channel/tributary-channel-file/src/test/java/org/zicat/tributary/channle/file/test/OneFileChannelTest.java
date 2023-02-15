@@ -92,7 +92,7 @@ public class OneFileChannelTest {
         channel.append(0, "foo".getBytes(StandardCharsets.UTF_8));
         channel.flush();
         RecordsResultSet recordsResultSet =
-                channel.poll(0, new RecordsOffset(0, 0), 1, TimeUnit.MILLISECONDS);
+                channel.poll(0, new RecordsOffset(0, 0, groupId), 1, TimeUnit.MILLISECONDS);
         Assert.assertFalse(recordsResultSet.isEmpty());
         while (recordsResultSet.hasNext()) {
             LOG.debug(new String(recordsResultSet.next(), StandardCharsets.UTF_8));
@@ -125,10 +125,10 @@ public class OneFileChannelTest {
         Assert.assertEquals(2, channel.activeSegment());
         RecordsResultSet recordsResultSet =
                 channel.poll(0, channel.getRecordsOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
-        channel.commit(groupId, 0, recordsResultSet.nexRecordsOffset());
+        channel.commit(0, recordsResultSet.nexRecordsOffset());
         Assert.assertEquals(1, channel.activeSegment());
 
-        channel.commit(groupId, 0, recordsResultSet.nexRecordsOffset().skipNextSegmentHead());
+        channel.commit(0, recordsResultSet.nexRecordsOffset().skipNextSegmentHead());
         Assert.assertEquals(1, channel.activeSegment());
         IOUtils.closeQuietly(channel);
     }
@@ -150,11 +150,11 @@ public class OneFileChannelTest {
         RecordsResultSet resultSet = channel.poll(0, offset, 1, TimeUnit.MILLISECONDS);
         Assert.assertTrue(resultSet.isEmpty());
 
-        resultSet = channel.take(0, new RecordsOffset(0, 0));
+        resultSet = channel.take(0, new RecordsOffset(0, 0, groupId));
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals(value, new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
-        channel.commit(groupId, 0, resultSet.nexRecordsOffset());
+        channel.commit(0, resultSet.nexRecordsOffset());
 
         String value2 = "test_data2";
         channel.append(0, value2.getBytes(StandardCharsets.UTF_8));
@@ -167,7 +167,7 @@ public class OneFileChannelTest {
         resultSet = channel.take(0, nextOffset);
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals(value2, new String(resultSet.next(), StandardCharsets.UTF_8));
-        channel.commit(groupId, 0, resultSet.nexRecordsOffset());
+        channel.commit(0, resultSet.nexRecordsOffset());
         IOUtils.closeQuietly(channel);
     }
 
@@ -276,7 +276,7 @@ public class OneFileChannelTest {
                                     }
                                 }
                                 try {
-                                    channel.commit(groupId, 0, recordsOffset);
+                                    channel.commit(0, recordsOffset);
                                 } catch (IOException ioException) {
                                     ioException.printStackTrace();
                                 }

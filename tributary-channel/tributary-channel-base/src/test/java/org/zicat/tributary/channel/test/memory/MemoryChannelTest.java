@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
 import static org.zicat.tributary.channel.memory.MemoryGroupManager.createUnPersistGroupManagerFactory;
+import static org.zicat.tributary.channel.memory.MemoryGroupManager.defaultRecordsOffset;
 
 /** OnePartitionMemoryChannelTest. */
 public class MemoryChannelTest {
@@ -38,8 +39,8 @@ public class MemoryChannelTest {
     @Test
     public void test() throws IOException, InterruptedException {
 
-        final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
-        groupOffsets.put("g1", RecordsOffset.startRecordOffset());
+        final Set<RecordsOffset> groupOffsets = new HashSet<>();
+        groupOffsets.add(defaultRecordsOffset("g1"));
         final MemoryChannel channel =
                 createMemoryChannel(
                         "t1",
@@ -47,6 +48,7 @@ public class MemoryChannelTest {
                         1024 * 4,
                         102400L,
                         CompressionType.NONE);
+        RecordsOffset recordsOffset = channel.getRecordsOffset("g1");
         final Random random = new Random(1023312);
         final List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < 200000; i++) {
@@ -60,7 +62,6 @@ public class MemoryChannelTest {
         }
         channel.flush();
         Assert.assertTrue(channel.activeSegment() > 1);
-        RecordsOffset recordsOffset = channel.getRecordsOffset("g1");
         RecordsResultSet recordsResultSet;
         int offset = 0;
         while (offset < result.size()) {
@@ -73,7 +74,7 @@ public class MemoryChannelTest {
                 offset++;
             }
             recordsOffset = recordsResultSet.nexRecordsOffset();
-            channel.commit("g1", recordsOffset);
+            channel.commit(recordsOffset);
         }
         Assert.assertEquals(1, channel.activeSegment());
         channel.close();

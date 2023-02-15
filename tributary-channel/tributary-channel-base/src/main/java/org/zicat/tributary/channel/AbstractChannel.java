@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.zicat.tributary.channel.memory.MemoryGroupManager.DEFAULT_RECORDS_OFFSET;
+import static org.zicat.tributary.channel.memory.MemoryGroupManager.defaultRecordsOffset;
 
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
@@ -172,19 +172,18 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public RecordsOffset getRecordsOffset(String groupId) {
         final RecordsOffset recordsOffset = groupManager.getRecordsOffset(groupId);
-        return DEFAULT_RECORDS_OFFSET.equals(recordsOffset)
-                ? new RecordsOffset(latestSegment.segmentId(), latestSegment.position())
+        return defaultRecordsOffset(groupId).equals(recordsOffset)
+                ? new RecordsOffset(latestSegment.segmentId(), latestSegment.position(), groupId)
                 : recordsOffset;
     }
 
     @Override
-    public synchronized void commit(String groupId, RecordsOffset recordsOffset)
-            throws IOException {
+    public synchronized void commit(RecordsOffset recordsOffset) throws IOException {
         if (latestSegment.segmentId() < recordsOffset.segmentId()) {
             LOG.warn("commit records offset {} over latest segment", recordsOffset);
             return;
         }
-        groupManager.commit(groupId, recordsOffset);
+        groupManager.commit(recordsOffset);
         final RecordsOffset min = groupManager.getMinRecordsOffset();
         if (min != null && minCommitSegmentId < min.segmentId()) {
             minCommitSegmentId = min.segmentId();
@@ -248,13 +247,13 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @return BlockRecordsOffset
      */
     protected BlockRecordsOffset cast(RecordsOffset recordsOffset) {
-        if (recordsOffset == null) {
-            return BlockRecordsOffset.cast(latestSegment.segmentId(), latestSegment.position());
-        }
         final BlockRecordsOffset newRecordOffset = BlockRecordsOffset.cast(recordsOffset);
         return newRecordOffset.segmentId() < minCommitSegmentId
                         || newRecordOffset.segmentId() > latestSegment.segmentId()
-                ? newRecordOffset.skip2Target(latestSegment.segmentId(), latestSegment.position())
+                ? newRecordOffset.skip2Target(
+                        latestSegment.segmentId(),
+                        latestSegment.position(),
+                        newRecordOffset.groupId())
                 : newRecordOffset;
     }
 

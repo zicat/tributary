@@ -22,11 +22,14 @@ import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.memory.MemoryGroupManager.createUnPersistGroupManagerFactory;
+import static org.zicat.tributary.channel.memory.MemoryGroupManager.defaultRecordsOffset;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
@@ -84,9 +87,9 @@ public class MemoryChannelFactory implements ChannelFactory {
             CompressionType compressionType) {
 
         final MemoryChannel[] channels = new MemoryChannel[partitionCount];
-        final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
+        final Set<RecordsOffset> groupOffsets = new HashSet<>();
         for (String group : groups) {
-            groupOffsets.put(group, RecordsOffset.startRecordOffset());
+            groupOffsets.add(defaultRecordsOffset(group));
         }
         final AbstractChannel.SingleGroupManagerFactory factory =
                 createUnPersistGroupManagerFactory(groupOffsets);

@@ -26,7 +26,6 @@ public class ContextBuilder extends CustomConfigBuilder {
 
     private String id;
     private String topic;
-    private String groupId;
     private int partitionId;
     private RecordsOffset startRecordsOffset;
 
@@ -49,17 +48,6 @@ public class ContextBuilder extends CustomConfigBuilder {
      */
     public ContextBuilder topic(String topic) {
         this.topic = topic;
-        return this;
-    }
-
-    /**
-     * set group id.
-     *
-     * @param groupId groupId
-     * @return this
-     */
-    public ContextBuilder groupId(String groupId) {
-        this.groupId = groupId;
         return this;
     }
 
@@ -91,7 +79,7 @@ public class ContextBuilder extends CustomConfigBuilder {
      * @return Context
      */
     public Context build() {
-        return new Context(id, customConfig, topic, groupId, partitionId, startRecordsOffset);
+        return new Context(id, customConfig, topic, partitionId, startRecordsOffset);
     }
 
     /**

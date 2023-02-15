@@ -23,8 +23,8 @@ import org.junit.Test;
 import org.zicat.tributary.channel.RecordsOffset;
 import org.zicat.tributary.channel.memory.MemoryGroupManager;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,9 +33,9 @@ public class MemoryGroupManagerTest {
 
     @Test
     public void testPersist() throws InterruptedException {
-        final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
-        groupOffsets.put("g1", new RecordsOffset(2, 100));
-        groupOffsets.put("g2", new RecordsOffset(3, 25));
+        final Set<RecordsOffset> groupOffsets = new HashSet<>();
+        groupOffsets.add(new RecordsOffset(2, 100, "g1"));
+        groupOffsets.add(new RecordsOffset(3, 25, "g2"));
         final MemoryGroupManagerMock manager =
                 new MemoryGroupManagerMock(groupOffsets) {
                     @Override
@@ -53,30 +53,30 @@ public class MemoryGroupManagerTest {
     @Test
     public void testCommit() {
 
-        final Map<String, RecordsOffset> groupOffsets = new HashMap<>();
-        groupOffsets.put("g1", new RecordsOffset(2, 100));
-        groupOffsets.put("g2", new RecordsOffset(3, 25));
+        final Set<RecordsOffset> groupOffsets = new HashSet<>();
+        groupOffsets.add(new RecordsOffset(2, 100, "g1"));
+        groupOffsets.add(new RecordsOffset(3, 25, "g2"));
         final MemoryGroupManager manager = new MemoryGroupManagerMock(groupOffsets);
-        manager.commit("g1", new RecordsOffset(1, 101));
-        manager.commit("g2", new RecordsOffset(3, 75));
+        manager.commit(new RecordsOffset(1, 101, "g1"));
+        manager.commit(new RecordsOffset(3, 75, "g2"));
         try {
-            manager.commit("g3", new RecordsOffset(100, 1));
+            manager.commit(new RecordsOffset(100, 1, "g3"));
             Assert.fail("expect commit fail");
         } catch (RuntimeException e) {
             Assert.assertTrue(true);
         }
-        Assert.assertEquals(new RecordsOffset(2, 100), manager.getRecordsOffset("g1"));
-        Assert.assertEquals(new RecordsOffset(3, 75), manager.getRecordsOffset("g2"));
-        Assert.assertEquals(new RecordsOffset(2, 100), manager.getMinRecordsOffset());
+        Assert.assertEquals(new RecordsOffset(2, 100, "g1"), manager.getRecordsOffset("g1"));
+        Assert.assertEquals(new RecordsOffset(3, 75, "g2"), manager.getRecordsOffset("g2"));
+        Assert.assertEquals(new RecordsOffset(2, 100, "g1"), manager.getMinRecordsOffset());
 
-        manager.commit("g1", new RecordsOffset(3, 25));
-        Assert.assertEquals(new RecordsOffset(3, 25), manager.getMinRecordsOffset());
+        manager.commit(new RecordsOffset(3, 25, "g1"));
+        Assert.assertEquals(new RecordsOffset(3, 25, "g1"), manager.getMinRecordsOffset());
 
-        manager.commit("g1", new RecordsOffset(3, 80));
-        Assert.assertEquals(new RecordsOffset(3, 75), manager.getMinRecordsOffset());
+        manager.commit(new RecordsOffset(3, 80, "g1"));
+        Assert.assertEquals(new RecordsOffset(3, 75, "g2"), manager.getMinRecordsOffset());
 
-        manager.commit("g2", new RecordsOffset(3, 90));
-        Assert.assertEquals(new RecordsOffset(3, 80), manager.getMinRecordsOffset());
+        manager.commit(new RecordsOffset(3, 90, "g2"));
+        Assert.assertEquals(new RecordsOffset(3, 80, "g1"), manager.getMinRecordsOffset());
 
         Assert.assertEquals(2, manager.groups().size());
         manager.close();
@@ -87,7 +87,7 @@ public class MemoryGroupManagerTest {
 
         private final AtomicInteger persistCount = new AtomicInteger(0);
 
-        public MemoryGroupManagerMock(Map<String, RecordsOffset> groupOffsets) {
+        public MemoryGroupManagerMock(Set<RecordsOffset> groupOffsets) {
             super(groupOffsets, 30);
         }
 

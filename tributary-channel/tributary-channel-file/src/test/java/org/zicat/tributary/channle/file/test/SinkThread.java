@@ -36,7 +36,6 @@ public class SinkThread extends Thread {
 
     private final Channel channel;
     private final int partitionId;
-    private final String groupName;
     private final AtomicLong readSize;
     private final long totalSize;
     private final RecordsOffset startOffset;
@@ -49,7 +48,6 @@ public class SinkThread extends Thread {
             long totalSize) {
         this.channel = channel;
         this.partitionId = partitionId;
-        this.groupName = groupName;
         this.readSize = readSize;
         this.totalSize = totalSize;
         this.startOffset = channel.getRecordsOffset(groupName, partitionId);
@@ -73,7 +71,7 @@ public class SinkThread extends Thread {
                     if (preFileId == null) {
                         preFileId = result.nexRecordsOffset().segmentId();
                     } else if (preFileId != result.nexRecordsOffset().segmentId()) {
-                        channel.commit(groupName, partitionId, recordsOffset);
+                        channel.commit(partitionId, recordsOffset);
                         preFileId = result.nexRecordsOffset().segmentId();
                     }
                 }
@@ -91,7 +89,7 @@ public class SinkThread extends Thread {
                 }
                 recordsOffset = result.nexRecordsOffset();
             }
-            channel.commit(groupName, partitionId, recordsOffset);
+            channel.commit(partitionId, recordsOffset);
         } catch (Exception e) {
             throw new TributaryRuntimeException(e);
         }

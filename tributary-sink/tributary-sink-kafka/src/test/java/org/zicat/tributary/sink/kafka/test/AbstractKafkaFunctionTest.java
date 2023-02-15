@@ -68,7 +68,7 @@ public class AbstractKafkaFunctionTest {
         final ContextBuilder builder =
                 ContextBuilder.newBuilder()
                         .partitionId(0)
-                        .startRecordsOffset(new RecordsOffset(1, 1));
+                        .startRecordsOffset(new RecordsOffset(1, 1, "g1"));
         final Context config = builder.build();
         function.open(config);
     }

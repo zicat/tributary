@@ -41,7 +41,7 @@ public class BlockRecordsOffsetTest {
         testData.add(new byte[] {1, 2, 3, 4, 5});
         testData.add(new byte[] {1, 2, 3});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf);
+        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf, "g1");
         final RecordsResultSet resultSet = recordsOffset.toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertArrayEquals(testData.get(0), resultSet.next());
@@ -58,7 +58,7 @@ public class BlockRecordsOffsetTest {
         final List<byte[]> testData = new ArrayList<>();
         testData.add(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf);
+        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf, "g1");
         Assert.assertTrue(recordsOffset.toResultSet().hasNext());
         Assert.assertFalse(recordsOffset.reset().toResultSet().hasNext());
         Assert.assertTrue(recordsOffset.reset().toResultSet().isEmpty());
@@ -69,8 +69,8 @@ public class BlockRecordsOffsetTest {
         final List<byte[]> testData = new ArrayList<>();
         testData.add(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf);
-        final BlockRecordsOffset recordsOffset2 = recordsOffset.skip2Target(2, 0);
+        final BlockRecordsOffset recordsOffset = new BlockRecordsOffsetMock(resultBuf, "g1");
+        final BlockRecordsOffset recordsOffset2 = recordsOffset.skip2Target(2, 0, "g1");
         Assert.assertSame(recordsOffset.block().resultBuf(), recordsOffset2.block().resultBuf());
         Assert.assertSame(recordsOffset.block().resultBuf(), recordsOffset2.block().resultBuf());
 
@@ -81,8 +81,8 @@ public class BlockRecordsOffsetTest {
     /** BufferRecordsOffsetMock. */
     public static class BlockRecordsOffsetMock extends BlockRecordsOffset {
 
-        public BlockRecordsOffsetMock(ByteBuffer resultBuf) {
-            super(1, 0, new BlockReader(resultBuf, null, resultBuf.remaining()));
+        public BlockRecordsOffsetMock(ByteBuffer resultBuf, String groupId) {
+            super(1, 0, groupId, new BlockReader(resultBuf, null, resultBuf.remaining()));
         }
     }
 

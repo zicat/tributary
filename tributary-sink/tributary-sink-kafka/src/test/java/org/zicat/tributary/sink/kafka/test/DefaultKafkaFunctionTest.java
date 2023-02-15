@@ -40,10 +40,9 @@ public class DefaultKafkaFunctionTest {
         DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction();
         final ContextBuilder builder =
                 new ContextBuilder()
-                        .groupId("g2")
                         .id("id2")
                         .partitionId(0)
-                        .startRecordsOffset(null)
+                        .startRecordsOffset(new RecordsOffset(0, 0, "g2"))
                         .topic("t2");
 
         builder.addCustomProperty("kafka.topic", "kt1");
@@ -51,7 +50,7 @@ public class DefaultKafkaFunctionTest {
         kafkaFunction.open(builder.build());
 
         final List<String> testValues = Arrays.asList("cc", "dd");
-        RecordsOffset recordsOffset = new RecordsOffset(2, 0);
+        RecordsOffset recordsOffset = new RecordsOffset(2, 0, "g2");
         kafkaFunction.process(
                 recordsOffset,
                 testValues.stream()

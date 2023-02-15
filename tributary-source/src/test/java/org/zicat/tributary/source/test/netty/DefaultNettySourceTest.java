@@ -43,18 +43,20 @@ public class DefaultNettySourceTest {
 
     @Test
     public void testLineDecoder() throws Exception {
+        final String groupId = "test_group";
         final DefaultChannel<MemoryChannel> channel =
                 new DefaultChannel<>(
                         () ->
                                 MemoryChannelFactory.createChannels(
                                         "t1",
                                         1,
-                                        Collections.singleton("test_group"),
+                                        Collections.singleton(groupId),
                                         1024 * 3,
                                         102400L,
                                         CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
+        final RecordsOffset recordsOffset = channel.getRecordsOffset(groupId, 0);
         final int freePort = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(freePort, channel) {
@@ -93,7 +95,7 @@ public class DefaultNettySourceTest {
 
             channel.flush();
             final RecordsResultSet recordsResultSet =
-                    channel.poll(0, new RecordsOffset(0, 0), 10, TimeUnit.MILLISECONDS);
+                    channel.poll(0, recordsOffset, 10, TimeUnit.MILLISECONDS);
             Assert.assertEquals("lynn", new String(recordsResultSet.next()));
             Assert.assertEquals("zhangjun", new String(recordsResultSet.next()));
             System.out.println(source);
@@ -102,25 +104,21 @@ public class DefaultNettySourceTest {
 
     @Test
     public void testLengthDecoder() throws Exception {
-        MemoryChannelFactory.createChannels(
-                "t1",
-                1,
-                Collections.singleton("test_group"),
-                1024 * 3,
-                102400L,
-                CompressionType.SNAPPY);
+
+        final String groupId = "test_group";
         final DefaultChannel<MemoryChannel> channel =
                 new DefaultChannel<>(
                         () ->
                                 MemoryChannelFactory.createChannels(
                                         "t1",
                                         1,
-                                        Collections.singleton("test_group"),
+                                        Collections.singleton(groupId),
                                         1024 * 3,
                                         102400L,
                                         CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
+        final RecordsOffset recordsOffset = channel.getRecordsOffset(groupId, 0);
         final int port = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(port, channel) {
@@ -141,7 +139,7 @@ public class DefaultNettySourceTest {
             channel.flush();
 
             final RecordsResultSet recordsResultSet =
-                    channel.poll(0, new RecordsOffset(0, 0), 10, TimeUnit.MILLISECONDS);
+                    channel.poll(0, recordsOffset, 10, TimeUnit.MILLISECONDS);
             Assert.assertArrayEquals(data1, recordsResultSet.next());
             Assert.assertArrayEquals(data2, recordsResultSet.next());
         }
