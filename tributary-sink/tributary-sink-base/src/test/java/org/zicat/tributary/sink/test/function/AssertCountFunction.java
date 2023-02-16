@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.test.function;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -47,7 +47,7 @@ public class AssertCountFunction extends AbstractFunction {
     }
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
         while (iterator.hasNext()) {
             iterator.next();
             offset++;

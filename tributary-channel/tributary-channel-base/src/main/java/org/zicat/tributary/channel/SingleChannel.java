@@ -32,17 +32,17 @@ public interface SingleChannel extends Channel, SingleGroupManager {
     }
 
     @Override
-    default long lag(int partition, RecordsOffset recordsOffset) {
-        return lag(recordsOffset);
+    default long lag(int partition, GroupOffset groupOffset) {
+        return lag(groupOffset);
     }
 
     /**
-     * estimate the lag between records offset and write position without partition.
+     * estimate the lag between group offset and write position without partition.
      *
-     * @param recordsOffset recordsOffset
-     * @return long lag return 0 if records offset over
+     * @param groupOffset groupOffset
+     * @return long lag return 0 if group offset over
      */
-    long lag(RecordsOffset recordsOffset);
+    long lag(GroupOffset groupOffset);
 
     @Override
     default void append(int partition, byte[] record, int offset, int length) throws IOException {
@@ -64,35 +64,34 @@ public interface SingleChannel extends Channel, SingleGroupManager {
     void append(byte[] record, int offset, int length) throws IOException;
 
     @Override
-    default RecordsResultSet poll(
-            int partition, RecordsOffset recordsOffset, long time, TimeUnit unit)
+    default RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
-        return poll(recordsOffset, time, unit);
+        return poll(groupOffset, time, unit);
     }
 
     /**
      * poll records without partition.
      *
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @param time time
      * @param unit unit
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    RecordsResultSet poll(RecordsOffset recordsOffset, long time, TimeUnit unit)
+    RecordsResultSet poll(GroupOffset groupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException;
 
     /**
-     * get records offset without partition. if group id is new, return the latest offset in channel
+     * get group offset without partition. if group id is new, return the latest offset in channel
      *
      * @param groupId groupId
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    RecordsOffset getRecordsOffset(String groupId);
+    GroupOffset getGroupOffset(String groupId);
 
     @Override
-    default RecordsOffset getRecordsOffset(String groupId, int partition) {
-        return getRecordsOffset(groupId);
+    default GroupOffset getGroupOffset(String groupId, int partition) {
+        return getGroupOffset(groupId);
     }
 }

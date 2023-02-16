@@ -22,7 +22,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.test.FileUtils;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.hdfs.DefaultHDFSFunction;
@@ -67,7 +67,7 @@ public class DefaultHDFSFunctionTest {
                 new ContextBuilder()
                         .id("id1")
                         .partitionId(0)
-                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"))
+                        .startGroupOffset(new GroupOffset(0, 0, "g1"))
                         .topic("t1");
         builder.addCustomProperty(BASE_SINK_PATH, DIR.getCanonicalFile().getPath())
                 .addCustomProperty(OPTION_IDLE_MILLIS.key(), 10000)
@@ -76,9 +76,9 @@ public class DefaultHDFSFunctionTest {
 
         defaultHDFSFunction.open(builder.build());
 
-        final RecordsOffset recordsOffset = new RecordsOffset(1, 0, "g1");
+        final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
         defaultHDFSFunction.process(
-                recordsOffset, Arrays.asList("aa".getBytes(), "bb".getBytes()).listIterator());
+                groupOffset, Arrays.asList("aa".getBytes(), "bb".getBytes()).listIterator());
         String currentBucketPath = currentBucketPath(defaultHDFSFunction);
 
         // refresh by time rolling
@@ -91,11 +91,11 @@ public class DefaultHDFSFunctionTest {
                                         .listFiles(
                                                 pathname -> pathname.getName().endsWith(".snappy")))
                         .length);
-        Assert.assertEquals(recordsOffset, defaultHDFSFunction.committableOffset());
+        Assert.assertEquals(groupOffset, defaultHDFSFunction.committableOffset());
 
-        final RecordsOffset recordsOffset2 = new RecordsOffset(2, 0, "g1");
+        final GroupOffset groupOffset2 = new GroupOffset(2, 0, "g1");
         defaultHDFSFunction.process(
-                recordsOffset2, Arrays.asList("aa".getBytes(), "bb".getBytes()).listIterator());
+                groupOffset2, Arrays.asList("aa".getBytes(), "bb".getBytes()).listIterator());
         currentBucketPath = currentBucketPath(defaultHDFSFunction);
         defaultHDFSFunction.idleTrigger();
         defaultHDFSFunction.idleTrigger();
@@ -108,7 +108,7 @@ public class DefaultHDFSFunctionTest {
                         .length);
 
         // because clock not set new current time over 1 min, committable offset not changed
-        Assert.assertEquals(recordsOffset2, defaultHDFSFunction.committableOffset());
+        Assert.assertEquals(groupOffset2, defaultHDFSFunction.committableOffset());
     }
 
     /**

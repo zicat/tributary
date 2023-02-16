@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.file.FileChannelBuilder;
 import org.zicat.tributary.common.IOUtils;
@@ -92,12 +92,12 @@ public class OneFileChannelTest {
         channel.append(0, "foo".getBytes(StandardCharsets.UTF_8));
         channel.flush();
         RecordsResultSet recordsResultSet =
-                channel.poll(0, new RecordsOffset(0, 0, groupId), 1, TimeUnit.MILLISECONDS);
+                channel.poll(0, new GroupOffset(0, 0, groupId), 1, TimeUnit.MILLISECONDS);
         Assert.assertFalse(recordsResultSet.isEmpty());
         while (recordsResultSet.hasNext()) {
             LOG.debug(new String(recordsResultSet.next(), StandardCharsets.UTF_8));
         }
-        Assert.assertEquals(3, recordsResultSet.nexRecordsOffset().segmentId());
+        Assert.assertEquals(3, recordsResultSet.nexGroupOffset().segmentId());
         channel.close();
     }
 
@@ -124,11 +124,11 @@ public class OneFileChannelTest {
         channel.flush();
         Assert.assertEquals(2, channel.activeSegment());
         RecordsResultSet recordsResultSet =
-                channel.poll(0, channel.getRecordsOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
-        channel.commit(0, recordsResultSet.nexRecordsOffset());
+                channel.poll(0, channel.getGroupOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
+        channel.commit(0, recordsResultSet.nexGroupOffset());
         Assert.assertEquals(1, channel.activeSegment());
 
-        channel.commit(0, recordsResultSet.nexRecordsOffset().skipNextSegmentHead());
+        channel.commit(0, recordsResultSet.nexGroupOffset().skipNextSegmentHead());
         Assert.assertEquals(1, channel.activeSegment());
         IOUtils.closeQuietly(channel);
     }
@@ -146,20 +146,20 @@ public class OneFileChannelTest {
         final String value = "test_data";
         channel.append(0, value.getBytes(StandardCharsets.UTF_8));
         channel.flush();
-        RecordsOffset offset = channel.getRecordsOffset(groupId, 0);
+        GroupOffset offset = channel.getGroupOffset(groupId, 0);
         RecordsResultSet resultSet = channel.poll(0, offset, 1, TimeUnit.MILLISECONDS);
         Assert.assertTrue(resultSet.isEmpty());
 
-        resultSet = channel.take(0, new RecordsOffset(0, 0, groupId));
+        resultSet = channel.take(0, new GroupOffset(0, 0, groupId));
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals(value, new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
-        channel.commit(0, resultSet.nexRecordsOffset());
+        channel.commit(0, resultSet.nexGroupOffset());
 
         String value2 = "test_data2";
         channel.append(0, value2.getBytes(StandardCharsets.UTF_8));
         channel.flush();
-        RecordsOffset nextOffset = resultSet.nexRecordsOffset();
+        GroupOffset nextOffset = resultSet.nexGroupOffset();
         resultSet = channel.take(0, nextOffset);
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals(value2, new String(resultSet.next(), StandardCharsets.UTF_8));
@@ -167,7 +167,7 @@ public class OneFileChannelTest {
         resultSet = channel.take(0, nextOffset);
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals(value2, new String(resultSet.next(), StandardCharsets.UTF_8));
-        channel.commit(0, resultSet.nexRecordsOffset());
+        channel.commit(0, resultSet.nexGroupOffset());
         IOUtils.closeQuietly(channel);
     }
 
@@ -256,27 +256,27 @@ public class OneFileChannelTest {
 
         List<Thread> readTreads = new ArrayList<>();
         for (String groupId : consumerGroups) {
-            final RecordsOffset startOffset = channel.getRecordsOffset(groupId, 0);
+            final GroupOffset startOffset = channel.getGroupOffset(groupId, 0);
             final Thread readTread =
                     new Thread(
                             () -> {
                                 RecordsResultSet result;
                                 int readSize = 0;
-                                RecordsOffset recordsOffset = startOffset;
+                                GroupOffset groupOffset = startOffset;
                                 while (readSize < dataSize * writeThread) {
                                     try {
-                                        result = channel.take(0, recordsOffset);
+                                        result = channel.take(0, groupOffset);
                                         while (result.hasNext()) {
                                             result.next();
                                             readSize++;
                                         }
-                                        recordsOffset = result.nexRecordsOffset();
+                                        groupOffset = result.nexGroupOffset();
                                     } catch (IOException | InterruptedException ioException) {
                                         ioException.printStackTrace();
                                     }
                                 }
                                 try {
-                                    channel.commit(0, recordsOffset);
+                                    channel.commit(0, groupOffset);
                                 } catch (IOException ioException) {
                                     ioException.printStackTrace();
                                 }

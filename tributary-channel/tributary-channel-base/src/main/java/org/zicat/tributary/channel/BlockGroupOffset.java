@@ -18,18 +18,17 @@
 
 package org.zicat.tributary.channel;
 
-/** BlockRecordsOffset. */
-public class BlockRecordsOffset extends RecordsOffset {
+/** BlockGroupOffset. */
+public class BlockGroupOffset extends GroupOffset {
 
     protected final BlockReader blockReader;
 
-    public BlockRecordsOffset(
-            long segmentId, long offset, String groupId, BlockReader blockReader) {
+    public BlockGroupOffset(long segmentId, long offset, String groupId, BlockReader blockReader) {
         super(segmentId, offset, groupId);
         this.blockReader = blockReader == null ? new BlockReader(null, null, 0) : blockReader;
     }
 
-    private BlockRecordsOffset(long segmentId, long offset, String groupId) {
+    private BlockGroupOffset(long segmentId, long offset, String groupId) {
         this(segmentId, offset, groupId, null);
     }
 
@@ -56,9 +55,9 @@ public class BlockRecordsOffset extends RecordsOffset {
      *
      * @param segmentId segmentId
      * @param groupId groupId
-     * @return BlockRecordsOffset
+     * @return BlockGroupOffset
      */
-    public static BlockRecordsOffset cast(long segmentId, String groupId) {
+    public static BlockGroupOffset cast(long segmentId, String groupId) {
         return cast(segmentId, 0, groupId);
     }
 
@@ -68,60 +67,59 @@ public class BlockRecordsOffset extends RecordsOffset {
      * @param segmentId segmentId
      * @param offset offset
      * @param groupId groupId
-     * @return BlockRecordsOffset
+     * @return BlockGroupOffset
      */
-    public static BlockRecordsOffset cast(long segmentId, long offset, String groupId) {
-        return new BlockRecordsOffset(segmentId, offset, groupId);
+    public static BlockGroupOffset cast(long segmentId, long offset, String groupId) {
+        return new BlockGroupOffset(segmentId, offset, groupId);
     }
 
     /**
-     * cast RecordsOffset as BlockRecordsOffset.
+     * cast GroupOffset as BlockGroupOffset.
      *
-     * @param recordsOffset recordsOffset
-     * @return BlockRecordsOffset
+     * @param groupOffset groupOffset
+     * @return BlockGroupOffset
      */
-    public static BlockRecordsOffset cast(RecordsOffset recordsOffset) {
-        if (recordsOffset instanceof BlockRecordsOffset) {
-            return (BlockRecordsOffset) recordsOffset;
+    public static BlockGroupOffset cast(GroupOffset groupOffset) {
+        if (groupOffset instanceof BlockGroupOffset) {
+            return (BlockGroupOffset) groupOffset;
         }
-        return new BlockRecordsOffset(
-                recordsOffset.segmentId(), recordsOffset.offset(), recordsOffset.groupId());
+        return new BlockGroupOffset(
+                groupOffset.segmentId(), groupOffset.offset(), groupOffset.groupId());
     }
 
     /**
      * reset block.
      *
-     * @return BlockRecordsOffset
+     * @return BlockGroupOffset
      */
-    public final BlockRecordsOffset reset() {
+    public final BlockGroupOffset reset() {
         blockReader.reset();
         return this;
     }
 
     @Override
-    public BlockRecordsOffset skip2TargetOffset(long newOffset) {
+    public BlockGroupOffset skip2TargetOffset(long newOffset) {
         return skip2Target(segmentId, newOffset, groupId);
     }
 
     @Override
-    public BlockRecordsOffset skipNextSegmentHead() {
+    public BlockGroupOffset skipNextSegmentHead() {
         return skip2TargetHead(segmentId() + 1);
     }
 
     @Override
-    public BlockRecordsOffset skip2TargetHead(long segmentId) {
+    public BlockGroupOffset skip2TargetHead(long segmentId) {
         return skip2Target(segmentId, 0, groupId);
     }
 
     @Override
-    public BlockRecordsOffset skip2Target(RecordsOffset recordsOffset) {
-        return skip2Target(
-                recordsOffset.segmentId(), recordsOffset.offset(), recordsOffset.groupId);
+    public BlockGroupOffset skip2Target(GroupOffset groupOffset) {
+        return skip2Target(groupOffset.segmentId(), groupOffset.offset(), groupOffset.groupId);
     }
 
     @Override
-    public BlockRecordsOffset skip2Target(long segmentId, long offset, String groupId) {
-        return new BlockRecordsOffset(segmentId, offset, groupId, blockReader);
+    public BlockGroupOffset skip2Target(long segmentId, long offset, String groupId) {
+        return new BlockGroupOffset(segmentId, offset, groupId, blockReader);
     }
 
     /** RecordsResultSetImpl. */
@@ -134,8 +132,8 @@ public class BlockRecordsOffset extends RecordsOffset {
         }
 
         @Override
-        public final RecordsOffset nexRecordsOffset() {
-            return BlockRecordsOffset.this;
+        public final GroupOffset nexGroupOffset() {
+            return BlockGroupOffset.this;
         }
 
         @Override
@@ -146,13 +144,13 @@ public class BlockRecordsOffset extends RecordsOffset {
         @Override
         public final byte[] next() {
             final byte[] result = this.nextData;
-            this.nextData = BlockRecordsOffset.this.blockReader.readNext();
+            this.nextData = BlockGroupOffset.this.blockReader.readNext();
             return result;
         }
 
         @Override
         public final long readBytes() {
-            return BlockRecordsOffset.this.blockReader.readBytes();
+            return BlockGroupOffset.this.blockReader.readBytes();
         }
     }
 }

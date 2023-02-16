@@ -43,13 +43,13 @@ public interface ChannelMeta {
     int activeSegment();
 
     /**
-     * estimate the lag between records offset and write position in one partition.
+     * estimate the lag between group offset and write position in one partition.
      *
      * @param partition partition
-     * @param recordsOffset recordsOffset
-     * @return long lag return 0 if records offset over latestRecordsOffset()
+     * @param groupOffset groupOffset
+     * @return long lag return 0 if group offset over latest offset
      */
-    long lag(int partition, RecordsOffset recordsOffset);
+    long lag(int partition, GroupOffset groupOffset);
 
     /**
      * return all write bytes.

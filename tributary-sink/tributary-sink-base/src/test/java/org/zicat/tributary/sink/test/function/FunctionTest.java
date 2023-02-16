@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.function.*;
 
 import java.nio.charset.StandardCharsets;
@@ -39,38 +39,38 @@ public class FunctionTest {
                     public void close() {}
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
                 };
-        final RecordsOffset recordsOffset = new RecordsOffset(1, 0, "g1");
+        final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
         final ContextBuilder builder =
-                ContextBuilder.newBuilder().startRecordsOffset(recordsOffset).partitionId(1);
+                ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
         final Context context = builder.build();
         function.open(context);
-        Assert.assertEquals(function.committableOffset(), recordsOffset);
+        Assert.assertEquals(function.committableOffset(), groupOffset);
         Assert.assertEquals(context.groupId(), function.context().groupId());
         Assert.assertEquals(context.partitionId(), function.context().partitionId());
         Assert.assertNull(context.topic(), function.context().topic());
         Assert.assertEquals(context, function.context());
 
-        RecordsOffset newRecordsOffset = recordsOffset.skipNextSegmentHead();
-        function.flush(newRecordsOffset, null);
-        Assert.assertEquals(function.committableOffset(), newRecordsOffset);
+        final GroupOffset newGroupOffset = groupOffset.skipNextSegmentHead();
+        function.flush(newGroupOffset, null);
+        Assert.assertEquals(function.committableOffset(), newGroupOffset);
     }
 
     @Test
     public void testDummyFunction() throws Exception {
 
         final Function function = new DummyFunction();
-        final RecordsOffset recordsOffset = new RecordsOffset(1, 0, "g1");
+        final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
         final ContextBuilder builder =
-                ContextBuilder.newBuilder().startRecordsOffset(recordsOffset).partitionId(1);
+                ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
         final Context context = builder.build();
         function.open(context);
 
-        final RecordsOffset newRecordsOffset = recordsOffset.skip2TargetHead(2);
+        final GroupOffset newGroupOffset = groupOffset.skip2TargetHead(2);
         function.process(
-                recordsOffset.skip2TargetHead(2),
+                groupOffset.skip2TargetHead(2),
                 Collections.singleton("data".getBytes(StandardCharsets.UTF_8)).iterator());
-        Assert.assertEquals(function.committableOffset(), newRecordsOffset);
+        Assert.assertEquals(function.committableOffset(), newGroupOffset);
     }
 }

@@ -22,7 +22,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.group.FileGroupManager;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
@@ -51,23 +51,23 @@ public class OnePartitionFileGroupManagerTest {
         final Set<String> groupIds = new HashSet<>(Arrays.asList("g1", "g2", "g3"));
         final FileGroupManager manager =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds);
-        final Map<String, RecordsOffset> cache = new HashMap<>();
+        final Map<String, GroupOffset> cache = new HashMap<>();
         Assert.assertEquals(
-                defaultRecordsOffset("g1").offset(), manager.getMinRecordsOffset().offset());
+                defaultGroupOffset("g1").offset(), manager.getMinGroupOffset().offset());
         Assert.assertEquals(
-                defaultRecordsOffset("g1").segmentId(), manager.getMinRecordsOffset().segmentId());
-        Assert.assertTrue(groupIds.contains(manager.getMinRecordsOffset().groupId()));
+                defaultGroupOffset("g1").segmentId(), manager.getMinGroupOffset().segmentId());
+        Assert.assertTrue(groupIds.contains(manager.getMinGroupOffset().groupId()));
 
         for (String group : groupIds) {
-            RecordsOffset recordsOffset = manager.getRecordsOffset(group);
-            Assert.assertEquals(defaultRecordsOffset(group), recordsOffset);
-            final RecordsOffset newRecordsOffset =
-                    new RecordsOffset(random.nextInt(10) + 1, random.nextInt(100), group);
-            manager.commit(newRecordsOffset);
-            Assert.assertEquals(newRecordsOffset, manager.getRecordsOffset(group));
-            manager.commit(newRecordsOffset.skip2TargetHead(newRecordsOffset.segmentId() - 1));
-            Assert.assertEquals(newRecordsOffset, manager.getRecordsOffset(group));
-            cache.put(group, manager.getRecordsOffset(group));
+            GroupOffset groupOffset = manager.getGroupOffset(group);
+            Assert.assertEquals(defaultGroupOffset(group), groupOffset);
+            final GroupOffset newGroupOffset =
+                    new GroupOffset(random.nextInt(10) + 1, random.nextInt(100), group);
+            manager.commit(newGroupOffset);
+            Assert.assertEquals(newGroupOffset, manager.getGroupOffset(group));
+            manager.commit(newGroupOffset.skip2TargetHead(newGroupOffset.segmentId() - 1));
+            Assert.assertEquals(newGroupOffset, manager.getGroupOffset(group));
+            cache.put(group, manager.getGroupOffset(group));
         }
         IOUtils.closeQuietly(manager);
 
@@ -76,32 +76,31 @@ public class OnePartitionFileGroupManagerTest {
         final FileGroupManager manager2 =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds2);
         Assert.assertEquals(
-                defaultRecordsOffset("g2").offset(), manager2.getMinRecordsOffset().offset());
+                defaultGroupOffset("g2").offset(), manager2.getMinGroupOffset().offset());
         Assert.assertEquals(
-                defaultRecordsOffset("g2").segmentId(), manager2.getMinRecordsOffset().segmentId());
-        Assert.assertTrue(groupIds2.contains(manager2.getMinRecordsOffset().groupId()));
+                defaultGroupOffset("g2").segmentId(), manager2.getMinGroupOffset().segmentId());
+        Assert.assertTrue(groupIds2.contains(manager2.getMinGroupOffset().groupId()));
 
         for (String group : groupIds2) {
-            RecordsOffset recordsOffset = manager2.getRecordsOffset(group);
-            Assert.assertEquals(
-                    cache.getOrDefault(group, defaultRecordsOffset(group)), recordsOffset);
+            GroupOffset groupOffset = manager2.getGroupOffset(group);
+            Assert.assertEquals(cache.getOrDefault(group, defaultGroupOffset(group)), groupOffset);
             if (cache.containsKey(group)) {
-                final RecordsOffset cacheRecordsOffset = cache.get(group);
-                manager2.commit(cacheRecordsOffset.skipNextSegmentHead());
+                final GroupOffset cacheGroupOffset = cache.get(group);
+                manager2.commit(cacheGroupOffset.skipNextSegmentHead());
                 Assert.assertEquals(
-                        cacheRecordsOffset.skipNextSegmentHead(), manager2.getRecordsOffset(group));
-                manager2.commit(cacheRecordsOffset);
+                        cacheGroupOffset.skipNextSegmentHead(), manager2.getGroupOffset(group));
+                manager2.commit(cacheGroupOffset);
                 Assert.assertEquals(
-                        cacheRecordsOffset.skipNextSegmentHead(), manager2.getRecordsOffset(group));
+                        cacheGroupOffset.skipNextSegmentHead(), manager2.getGroupOffset(group));
             } else {
-                final RecordsOffset newRecordsOffset =
-                        new RecordsOffset(random.nextInt(10) + 1, random.nextInt(100), group);
-                manager2.commit(newRecordsOffset);
-                Assert.assertEquals(newRecordsOffset, manager2.getRecordsOffset(group));
-                manager2.commit(newRecordsOffset.skip2TargetHead(newRecordsOffset.segmentId() - 1));
-                Assert.assertEquals(newRecordsOffset, manager2.getRecordsOffset(group));
+                final GroupOffset newGroupOffset =
+                        new GroupOffset(random.nextInt(10) + 1, random.nextInt(100), group);
+                manager2.commit(newGroupOffset);
+                Assert.assertEquals(newGroupOffset, manager2.getGroupOffset(group));
+                manager2.commit(newGroupOffset.skip2TargetHead(newGroupOffset.segmentId() - 1));
+                Assert.assertEquals(newGroupOffset, manager2.getGroupOffset(group));
             }
-            cache.put(group, manager2.getRecordsOffset(group));
+            cache.put(group, manager2.getGroupOffset(group));
         }
 
         IOUtils.closeQuietly(manager2);
@@ -111,22 +110,20 @@ public class OnePartitionFileGroupManagerTest {
         final Set<String> groupIds3 = Collections.singleton(singleGroup);
         final FileGroupManager manager3 =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds3);
-        Assert.assertEquals(cache.get(singleGroup), manager3.getMinRecordsOffset());
-        Assert.assertEquals(cache.get(singleGroup), manager3.getRecordsOffset(singleGroup));
+        Assert.assertEquals(cache.get(singleGroup), manager3.getMinGroupOffset());
+        Assert.assertEquals(cache.get(singleGroup), manager3.getGroupOffset(singleGroup));
         manager3.commit(cache.get(singleGroup).skipNextSegmentHead());
         Assert.assertEquals(
-                cache.get(singleGroup).skipNextSegmentHead(), manager3.getMinRecordsOffset());
+                cache.get(singleGroup).skipNextSegmentHead(), manager3.getMinGroupOffset());
         Assert.assertEquals(
-                cache.get(singleGroup).skipNextSegmentHead(),
-                manager3.getRecordsOffset(singleGroup));
+                cache.get(singleGroup).skipNextSegmentHead(), manager3.getGroupOffset(singleGroup));
 
         manager3.commit(
                 cache.get(singleGroup).skip2TargetHead(cache.get(singleGroup).segmentId() - 1));
         Assert.assertEquals(
-                cache.get(singleGroup).skipNextSegmentHead(), manager3.getMinRecordsOffset());
+                cache.get(singleGroup).skipNextSegmentHead(), manager3.getMinGroupOffset());
         Assert.assertEquals(
-                cache.get(singleGroup).skipNextSegmentHead(),
-                manager3.getRecordsOffset(singleGroup));
+                cache.get(singleGroup).skipNextSegmentHead(), manager3.getGroupOffset(singleGroup));
 
         IOUtils.closeQuietly(manager3);
 
@@ -134,21 +131,21 @@ public class OnePartitionFileGroupManagerTest {
         final FileGroupManager manager4 =
                 new FileGroupManager(new File(DIR, createFileName(topic + "_new")), groupIds);
         Assert.assertEquals(
-                defaultRecordsOffset("g2").offset(), manager4.getMinRecordsOffset().offset());
+                defaultGroupOffset("g2").offset(), manager4.getMinGroupOffset().offset());
         Assert.assertEquals(
-                defaultRecordsOffset("g2").segmentId(), manager4.getMinRecordsOffset().segmentId());
-        Assert.assertTrue(groupIds.contains(manager4.getMinRecordsOffset().groupId()));
+                defaultGroupOffset("g2").segmentId(), manager4.getMinGroupOffset().segmentId());
+        Assert.assertTrue(groupIds.contains(manager4.getMinGroupOffset().groupId()));
 
         for (String group : groupIds) {
-            RecordsOffset recordsOffset = manager4.getRecordsOffset(group);
-            Assert.assertEquals(-1, recordsOffset.segmentId());
-            final RecordsOffset newRecordsOffset =
-                    new RecordsOffset(random.nextInt(10) + 1, random.nextInt(100), group);
-            manager4.commit(newRecordsOffset);
-            Assert.assertEquals(newRecordsOffset, manager4.getRecordsOffset(group));
-            manager4.commit(newRecordsOffset.skip2TargetHead(newRecordsOffset.segmentId() - 1));
-            Assert.assertEquals(newRecordsOffset, manager4.getRecordsOffset(group));
-            cache.put(group, manager4.getRecordsOffset(group));
+            GroupOffset groupOffset = manager4.getGroupOffset(group);
+            Assert.assertEquals(-1, groupOffset.segmentId());
+            final GroupOffset newGroupOffset =
+                    new GroupOffset(random.nextInt(10) + 1, random.nextInt(100), group);
+            manager4.commit(newGroupOffset);
+            Assert.assertEquals(newGroupOffset, manager4.getGroupOffset(group));
+            manager4.commit(newGroupOffset.skip2TargetHead(newGroupOffset.segmentId() - 1));
+            Assert.assertEquals(newGroupOffset, manager4.getGroupOffset(group));
+            cache.put(group, manager4.getGroupOffset(group));
         }
         IOUtils.closeQuietly(manager4);
     }

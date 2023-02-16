@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.channel.group;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 
 import java.io.IOException;
 
@@ -26,35 +26,35 @@ import java.io.IOException;
 public interface SingleGroupManager extends GroupManager {
 
     /**
-     * get records offset without partition. return (-1, -1) if first consume
+     * get group offset without partition. return (-1, -1) if first consume
      *
      * @param groupId groupId
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    RecordsOffset getRecordsOffset(String groupId);
+    GroupOffset getGroupOffset(String groupId);
 
     @Override
-    default RecordsOffset getRecordsOffset(String groupId, int partition) {
-        return getRecordsOffset(groupId);
+    default GroupOffset getGroupOffset(String groupId, int partition) {
+        return getGroupOffset(groupId);
     }
 
     /**
-     * commit records offset without partition.
+     * commit group offset without partition.
      *
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @throws IOException IOException
      */
-    void commit(RecordsOffset recordsOffset) throws IOException;
+    void commit(GroupOffset groupOffset) throws IOException;
 
     @Override
-    default void commit(int partition, RecordsOffset recordsOffset) throws IOException {
-        commit(recordsOffset);
+    default void commit(int partition, GroupOffset groupOffset) throws IOException {
+        commit(groupOffset);
     }
 
     /**
-     * get min records offset without partition.
+     * get min group offset without partition.
      *
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    RecordsOffset getMinRecordsOffset();
+    GroupOffset getMinGroupOffset();
 }

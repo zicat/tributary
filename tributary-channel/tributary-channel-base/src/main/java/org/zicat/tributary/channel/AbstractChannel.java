@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
@@ -61,7 +61,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         this.topic = topic;
         this.groupManagerFactory = groupManagerFactory;
         this.groupManager = groupManagerFactory.create();
-        this.minCommitSegmentId = groupManager.getMinRecordsOffset().segmentId();
+        this.minCommitSegmentId = groupManager.getMinGroupOffset().segmentId();
     }
 
     /**
@@ -143,8 +143,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public long lag(RecordsOffset recordsOffset) {
-        return latestSegment.lag(recordsOffset);
+    public long lag(GroupOffset groupOffset) {
+        return latestSegment.lag(groupOffset);
     }
 
     @Override
@@ -163,29 +163,29 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public RecordsResultSet poll(RecordsOffset recordsOffset, long time, TimeUnit unit)
+    public RecordsResultSet poll(GroupOffset groupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
-        final RecordsResultSet resultSet = read(recordsOffset, time, unit);
+        final RecordsResultSet resultSet = read(groupOffset, time, unit);
         readBytes.addAndGet(resultSet.readBytes());
         return resultSet;
     }
 
     @Override
-    public RecordsOffset getRecordsOffset(String groupId) {
-        final RecordsOffset recordsOffset = groupManager.getRecordsOffset(groupId);
-        return defaultRecordsOffset(groupId).equals(recordsOffset)
-                ? new RecordsOffset(latestSegment.segmentId(), latestSegment.position(), groupId)
-                : recordsOffset;
+    public GroupOffset getGroupOffset(String groupId) {
+        final GroupOffset groupOffset = groupManager.getGroupOffset(groupId);
+        return defaultGroupOffset(groupId).equals(groupOffset)
+                ? new GroupOffset(latestSegment.segmentId(), latestSegment.position(), groupId)
+                : groupOffset;
     }
 
     @Override
-    public synchronized void commit(RecordsOffset recordsOffset) throws IOException {
-        if (latestSegment.segmentId() < recordsOffset.segmentId()) {
-            LOG.warn("commit records offset {} over latest segment", recordsOffset);
+    public synchronized void commit(GroupOffset groupOffset) throws IOException {
+        if (latestSegment.segmentId() < groupOffset.segmentId()) {
+            LOG.warn("commit group offset {} over latest segment", groupOffset);
             return;
         }
-        groupManager.commit(recordsOffset);
-        final RecordsOffset min = groupManager.getMinRecordsOffset();
+        groupManager.commit(groupOffset);
+        final GroupOffset min = groupManager.getMinGroupOffset();
         if (min != null && minCommitSegmentId < min.segmentId()) {
             minCommitSegmentId = min.segmentId();
             cleanUp();
@@ -193,25 +193,25 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public RecordsOffset getMinRecordsOffset() {
-        return groupManager.getMinRecordsOffset();
+    public GroupOffset getMinGroupOffset() {
+        return groupManager.getMinGroupOffset();
     }
 
     /**
      * read file log.
      *
-     * @param originalRecordsOffset originalRecordsOffset
+     * @param originalGroupOffset originalGroupOffset
      * @param time time
      * @param unit unit
      * @return LogResult
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    private RecordsResultSet read(RecordsOffset originalRecordsOffset, long time, TimeUnit unit)
+    private RecordsResultSet read(GroupOffset originalGroupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
 
         final S latest = this.latestSegment;
-        final BlockRecordsOffset offset = cast(originalRecordsOffset);
+        final BlockGroupOffset offset = cast(originalGroupOffset);
         S segment = latest.match(offset) ? latest : cache.get(offset.segmentId());
         if (segment == null) {
             LOG.warn("segment id {} not found, start to consume from latest offset", offset);
@@ -244,11 +244,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     /**
      * read from last segment if null or over lastSegment.
      *
-     * @param recordsOffset recordsOffset
-     * @return BlockRecordsOffset
+     * @param groupOffset groupOffset
+     * @return BlockGroupOffset
      */
-    protected BlockRecordsOffset cast(RecordsOffset recordsOffset) {
-        final BlockRecordsOffset newRecordOffset = BlockRecordsOffset.cast(recordsOffset);
+    protected BlockGroupOffset cast(GroupOffset groupOffset) {
+        final BlockGroupOffset newRecordOffset = BlockGroupOffset.cast(groupOffset);
         return newRecordOffset.segmentId() < minCommitSegmentId
                         || newRecordOffset.segmentId() > latestSegment.segmentId()
                 ? newRecordOffset.skip2Target(

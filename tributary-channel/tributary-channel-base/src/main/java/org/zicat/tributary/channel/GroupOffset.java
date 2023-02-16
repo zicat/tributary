@@ -24,50 +24,31 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
- * RecordsOffset.
+ * GroupOffset.
  *
- * <p>Each block in {@link Channel} has a unique RecordsOffset.
+ * <p>Each block in {@link Channel} has a unique GroupOffset.
  *
- * <p>RecordsOffset can be stored and fetch by {@link Channel} using group id.
+ * <p>GroupOffset can be stored and fetch by {@link Channel} using group id.
  *
- * <p>RecordsOffset is composed of segmentId(long) and offset(long). It is important to control the
- * size of segment. If the size is too small will cause {@link FileChannel} put records performance
- * poor.If the size is to large will cause {@link FileChannel} clear expired segment not timely.
+ * <p>GroupOffset is composed of segmentId(long) and offset(long) and group id(string). It is
+ * important to control the size of segment. If the size is too small will cause {@link FileChannel}
+ * put records performance poor.If the size is to large will cause {@link FileChannel} clear expired
+ * segment not timely.
  */
-public class RecordsOffset implements Comparable<RecordsOffset> {
+public class GroupOffset extends Offset {
 
-    protected final long segmentId;
-    protected final long offset;
     protected final String groupId;
     protected final byte[] groupBs;
     private static final int RECORD_LENGTH = 20;
 
-    public RecordsOffset(long segmentId, long offset, String groupId) {
+    public GroupOffset(long segmentId, long offset, String groupId) {
+
+        super(segmentId, offset);
         if (groupId == null) {
             throw new IllegalArgumentException("group id not null");
         }
-        this.segmentId = segmentId;
-        this.offset = offset;
         this.groupId = groupId;
         this.groupBs = groupId.getBytes(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * get segment id.
-     *
-     * @return long segment id
-     */
-    public long segmentId() {
-        return segmentId;
-    }
-
-    /**
-     * get offset.
-     *
-     * @return long offset
-     */
-    public long offset() {
-        return offset;
     }
 
     /**
@@ -101,12 +82,12 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      * @param byteBuffer byte buffer
      * @return RecordOffset
      */
-    public static RecordsOffset parserByteBuffer(ByteBuffer byteBuffer) {
+    public static GroupOffset parserByteBuffer(ByteBuffer byteBuffer) {
         final long segmentId = byteBuffer.getLong();
         final long offset = byteBuffer.getLong();
         final byte[] groupByte = new byte[byteBuffer.getInt()];
         byteBuffer.get(groupByte);
-        return new RecordsOffset(segmentId, offset, new String(groupByte, StandardCharsets.UTF_8));
+        return new GroupOffset(segmentId, offset, new String(groupByte, StandardCharsets.UTF_8));
     }
 
     /**
@@ -114,7 +95,7 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      *
      * @return RecordOffset
      */
-    public RecordsOffset skipNextSegmentHead() {
+    public GroupOffset skipNextSegmentHead() {
         return skip2TargetHead(segmentId() + 1);
     }
 
@@ -124,19 +105,18 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      * @param segmentId segmentId
      * @return RecordOffset
      */
-    public RecordsOffset skip2TargetHead(long segmentId) {
+    public GroupOffset skip2TargetHead(long segmentId) {
         return skip2Target(segmentId, 0, groupId);
     }
 
     /**
      * skip to target.
      *
-     * @param recordsOffset recordOffset
+     * @param groupOffset groupOffset
      * @return new recordOffset
      */
-    public RecordsOffset skip2Target(RecordsOffset recordsOffset) {
-        return skip2Target(
-                recordsOffset.segmentId(), recordsOffset.offset(), recordsOffset.groupId());
+    public GroupOffset skip2Target(GroupOffset groupOffset) {
+        return skip2Target(groupOffset.segmentId(), groupOffset.offset(), groupOffset.groupId());
     }
 
     /**
@@ -147,58 +127,18 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
      * @param groupId groupId
      * @return RecordOffset
      */
-    public RecordsOffset skip2Target(long segmentId, long offset, String groupId) {
-        return new RecordsOffset(segmentId, offset, groupId);
+    public GroupOffset skip2Target(long segmentId, long offset, String groupId) {
+        return new GroupOffset(segmentId, offset, groupId);
     }
 
     /**
      * skip to target offset.
      *
      * @param newOffset newOffset
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    public RecordsOffset skip2TargetOffset(long newOffset) {
-        return new RecordsOffset(segmentId, newOffset, groupId);
-    }
-
-    @Override
-    public int compareTo(RecordsOffset o) {
-        if (this.segmentId == o.segmentId) {
-            return Long.compare(this.offset, o.offset);
-        } else {
-            return Long.compare(this.segmentId, o.segmentId);
-        }
-    }
-
-    /**
-     * compare min offset.
-     *
-     * @param offset1 offset1
-     * @param offset2 offset2
-     * @return min
-     */
-    public static RecordsOffset min(RecordsOffset offset1, RecordsOffset offset2) {
-        if (offset1 == null || offset2 == null) {
-            return null;
-        }
-        return offset1.compareTo(offset2) > 0 ? offset2 : offset1;
-    }
-
-    /**
-     * compare max offset.
-     *
-     * @param offset1 offset1
-     * @param offset2 offset2
-     * @return min
-     */
-    public static RecordsOffset max(RecordsOffset offset1, RecordsOffset offset2) {
-        if (offset1 == null) {
-            return offset2;
-        }
-        if (offset2 == null) {
-            return offset1;
-        }
-        return offset1.compareTo(offset2) > 0 ? offset1 : offset2;
+    public GroupOffset skip2TargetOffset(long newOffset) {
+        return new GroupOffset(segmentId, newOffset, groupId);
     }
 
     @Override
@@ -214,7 +154,7 @@ public class RecordsOffset implements Comparable<RecordsOffset> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final RecordsOffset that = (RecordsOffset) o;
+        final GroupOffset that = (GroupOffset) o;
         return segmentId == that.segmentId
                 && offset == that.offset
                 && Objects.equals(groupId, that.groupId);

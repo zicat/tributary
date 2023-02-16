@@ -22,7 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
@@ -159,9 +159,9 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     /**
      * flush file offset with writers.
      *
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      */
-    public final void flush(RecordsOffset recordsOffset) {
+    public final void flush(GroupOffset groupOffset) {
         final OnFlushCallback flushFunction =
                 () -> {
                     for (Map.Entry<String, BucketWriter<P>> entry : sfWriters.entrySet()) {
@@ -170,7 +170,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
                     }
                     return true;
                 };
-        flush(recordsOffset, flushFunction);
+        flush(groupOffset, flushFunction);
     }
 
     @Override

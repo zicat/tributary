@@ -22,9 +22,9 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.BlockRecordsOffset;
+import org.zicat.tributary.channel.BlockGroupOffset;
 import org.zicat.tributary.channel.BlockWriter;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.file.FileSegment;
 import org.zicat.tributary.common.IOUtils;
@@ -91,14 +91,13 @@ public class SegmentTest {
                             result.add(createStringByLength(6));
                             result.add(createStringByLength(20));
 
-                            BlockRecordsOffset recordsOffset =
-                                    BlockRecordsOffset.cast(new RecordsOffset(fileId, 0, "g1"));
+                            BlockGroupOffset groupOffset =
+                                    BlockGroupOffset.cast(new GroupOffset(fileId, 0, "g1"));
                             while (!result.isEmpty()) {
                                 RecordsResultSet resultSet;
                                 try {
                                     resultSet =
-                                            segment.readBlock(
-                                                            recordsOffset, 1, TimeUnit.MILLISECONDS)
+                                            segment.readBlock(groupOffset, 1, TimeUnit.MILLISECONDS)
                                                     .toResultSet();
                                     Assert.assertTrue(resultSet.hasNext());
                                     while (resultSet.hasNext()) {
@@ -107,8 +106,7 @@ public class SegmentTest {
                                                 result.remove(
                                                         new String(bs, StandardCharsets.UTF_8)));
                                     }
-                                    recordsOffset =
-                                            BlockRecordsOffset.cast(resultSet.nexRecordsOffset());
+                                    groupOffset = BlockGroupOffset.cast(resultSet.nexGroupOffset());
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
@@ -142,10 +140,10 @@ public class SegmentTest {
         result.add(createStringByLength(20));
         int i = 0;
 
-        final BlockRecordsOffset bufferRecordsOffset = BlockRecordsOffset.cast(fileId, "g1");
+        final BlockGroupOffset bufferGroupOffset = BlockGroupOffset.cast(fileId, "g1");
 
         RecordsResultSet resultSet =
-                segment.readBlock(bufferRecordsOffset, 1, TimeUnit.MILLISECONDS).toResultSet();
+                segment.readBlock(bufferGroupOffset, 1, TimeUnit.MILLISECONDS).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         while (resultSet.hasNext()) {
             byte[] bs = resultSet.next();
@@ -155,7 +153,7 @@ public class SegmentTest {
 
         resultSet =
                 segment.readBlock(
-                                BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                BlockGroupOffset.cast(resultSet.nexGroupOffset()),
                                 1,
                                 TimeUnit.MILLISECONDS)
                         .toResultSet();
@@ -168,7 +166,7 @@ public class SegmentTest {
 
         resultSet =
                 segment.readBlock(
-                                BlockRecordsOffset.cast(resultSet.nexRecordsOffset()),
+                                BlockGroupOffset.cast(resultSet.nexGroupOffset()),
                                 1,
                                 TimeUnit.MILLISECONDS)
                         .toResultSet();

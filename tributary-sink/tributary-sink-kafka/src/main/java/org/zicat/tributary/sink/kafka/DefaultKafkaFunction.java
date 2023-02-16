@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.kafka;
 
 import io.prometheus.client.Counter;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.Context;
@@ -51,7 +51,7 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
     }
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
 
         int totalCount = 0;
         while (iterator.hasNext()) {
@@ -60,7 +60,7 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                 totalCount++;
             }
         }
-        flush(recordsOffset);
+        flush(groupOffset);
         SINK_KAFKA_COUNTER
                 .labels(metricsHost(), context.groupId(), context.topic())
                 .inc(totalCount);

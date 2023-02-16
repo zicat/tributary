@@ -22,7 +22,7 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.utils.Exceptions;
@@ -121,11 +121,11 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
     /**
      * try flush file offset.
      *
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      */
-    public final void flush(RecordsOffset recordsOffset) {
+    public final void flush(GroupOffset groupOffset) {
         flush(
-                recordsOffset,
+                groupOffset,
                 () -> {
                     producerMap.forEach((k, v) -> v.flush());
                     return true;

@@ -21,7 +21,7 @@ which ensures the reliability of records and improves the scale of unconsumed re
 When a large amount of records needs to be temporarily stored, the implementation of channel based on memory may cause
 serious GC, which may affect the efficiency of records sinking and even cause program crash.
 
-In order to support multiple sinks, sinks need to maintain their own records offset. In case of failure, they only need
+In order to support multiple sinks, sinks need to maintain their own group offset. In case of failure, they only need
 to design their own failure strategy, which will not affect the source and other sinks.
 
 ## FileChannel Implement

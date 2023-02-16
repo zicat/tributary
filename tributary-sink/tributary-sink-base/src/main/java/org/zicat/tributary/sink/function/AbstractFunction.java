@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.utils.HostUtils;
@@ -36,19 +36,19 @@ public abstract class AbstractFunction implements Function {
     protected Context context;
     protected Clock clock;
 
-    private RecordsOffset committableOffset;
+    private GroupOffset committableOffset;
     private String metricsHost;
 
     @Override
     public void open(Context context) {
         this.context = context;
-        this.committableOffset = context.startRecordsOffset();
+        this.committableOffset = context.startGroupOffset();
         this.clock = context.getOrGetDefaultClock();
         this.metricsHost = context.get(OPTION_METRICS_HOST);
     }
 
     @Override
-    public final RecordsOffset committableOffset() {
+    public final GroupOffset committableOffset() {
         return committableOffset;
     }
 
@@ -76,7 +76,7 @@ public abstract class AbstractFunction implements Function {
      * @param newCommittableOffset newCommittableOffset
      * @param callback callback
      */
-    public final void flush(RecordsOffset newCommittableOffset, OnFlushCallback callback) {
+    public final void flush(GroupOffset newCommittableOffset, OnFlushCallback callback) {
         if (newCommittableOffset == null) {
             return;
         }

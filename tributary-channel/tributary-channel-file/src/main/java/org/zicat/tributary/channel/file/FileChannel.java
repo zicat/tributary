@@ -32,7 +32,7 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
 
 /**
- * FileChannel implements {@link Channel} to Storage records and {@link RecordsOffset} in local file
+ * FileChannel implements {@link Channel} to Storage records and {@link GroupOffset} in local file
  * system.
  *
  * <p>All public methods in FileChannel are @ThreadSafe.
@@ -45,8 +45,8 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
  * <p>Only one {@link FileSegment} is writeable and support multi threads write it, multi threads
  * can read writable segment or other segments tagged as finished(not writable).
  *
- * <p>FileChannel support commit RecordsOffset and support clean up expired segments(all group ids
- * has commit the offset over this segments) async}
+ * <p>FileChannel support commit groupOffset and support clean up expired segments(all group ids has
+ * commit the offset over this segments) async}
  */
 public class FileChannel extends AbstractChannel<FileSegment> {
 

@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * Channel.
  *
  * <p>Channel support to append record to channel, poll or take records, flush data and commit
- * consumer {@link RecordsOffset}
+ * consumer {@link GroupOffset}
  *
  * <p>All methods in Channel are @ThreadSafe.
  */
@@ -70,38 +70,38 @@ public interface Channel extends Closeable, ChannelMeta, GroupManager {
      * poll records.
      *
      * @param partition partition
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @param time time
      * @param unit unit
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    RecordsResultSet poll(int partition, RecordsOffset recordsOffset, long time, TimeUnit unit)
+    RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException;
 
     /**
      * take records. waiting if necessary * until an element becomes available.
      *
      * @param partition the partition to read
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    default RecordsResultSet take(int partition, RecordsOffset recordsOffset)
+    default RecordsResultSet take(int partition, GroupOffset groupOffset)
             throws IOException, InterruptedException {
-        return poll(partition, recordsOffset, 0, TimeUnit.MILLISECONDS);
+        return poll(partition, groupOffset, 0, TimeUnit.MILLISECONDS);
     }
 
     /** flush block data and page cache data to disk. */
     void flush() throws IOException;
 
     /**
-     * get records offset without partition. if group id is new, return the latest offset in channel
+     * get group offset without partition. if group id is new, return the latest offset in channel
      *
      * @param groupId groupId
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    RecordsOffset getRecordsOffset(String groupId, int partition);
+    GroupOffset getGroupOffset(String groupId, int partition);
 }

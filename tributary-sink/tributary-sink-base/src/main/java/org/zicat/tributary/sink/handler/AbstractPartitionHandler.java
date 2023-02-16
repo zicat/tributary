@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -70,8 +70,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     protected final Long maxRetainSize;
     protected final Clock clock;
 
-    private volatile RecordsOffset fetchOffset;
-    private RecordsOffset commitOffsetWaterMark;
+    private volatile GroupOffset fetchOffset;
+    private GroupOffset commitOffsetWaterMark;
     private long preTriggerMillis;
 
     public AbstractPartitionHandler(
@@ -94,7 +94,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                 if (closed.get() && result.isEmpty()) {
                     break;
                 }
-                final RecordsOffset nextOffset = result.nexRecordsOffset();
+                final GroupOffset nextOffset = result.nexGroupOffset();
                 if (!result.isEmpty()) {
                     process(nextOffset, result);
                     commit();
@@ -160,8 +160,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     /** update commit offset watermark. */
     private boolean updateCommitOffsetWaterMark() {
-        final RecordsOffset oldCommitOffsetWaterMark = commitOffsetWaterMark;
-        commitOffsetWaterMark = RecordsOffset.max(committableOffset(), commitOffsetWaterMark);
+        final GroupOffset oldCommitOffsetWaterMark = commitOffsetWaterMark;
+        commitOffsetWaterMark = GroupOffset.max(committableOffset(), commitOffsetWaterMark);
         skipCommitOffsetWaterMarkByMaxRetainSize();
         checkFetchOffset();
         return this.commitOffsetWaterMark != oldCommitOffsetWaterMark;
@@ -170,9 +170,9 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     /**
      * rollback fetch offset.
      *
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    private RecordsOffset rollbackFetchOffset() {
+    private GroupOffset rollbackFetchOffset() {
         commit();
         return fetchOffset.skip2Target(commitOffsetWaterMark);
     }
@@ -191,22 +191,22 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         if (maxRetainSize == null) {
             return;
         }
-        RecordsOffset newRecordsOffset = this.commitOffsetWaterMark;
-        RecordsOffset preRecordsOffset = this.commitOffsetWaterMark;
+        GroupOffset newGroupOffset = this.commitOffsetWaterMark;
+        GroupOffset preGroupOffset = this.commitOffsetWaterMark;
         while (true) {
-            final long lag = channel.lag(partitionId, newRecordsOffset);
+            final long lag = channel.lag(partitionId, newGroupOffset);
             if (lag > maxRetainSize) {
-                preRecordsOffset = newRecordsOffset;
-                newRecordsOffset = newRecordsOffset.skipNextSegmentHead();
+                preGroupOffset = newGroupOffset;
+                newGroupOffset = newGroupOffset.skipNextSegmentHead();
                 continue;
             }
             if (lag <= 0) {
-                newRecordsOffset = preRecordsOffset;
+                newGroupOffset = preGroupOffset;
             }
             break;
         }
 
-        if (newRecordsOffset == this.commitOffsetWaterMark) {
+        if (preGroupOffset == this.commitOffsetWaterMark) {
             return;
         }
 
@@ -216,8 +216,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                 partitionId,
                 maxRetainSize,
                 commitOffsetWaterMark.segmentId(),
-                newRecordsOffset.segmentId());
-        this.commitOffsetWaterMark = newRecordsOffset;
+                newGroupOffset.segmentId());
+        this.commitOffsetWaterMark = newGroupOffset;
     }
 
     /**
@@ -264,9 +264,9 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     /**
      * get commit offset watermark. for unit test visitable.
      *
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    public RecordsOffset commitOffsetWaterMark() {
+    public GroupOffset commitOffsetWaterMark() {
         return commitOffsetWaterMark;
     }
 }

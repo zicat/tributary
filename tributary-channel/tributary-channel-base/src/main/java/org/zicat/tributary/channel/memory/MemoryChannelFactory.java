@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createUnPersistGroupManagerFactory;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
@@ -87,9 +87,9 @@ public class MemoryChannelFactory implements ChannelFactory {
             CompressionType compressionType) {
 
         final MemoryChannel[] channels = new MemoryChannel[partitionCount];
-        final Set<RecordsOffset> groupOffsets = new HashSet<>();
+        final Set<GroupOffset> groupOffsets = new HashSet<>();
         for (String group : groups) {
-            groupOffsets.add(defaultRecordsOffset(group));
+            groupOffsets.add(defaultGroupOffset(group));
         }
         final AbstractChannel.SingleGroupManagerFactory factory =
                 createUnPersistGroupManagerFactory(groupOffsets);

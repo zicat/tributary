@@ -155,11 +155,11 @@ public class AbstractPartitionHandlerTest {
                     public void open() {}
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
 
                     @Override
-                    public RecordsOffset committableOffset() {
-                        return new RecordsOffset(0, 0, groupId);
+                    public GroupOffset committableOffset() {
+                        return new GroupOffset(0, 0, groupId);
                     }
                 };
         handler.start();
@@ -234,7 +234,7 @@ public class AbstractPartitionHandlerTest {
                     public void open() {}
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
                         while (iterator.hasNext()) {
                             Assert.assertTrue(
                                     consumerData.remove(
@@ -243,16 +243,16 @@ public class AbstractPartitionHandlerTest {
                     }
 
                     @Override
-                    public RecordsOffset committableOffset() {
-                        return new RecordsOffset(0, 0, groupId);
+                    public GroupOffset committableOffset() {
+                        return new GroupOffset(0, 0, groupId);
                     }
 
                     @Override
                     public void skipCommitOffsetWaterMarkByMaxRetainSize() {
-                        final RecordsOffset recordsOffset = commitOffsetWaterMark();
+                        final GroupOffset groupOffset = commitOffsetWaterMark();
                         super.skipCommitOffsetWaterMarkByMaxRetainSize();
-                        final RecordsOffset recordsOffset2 = commitOffsetWaterMark();
-                        skip.set(recordsOffset != recordsOffset2 || skip.get());
+                        final GroupOffset groupOffset2 = commitOffsetWaterMark();
+                        skip.set(groupOffset != groupOffset2 || skip.get());
                     }
 
                     @Override
@@ -325,13 +325,13 @@ public class AbstractPartitionHandlerTest {
                     @Override
                     public void idleTrigger() {}
 
-                    private RecordsOffset recordsOffset;
+                    private GroupOffset groupOffset;
 
                     @Override
                     public void open() {}
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
                         int id = counter.incrementAndGet();
                         Assert.assertTrue(lag() > 0);
                         if (id == 1) {
@@ -341,7 +341,7 @@ public class AbstractPartitionHandlerTest {
                             consumerData.remove(
                                     new String(iterator.next(), StandardCharsets.UTF_8));
                         }
-                        this.recordsOffset = recordsOffset;
+                        this.groupOffset = groupOffset;
                         if (id == 3) {
                             throw new RuntimeException("second");
                         }
@@ -351,8 +351,8 @@ public class AbstractPartitionHandlerTest {
                     }
 
                     @Override
-                    public RecordsOffset committableOffset() {
-                        return recordsOffset;
+                    public GroupOffset committableOffset() {
+                        return groupOffset;
                     }
                 };
         handler.start();

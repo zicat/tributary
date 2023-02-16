@@ -23,7 +23,7 @@ import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.apache.hadoop.hbase.client.Mutation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
@@ -85,7 +85,7 @@ public abstract class AbstractHBaseFunction extends AbstractFunction {
      *
      * @param fileOffset fileOffset
      */
-    public boolean flush(RecordsOffset fileOffset) {
+    public boolean flush(GroupOffset fileOffset) {
         final AtomicBoolean flushed = new AtomicBoolean(false);
         flush(
                 fileOffset,

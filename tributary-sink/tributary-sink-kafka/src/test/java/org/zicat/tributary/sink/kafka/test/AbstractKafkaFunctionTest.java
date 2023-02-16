@@ -24,7 +24,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -45,7 +45,7 @@ public class AbstractKafkaFunctionTest {
         function =
                 new AbstractKafkaFunction() {
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
                         int count = 0;
                         while (iterator.hasNext()) {
                             sendKafka(
@@ -57,7 +57,7 @@ public class AbstractKafkaFunctionTest {
                                 "broker_test" + count,
                                 new ProducerRecord<>("topic_test", "test_value".getBytes()),
                                 (metadata, exception) -> Assert.assertNull(exception));
-                        flush(recordsOffset);
+                        flush(groupOffset);
                     }
 
                     @Override
@@ -68,7 +68,7 @@ public class AbstractKafkaFunctionTest {
         final ContextBuilder builder =
                 ContextBuilder.newBuilder()
                         .partitionId(0)
-                        .startRecordsOffset(new RecordsOffset(1, 1, "g1"));
+                        .startGroupOffset(new GroupOffset(1, 1, "g1"));
         final Context config = builder.build();
         function.open(config);
     }
@@ -77,12 +77,12 @@ public class AbstractKafkaFunctionTest {
     public void test() throws Exception {
 
         final String value = "test_data";
-        final RecordsOffset nextRecordsOffset = function.committableOffset().skipNextSegmentHead();
+        final GroupOffset nextGroupOffset = function.committableOffset().skipNextSegmentHead();
         function.process(
-                nextRecordsOffset,
+                nextGroupOffset,
                 Collections.singleton(value.getBytes(StandardCharsets.UTF_8)).iterator());
         Assert.assertEquals(value, new String(producer.history().get(0).value()));
-        Assert.assertEquals(nextRecordsOffset, function.committableOffset());
+        Assert.assertEquals(nextGroupOffset, function.committableOffset());
     }
 
     @Test

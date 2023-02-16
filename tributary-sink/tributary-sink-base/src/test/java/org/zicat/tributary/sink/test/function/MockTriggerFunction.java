@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.test.function;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Trigger;
 
@@ -32,7 +32,7 @@ public class MockTriggerFunction extends AbstractFunction implements Trigger {
     public static final long IDLE_TIME_MILLIS = 10;
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
 
     @Override
     public void close() {}

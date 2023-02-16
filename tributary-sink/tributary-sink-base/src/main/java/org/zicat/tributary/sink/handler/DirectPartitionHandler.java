@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
@@ -53,12 +53,12 @@ public class DirectPartitionHandler extends AbstractPartitionHandler {
     }
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) throws Exception {
-        function.process(recordsOffset, iterator);
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception {
+        function.process(groupOffset, iterator);
     }
 
     @Override
-    public RecordsOffset committableOffset() {
+    public GroupOffset committableOffset() {
         return function.committableOffset();
     }
 

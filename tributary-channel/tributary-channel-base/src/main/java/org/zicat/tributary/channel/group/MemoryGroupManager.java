@@ -19,7 +19,7 @@
 package org.zicat.tributary.channel.group;
 
 import org.zicat.tributary.channel.AbstractChannel;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.Threads;
 
 import java.io.IOException;
@@ -35,21 +35,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * MemoryGroupManager.
  *
- * <p>Store commit offset in memory cache, Override flush(String groupId, RecordsOffset
- * recordsOffset) to storage.
+ * <p>Store commit offset in memory cache, Override flush function to storage.
  */
 public abstract class MemoryGroupManager implements SingleGroupManager {
 
-    private final Map<String, RecordsOffset> cache = new ConcurrentHashMap<>();
+    private final Map<String, GroupOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final long periodSecond;
     protected ScheduledExecutorService schedule;
 
-    public MemoryGroupManager(Set<RecordsOffset> groupOffsets, long periodSecond) {
-        for (RecordsOffset recordsOffset : groupOffsets) {
-            this.cache.put(recordsOffset.groupId(), recordsOffset);
-            this.groups.add(recordsOffset.groupId());
+    public MemoryGroupManager(Set<GroupOffset> groupOffsets, long periodSecond) {
+        for (GroupOffset groupOffset : groupOffsets) {
+            this.cache.put(groupOffset.groupId(), groupOffset);
+            this.groups.add(groupOffset.groupId());
         }
         this.periodSecond = periodSecond;
         if (periodSecond > 0) {
@@ -61,13 +60,13 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
     }
 
     /**
-     * create default records offset.
+     * create default group offset.
      *
      * @param groupId groupId
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    public static RecordsOffset defaultRecordsOffset(String groupId) {
-        return new RecordsOffset(-1, -1, groupId);
+    public static GroupOffset defaultGroupOffset(String groupId) {
+        return new GroupOffset(-1, -1, groupId);
     }
 
     /** schedule. */
@@ -84,25 +83,25 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
      *
      * @param action callback function
      */
-    protected void foreachGroup(Consumer<String, RecordsOffset> action) throws IOException {
-        for (Map.Entry<String, RecordsOffset> entry : cache.entrySet()) {
+    protected void foreachGroup(Consumer<String, GroupOffset> action) throws IOException {
+        for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
             action.accept(entry.getKey(), entry.getValue());
         }
     }
 
     @Override
-    public synchronized void commit(RecordsOffset recordsOffset) {
+    public synchronized void commit(GroupOffset groupOffset) {
 
         isOpen();
-        final RecordsOffset cachedRecordsOffset = cache.get(recordsOffset.groupId());
-        if (cachedRecordsOffset == null) {
+        final GroupOffset cachedGroupOffset = cache.get(groupOffset.groupId());
+        if (cachedGroupOffset == null) {
             throw new IllegalStateException(
-                    "group id " + recordsOffset.groupId() + " not found in cache");
+                    "group id " + groupOffset.groupId() + " not found in cache");
         }
-        if (cachedRecordsOffset.compareTo(recordsOffset) >= 0) {
+        if (cachedGroupOffset.compareTo(groupOffset) >= 0) {
             return;
         }
-        cache.put(recordsOffset.groupId(), recordsOffset);
+        cache.put(groupOffset.groupId(), groupOffset);
     }
 
     @Override
@@ -111,18 +110,18 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
     }
 
     @Override
-    public RecordsOffset getRecordsOffset(String groupId) {
+    public GroupOffset getGroupOffset(String groupId) {
         isOpen();
         return cache.get(groupId);
     }
 
     @Override
-    public RecordsOffset getMinRecordsOffset() {
+    public GroupOffset getMinGroupOffset() {
         isOpen();
-        RecordsOffset min = null;
-        for (Map.Entry<String, RecordsOffset> entry : cache.entrySet()) {
-            final RecordsOffset recordsOffset = entry.getValue();
-            min = min == null ? recordsOffset : RecordsOffset.min(min, recordsOffset);
+        GroupOffset min = null;
+        for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
+            final GroupOffset groupOffset = entry.getValue();
+            min = min == null ? groupOffset : GroupOffset.min(min, groupOffset);
         }
         return min;
     }
@@ -173,7 +172,7 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
      * @return MemoryOnePartitionGroupManager
      */
     public static AbstractChannel.SingleGroupManagerFactory createUnPersistGroupManagerFactory(
-            Set<RecordsOffset> groupOffsets) {
+            Set<GroupOffset> groupOffsets) {
         return () ->
                 new MemoryGroupManager(groupOffsets, -1) {
                     @Override

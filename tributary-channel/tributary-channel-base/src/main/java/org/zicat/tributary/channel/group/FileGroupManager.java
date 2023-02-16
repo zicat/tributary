@@ -20,7 +20,7 @@ package org.zicat.tributary.channel.group;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
@@ -36,7 +36,7 @@ import java.util.*;
 /**
  * FileGroupManager.
  *
- * <p>Store RecordsOffset in local {@link FileGroupManager#groupIndexFile}.
+ * <p>Store GroupOffset in local {@link FileGroupManager#groupIndexFile}.
  *
  * <p>File name example: {myTopic}_group_id.index
  *
@@ -77,9 +77,9 @@ public class FileGroupManager extends MemoryGroupManager {
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(tmpFile, "rw");
                 FileChannel channel = randomAccessFile.getChannel()) {
             foreachGroup(
-                    (group, recordsOffset) -> {
-                        byteBuffer = IOUtils.reAllocate(byteBuffer, recordsOffset.size());
-                        recordsOffset.fillBuffer(byteBuffer);
+                    (group, groupOffset) -> {
+                        byteBuffer = IOUtils.reAllocate(byteBuffer, groupOffset.size());
+                        groupOffset.fillBuffer(byteBuffer);
                         byteBuffer.flip();
                         IOUtils.writeFull(channel, byteBuffer);
                     });
@@ -155,17 +155,17 @@ public class FileGroupManager extends MemoryGroupManager {
      *
      * @param groupIndexFile groupIndexFile
      * @param groupIds groupIds groupIds
-     * @return group records offset
+     * @return group group offset
      */
-    private static Set<RecordsOffset> getGroupOffsets(File groupIndexFile, Set<String> groupIds) {
+    private static Set<GroupOffset> getGroupOffsets(File groupIndexFile, Set<String> groupIds) {
 
         final int cacheExpectedSize = groupIds.size();
         final List<String> allGroups = new ArrayList<>(groupIds);
-        final Set<RecordsOffset> existsGroups = parseExistsGroups(groupIndexFile, allGroups);
-        final Set<RecordsOffset> result = new HashSet<>(existsGroups);
+        final Set<GroupOffset> existsGroups = parseExistsGroups(groupIndexFile, allGroups);
+        final Set<GroupOffset> result = new HashSet<>(existsGroups);
         // AllGroups only contains new groups after call method parseExistsGroups.
         // Add new group with default offset to result ensure all groupIds has one offset.
-        allGroups.forEach(groupId -> result.add(defaultRecordsOffset(groupId)));
+        allGroups.forEach(groupId -> result.add(defaultGroupOffset(groupId)));
         if (result.size() != cacheExpectedSize) {
             throw new TributaryRuntimeException(
                     "cache size must equal groupIds size, expected size = "
@@ -198,10 +198,10 @@ public class FileGroupManager extends MemoryGroupManager {
      * @param allGroups allGroups, allGroups will remove those groups that exits.
      * @return group offsets map
      */
-    private static Set<RecordsOffset> parseExistsGroups(
+    private static Set<GroupOffset> parseExistsGroups(
             final File groupIndexFile, List<String> allGroups) {
 
-        final Set<RecordsOffset> existsGroups = new HashSet<>();
+        final Set<GroupOffset> existsGroups = new HashSet<>();
 
         /*
          * Method {@link FileGroupManager#swapIndexFileQuietly} may cause delete groupIndexFile
@@ -215,7 +215,7 @@ public class FileGroupManager extends MemoryGroupManager {
         try {
             final ByteBuffer byteBuffer = ByteBuffer.wrap(IOUtils.readFull(realGroupIndexFile));
             while (byteBuffer.hasRemaining()) {
-                final RecordsOffset offset = RecordsOffset.parserByteBuffer(byteBuffer);
+                final GroupOffset offset = GroupOffset.parserByteBuffer(byteBuffer);
                 if (allGroups.remove(offset.groupId())) {
                     existsGroups.add(offset);
                 }

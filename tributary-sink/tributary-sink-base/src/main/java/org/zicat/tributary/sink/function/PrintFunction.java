@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.function;
 import io.prometheus.client.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
@@ -44,13 +44,13 @@ public class PrintFunction extends AbstractFunction {
     }
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
         int i = 0;
         while (iterator.hasNext()) {
             LOG.info("data:{}", new String(iterator.next(), StandardCharsets.UTF_8));
             i++;
         }
-        flush(recordsOffset, null);
+        flush(groupOffset, null);
         SINK_PRINT_COUNTER.labels(metricsHost(), context.groupId(), context.topic()).inc(i);
     }
 

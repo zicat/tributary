@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.channel.group;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -35,20 +35,20 @@ public interface GroupManager extends Closeable {
     Set<String> groups();
 
     /**
-     * get current records offset by group id & partition. return (-1, -1) if first consume
+     * get current group offset by group id & partition. return (-1, -1) if first consume
      *
      * @param groupId groupId
      * @param partition partition
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    RecordsOffset getRecordsOffset(String groupId, int partition);
+    GroupOffset getGroupOffset(String groupId, int partition);
 
     /**
-     * commit records offset.
+     * commit group offset.
      *
      * @param partition partition
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @throws IOException IOException
      */
-    void commit(int partition, RecordsOffset recordsOffset) throws IOException;
+    void commit(int partition, GroupOffset groupOffset) throws IOException;
 }

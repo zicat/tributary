@@ -21,7 +21,7 @@ package org.zicat.tributary.channel.test.memory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.memory.MemoryChannel;
 
@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createUnPersistGroupManagerFactory;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultRecordsOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
 
 /** OnePartitionMemoryChannelTest. */
@@ -39,8 +39,8 @@ public class MemoryChannelTest {
     @Test
     public void test() throws IOException, InterruptedException {
 
-        final Set<RecordsOffset> groupOffsets = new HashSet<>();
-        groupOffsets.add(defaultRecordsOffset("g1"));
+        final Set<GroupOffset> groupOffsets = new HashSet<>();
+        groupOffsets.add(defaultGroupOffset("g1"));
         final MemoryChannel channel =
                 createMemoryChannel(
                         "t1",
@@ -48,7 +48,7 @@ public class MemoryChannelTest {
                         1024 * 4,
                         102400L,
                         CompressionType.NONE);
-        RecordsOffset recordsOffset = channel.getRecordsOffset("g1");
+        GroupOffset groupOffset = channel.getGroupOffset("g1");
         final Random random = new Random(1023312);
         final List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < 200000; i++) {
@@ -65,7 +65,7 @@ public class MemoryChannelTest {
         RecordsResultSet recordsResultSet;
         int offset = 0;
         while (offset < result.size()) {
-            recordsResultSet = channel.poll(recordsOffset, 10, TimeUnit.MILLISECONDS);
+            recordsResultSet = channel.poll(groupOffset, 10, TimeUnit.MILLISECONDS);
             if (recordsResultSet.isEmpty()) {
                 break;
             }
@@ -73,8 +73,8 @@ public class MemoryChannelTest {
                 Assert.assertArrayEquals(result.get(offset), recordsResultSet.next());
                 offset++;
             }
-            recordsOffset = recordsResultSet.nexRecordsOffset();
-            channel.commit(recordsOffset);
+            groupOffset = recordsResultSet.nexGroupOffset();
+            channel.commit(groupOffset);
         }
         Assert.assertEquals(1, channel.activeSegment());
         channel.close();

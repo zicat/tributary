@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.Config;
 
 import java.util.Map;
@@ -29,19 +29,19 @@ public class Context extends Config {
     private final String id;
     private final String topic;
     private final int partitionId;
-    private final RecordsOffset startRecordsOffset;
+    private final GroupOffset startGroupOffset;
 
     Context(
             String id,
             Map<String, Object> customConfig,
             String topic,
             int partitionId,
-            RecordsOffset startRecordsOffset) {
+            GroupOffset startGroupOffset) {
         super(customConfig);
         this.id = id;
         this.topic = topic;
         this.partitionId = partitionId;
-        this.startRecordsOffset = startRecordsOffset;
+        this.startGroupOffset = startGroupOffset;
     }
 
     public String topic() {
@@ -49,15 +49,15 @@ public class Context extends Config {
     }
 
     public String groupId() {
-        return startRecordsOffset.groupId();
+        return startGroupOffset.groupId();
     }
 
     public int partitionId() {
         return partitionId;
     }
 
-    public RecordsOffset startRecordsOffset() {
-        return startRecordsOffset;
+    public GroupOffset startGroupOffset() {
+        return startGroupOffset;
     }
 
     public String id() {

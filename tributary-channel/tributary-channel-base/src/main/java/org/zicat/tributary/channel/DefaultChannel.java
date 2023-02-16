@@ -74,9 +74,9 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public RecordsOffset getRecordsOffset(String groupId, int partition) {
+    public GroupOffset getGroupOffset(String groupId, int partition) {
         final C channel = getPartitionChannel(partition);
-        return channel.getRecordsOffset(groupId);
+        return channel.getGroupOffset(groupId);
     }
 
     @Override
@@ -93,17 +93,16 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public RecordsResultSet poll(
-            int partition, RecordsOffset recordsOffset, long time, TimeUnit unit)
+    public RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
         final C channel = getPartitionChannel(partition);
-        return channel.poll(recordsOffset, time, unit);
+        return channel.poll(groupOffset, time, unit);
     }
 
     @Override
-    public void commit(int partition, RecordsOffset recordsOffset) throws IOException {
+    public void commit(int partition, GroupOffset groupOffset) throws IOException {
         final C channel = getPartitionChannel(partition);
-        channel.commit(recordsOffset);
+        channel.commit(groupOffset);
     }
 
     @Override
@@ -126,9 +125,9 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public long lag(int partition, RecordsOffset recordsOffset) {
+    public long lag(int partition, GroupOffset groupOffset) {
         final C channel = getPartitionChannel(partition);
-        return channel.lag(recordsOffset);
+        return channel.lag(groupOffset);
     }
 
     @Override

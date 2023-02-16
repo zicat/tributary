@@ -56,7 +56,7 @@ public class DefaultNettySourceTest {
                                         CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
-        final RecordsOffset recordsOffset = channel.getRecordsOffset(groupId, 0);
+        final GroupOffset groupOffset = channel.getGroupOffset(groupId, 0);
         final int freePort = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(freePort, channel) {
@@ -95,10 +95,9 @@ public class DefaultNettySourceTest {
 
             channel.flush();
             final RecordsResultSet recordsResultSet =
-                    channel.poll(0, recordsOffset, 10, TimeUnit.MILLISECONDS);
+                    channel.poll(0, groupOffset, 10, TimeUnit.MILLISECONDS);
             Assert.assertEquals("lynn", new String(recordsResultSet.next()));
             Assert.assertEquals("zhangjun", new String(recordsResultSet.next()));
-            System.out.println(source);
         }
     }
 
@@ -118,7 +117,7 @@ public class DefaultNettySourceTest {
                                         CompressionType.SNAPPY),
                         0,
                         TimeUnit.SECONDS);
-        final RecordsOffset recordsOffset = channel.getRecordsOffset(groupId, 0);
+        final GroupOffset groupOffset = channel.getGroupOffset(groupId, 0);
         final int port = getFreeTcpPort();
         try (Source source =
                 new DefaultNettySource(port, channel) {
@@ -139,7 +138,7 @@ public class DefaultNettySourceTest {
             channel.flush();
 
             final RecordsResultSet recordsResultSet =
-                    channel.poll(0, recordsOffset, 10, TimeUnit.MILLISECONDS);
+                    channel.poll(0, groupOffset, 10, TimeUnit.MILLISECONDS);
             Assert.assertArrayEquals(data1, recordsResultSet.next());
             Assert.assertArrayEquals(data2, recordsResultSet.next());
         }

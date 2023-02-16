@@ -14,7 +14,7 @@ multi sinks.
 ### Reliability
 
 When records arrive at the tributary service, the source append into the channel and ack client, sinks fetch records
-from the channel with RecordsOffset, and commit the RecordsOffset after external systems store these records. This is a
+from the channel with GroupOffset, and commit the GroupOffset after external systems store these records. This is a
 how records in Tributary provide end-to-end reliability of the flow.
 
 ### Recoverability
@@ -22,7 +22,7 @@ how records in Tributary provide end-to-end reliability of the flow.
 If the channel crash e.g., disk full, source report the exception to the client. Because tributary service is stateless,
 client need to switch to other tributary services and switch back after this service recover.
 
-If the external sink system crash, the sink will roll up to the previous committed RecordsOffset and reconsume records(
+If the external sink system crash, the sink will roll up to the previous committed GroupOffset and reconsume records(
 at least once). The failure of some sink systems not affect others sinking records.
 
 ## Setting up a tributary service

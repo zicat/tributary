@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -47,7 +47,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     protected final Integer partitionId;
     protected final FunctionFactory functionFactory;
     protected final SinkGroupConfig sinkGroupConfig;
-    protected final RecordsOffset startOffset;
+    protected final GroupOffset startOffset;
     protected final AtomicBoolean closed;
 
     public PartitionHandler(
@@ -57,7 +57,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
         this.functionFactory = findFunctionFactory(sinkGroupConfig.functionIdentity());
-        this.startOffset = channel.getRecordsOffset(groupId, partitionId);
+        this.startOffset = channel.getGroupOffset(groupId, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
     }
@@ -77,9 +77,9 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     /**
      * committableOffset.
      *
-     * @return RecordsOffset
+     * @return GroupOffset
      */
-    public abstract RecordsOffset committableOffset();
+    public abstract GroupOffset committableOffset();
 
     /**
      * create thread name.
@@ -93,23 +93,23 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     /**
      * process.
      *
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @param iterator iterator
      */
-    public abstract void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator)
+    public abstract void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
             throws Exception;
 
     /**
      * commit file offset.
      *
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      */
-    protected void commit(RecordsOffset recordsOffset) {
-        if (recordsOffset == null) {
+    protected void commit(GroupOffset groupOffset) {
+        if (groupOffset == null) {
             return;
         }
         try {
-            channel.commit(partitionId, recordsOffset);
+            channel.commit(partitionId, groupOffset);
         } catch (Throwable e) {
             LOG.warn("commit fail", e);
         }
@@ -119,17 +119,16 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * default poll data, subclass can override this function.
      *
      * @param partitionId partitionId
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @param idleTimeMillis idleTimeMillis
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    protected RecordsResultSet poll(
-            int partitionId, RecordsOffset recordsOffset, long idleTimeMillis)
+    protected RecordsResultSet poll(int partitionId, GroupOffset groupOffset, long idleTimeMillis)
             throws IOException, InterruptedException {
         final long waitTime = idleTimeMillis <= 0 ? DEFAULT_WAIT_TIME_MILLIS : idleTimeMillis;
-        return channel.poll(partitionId, recordsOffset, waitTime, TimeUnit.MILLISECONDS);
+        return channel.poll(partitionId, groupOffset, waitTime, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -159,7 +158,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
                     ContextBuilder.newBuilder()
                             .id(id == null ? getSinHandlerId() : id)
                             .partitionId(partitionId)
-                            .startRecordsOffset(startOffset)
+                            .startGroupOffset(startOffset)
                             .topic(channel.topic());
             builder.addAll(sinkGroupConfig);
             function.open(builder.build());

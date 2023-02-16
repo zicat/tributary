@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.hbase.AbstractHBaseFunction;
 import org.zicat.tributary.sink.hbase.DiscardHBaseWriter;
@@ -72,7 +72,7 @@ public class AbstractHBaseFunctionTest {
                     }
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator)
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
                             throws Exception {
                         while (iterator.hasNext()) {
                             byte[] data = iterator.next();
@@ -85,14 +85,14 @@ public class AbstractHBaseFunctionTest {
                         .id("id")
                         .partitionId(0)
                         .topic("t1")
-                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"));
+                        .startGroupOffset(new GroupOffset(0, 0, "g1"));
         function.open(contextBuilder.build());
         final List<byte[]> testData =
                 Arrays.asList(
                         "1".getBytes(StandardCharsets.UTF_8),
                         "2".getBytes(StandardCharsets.UTF_8),
                         "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
+        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
         Assert.assertTrue(function.getHBaseWriter(tableIdentity) instanceof DiscardHBaseWriter);
         function.close();
     }
@@ -116,7 +116,7 @@ public class AbstractHBaseFunctionTest {
                     }
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator)
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
                             throws Exception {
                         while (iterator.hasNext()) {
                             byte[] data = iterator.next();
@@ -129,19 +129,19 @@ public class AbstractHBaseFunctionTest {
                         .id("id")
                         .partitionId(0)
                         .topic("t1")
-                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"));
+                        .startGroupOffset(new GroupOffset(0, 0, "g1"));
         function.open(contextBuilder.build());
         final List<byte[]> testData =
                 Arrays.asList(
                         "1".getBytes(StandardCharsets.UTF_8),
                         "2".getBytes(StandardCharsets.UTF_8),
                         "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
+        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
 
         final MockBufferedMutator mutator =
                 (MockBufferedMutator) connection.getBufferedMutator(tableIdentity.tableName());
         Assert.assertEquals(3, mutator.mutateList.size());
-        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
+        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
         Assert.assertEquals(6, mutator.mutateList.size());
         function.close();
     }
@@ -165,7 +165,7 @@ public class AbstractHBaseFunctionTest {
                     }
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator)
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
                             throws Exception {
                         while (iterator.hasNext()) {
                             byte[] data = iterator.next();
@@ -178,7 +178,7 @@ public class AbstractHBaseFunctionTest {
                         .id("id")
                         .partitionId(0)
                         .topic("t1")
-                        .startRecordsOffset(new RecordsOffset(0, 0, "g1"));
+                        .startGroupOffset(new GroupOffset(0, 0, "g1"));
         function.open(contextBuilder.build());
         final List<byte[]> testData =
                 Arrays.asList(
@@ -186,13 +186,13 @@ public class AbstractHBaseFunctionTest {
                         "2".getBytes(StandardCharsets.UTF_8),
                         "3".getBytes(StandardCharsets.UTF_8),
                         "4".getBytes(StandardCharsets.UTF_8));
-        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
+        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
 
         final MockBufferedMutator mutator =
                 (MockBufferedMutator) connection.getBufferedMutator(hTableEntity.tableName());
         Assert.assertEquals(0, mutator.flushCount.get());
         Assert.assertEquals(0, mutator.flushSize.get());
-        function.process(new RecordsOffset(1, 1, "g1"), testData.listIterator());
+        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
         function.close();
         Assert.assertEquals(1, mutator.flushCount.get());
         Assert.assertEquals(8, mutator.flushSize.get());
@@ -218,17 +218,17 @@ public class AbstractHBaseFunctionTest {
                     }
 
                     @Override
-                    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
+                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
                 };
         final ContextBuilder contextBuilder =
                 ContextBuilder.newBuilder()
                         .id("id")
                         .partitionId(0)
                         .topic("t1")
-                        .startRecordsOffset(new RecordsOffset(1, 1, "g1"));
+                        .startGroupOffset(new GroupOffset(1, 1, "g1"));
         // always flush
         function.open(contextBuilder.build());
-        final RecordsOffset flushRecordOffset = new RecordsOffset(1, 5, "g1");
+        final GroupOffset flushRecordOffset = new GroupOffset(1, 5, "g1");
         Assert.assertTrue(function.flush(flushRecordOffset));
         Assert.assertEquals(function.committableOffset(), flushRecordOffset);
     }

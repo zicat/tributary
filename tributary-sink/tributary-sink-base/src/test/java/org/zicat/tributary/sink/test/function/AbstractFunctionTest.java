@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -38,13 +38,13 @@ public class AbstractFunctionTest {
     @Test
     public void testFlush() {
 
-        final RecordsOffset startRecordsOffset = new RecordsOffset(0, 0, "g1");
+        final GroupOffset startGroupOffset = new GroupOffset(0, 0, "g1");
         final MockClock clock = new MockClock();
         clock.setCurrentTimeMillis(0);
         final MockFunction function = createFunction(clock);
         final AtomicInteger callback = new AtomicInteger();
         function.flush(
-                startRecordsOffset.skipNextSegmentHead(),
+                startGroupOffset.skipNextSegmentHead(),
                 () -> {
                     callback.incrementAndGet();
                     return true;
@@ -52,7 +52,7 @@ public class AbstractFunctionTest {
         Assert.assertEquals(1, callback.get());
         clock.setCurrentTimeMillis(fullMill);
         function.flush(
-                startRecordsOffset.skipNextSegmentHead(),
+                startGroupOffset.skipNextSegmentHead(),
                 () -> {
                     callback.incrementAndGet();
                     return true;
@@ -68,9 +68,9 @@ public class AbstractFunctionTest {
      */
     private MockFunction createFunction(MockClock clock) {
         final MockFunction function = new MockFunction();
-        final RecordsOffset startRecordsOffset = new RecordsOffset(0, 0, "g1");
+        final GroupOffset startGroupOffset = new GroupOffset(0, 0, "g1");
         final ContextBuilder builder =
-                ContextBuilder.newBuilder().startRecordsOffset(startRecordsOffset).partitionId(1);
+                ContextBuilder.newBuilder().startGroupOffset(startGroupOffset).partitionId(1);
         builder.addCustomProperty(OPTION_CLOCK.key(), clock);
         final Context context = builder.build();
         clock.setCurrentTimeMillis(0);
@@ -82,7 +82,7 @@ public class AbstractFunctionTest {
     private static class MockFunction extends AbstractFunction {
 
         @Override
-        public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {}
+        public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
 
         @Override
         public void close() {}

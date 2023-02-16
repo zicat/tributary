@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.hdfs;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import org.apache.hadoop.fs.FileSystem;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.Context;
@@ -61,7 +61,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     protected int idleTriggerMillis;
     protected String bucketDateFormat = null;
     protected String timeBucket = null;
-    protected RecordsOffset lastRecordsOffset;
+    protected GroupOffset lastGroupOffset;
 
     @Override
     public void open(Context context) {
@@ -86,7 +86,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     }
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) throws Exception {
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception {
 
         refresh(false);
         int totalCount = 0;
@@ -96,7 +96,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
             appendData(bucket, record, 0, record.length);
             totalCount++;
         }
-        lastRecordsOffset = recordsOffset;
+        lastGroupOffset = groupOffset;
         updateMetrics(totalCount);
     }
 
@@ -115,7 +115,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
             protected void renameBucket(String bucketPath, String targetPath, final FileSystem fs)
                     throws IOException {
                 super.renameBucket(bucketPath, targetPath, fs);
-                DefaultHDFSFunction.this.flush(lastRecordsOffset, null);
+                DefaultHDFSFunction.this.flush(lastGroupOffset, null);
             }
         };
     }

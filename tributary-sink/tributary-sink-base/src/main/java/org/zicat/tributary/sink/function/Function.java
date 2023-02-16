@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
@@ -52,17 +52,17 @@ public interface Function extends Closeable {
      * <p>In some SinkHandler{@link DirectPartitionHandler}, One Function Instance consumer all data
      * of the partition
      *
-     * @param recordsOffset recordsOffset
+     * @param groupOffset groupOffset
      * @param iterator iterator
      */
-    void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) throws Exception;
+    void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception;
 
     /**
      * return the committable partition offset.
      *
      * @return map, key is partition id, value is the committable partition offset
      */
-    RecordsOffset committableOffset();
+    GroupOffset committableOffset();
 
     /**
      * close function.

@@ -21,7 +21,7 @@ package org.zicat.tributary.channle.file.test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
@@ -38,7 +38,7 @@ public class SinkThread extends Thread {
     private final int partitionId;
     private final AtomicLong readSize;
     private final long totalSize;
-    private final RecordsOffset startOffset;
+    private final GroupOffset startOffset;
 
     public SinkThread(
             Channel channel,
@@ -50,29 +50,29 @@ public class SinkThread extends Thread {
         this.partitionId = partitionId;
         this.readSize = readSize;
         this.totalSize = totalSize;
-        this.startOffset = channel.getRecordsOffset(groupName, partitionId);
+        this.startOffset = channel.getGroupOffset(groupName, partitionId);
     }
 
     @Override
     public void run() {
 
         try {
-            RecordsOffset recordsOffset = startOffset;
+            GroupOffset groupOffset = startOffset;
             RecordsResultSet result = null;
             long readLength = 0;
             long start = System.currentTimeMillis();
             DecimalFormat df = new DecimalFormat("######0.00");
             Long preFileId = null;
             while (readSize.get() < totalSize || (result != null && result.hasNext())) {
-                result = channel.poll(partitionId, recordsOffset, 10, TimeUnit.MILLISECONDS);
+                result = channel.poll(partitionId, groupOffset, 10, TimeUnit.MILLISECONDS);
                 while (result.hasNext()) {
                     readLength += result.next().length;
                     readSize.incrementAndGet();
                     if (preFileId == null) {
-                        preFileId = result.nexRecordsOffset().segmentId();
-                    } else if (preFileId != result.nexRecordsOffset().segmentId()) {
-                        channel.commit(partitionId, recordsOffset);
-                        preFileId = result.nexRecordsOffset().segmentId();
+                        preFileId = result.nexGroupOffset().segmentId();
+                    } else if (preFileId != result.nexGroupOffset().segmentId()) {
+                        channel.commit(partitionId, groupOffset);
+                        preFileId = result.nexGroupOffset().segmentId();
                     }
                 }
                 long spend = System.currentTimeMillis() - start;
@@ -81,15 +81,15 @@ public class SinkThread extends Thread {
                             "read spend:"
                                     + df.format(readLength / 1024.0 / 1024.0 / (spend / 1000.0))
                                     + "(mb/s), file id:"
-                                    + result.nexRecordsOffset().segmentId()
+                                    + result.nexGroupOffset().segmentId()
                                     + ", lag:"
-                                    + channel.lag(partitionId, result.nexRecordsOffset()));
+                                    + channel.lag(partitionId, result.nexGroupOffset()));
                     readLength = 0;
                     start = System.currentTimeMillis();
                 }
-                recordsOffset = result.nexRecordsOffset();
+                groupOffset = result.nexGroupOffset();
             }
-            channel.commit(partitionId, recordsOffset);
+            channel.commit(partitionId, groupOffset);
         } catch (Exception e) {
             throw new TributaryRuntimeException(e);
         }

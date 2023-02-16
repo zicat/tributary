@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,11 +30,11 @@ public class CollectionFunction extends AbstractFunction {
     public List<byte[]> history = new ArrayList<>();
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
         while (iterator.hasNext()) {
             history.add(iterator.next());
         }
-        flush(recordsOffset, null);
+        flush(groupOffset, null);
     }
 
     @Override

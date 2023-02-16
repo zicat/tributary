@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
@@ -41,14 +41,14 @@ public class AssertFunction extends AbstractFunction {
     }
 
     @Override
-    public void process(RecordsOffset recordsOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
 
         while (iterator.hasNext()) {
             Assert.assertFalse(assertData.isEmpty());
             byte[] data = iterator.next();
             String value = new String(data, StandardCharsets.UTF_8);
             Assert.assertTrue(assertData.remove(value));
-            flush(recordsOffset, null);
+            flush(groupOffset, null);
         }
     }
 

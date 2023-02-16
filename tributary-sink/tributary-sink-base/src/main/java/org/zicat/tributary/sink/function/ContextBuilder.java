@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.RecordsOffset;
+import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.CustomConfigBuilder;
 
 /** ContextBuilder. */
@@ -27,7 +27,7 @@ public class ContextBuilder extends CustomConfigBuilder {
     private String id;
     private String topic;
     private int partitionId;
-    private RecordsOffset startRecordsOffset;
+    private GroupOffset startGroupOffset;
 
     /**
      * set id.
@@ -65,11 +65,11 @@ public class ContextBuilder extends CustomConfigBuilder {
     /**
      * set start file offset.
      *
-     * @param startRecordsOffset startRecordsOffset
+     * @param startGroupOffset startGroupOffset
      * @return this
      */
-    public ContextBuilder startRecordsOffset(RecordsOffset startRecordsOffset) {
-        this.startRecordsOffset = startRecordsOffset;
+    public ContextBuilder startGroupOffset(GroupOffset startGroupOffset) {
+        this.startGroupOffset = startGroupOffset;
         return this;
     }
 
@@ -79,7 +79,7 @@ public class ContextBuilder extends CustomConfigBuilder {
      * @return Context
      */
     public Context build() {
-        return new Context(id, customConfig, topic, partitionId, startRecordsOffset);
+        return new Context(id, customConfig, topic, partitionId, startGroupOffset);
     }
 
     /**
