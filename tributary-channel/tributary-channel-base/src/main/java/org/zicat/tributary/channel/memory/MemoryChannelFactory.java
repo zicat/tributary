@@ -43,23 +43,35 @@ public class MemoryChannelFactory implements ChannelFactory {
 
     @Override
     public Channel createChannel(String topic, ReadableConfig config) throws IOException {
+        final Set<String> groupSet = groupSet(config);
         return new DefaultChannel<>(
-                (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                        () -> {
-                            final Set<String> groupSet = groupSet(config);
-                            final int partitionCounts = config.get(OPTION_PARTITION_COUNT);
-                            final int blockSize = config.get(OPTION_BLOCK_SIZE);
-                            final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
-                            final CompressionType compression =
-                                    CompressionType.getByName(config.get(OPTION_COMPRESSION));
-                            return createChannels(
-                                    topic,
-                                    partitionCounts,
-                                    groupSet,
-                                    blockSize,
-                                    segmentSize,
-                                    compression);
-                        },
+                new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
+                    @Override
+                    public String topic() {
+                        return topic;
+                    }
+
+                    @Override
+                    public Set<String> groups() {
+                        return groupSet;
+                    }
+
+                    @Override
+                    public AbstractChannel<?>[] create() {
+                        final int partitionCounts = config.get(OPTION_PARTITION_COUNT);
+                        final int blockSize = config.get(OPTION_BLOCK_SIZE);
+                        final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
+                        final CompressionType compression =
+                                CompressionType.getByName(config.get(OPTION_COMPRESSION));
+                        return createChannels(
+                                topic,
+                                partitionCounts,
+                                groupSet,
+                                blockSize,
+                                segmentSize,
+                                compression);
+                    }
+                },
                 config.get(OPTION_FLUSH_PERIOD_MILLS),
                 TimeUnit.MILLISECONDS);
     }

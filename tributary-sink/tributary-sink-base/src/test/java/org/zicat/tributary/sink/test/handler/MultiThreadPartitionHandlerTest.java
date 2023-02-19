@@ -49,15 +49,29 @@ public class MultiThreadPartitionHandlerTest {
                 new MultiThreadPartitionHandler(
                         "g1",
                         new DefaultChannel<>(
-                                (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                        () ->
-                                                MemoryChannelFactory.createChannels(
-                                                        "t1",
-                                                        1,
-                                                        Collections.singleton("g1"),
-                                                        1024 * 3,
-                                                        102400L,
-                                                        CompressionType.SNAPPY),
+                                new DefaultChannel.AbstractChannelArrayFactory<
+                                        AbstractChannel<?>>() {
+                                    @Override
+                                    public String topic() {
+                                        return "t1";
+                                    }
+
+                                    @Override
+                                    public Set<String> groups() {
+                                        return Collections.singleton("g1");
+                                    }
+
+                                    @Override
+                                    public AbstractChannel<?>[] create() {
+                                        return MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                1,
+                                                Collections.singleton("g1"),
+                                                1024 * 3,
+                                                102400L,
+                                                CompressionType.SNAPPY);
+                                    }
+                                },
                                 0,
                                 TimeUnit.SECONDS),
                         0,
@@ -75,15 +89,29 @@ public class MultiThreadPartitionHandlerTest {
                 new MultiThreadPartitionHandler(
                         "g1",
                         new DefaultChannel<>(
-                                (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                        () ->
-                                                MemoryChannelFactory.createChannels(
-                                                        "t1",
-                                                        1,
-                                                        Collections.singleton("g1"),
-                                                        1024 * 3,
-                                                        102400L,
-                                                        CompressionType.SNAPPY),
+                                new DefaultChannel.AbstractChannelArrayFactory<
+                                        AbstractChannel<?>>() {
+                                    @Override
+                                    public String topic() {
+                                        return "t1";
+                                    }
+
+                                    @Override
+                                    public Set<String> groups() {
+                                        return Collections.singleton("g1");
+                                    }
+
+                                    @Override
+                                    public AbstractChannel<?>[] create() {
+                                        return MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                1,
+                                                Collections.singleton("g1"),
+                                                1024 * 3,
+                                                102400L,
+                                                CompressionType.SNAPPY);
+                                    }
+                                },
                                 0,
                                 TimeUnit.SECONDS),
                         0,
@@ -103,15 +131,29 @@ public class MultiThreadPartitionHandlerTest {
                 new MultiThreadPartitionHandler(
                         "g1",
                         new DefaultChannel<>(
-                                (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                        () ->
-                                                MemoryChannelFactory.createChannels(
-                                                        "t1",
-                                                        1,
-                                                        Collections.singleton("g1"),
-                                                        1024 * 3,
-                                                        102400L,
-                                                        CompressionType.SNAPPY),
+                                new DefaultChannel.AbstractChannelArrayFactory<
+                                        AbstractChannel<?>>() {
+                                    @Override
+                                    public String topic() {
+                                        return "t1";
+                                    }
+
+                                    @Override
+                                    public Set<String> groups() {
+                                        return Collections.singleton("g1");
+                                    }
+
+                                    @Override
+                                    public AbstractChannel<?>[] create() {
+                                        return MemoryChannelFactory.createChannels(
+                                                "t1",
+                                                1,
+                                                Collections.singleton("g1"),
+                                                1024 * 3,
+                                                102400L,
+                                                CompressionType.SNAPPY);
+                                    }
+                                },
                                 0,
                                 TimeUnit.SECONDS),
                         0,

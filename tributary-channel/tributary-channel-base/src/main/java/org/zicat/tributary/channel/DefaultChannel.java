@@ -24,6 +24,7 @@ import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -50,8 +51,8 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
             throw new IllegalArgumentException("channels is null or empty");
         }
         this.factory = factory;
-        this.topic = channels[0].topic();
-        this.groups = channels[0].groups();
+        this.topic = factory.topic();
+        this.groups = Collections.unmodifiableSet(factory.groups());
         this.channels = channels;
         if (flushPeriod > 0) {
             flushPeriodMill = flushUnit.toMillis(flushPeriod);
@@ -74,22 +75,6 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
             }
         }
         return result;
-    }
-
-    /**
-     * AbstractChannelArrayFactory.
-     *
-     * @param <C> type channel
-     */
-    public interface AbstractChannelArrayFactory<C extends AbstractChannel<?>>
-            extends Factory<C[]> {
-
-        @Override
-        default void destroy(C[] cs) {
-            for (C c : cs) {
-                IOUtils.closeQuietly(c);
-            }
-        }
     }
 
     @Override
@@ -184,5 +169,35 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
                 },
                 flushPeriodMill,
                 closed);
+    }
+
+    /**
+     * AbstractChannelArrayFactory.
+     *
+     * @param <C> type channel
+     */
+    public interface AbstractChannelArrayFactory<C extends AbstractChannel<?>>
+            extends Factory<C[]> {
+
+        /**
+         * return topic.
+         *
+         * @return string
+         */
+        String topic();
+
+        /**
+         * get groups.
+         *
+         * @return group set
+         */
+        Set<String> groups();
+
+        @Override
+        default void destroy(C[] cs) {
+            for (C c : cs) {
+                IOUtils.closeQuietly(c);
+            }
+        }
     }
 }

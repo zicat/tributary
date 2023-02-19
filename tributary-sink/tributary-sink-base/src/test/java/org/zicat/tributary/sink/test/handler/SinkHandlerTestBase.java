@@ -36,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /** SinkHandlerTestBase. */
@@ -56,15 +57,28 @@ public class SinkHandlerTestBase {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                () ->
-                                        MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                partitionCount,
-                                                Collections.singleton(groupId),
-                                                1024 * 3,
-                                                102400L,
-                                                CompressionType.SNAPPY),
+                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
+                            @Override
+                            public String topic() {
+                                return "t1";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return Collections.singleton(groupId);
+                            }
+
+                            @Override
+                            public AbstractChannel<?>[] create() {
+                                return MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        partitionCount,
+                                        Collections.singleton(groupId),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
         final SinkGroupConfigBuilder builder =

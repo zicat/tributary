@@ -146,23 +146,37 @@ public class FileChannelBuilder {
     public DefaultChannel<FileChannel> build() throws IOException {
 
         return new DefaultChannel<>(
-                () -> {
-                    if (dirs == null || dirs.isEmpty()) {
-                        throw new IllegalStateException("dir list is null or empty");
+                new DefaultChannel.AbstractChannelArrayFactory<FileChannel>() {
+                    @Override
+                    public String topic() {
+                        return topic;
                     }
-                    if (consumerGroups == null || consumerGroups.isEmpty()) {
-                        throw new IllegalStateException(
-                                "file channel must has at least one consumer group");
+
+                    @Override
+                    public Set<String> groups() {
+                        return consumerGroups;
                     }
-                    final FileChannel[] fileChannels = new FileChannel[dirs.size()];
-                    for (int i = 0; i < dirs.size(); i++) {
-                        final File dir = dirs.get(i).getCanonicalFile();
-                        if (!dir.exists() && !IOUtils.makeDir(dir)) {
-                            throw new IllegalStateException("try to create fail " + dir.getPath());
+
+                    @Override
+                    public FileChannel[] create() throws IOException {
+                        if (dirs == null || dirs.isEmpty()) {
+                            throw new IllegalStateException("dir list is null or empty");
                         }
-                        fileChannels[i] = createFileChannel(dir);
+                        if (consumerGroups == null || consumerGroups.isEmpty()) {
+                            throw new IllegalStateException(
+                                    "file channel must has at least one consumer group");
+                        }
+                        final FileChannel[] fileChannels = new FileChannel[dirs.size()];
+                        for (int i = 0; i < dirs.size(); i++) {
+                            final File dir = dirs.get(i).getCanonicalFile();
+                            if (!dir.exists() && !IOUtils.makeDir(dir)) {
+                                throw new IllegalStateException(
+                                        "try to create fail " + dir.getPath());
+                            }
+                            fileChannels[i] = createFileChannel(dir);
+                        }
+                        return fileChannels;
                     }
-                    return fileChannels;
                 },
                 flushPeriod,
                 flushTimeUnit);

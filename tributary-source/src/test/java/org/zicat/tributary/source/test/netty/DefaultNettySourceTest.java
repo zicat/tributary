@@ -34,6 +34,7 @@ import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.source.netty.NettyDecoder.lineDecoder;
@@ -46,14 +47,28 @@ public class DefaultNettySourceTest {
         final String groupId = "test_group";
         final DefaultChannel<MemoryChannel> channel =
                 new DefaultChannel<>(
-                        () ->
-                                MemoryChannelFactory.createChannels(
+                        new DefaultChannel.AbstractChannelArrayFactory<MemoryChannel>() {
+                            @Override
+                            public String topic() {
+                                return "t1";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return Collections.singleton(groupId);
+                            }
+
+                            @Override
+                            public MemoryChannel[] create() {
+                                return MemoryChannelFactory.createChannels(
                                         "t1",
                                         1,
                                         Collections.singleton(groupId),
                                         1024 * 3,
                                         102400L,
-                                        CompressionType.SNAPPY),
+                                        CompressionType.SNAPPY);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
         final GroupOffset groupOffset = channel.committedGroupOffset(groupId, 0);
@@ -107,14 +122,28 @@ public class DefaultNettySourceTest {
         final String groupId = "test_group";
         final DefaultChannel<MemoryChannel> channel =
                 new DefaultChannel<>(
-                        () ->
-                                MemoryChannelFactory.createChannels(
+                        new DefaultChannel.AbstractChannelArrayFactory<MemoryChannel>() {
+                            @Override
+                            public String topic() {
+                                return "t1";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return Collections.singleton(groupId);
+                            }
+
+                            @Override
+                            public MemoryChannel[] create() {
+                                return MemoryChannelFactory.createChannels(
                                         "t1",
                                         1,
                                         Collections.singleton(groupId),
                                         1024 * 3,
                                         102400L,
-                                        CompressionType.SNAPPY),
+                                        CompressionType.SNAPPY);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
         final GroupOffset groupOffset = channel.committedGroupOffset(groupId, 0);

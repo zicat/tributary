@@ -57,15 +57,28 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 1;
         final Channel channel =
                 new DefaultChannel<>(
-                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                () ->
-                                        MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                partitionCount,
-                                                Collections.singleton(groupId),
-                                                1024 * 3,
-                                                102400L,
-                                                CompressionType.SNAPPY),
+                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
+                            @Override
+                            public String topic() {
+                                return "t1";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return Collections.singleton(groupId);
+                            }
+
+                            @Override
+                            public AbstractChannel<?>[] create() {
+                                return MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        partitionCount,
+                                        Collections.singleton(groupId),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
         final SinkGroupConfigBuilder builder =
@@ -121,15 +134,28 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                () ->
-                                        MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                partitionCount,
-                                                Collections.singleton(groupId),
-                                                50,
-                                                50L,
-                                                CompressionType.NONE),
+                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
+                            @Override
+                            public String topic() {
+                                return "t1";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return Collections.singleton(groupId);
+                            }
+
+                            @Override
+                            public AbstractChannel<?>[] create() {
+                                return MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        partitionCount,
+                                        Collections.singleton(groupId),
+                                        50,
+                                        50L,
+                                        CompressionType.NONE);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
         final int partitionId = 0;
@@ -188,15 +214,28 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                () ->
-                                        MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                partitionCount,
-                                                Collections.singleton(groupId),
-                                                50,
-                                                50L,
-                                                CompressionType.NONE),
+                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
+                            @Override
+                            public String topic() {
+                                return "t1";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return Collections.singleton(groupId);
+                            }
+
+                            @Override
+                            public AbstractChannel<?>[] create() {
+                                return MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        partitionCount,
+                                        Collections.singleton(groupId),
+                                        50,
+                                        50L,
+                                        CompressionType.NONE);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
 
@@ -282,15 +321,28 @@ public class AbstractPartitionHandlerTest {
         final int partitionCount = 2;
         final Channel channel =
                 new DefaultChannel<>(
-                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                () ->
-                                        MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                partitionCount,
-                                                Collections.singleton(groupId),
-                                                1024 * 3,
-                                                102400L,
-                                                CompressionType.SNAPPY),
+                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
+                            @Override
+                            public String topic() {
+                                return "t1";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return Collections.singleton(groupId);
+                            }
+
+                            @Override
+                            public AbstractChannel<?>[] create() {
+                                return MemoryChannelFactory.createChannels(
+                                        "t1",
+                                        partitionCount,
+                                        Collections.singleton(groupId),
+                                        1024 * 3,
+                                        102400L,
+                                        CompressionType.SNAPPY);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
 

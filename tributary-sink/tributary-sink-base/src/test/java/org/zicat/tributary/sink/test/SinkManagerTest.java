@@ -71,15 +71,28 @@ public class SinkManagerTest {
         }
         final Channel channel =
                 new DefaultChannel<>(
-                        (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                                () ->
-                                        MemoryChannelFactory.createChannels(
-                                                "voqa",
-                                                partitionCount,
-                                                consumerGroup,
-                                                1024 * 3,
-                                                1024 * 4L,
-                                                CompressionType.SNAPPY),
+                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
+                            @Override
+                            public String topic() {
+                                return "voqa";
+                            }
+
+                            @Override
+                            public Set<String> groups() {
+                                return consumerGroup;
+                            }
+
+                            @Override
+                            public AbstractChannel<?>[] create() {
+                                return MemoryChannelFactory.createChannels(
+                                        "voqa",
+                                        partitionCount,
+                                        consumerGroup,
+                                        1024 * 3,
+                                        1024 * 4L,
+                                        CompressionType.SNAPPY);
+                            }
+                        },
                         0,
                         TimeUnit.SECONDS);
         final SinkGroupConfigBuilder builder =
