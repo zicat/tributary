@@ -26,13 +26,13 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.IOUtils;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG;
@@ -47,8 +47,6 @@ public class KafkaChannel implements Channel {
     private final String topic;
     private final int partitionCount;
     private final Set<String> groups;
-    private final AtomicLong writeBytes = new AtomicLong();
-    private final AtomicLong readBytes = new AtomicLong();
 
     private final KafkaProducer<byte[], byte[]> producer;
     private final Map<TopicPartition, PartitionKafkaConsumer> partitionConsumerManager;
@@ -69,7 +67,6 @@ public class KafkaChannel implements Channel {
         final ProducerRecord<byte[], byte[]> producerRecord =
                 new ProducerRecord<>(topic, partition, null, copyRecord(record, offset, length));
         producer.send(producerRecord);
-        writeBytes.addAndGet(length);
     }
 
     /**
@@ -94,9 +91,7 @@ public class KafkaChannel implements Channel {
     public RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit) {
         final TopicPartition topicPartition = new TopicPartition(topic, partition);
         final PartitionKafkaConsumer consumer = getConsumer(topicPartition);
-        final RecordsResultSet recordsResultSet = consumer.poll(groupOffset, time, unit);
-        readBytes.addAndGet(recordsResultSet.readBytes());
-        return recordsResultSet;
+        return consumer.poll(groupOffset, time, unit);
     }
 
     /**
@@ -137,31 +132,10 @@ public class KafkaChannel implements Channel {
     }
 
     @Override
-    public int activeSegment() {
-        // use metrics monitor, kafka channel don't need
-        return 0;
-    }
-
-    @Override
     public long lag(int partition, GroupOffset groupOffset) {
         final TopicPartition topicPartition = new TopicPartition(topic, partition);
         final Long endOffset = getConsumer(topicPartition).endOffsets(groupOffset.groupId());
         return endOffset == null ? 0L : endOffset - groupOffset.offset();
-    }
-
-    @Override
-    public long writeBytes() {
-        return writeBytes.get();
-    }
-
-    @Override
-    public long readBytes() {
-        return readBytes.get();
-    }
-
-    @Override
-    public long bufferUsage() {
-        return 0L;
     }
 
     @Override
@@ -212,5 +186,10 @@ public class KafkaChannel implements Channel {
             consumerMap.put(topicPartition, consumer);
         }
         return Collections.unmodifiableMap(consumerMap);
+    }
+
+    @Override
+    public Map<String, GaugeFamily> gaugeFamily() {
+        return Collections.emptyMap();
     }
 }

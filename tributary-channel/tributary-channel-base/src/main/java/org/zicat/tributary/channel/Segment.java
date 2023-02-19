@@ -411,6 +411,15 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     /**
+     * get write bytes of a segment, not include head.
+     *
+     * @return write bytes.
+     */
+    public long writeBytes() {
+        return position.get();
+    }
+
+    /**
      * blockSize.
      *
      * @return int size

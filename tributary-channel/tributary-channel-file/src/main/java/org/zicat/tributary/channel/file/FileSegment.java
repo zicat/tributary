@@ -261,4 +261,9 @@ public class FileSegment extends Segment {
                     channel);
         }
     }
+
+    @Override
+    public long writeBytes() {
+        return position.get() - FILE_SEGMENT_HEAD_SIZE;
+    }
 }

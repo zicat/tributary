@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>All methods in Channel are @ThreadSafe.
  */
-public interface Channel extends Closeable, ChannelMeta, GroupManager {
+public interface Channel extends Closeable, ChannelMetric, GroupManager {
 
     /**
      * append record to channel.
@@ -104,4 +104,27 @@ public interface Channel extends Closeable, ChannelMeta, GroupManager {
      * @return GroupOffset
      */
     GroupOffset committedGroupOffset(String groupId, int partition);
+
+    /**
+     * estimate the lag between group offset and write position in one partition.
+     *
+     * @param partition partition
+     * @param groupOffset groupOffset
+     * @return long lag return 0 if group offset over latest offset
+     */
+    long lag(int partition, GroupOffset groupOffset);
+
+    /**
+     * get topic.
+     *
+     * @return topic
+     */
+    String topic();
+
+    /**
+     * get partition count.
+     *
+     * @return int
+     */
+    int partition();
 }

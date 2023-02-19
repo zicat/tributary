@@ -20,9 +20,12 @@ package org.zicat.tributary.channel;
 
 import org.zicat.tributary.common.Factory;
 import org.zicat.tributary.common.Functions;
+import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,6 +58,22 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
             flushSegmentThread = new Thread(this::periodForceSegment, "segment_flush_thread");
             flushSegmentThread.start();
         }
+    }
+
+    @Override
+    public Map<String, GaugeFamily> gaugeFamily() {
+        final Map<String, GaugeFamily> result = new HashMap<>();
+        for (Channel c : channels) {
+            for (Map.Entry<String, GaugeFamily> entry : c.gaugeFamily().entrySet()) {
+                final GaugeFamily cache = result.get(entry.getKey());
+                if (cache == null) {
+                    result.put(entry.getKey(), entry.getValue());
+                } else {
+                    result.put(entry.getKey(), cache.merge(entry.getValue()));
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -116,15 +135,6 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public int activeSegment() {
-        int segments = 0;
-        for (C channel : channels) {
-            segments += channel.activeSegment();
-        }
-        return segments;
-    }
-
-    @Override
     public long lag(int partition, GroupOffset groupOffset) {
         final C channel = getPartitionChannel(partition);
         return channel.lag(groupOffset);
@@ -141,33 +151,6 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
                 }
             }
         }
-    }
-
-    @Override
-    public long writeBytes() {
-        int writeBytes = 0;
-        for (C channel : channels) {
-            writeBytes += channel.writeBytes();
-        }
-        return writeBytes;
-    }
-
-    @Override
-    public long readBytes() {
-        int readBytes = 0;
-        for (C channel : channels) {
-            readBytes += channel.readBytes();
-        }
-        return readBytes;
-    }
-
-    @Override
-    public long bufferUsage() {
-        int pageCache = 0;
-        for (C channel : channels) {
-            pageCache += channel.bufferUsage();
-        }
-        return pageCache;
     }
 
     @Override

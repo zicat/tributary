@@ -21,15 +21,13 @@ package org.zicat.tributary.channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.group.SingleGroupManager;
+import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,6 +41,14 @@ import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupO
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractChannel.class);
+    public static final String METRICS_NAME_WRITE_BYTES = "channel_write_bytes";
+    private static final String METRICS_DESCRIPTION_WRITE_BYTES = "channel write bytes";
+    public static final String METRICS_NAME_READ_BYTES = "channel_read_bytes";
+    private static final String METRICS_DESCRIPTION_READ_BYTES = "channel read bytes";
+    public static final String METRICS_NAME_BUFFER_USAGE = "channel_buffer_usage";
+    private static final String METRICS_DESCRIPTION_BUFFER_USAGE = "channel buffer usage";
+    public static final String METRICS_NAME_ACTIVE_SEGMENT = "channel_active_segment";
+    private static final String METRICS_DESCRIPTION_ACTIVE_SEGMENT = "channel active segment";
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition newSegmentCondition = lock.newCondition();
@@ -148,18 +154,31 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public long writeBytes() {
-        return writeBytes.get() + latestSegment.position();
-    }
-
-    @Override
-    public long readBytes() {
-        return readBytes.get();
-    }
-
-    @Override
-    public long bufferUsage() {
-        return latestSegment.cacheUsed();
+    public Map<String, GaugeFamily> gaugeFamily() {
+        final Map<String, GaugeFamily> result = new HashMap<>();
+        result.put(
+                METRICS_NAME_WRITE_BYTES,
+                new GaugeFamily(
+                        METRICS_NAME_WRITE_BYTES,
+                        METRICS_DESCRIPTION_WRITE_BYTES,
+                        writeBytes.get() + latestSegment.writeBytes()));
+        result.put(
+                METRICS_NAME_READ_BYTES,
+                new GaugeFamily(
+                        METRICS_NAME_READ_BYTES, METRICS_DESCRIPTION_READ_BYTES, readBytes.get()));
+        result.put(
+                METRICS_NAME_BUFFER_USAGE,
+                new GaugeFamily(
+                        METRICS_NAME_BUFFER_USAGE,
+                        METRICS_DESCRIPTION_BUFFER_USAGE,
+                        latestSegment.cacheUsed()));
+        result.put(
+                METRICS_NAME_ACTIVE_SEGMENT,
+                new GaugeFamily(
+                        METRICS_NAME_ACTIVE_SEGMENT,
+                        METRICS_DESCRIPTION_ACTIVE_SEGMENT,
+                        cache.size()));
+        return result;
     }
 
     @Override
@@ -307,7 +326,6 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         return groupManager.groups();
     }
 
-    @Override
     public int activeSegment() {
         return cache.size();
     }

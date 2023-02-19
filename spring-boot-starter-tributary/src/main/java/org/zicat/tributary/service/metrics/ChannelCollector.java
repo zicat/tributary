@@ -20,11 +20,14 @@ package org.zicat.tributary.service.metrics;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.GaugeMetricFamily;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.service.component.DynamicChannel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /** ChannelCollector metric collector. */
 public class ChannelCollector extends Collector {
@@ -41,79 +44,17 @@ public class ChannelCollector extends Collector {
     @Override
     public List<MetricFamilySamples> collect() {
         final List<MetricFamilySamples> metricSamples = new ArrayList<>();
-        metricSamples.add(collectionActiveSegment());
-        metricSamples.add(collectionPageCacheUsage());
-        metricSamples.add(collectionReadBytes());
-        metricSamples.add(collectionWriteBytes());
+        for (Channel channel : dynamicChannel.getChannels().values()) {
+            final Map<String, GaugeFamily> channelMetrics = channel.gaugeFamily();
+            final String topic = channel.topic();
+            for (GaugeFamily gaugeFamily : channelMetrics.values()) {
+                final GaugeMetricFamily labeledGauge =
+                        new GaugeMetricFamily(
+                                gaugeFamily.getName(), gaugeFamily.getDescription(), labels);
+                labeledGauge.addMetric(Arrays.asList(topic, metricsIp), gaugeFamily.getValue());
+                metricSamples.add(labeledGauge);
+            }
+        }
         return metricSamples;
-    }
-
-    /**
-     * collection write bytes.
-     *
-     * @return GaugeMetricFamily
-     */
-    private MetricFamilySamples collectionWriteBytes() {
-        final GaugeMetricFamily labeledGauge =
-                new GaugeMetricFamily("channel_write_bytes", "channel write bytes", labels);
-        dynamicChannel
-                .getChannels()
-                .forEach(
-                        (topic, channel) ->
-                                labeledGauge.addMetric(
-                                        Arrays.asList(topic, metricsIp), channel.writeBytes()));
-        return labeledGauge;
-    }
-
-    /**
-     * collection write bytes.
-     *
-     * @return GaugeMetricFamily
-     */
-    private MetricFamilySamples collectionReadBytes() {
-        final GaugeMetricFamily labeledGauge =
-                new GaugeMetricFamily("channel_read_bytes", "channel read bytes", labels);
-        dynamicChannel
-                .getChannels()
-                .forEach(
-                        (topic, channel) ->
-                                labeledGauge.addMetric(
-                                        Arrays.asList(topic, metricsIp), channel.readBytes()));
-        return labeledGauge;
-    }
-
-    /**
-     * collection page cache usage.
-     *
-     * @return GaugeMetricFamily
-     */
-    private MetricFamilySamples collectionPageCacheUsage() {
-        final GaugeMetricFamily labeledGauge =
-                new GaugeMetricFamily("channel_buffer_usage", "channel buffer usage", labels);
-        dynamicChannel
-                .getChannels()
-                .forEach(
-                        (topic, channel) ->
-                                labeledGauge.addMetric(
-                                        Arrays.asList(topic, metricsIp), channel.bufferUsage()));
-        return labeledGauge;
-    }
-
-    /**
-     * collection active segment.
-     *
-     * @return GaugeMetricFamily
-     */
-    private MetricFamilySamples collectionActiveSegment() {
-        final GaugeMetricFamily labeledGauge =
-                new GaugeMetricFamily(
-                        "channel_active_segment", "channel total active segment", labels);
-        dynamicChannel
-                .getChannels()
-                .forEach(
-                        (topic, channel) ->
-                                labeledGauge.addMetric(
-                                        Arrays.asList(topic, metricsIp), channel.activeSegment()));
-        return labeledGauge;
     }
 }

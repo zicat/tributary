@@ -19,7 +19,6 @@
 package org.zicat.tributary.channel.file;
 
 import org.zicat.tributary.channel.AbstractChannel;
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.DefaultChannel;
 import org.zicat.tributary.channel.group.FileGroupManager;
@@ -144,29 +143,27 @@ public class FileChannelBuilder {
      *
      * @return PartitionFileChannel
      */
-    public Channel build() throws IOException {
+    public DefaultChannel<FileChannel> build() throws IOException {
 
         return new DefaultChannel<>(
-                (DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>)
-                        () -> {
-                            if (dirs == null || dirs.isEmpty()) {
-                                throw new IllegalStateException("dir list is null or empty");
-                            }
-                            if (consumerGroups == null || consumerGroups.isEmpty()) {
-                                throw new IllegalStateException(
-                                        "file channel must has at least one consumer group");
-                            }
-                            final FileChannel[] fileChannels = new FileChannel[dirs.size()];
-                            for (int i = 0; i < dirs.size(); i++) {
-                                final File dir = dirs.get(i).getCanonicalFile();
-                                if (!dir.exists() && !IOUtils.makeDir(dir)) {
-                                    throw new IllegalStateException(
-                                            "try to create fail " + dir.getPath());
-                                }
-                                fileChannels[i] = createFileChannel(dir);
-                            }
-                            return fileChannels;
-                        },
+                () -> {
+                    if (dirs == null || dirs.isEmpty()) {
+                        throw new IllegalStateException("dir list is null or empty");
+                    }
+                    if (consumerGroups == null || consumerGroups.isEmpty()) {
+                        throw new IllegalStateException(
+                                "file channel must has at least one consumer group");
+                    }
+                    final FileChannel[] fileChannels = new FileChannel[dirs.size()];
+                    for (int i = 0; i < dirs.size(); i++) {
+                        final File dir = dirs.get(i).getCanonicalFile();
+                        if (!dir.exists() && !IOUtils.makeDir(dir)) {
+                            throw new IllegalStateException("try to create fail " + dir.getPath());
+                        }
+                        fileChannels[i] = createFileChannel(dir);
+                    }
+                    return fileChannels;
+                },
                 flushPeriod,
                 flushTimeUnit);
     }
