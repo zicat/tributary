@@ -20,16 +20,12 @@ package org.zicat.tributary.channel.group;
 
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.GroupOffset;
-import org.zicat.tributary.common.Threads;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -37,25 +33,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>Store commit offset in memory cache, Override flush function to storage.
  */
-public abstract class MemoryGroupManager implements SingleGroupManager {
+public class MemoryGroupManager implements SingleGroupManager {
 
     private final Map<String, GroupOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final long periodSecond;
-    protected ScheduledExecutorService schedule;
 
-    public MemoryGroupManager(Set<GroupOffset> groupOffsets, long periodSecond) {
+    public MemoryGroupManager(Set<GroupOffset> groupOffsets) {
         for (GroupOffset groupOffset : groupOffsets) {
             this.cache.put(groupOffset.groupId(), groupOffset);
             this.groups.add(groupOffset.groupId());
-        }
-        this.periodSecond = periodSecond;
-        if (periodSecond > 0) {
-            this.schedule =
-                    Executors.newSingleThreadScheduledExecutor(
-                            Threads.createThreadFactoryByName("group_persist", true));
-            schedule();
         }
     }
 
@@ -69,21 +56,13 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
         return new GroupOffset(-1, -1, groupId);
     }
 
-    /** schedule. */
-    protected void schedule() {
-        schedule.scheduleWithFixedDelay(
-                this::persist, periodSecond, periodSecond, TimeUnit.SECONDS);
-    }
-
-    /** persist. */
-    public abstract void persist();
-
     /**
      * foreach group.
      *
      * @param action callback function
      */
     protected void foreachGroup(Consumer<String, GroupOffset> action) throws IOException {
+        isOpen();
         for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
             action.accept(entry.getKey(), entry.getValue());
         }
@@ -115,9 +94,7 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
         return cache.get(groupId);
     }
 
-    @Override
     public GroupOffset getMinGroupOffset() {
-        isOpen();
         GroupOffset min = null;
         for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
             final GroupOffset groupOffset = entry.getValue();
@@ -136,14 +113,7 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                if (schedule != null) {
-                    schedule.shutdownNow();
-                }
-                persist();
-            } finally {
-                cache.clear();
-            }
+            cache.clear();
         }
     }
 
@@ -171,12 +141,8 @@ public abstract class MemoryGroupManager implements SingleGroupManager {
      * @param groupOffsets groupOffsets
      * @return MemoryOnePartitionGroupManager
      */
-    public static AbstractChannel.SingleGroupManagerFactory createUnPersistGroupManagerFactory(
+    public static AbstractChannel.MemoryGroupManagerFactory createMemoryGroupManagerFactory(
             Set<GroupOffset> groupOffsets) {
-        return () ->
-                new MemoryGroupManager(groupOffsets, -1) {
-                    @Override
-                    public void persist() {}
-                };
+        return () -> new MemoryGroupManager(groupOffsets);
     }
 }

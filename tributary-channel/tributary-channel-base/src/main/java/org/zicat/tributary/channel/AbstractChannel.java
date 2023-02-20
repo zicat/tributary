@@ -20,7 +20,7 @@ package org.zicat.tributary.channel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.group.SingleGroupManager;
+import org.zicat.tributary.channel.group.MemoryGroupManager;
 import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
@@ -56,14 +56,14 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicLong writeBytes = new AtomicLong();
     private final AtomicLong readBytes = new AtomicLong();
-    private final SingleGroupManagerFactory groupManagerFactory;
-    private final SingleGroupManager groupManager;
+    private final MemoryGroupManagerFactory groupManagerFactory;
+    private final MemoryGroupManager groupManager;
     private final String topic;
 
     protected long minCommitSegmentId;
     protected volatile S latestSegment;
 
-    protected AbstractChannel(String topic, SingleGroupManagerFactory groupManagerFactory) {
+    protected AbstractChannel(String topic, MemoryGroupManagerFactory groupManagerFactory) {
         this.topic = topic;
         this.groupManagerFactory = groupManagerFactory;
         this.groupManager = groupManagerFactory.create();
@@ -80,8 +80,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         addSegment(lastSegment);
     }
 
-    /** SingleGroupManagerFactory. */
-    public interface SingleGroupManagerFactory extends SafeFactory<SingleGroupManager> {}
+    /** MemoryGroupManagerFactory. */
+    public interface MemoryGroupManagerFactory extends SafeFactory<MemoryGroupManager> {}
 
     /**
      * create segment by id.
@@ -209,11 +209,6 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             minCommitSegmentId = min.segmentId();
             cleanUp();
         }
-    }
-
-    @Override
-    public GroupOffset getMinGroupOffset() {
-        return groupManager.getMinGroupOffset();
     }
 
     /**

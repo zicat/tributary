@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.test;
+package org.zicat.tributary.channel.test.group;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,30 +25,9 @@ import org.zicat.tributary.channel.group.MemoryGroupManager;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** OnePartitionMemoryGroupManagerTest. */
 public class MemoryGroupManagerTest {
-
-    @Test
-    public void testPersist() throws InterruptedException {
-        final Set<GroupOffset> groupOffsets = new HashSet<>();
-        groupOffsets.add(new GroupOffset(2, 100, "g1"));
-        groupOffsets.add(new GroupOffset(3, 25, "g2"));
-        final MemoryGroupManagerMock manager =
-                new MemoryGroupManagerMock(groupOffsets) {
-                    @Override
-                    public void schedule() {
-                        schedule.scheduleWithFixedDelay(
-                                this::persist, 10, 1000, TimeUnit.MILLISECONDS);
-                    }
-                };
-        Thread.sleep(15);
-        Assert.assertEquals(1, manager.persistCount.get());
-        manager.close();
-        Assert.assertEquals(2, manager.persistCount.get());
-    }
 
     @Test
     public void testCommit() {
@@ -56,7 +35,7 @@ public class MemoryGroupManagerTest {
         final Set<GroupOffset> groupOffsets = new HashSet<>();
         groupOffsets.add(new GroupOffset(2, 100, "g1"));
         groupOffsets.add(new GroupOffset(3, 25, "g2"));
-        final MemoryGroupManager manager = new MemoryGroupManagerMock(groupOffsets);
+        final MemoryGroupManager manager = new MemoryGroupManager(groupOffsets);
         manager.commit(new GroupOffset(1, 101, "g1"));
         manager.commit(new GroupOffset(3, 75, "g2"));
         try {
@@ -80,20 +59,5 @@ public class MemoryGroupManagerTest {
 
         Assert.assertEquals(2, manager.groups().size());
         manager.close();
-    }
-
-    /** MemoryOnePartitionGroupManagerMock. */
-    private static class MemoryGroupManagerMock extends MemoryGroupManager {
-
-        private final AtomicInteger persistCount = new AtomicInteger(0);
-
-        public MemoryGroupManagerMock(Set<GroupOffset> groupOffsets) {
-            super(groupOffsets, 30);
-        }
-
-        @Override
-        public void persist() {
-            persistCount.incrementAndGet();
-        }
     }
 }

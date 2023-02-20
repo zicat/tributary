@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.createUnPersistGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
@@ -58,7 +58,7 @@ public class MemoryChannelTest {
         final MemoryChannel channel =
                 createMemoryChannel(
                         "t1",
-                        createUnPersistGroupManagerFactory(groupOffsets),
+                        createMemoryGroupManagerFactory(groupOffsets),
                         1024 * 4,
                         102400L,
                         CompressionType.NONE);

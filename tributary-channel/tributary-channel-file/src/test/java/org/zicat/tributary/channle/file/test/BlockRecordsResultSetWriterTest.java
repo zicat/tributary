@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.file.FileSegment;
+import org.zicat.tributary.channel.file.FileSegmentUtil;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
 
@@ -34,12 +35,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
-import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
-import static org.zicat.tributary.channel.file.FileSegmentUtil.legalFileOffset;
 import static org.zicat.tributary.common.VIntUtil.putVInt;
 
 /** BufferReaderWriterTest. */
-public class BufferRecordsResultSetWriterTest {
+public class BlockRecordsResultSetWriterTest {
 
     FileChannel fileChannel;
     File dir = FileUtils.createTmpDir("buffer_records_result_set_writer_test");
@@ -51,7 +50,7 @@ public class BufferRecordsResultSetWriterTest {
         IOUtils.makeDir(dir);
         RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
         fileChannel = randomAccessFile.getChannel();
-        ByteBuffer segmentHeader = ByteBuffer.allocate(FILE_SEGMENT_HEAD_SIZE);
+        ByteBuffer segmentHeader = ByteBuffer.allocate(FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE);
         IOUtils.writeFull(fileChannel, segmentHeader);
     }
 
@@ -115,7 +114,7 @@ public class BufferRecordsResultSetWriterTest {
         // test buffer reader
         BlockGroupOffset bufferRecordsResultSet =
                 BlockGroupOffset.cast(new GroupOffset(0, 0, "g1"));
-        long offset = legalFileOffset(bufferRecordsResultSet.offset());
+        long offset = FileSegmentUtil.legalFileOffset(bufferRecordsResultSet.offset());
         Assert.assertTrue(offset >= 2);
         Assert.assertFalse(offset >= 10);
 
@@ -125,7 +124,7 @@ public class BufferRecordsResultSetWriterTest {
                         new BlockWriter(1024),
                         CompressionType.SNAPPY,
                         10240,
-                        FILE_SEGMENT_HEAD_SIZE,
+                        FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE,
                         file,
                         fileChannel);
         RecordsResultSet resultSet =

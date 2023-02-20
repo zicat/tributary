@@ -191,7 +191,7 @@ public class FileChannelBuilder {
      * @param groupPersistPeriodSecond groupPersistPeriodSecond
      * @return SingleGroupManager
      */
-    private static AbstractChannel.SingleGroupManagerFactory groupManagerFactory(
+    private static AbstractChannel.MemoryGroupManagerFactory groupManagerFactory(
             File dir, String topic, Set<String> consumerGroups, long groupPersistPeriodSecond) {
         return () ->
                 new FileGroupManager(

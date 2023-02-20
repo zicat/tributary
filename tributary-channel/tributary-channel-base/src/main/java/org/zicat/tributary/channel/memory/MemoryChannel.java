@@ -31,7 +31,7 @@ public class MemoryChannel extends AbstractChannel<MemorySegment> {
 
     protected MemoryChannel(
             String topic,
-            SingleGroupManagerFactory groupManagerFactory,
+            MemoryGroupManagerFactory groupManagerFactory,
             int blockSize,
             Long segmentSize,
             CompressionType compressionType) {

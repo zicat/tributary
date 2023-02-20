@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.createUnPersistGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 
 /** MemoryChannelFactory. */
@@ -100,8 +100,8 @@ public class MemoryChannelFactory implements ChannelFactory {
         for (String group : groups) {
             groupOffsets.add(defaultGroupOffset(group));
         }
-        final AbstractChannel.SingleGroupManagerFactory factory =
-                createUnPersistGroupManagerFactory(groupOffsets);
+        final AbstractChannel.MemoryGroupManagerFactory factory =
+                createMemoryGroupManagerFactory(groupOffsets);
         for (int i = 0; i < partitionCount; i++) {
             channels[i] =
                     createMemoryChannel(topic, factory, blockSize, segmentSize, compressionType);
@@ -121,7 +121,7 @@ public class MemoryChannelFactory implements ChannelFactory {
      */
     public static MemoryChannel createMemoryChannel(
             String topic,
-            AbstractChannel.SingleGroupManagerFactory factory,
+            AbstractChannel.MemoryGroupManagerFactory factory,
             int blockSize,
             long segmentSize,
             CompressionType compressionType) {

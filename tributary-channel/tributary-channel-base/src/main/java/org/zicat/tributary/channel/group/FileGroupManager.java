@@ -21,10 +21,7 @@ package org.zicat.tributary.channel.group;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.GroupOffset;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.*;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -32,6 +29,10 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * FileGroupManager.
@@ -56,7 +57,9 @@ public class FileGroupManager extends MemoryGroupManager {
     public static final String FILE_SUFFIX = "_group_id.index";
     public static final String TMP_SUFFIX = ".tmp";
 
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final File groupIndexFile;
+    protected ScheduledExecutorService schedule;
     private ByteBuffer byteBuffer;
 
     public FileGroupManager(File groupIndexFile, Set<String> groupIds) {
@@ -64,11 +67,19 @@ public class FileGroupManager extends MemoryGroupManager {
     }
 
     public FileGroupManager(File groupIndexFile, Set<String> groupIds, long periodSecond) {
-        super(getGroupOffsets(groupIndexFile, groupIds), periodSecond);
+        super(getGroupOffsets(groupIndexFile, groupIds));
+        if (periodSecond < 0) {
+            throw new IllegalArgumentException("period flush must over 0");
+        }
         this.groupIndexFile = groupIndexFile;
+        this.schedule =
+                Executors.newSingleThreadScheduledExecutor(
+                        Threads.createThreadFactoryByName("group_persist", true));
+        schedule.scheduleWithFixedDelay(
+                this::persist, periodSecond, periodSecond, TimeUnit.SECONDS);
     }
 
-    @Override
+    /** persist group offsets. */
     public synchronized void persist() {
         final File tmpFile = createTmpGroupIndexFile();
         if (tmpFile == null) {
@@ -252,5 +263,19 @@ public class FileGroupManager extends MemoryGroupManager {
                         && f.length() > 0
                         && f.length() >= groupIndexFile.length()
                         && f.lastModified() > groupIndexFile.lastModified();
+    }
+
+    @Override
+    public void close() {
+        if (closed.compareAndSet(false, true)) {
+            try {
+                if (schedule != null) {
+                    schedule.shutdown();
+                }
+                persist();
+            } finally {
+                super.close();
+            }
+        }
     }
 }

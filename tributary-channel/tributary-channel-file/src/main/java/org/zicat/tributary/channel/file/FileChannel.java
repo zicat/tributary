@@ -59,7 +59,7 @@ public class FileChannel extends AbstractChannel<FileSegment> {
 
     protected FileChannel(
             String topic,
-            SingleGroupManagerFactory factory,
+            MemoryGroupManagerFactory factory,
             int blockSize,
             Long segmentSize,
             CompressionType compressionType,

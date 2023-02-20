@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channle.file.test;
+package org.zicat.tributary.channel.test.group;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -37,7 +37,7 @@ import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
 /** OnePartitionFileGroupManagerTest. */
-public class OnePartitionFileGroupManagerTest {
+public class FileGroupManagerTest {
 
     private static final File DIR = FileUtils.createTmpDir("file_group_manager_test");
 

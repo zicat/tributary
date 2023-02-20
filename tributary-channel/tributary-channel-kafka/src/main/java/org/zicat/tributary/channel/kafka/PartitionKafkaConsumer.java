@@ -204,9 +204,4 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
                                 topicPartition,
                                 new OffsetAndMetadata(getKafkaOffset(groupOffset))));
     }
-
-    @Override
-    public GroupOffset getMinGroupOffset() {
-        throw new UnsupportedOperationException("not support get min group offset");
-    }
 }

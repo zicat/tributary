@@ -50,11 +50,4 @@ public interface SingleGroupManager extends GroupManager {
     default void commit(int partition, GroupOffset groupOffset) throws IOException {
         commit(groupOffset);
     }
-
-    /**
-     * get min group offset without partition.
-     *
-     * @return GroupOffset
-     */
-    GroupOffset getMinGroupOffset();
 }
