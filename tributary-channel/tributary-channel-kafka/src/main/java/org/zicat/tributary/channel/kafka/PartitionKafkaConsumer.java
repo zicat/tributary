@@ -20,24 +20,21 @@ package org.zicat.tributary.channel.kafka;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.group.SingleGroupManager;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.Closeable;
-import java.time.Duration;
-import java.util.*;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 
 /** PartitionKafkaConsumer. */
 public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
@@ -48,7 +45,7 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
     private final TopicPartition topicPartition;
     private final Set<String> groups;
     private final Properties properties;
-    private final Map<String, KafkaConsumer<byte[], byte[]>> consumerGroupCache;
+    private final Map<String, GroupPartitionKafkaConsumer> consumerGroupCache;
 
     public PartitionKafkaConsumer(
             TopicPartition topicPartition, Set<String> groups, Properties properties) {
@@ -66,33 +63,12 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
      * @param topicPartition topicPartition
      * @return kafka consumer map
      */
-    private static Map<String, KafkaConsumer<byte[], byte[]>> createConsumerGroupCache(
+    private static Map<String, GroupPartitionKafkaConsumer> createConsumerGroupCache(
             Properties properties, Set<String> groups, TopicPartition topicPartition) {
-        final Map<String, KafkaConsumer<byte[], byte[]>> result = new ConcurrentHashMap<>();
-        final Collection<TopicPartition> partitions = Collections.singletonList(topicPartition);
+        final Map<String, GroupPartitionKafkaConsumer> result = new ConcurrentHashMap<>();
         for (String group : groups) {
-            final Properties newProperties = copyProperties(group, properties);
-            final KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(newProperties);
-            consumer.assign(partitions);
-            result.put(group, consumer);
+            result.put(group, new GroupPartitionKafkaConsumer(group, topicPartition, properties));
         }
-        return result;
-    }
-
-    /**
-     * copy properties.
-     *
-     * @param groupId groupId
-     * @param properties properties
-     * @return Properties
-     */
-    private static Properties copyProperties(String groupId, Properties properties) {
-        final Properties result = new Properties();
-        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-        result.put(GROUP_ID_CONFIG, groupId);
-        result.put(ENABLE_AUTO_COMMIT_CONFIG, false);
         return result;
     }
 
@@ -105,11 +81,7 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
      * @return KafkaRecordsResultSet
      */
     public KafkaRecordsResultSet poll(GroupOffset groupOffset, long time, TimeUnit unit) {
-        final KafkaConsumer<byte[], byte[]> consumer = getKafkaConsumer(groupOffset.groupId());
-        consumer.seek(topicPartition, getKafkaOffset(groupOffset));
-        final ConsumerRecords<byte[], byte[]> consumerRecords =
-                consumer.poll(Duration.ofMillis(unit.toMillis(time)));
-        return new KafkaRecordsResultSet(consumerRecords, groupOffset);
+        return groupPartitionKafkaConsumer(groupOffset.groupId()).poll(groupOffset, time, unit);
     }
 
     /**
@@ -118,8 +90,8 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
      * @param groupId groupId
      * @return kafka consumer
      */
-    private KafkaConsumer<byte[], byte[]> getKafkaConsumer(String groupId) {
-        final KafkaConsumer<byte[], byte[]> consumer = consumerGroupCache.get(groupId);
+    private GroupPartitionKafkaConsumer groupPartitionKafkaConsumer(String groupId) {
+        final GroupPartitionKafkaConsumer consumer = consumerGroupCache.get(groupId);
         if (consumer == null) {
             throw new IllegalStateException(
                     "find kafka consumer by group id fai, group id = " + groupId);
@@ -133,9 +105,7 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
      * @return offset
      */
     public Long endOffsets(String groupId) {
-        final Map<TopicPartition, Long> result =
-                getKafkaConsumer(groupId).endOffsets(Collections.singletonList(topicPartition));
-        return result == null ? null : result.get(topicPartition);
+        return groupPartitionKafkaConsumer(groupId).endOffsets();
     }
 
     /**
@@ -144,7 +114,7 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
      * @param groupOffset groupOffset
      * @return long offset
      */
-    public static long getKafkaOffset(GroupOffset groupOffset) {
+    public static long getKafkaOffset(Offset groupOffset) {
         return groupOffset.segmentId() * SEGMENT_SIZE + groupOffset.offset();
     }
 
@@ -198,10 +168,6 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
 
     @Override
     public void commit(GroupOffset groupOffset) {
-        getKafkaConsumer(groupOffset.groupId())
-                .commitSync(
-                        Collections.singletonMap(
-                                topicPartition,
-                                new OffsetAndMetadata(getKafkaOffset(groupOffset))));
+        groupPartitionKafkaConsumer(groupOffset.groupId()).commit(groupOffset);
     }
 }
