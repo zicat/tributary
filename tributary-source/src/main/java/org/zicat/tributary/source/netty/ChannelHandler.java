@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 
 import java.net.InetSocketAddress;
-import java.util.Random;
 
 /** ChannelHandler. */
 public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
@@ -40,12 +39,14 @@ public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
             "failed response pong to host:{}, port:{}, cause:{}";
     private static final int CHANNEL_ERROR_CODE = -1;
 
-    private final Random random = new Random(System.currentTimeMillis());
     private final Channel channel;
+    private final int partitionCount;
+    private static final PartitionSelect partitionSelect = new PartitionSelect.RoundRobin();
     private final boolean ack;
 
     public ChannelHandler(Channel channel, boolean ack) {
         this.channel = channel;
+        this.partitionCount = channel.partition();
         this.ack = ack;
     }
 
@@ -64,8 +65,8 @@ public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) {
 
-        final int partition = random.nextInt(channel.partition());
         try {
+            final int partition = getPartitionSelect().partition(packet, partitionCount);
             channel.append(partition, packet);
         } catch (Throwable e) {
             LOG.error("append data error", e);
@@ -73,6 +74,15 @@ public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
             return;
         }
         response(packet.length, ctx);
+    }
+
+    /**
+     * get partition select.
+     *
+     * @return PartitionSelect
+     */
+    protected PartitionSelect getPartitionSelect() {
+        return partitionSelect;
     }
 
     /**
