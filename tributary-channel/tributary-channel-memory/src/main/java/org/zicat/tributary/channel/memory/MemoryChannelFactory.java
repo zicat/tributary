@@ -24,7 +24,6 @@ import org.zicat.tributary.common.ReadableConfig;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
@@ -71,8 +70,7 @@ public class MemoryChannelFactory implements ChannelFactory {
                                 compression);
                     }
                 },
-                config.get(OPTION_FLUSH_PERIOD_MILLS),
-                TimeUnit.MILLISECONDS);
+                config.get(OPTION_FLUSH_PERIOD_MILLS));
     }
 
     /**

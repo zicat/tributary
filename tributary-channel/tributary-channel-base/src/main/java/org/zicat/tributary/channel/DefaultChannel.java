@@ -36,29 +36,48 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
     protected final AbstractChannelArrayFactory<C> factory;
     protected final C[] channels;
-    protected final String topic;
     protected final AtomicBoolean closed = new AtomicBoolean(false);
-    protected final Set<String> groups;
     private Thread flushSegmentThread;
-    private long flushPeriodMill;
 
-    public DefaultChannel(
-            AbstractChannelArrayFactory<C> factory, long flushPeriod, TimeUnit flushUnit)
+    public DefaultChannel(AbstractChannelArrayFactory<C> factory, long flushPeriodMills)
             throws IOException {
-
         final C[] channels = factory.create();
         if (channels == null || channels.length == 0) {
             throw new IllegalArgumentException("channels is null or empty");
         }
         this.factory = factory;
-        this.topic = factory.topic();
-        this.groups = Collections.unmodifiableSet(factory.groups());
         this.channels = channels;
-        if (flushPeriod > 0) {
-            flushPeriodMill = flushUnit.toMillis(flushPeriod);
-            flushSegmentThread = new Thread(this::periodForceSegment, "segment_flush_thread");
-            flushSegmentThread.start();
+        if (flushPeriodMills > 0) {
+            flushSegmentThread = startFlushSegmentThread(channels, closed, flushPeriodMills);
         }
+    }
+
+    /**
+     * start flush segment thread.
+     *
+     * @param channels channels
+     * @param closed closed
+     * @param flushPeriodMillis flushPeriodMillis
+     * @param <C> channel
+     * @return Thread
+     */
+    private static <C extends AbstractChannel<?>> Thread startFlushSegmentThread(
+            C[] channels, AtomicBoolean closed, long flushPeriodMillis) {
+        final Runnable task =
+                () ->
+                        Functions.loopCloseableFunction(
+                                t -> {
+                                    boolean success = true;
+                                    for (C channel : channels) {
+                                        success = success && channel.flushQuietly();
+                                    }
+                                    return success;
+                                },
+                                flushPeriodMillis,
+                                closed);
+        final Thread thread = new Thread(task, "segment_flush_thread");
+        thread.start();
+        return thread;
     }
 
     @Override
@@ -79,8 +98,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
     @Override
     public GroupOffset committedGroupOffset(String groupId, int partition) {
-        final C channel = getPartitionChannel(partition);
-        return channel.committedGroupOffset(groupId);
+        return getPartitionChannel(partition).committedGroupOffset(groupId);
     }
 
     @Override
@@ -92,26 +110,23 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
     @Override
     public void append(int partition, byte[] record, int offset, int length) throws IOException {
-        final C channel = getPartitionChannel(partition);
-        channel.append(record, offset, length);
+        getPartitionChannel(partition).append(record, offset, length);
     }
 
     @Override
     public RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
-        final C channel = getPartitionChannel(partition);
-        return channel.poll(groupOffset, time, unit);
+        return getPartitionChannel(partition).poll(groupOffset, time, unit);
     }
 
     @Override
-    public void commit(int partition, GroupOffset groupOffset) throws IOException {
-        final C channel = getPartitionChannel(partition);
-        channel.commit(groupOffset);
+    public void commit(int partition, GroupOffset groupOffset) {
+        getPartitionChannel(partition).commit(groupOffset);
     }
 
     @Override
     public String topic() {
-        return topic;
+        return factory.topic();
     }
 
     @Override
@@ -121,8 +136,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
     @Override
     public long lag(int partition, GroupOffset groupOffset) {
-        final C channel = getPartitionChannel(partition);
-        return channel.lag(groupOffset);
+        return getPartitionChannel(partition).lag(groupOffset);
     }
 
     @Override
@@ -140,7 +154,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
     @Override
     public Set<String> groups() {
-        return groups;
+        return Collections.unmodifiableSet(factory.groups());
     }
 
     /**
@@ -154,21 +168,6 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
                     "partition over, partition is " + partition + ", size is " + channels.length);
         }
         return channels[partition];
-    }
-
-    /** force segment to dish. */
-    protected void periodForceSegment() {
-
-        Functions.loopCloseableFunction(
-                t -> {
-                    boolean success = true;
-                    for (C channel : channels) {
-                        success = success && channel.flushQuietly();
-                    }
-                    return success;
-                },
-                flushPeriodMill,
-                closed);
     }
 
     /**

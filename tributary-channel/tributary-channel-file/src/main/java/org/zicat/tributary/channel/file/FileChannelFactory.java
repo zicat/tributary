@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
@@ -62,7 +61,7 @@ public class FileChannelFactory implements ChannelFactory {
         final FileChannelBuilder builder =
                 FileChannelBuilder.newBuilder()
                         .dirs(createDir(dirs))
-                        .flushPeriod(flushPeriodMills, TimeUnit.MILLISECONDS)
+                        .flushPeriodMills(flushPeriodMills)
                         .groupPersistPeriodSecond(groupPersist);
         builder.blockSize(blockSize)
                 .segmentSize(segmentSize)

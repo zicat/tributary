@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD_SECOND;
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
@@ -43,19 +42,16 @@ public class FileChannelBuilder {
     protected Integer blockSize;
     protected CompressionType compressionType;
     protected Set<String> consumerGroups;
-    protected long flushPeriod = 1;
-    protected TimeUnit flushTimeUnit = TimeUnit.SECONDS;
+    protected long flushPeriodMills = 1000;
 
     /**
      * set flush period .
      *
-     * @param flushPeriod flushPeriod
-     * @param flushTimeUnit flushTimeUnit
+     * @param flushPeriodMills flushPeriodMills
      * @return this
      */
-    public FileChannelBuilder flushPeriod(long flushPeriod, TimeUnit flushTimeUnit) {
-        this.flushPeriod = flushPeriod;
-        this.flushTimeUnit = flushTimeUnit;
+    public FileChannelBuilder flushPeriodMills(long flushPeriodMills) {
+        this.flushPeriodMills = flushPeriodMills;
         return this;
     }
 
@@ -178,8 +174,7 @@ public class FileChannelBuilder {
                         return fileChannels;
                     }
                 },
-                flushPeriod,
-                flushTimeUnit);
+                flushPeriodMills);
     }
 
     /**

@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.sink.handler.MultiThreadPartitionHandler.OPTION_THREADS;
 
@@ -72,8 +71,7 @@ public class MultiThreadPartitionHandlerTest {
                                                 CompressionType.SNAPPY);
                                     }
                                 },
-                                0,
-                                TimeUnit.SECONDS),
+                                0),
                         0,
                         builder.build());
         try {
@@ -112,8 +110,7 @@ public class MultiThreadPartitionHandlerTest {
                                                 CompressionType.SNAPPY);
                                     }
                                 },
-                                0,
-                                TimeUnit.SECONDS),
+                                0),
                         0,
                         builder.build());
         handler.open();
@@ -154,8 +151,7 @@ public class MultiThreadPartitionHandlerTest {
                                                 CompressionType.SNAPPY);
                                     }
                                 },
-                                0,
-                                TimeUnit.SECONDS),
+                                0),
                         0,
                         builder.build());
         handler.open();

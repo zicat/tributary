@@ -69,8 +69,7 @@ public class DefaultNettySourceTest {
                                         CompressionType.SNAPPY);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
         final GroupOffset groupOffset = channel.committedGroupOffset(groupId, 0);
         final int freePort = getFreeTcpPort();
         try (Source source =
@@ -144,8 +143,7 @@ public class DefaultNettySourceTest {
                                         CompressionType.SNAPPY);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
         final GroupOffset groupOffset = channel.committedGroupOffset(groupId, 0);
         final int port = getFreeTcpPort();
         try (Source source =

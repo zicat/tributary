@@ -79,8 +79,7 @@ public class AbstractPartitionHandlerTest {
                                         CompressionType.SNAPPY);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity(MockIdleTriggerFactory.ID);
         final SinkGroupConfig sinkGroupConfig = builder.build();
@@ -156,8 +155,7 @@ public class AbstractPartitionHandlerTest {
                                         CompressionType.NONE);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
         final int partitionId = 0;
         final AbstractPartitionHandler handler =
                 new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
@@ -236,8 +234,7 @@ public class AbstractPartitionHandlerTest {
                                         CompressionType.NONE);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
 
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
@@ -343,8 +340,7 @@ public class AbstractPartitionHandlerTest {
                                         CompressionType.SNAPPY);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
 
         final SinkGroupConfig sinkGroupConfig =
                 SinkGroupConfigBuilder.newBuilder()

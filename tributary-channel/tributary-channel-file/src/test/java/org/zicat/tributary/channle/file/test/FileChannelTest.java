@@ -458,8 +458,7 @@ public class FileChannelTest {
         for (int i = 0; i < partitionCount; i++) {
             dirs.add(new File(dir + i));
         }
-        final FileChannelBuilder builder =
-                FileChannelBuilder.newBuilder().flushPeriod(500, TimeUnit.MILLISECONDS);
+        final FileChannelBuilder builder = FileChannelBuilder.newBuilder().flushPeriodMills(500);
         builder.segmentSize(segmentSize)
                 .blockSize(blockSize)
                 .consumerGroups(consumerGroup)

@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.sink.test.function.AssertCountFunction.OPTION_ASSERT_COUNT;
 
@@ -93,8 +92,7 @@ public class SinkManagerTest {
                                         CompressionType.SNAPPY);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentity("direct")

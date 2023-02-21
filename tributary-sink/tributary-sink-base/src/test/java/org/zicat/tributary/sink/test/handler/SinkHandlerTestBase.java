@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /** SinkHandlerTestBase. */
 public class SinkHandlerTestBase {
@@ -79,8 +78,7 @@ public class SinkHandlerTestBase {
                                         CompressionType.SNAPPY);
                             }
                         },
-                        0,
-                        TimeUnit.SECONDS);
+                        0);
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .handlerIdentity(handlerIdentity)
