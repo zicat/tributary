@@ -115,7 +115,7 @@ public class SegmentTest {
         writerThread.start();
         readThread.start();
         writerThread.join();
-        segment.finish();
+        segment.readonly();
         readThread.join(1000);
         readThread.interrupt();
     }
@@ -131,7 +131,7 @@ public class SegmentTest {
         Assert.assertTrue(segment.append("".getBytes(), 0, 0));
         testAppend(6, segment);
         testAppend(20, segment);
-        segment.finish();
+        segment.readonly();
         Assert.assertFalse(
                 segment.append(createStringByLength(6).getBytes(StandardCharsets.UTF_8), 0, 6));
 

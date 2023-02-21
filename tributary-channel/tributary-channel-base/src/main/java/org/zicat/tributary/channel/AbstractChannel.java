@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.group.MemoryGroupManager;
 import org.zicat.tributary.common.GaugeFamily;
+import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
 
@@ -41,14 +42,15 @@ import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupO
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractChannel.class);
-    public static final String METRICS_NAME_WRITE_BYTES = "channel_write_bytes";
-    private static final String METRICS_DESCRIPTION_WRITE_BYTES = "channel write bytes";
-    public static final String METRICS_NAME_READ_BYTES = "channel_read_bytes";
-    private static final String METRICS_DESCRIPTION_READ_BYTES = "channel read bytes";
-    public static final String METRICS_NAME_BUFFER_USAGE = "channel_buffer_usage";
-    private static final String METRICS_DESCRIPTION_BUFFER_USAGE = "channel buffer usage";
-    public static final String METRICS_NAME_ACTIVE_SEGMENT = "channel_active_segment";
-    private static final String METRICS_DESCRIPTION_ACTIVE_SEGMENT = "channel active segment";
+
+    public static final GaugeKey KEY_WRITE_BYTES =
+            new GaugeKey("channel_write_bytes", "channel write bytes");
+    public static final GaugeKey KEY_READ_BYTES =
+            new GaugeKey("channel_read_bytes", "channel read bytes");
+    public static final GaugeKey KEY_BUFFER_USAGE =
+            new GaugeKey("channel_buffer_usage", "channel buffer usage");
+    public static final GaugeKey KEY_ACTIVE_SEGMENT =
+            new GaugeKey("channel_active_segment", "channel active segment");
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition newSegmentCondition = lock.newCondition();
@@ -107,10 +109,10 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            segment.finish();
+            segment.readonly();
             final S retrySegment = this.latestSegment;
             if (!retrySegment.append(record, offset, length)) {
-                retrySegment.finish();
+                retrySegment.readonly();
                 final long newSegmentId = retrySegment.segmentId() + 1L;
                 final S newSegment = createSegment(newSegmentId);
                 append2Segment(newSegment, record, offset, length);
@@ -154,31 +156,13 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public Map<String, GaugeFamily> gaugeFamily() {
-        final Map<String, GaugeFamily> result = new HashMap<>();
-        result.put(
-                METRICS_NAME_WRITE_BYTES,
-                new GaugeFamily(
-                        METRICS_NAME_WRITE_BYTES,
-                        METRICS_DESCRIPTION_WRITE_BYTES,
-                        writeBytes.get() + latestSegment.writeBytes()));
-        result.put(
-                METRICS_NAME_READ_BYTES,
-                new GaugeFamily(
-                        METRICS_NAME_READ_BYTES, METRICS_DESCRIPTION_READ_BYTES, readBytes.get()));
-        result.put(
-                METRICS_NAME_BUFFER_USAGE,
-                new GaugeFamily(
-                        METRICS_NAME_BUFFER_USAGE,
-                        METRICS_DESCRIPTION_BUFFER_USAGE,
-                        latestSegment.cacheUsed()));
-        result.put(
-                METRICS_NAME_ACTIVE_SEGMENT,
-                new GaugeFamily(
-                        METRICS_NAME_ACTIVE_SEGMENT,
-                        METRICS_DESCRIPTION_ACTIVE_SEGMENT,
-                        cache.size()));
-        return result;
+    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
+        final Map<GaugeKey, GaugeFamily> families = new HashMap<>();
+        KEY_WRITE_BYTES.value(writeBytes.get() + latestSegment.writeBytes()).register(families);
+        KEY_READ_BYTES.value(readBytes.get()).register(families);
+        KEY_BUFFER_USAGE.value(latestSegment.cacheUsed()).register(families);
+        KEY_ACTIVE_SEGMENT.value(cache.size()).register(families);
+        return families;
     }
 
     @Override
@@ -233,7 +217,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         }
         // try read it first
         final RecordsResultSet resultSet = segment.readBlock(offset, time, unit).toResultSet();
-        if (!segment.isFinish() || !resultSet.isEmpty()) {
+        if (!segment.isReadonly() || !resultSet.isEmpty()) {
             return resultSet;
         }
 

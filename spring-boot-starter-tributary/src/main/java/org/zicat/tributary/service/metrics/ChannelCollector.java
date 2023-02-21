@@ -22,6 +22,7 @@ import io.prometheus.client.Collector;
 import io.prometheus.client.GaugeMetricFamily;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.GaugeFamily;
+import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.service.component.DynamicChannel;
 
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public class ChannelCollector extends Collector {
     public List<MetricFamilySamples> collect() {
         final List<MetricFamilySamples> metricSamples = new ArrayList<>();
         for (Channel channel : dynamicChannel.getChannels().values()) {
-            final Map<String, GaugeFamily> channelMetrics = channel.gaugeFamily();
+            final Map<GaugeKey, GaugeFamily> channelMetrics = channel.gaugeFamily();
             final String topic = channel.topic();
             for (GaugeFamily gaugeFamily : channelMetrics.values()) {
                 final GaugeMetricFamily labeledGauge =

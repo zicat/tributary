@@ -70,6 +70,7 @@ public class FileChannel extends AbstractChannel<FileSegment> {
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;
         this.dir = dir;
+        createLastSegment();
     }
 
     @Override
@@ -103,7 +104,7 @@ public class FileChannel extends AbstractChannel<FileSegment> {
     }
 
     /** load segments. */
-    protected void createLastSegment() {
+    private void createLastSegment() {
 
         final File[] files = dir.listFiles(file -> isFileSegment(topic(), file.getName()));
         if (files == null || files.length == 0) {
@@ -124,7 +125,7 @@ public class FileChannel extends AbstractChannel<FileSegment> {
         }
         for (FileSegment fileSegment : remainingSegment) {
             try {
-                fileSegment.finish();
+                fileSegment.readonly();
             } catch (IOException e) {
                 throw new TributaryRuntimeException("finish history segment fail", e);
             }

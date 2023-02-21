@@ -52,7 +52,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition readable = lock.newCondition();
-    private final AtomicBoolean finished = new AtomicBoolean(false);
+    private final AtomicBoolean readonly = new AtomicBoolean(false);
     private final BlockWriter.BlockFlushHandler blockFlushHandler;
     private final AtomicBoolean closed = new AtomicBoolean();
     protected final AtomicLong position = new AtomicLong();
@@ -103,7 +103,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (isFinish() || position() > segmentSize) {
+            if (isReadonly() || position() > segmentSize) {
                 return false;
             }
 
@@ -169,7 +169,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (offset >= position() && !finished.get()) {
+            if (offset >= position() && !isReadonly()) {
                 if (time == 0) {
                     readable.await();
                 } else if (!readable.await(time, unit)) {
@@ -293,13 +293,13 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      */
     public void flush(boolean force) throws IOException {
 
-        if (isFinish() || cacheUsed == 0 && !force) {
+        if (isReadonly() || cacheUsed == 0 && !force) {
             return;
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (isFinish() || cacheUsed == 0 && !force) {
+            if (isReadonly() || cacheUsed == 0 && !force) {
                 return;
             }
             if (!writer.isEmpty() && force) {
@@ -317,19 +317,19 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      *
      * @throws IOException IOException
      */
-    public void finish() throws IOException {
+    public void readonly() throws IOException {
 
-        if (isFinish()) {
+        if (isReadonly()) {
             return;
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (isFinish()) {
+            if (isReadonly()) {
                 return;
             }
             flush();
-            finished.set(true);
+            readonly.set(true);
             readable.signalAll();
         } finally {
             lock.unlock();
@@ -341,14 +341,14 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      *
      * @return true if segment is not allow to write
      */
-    public boolean isFinish() {
-        return finished.get();
+    public boolean isReadonly() {
+        return readonly.get();
     }
 
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
-            finish();
+            readonly();
         }
     }
 

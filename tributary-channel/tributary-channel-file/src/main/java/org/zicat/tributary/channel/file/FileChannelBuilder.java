@@ -202,16 +202,13 @@ public class FileChannelBuilder {
      * @return FileChannel
      */
     private FileChannel createFileChannel(File dir) {
-        final FileChannel channel =
-                new FileChannel(
-                        topic,
-                        groupManagerFactory(dir, topic, consumerGroups, groupPersistPeriodSecond),
-                        blockSize,
-                        segmentSize,
-                        compressionType,
-                        dir);
-        channel.createLastSegment();
-        return channel;
+        return new FileChannel(
+                topic,
+                groupManagerFactory(dir, topic, consumerGroups, groupPersistPeriodSecond),
+                blockSize,
+                segmentSize,
+                compressionType,
+                dir);
     }
 
     /**

@@ -38,10 +38,10 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zicat.tributary.channel.AbstractChannel.METRICS_NAME_ACTIVE_SEGMENT;
+import static org.zicat.tributary.channel.AbstractChannel.KEY_ACTIVE_SEGMENT;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 
-/** OneFileChannelTest. */
+/** FileChannelTest. */
 public class FileChannelTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileChannelTest.class);
@@ -144,20 +144,20 @@ public class FileChannelTest {
 
         Assert.assertEquals(
                 2,
-                Double.valueOf(channel.gaugeFamily().get(METRICS_NAME_ACTIVE_SEGMENT).getValue())
+                Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
                         .intValue());
         RecordsResultSet recordsResultSet =
                 channel.poll(0, channel.committedGroupOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
         channel.commit(0, recordsResultSet.nexGroupOffset());
         Assert.assertEquals(
                 1,
-                Double.valueOf(channel.gaugeFamily().get(METRICS_NAME_ACTIVE_SEGMENT).getValue())
+                Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
                         .intValue());
 
         channel.commit(0, recordsResultSet.nexGroupOffset().skipNextSegmentHead());
         Assert.assertEquals(
                 1,
-                Double.valueOf(channel.gaugeFamily().get(METRICS_NAME_ACTIVE_SEGMENT).getValue())
+                Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
                         .intValue());
         IOUtils.closeQuietly(channel);
     }

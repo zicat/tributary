@@ -155,6 +155,15 @@ public class ChannelBaseTest {
                 Assert.assertEquals(
                         "partition-" + i + "-value-0",
                         new String(recordsResultSet.next(), StandardCharsets.UTF_8));
+
+                if (!recordsResultSet.hasNext()) {
+                    recordsResultSet =
+                            channel.poll(
+                                    i,
+                                    recordsResultSet.nexGroupOffset(),
+                                    1000,
+                                    TimeUnit.MILLISECONDS);
+                }
                 Assert.assertEquals(
                         "partition-" + i + "-value-1",
                         new String(recordsResultSet.next(), StandardCharsets.UTF_8));
@@ -193,6 +202,14 @@ public class ChannelBaseTest {
                 Assert.assertEquals(
                         "partition-" + i + "-value-0",
                         new String(recordsResultSet.next(), StandardCharsets.UTF_8));
+                if (!recordsResultSet.hasNext()) {
+                    recordsResultSet =
+                            channel.poll(
+                                    i,
+                                    recordsResultSet.nexGroupOffset(),
+                                    1000,
+                                    TimeUnit.MILLISECONDS);
+                }
                 Assert.assertEquals(
                         "partition-" + i + "-value-1",
                         new String(recordsResultSet.next(), StandardCharsets.UTF_8));

@@ -18,48 +18,20 @@
 
 package org.zicat.tributary.common;
 
-import java.util.Objects;
+import java.util.Map;
 
 /** GaugeFamily. */
-public class GaugeFamily {
+public class GaugeFamily extends GaugeKey {
 
-    private final String name;
-    private final String description;
     private final double value;
 
     public GaugeFamily(String name, String description, double value) {
-        this.name = name;
-        this.description = description;
+        super(name, description);
         this.value = value;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     public double getValue() {
         return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        GaugeFamily that = (GaugeFamily) o;
-        return Objects.equals(name, that.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
     }
 
     /**
@@ -72,6 +44,15 @@ public class GaugeFamily {
         if (!equals(gaugeFamily)) {
             throw new IllegalArgumentException("gauge family merge fail, name diff");
         }
-        return new GaugeFamily(name, description, this.value + gaugeFamily.getValue());
+        return new GaugeFamily(getName(), getDescription(), this.value + gaugeFamily.getValue());
+    }
+
+    /**
+     * register to gaugeFamilies.
+     *
+     * @param gaugeFamilies gaugeFamilies
+     */
+    public void register(Map<GaugeKey, GaugeFamily> gaugeFamilies) {
+        gaugeFamilies.put(this, this);
     }
 }

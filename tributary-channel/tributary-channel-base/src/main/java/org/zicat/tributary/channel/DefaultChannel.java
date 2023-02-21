@@ -18,10 +18,7 @@
 
 package org.zicat.tributary.channel;
 
-import org.zicat.tributary.common.Factory;
-import org.zicat.tributary.common.Functions;
-import org.zicat.tributary.common.GaugeFamily;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -81,10 +78,10 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public Map<String, GaugeFamily> gaugeFamily() {
-        final Map<String, GaugeFamily> result = new HashMap<>();
+    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
+        final Map<GaugeKey, GaugeFamily> result = new HashMap<>();
         for (Channel c : channels) {
-            for (Map.Entry<String, GaugeFamily> entry : c.gaugeFamily().entrySet()) {
+            for (Map.Entry<GaugeKey, GaugeFamily> entry : c.gaugeFamily().entrySet()) {
                 final GaugeFamily cache = result.get(entry.getKey());
                 if (cache == null) {
                     result.put(entry.getKey(), entry.getValue());

@@ -39,6 +39,7 @@ public class MemoryChannel extends AbstractChannel<MemorySegment> {
         this.blockWriter = new BlockWriter(blockSize);
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;
+        loadLastSegment();
     }
 
     @Override
@@ -47,7 +48,7 @@ public class MemoryChannel extends AbstractChannel<MemorySegment> {
     }
 
     /** load last segment. */
-    protected void loadLastSegment() {
+    private void loadLastSegment() {
         initLastSegment(createSegment(0L));
     }
 }

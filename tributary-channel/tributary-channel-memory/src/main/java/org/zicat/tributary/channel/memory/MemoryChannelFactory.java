@@ -122,9 +122,6 @@ public class MemoryChannelFactory implements ChannelFactory {
             int blockSize,
             long segmentSize,
             CompressionType compressionType) {
-        final MemoryChannel memoryChannel =
-                new MemoryChannel(topic, factory, blockSize, segmentSize, compressionType);
-        memoryChannel.loadLastSegment();
-        return memoryChannel;
+        return new MemoryChannel(topic, factory, blockSize, segmentSize, compressionType);
     }
 }

@@ -27,6 +27,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.GaugeFamily;
+import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 
 import java.util.*;
@@ -189,7 +190,7 @@ public class KafkaChannel implements Channel {
     }
 
     @Override
-    public Map<String, GaugeFamily> gaugeFamily() {
+    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
         return Collections.emptyMap();
     }
 }
