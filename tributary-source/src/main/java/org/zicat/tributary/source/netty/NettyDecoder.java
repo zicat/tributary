@@ -18,26 +18,31 @@
 
 package org.zicat.tributary.source.netty;
 
+import org.zicat.tributary.common.SafeFactory;
+import org.zicat.tributary.source.netty.ack.AckHandler;
+import org.zicat.tributary.source.netty.ack.LengthAckHandler;
+import org.zicat.tributary.source.netty.ack.MuteAckHandler;
+
 /** NettyDecoder. */
 public enum NettyDecoder {
-    lineDecoder(false, LineDecoder::new),
-    lengthDecoder(true, LengthDecoder::new);
+    lineDecoder(LineDecoder::new, MuteAckHandler::new),
+    lengthDecoder(LengthDecoder::new, LengthAckHandler::new);
 
-    private final boolean ack;
     private final SourceDecoderFactory sourceDecoderFactory;
+    private final AckHandlerFactory ackHandlerFactory;
 
-    NettyDecoder(boolean ack, SourceDecoderFactory sourceDecoderFactory) {
-        this.ack = ack;
+    NettyDecoder(SourceDecoderFactory sourceDecoderFactory, AckHandlerFactory ackHandlerFactory) {
         this.sourceDecoderFactory = sourceDecoderFactory;
+        this.ackHandlerFactory = ackHandlerFactory;
     }
 
     /**
-     * is ack.
+     * create ack handler.
      *
-     * @return boolean
+     * @return AckHandler
      */
-    public boolean isAck() {
-        return ack;
+    public AckHandler createAckHandler() {
+        return ackHandlerFactory.create();
     }
 
     /**
@@ -46,10 +51,12 @@ public enum NettyDecoder {
      * @return source decoder
      */
     public SourceDecoder createSourceDecoder() {
-        return sourceDecoderFactory.createSourceDecoder();
+        return sourceDecoderFactory.create();
     }
 
-    interface SourceDecoderFactory {
-        SourceDecoder createSourceDecoder();
-    }
+    /** SourceDecoderFactory to create SourceDecoder. */
+    interface SourceDecoderFactory extends SafeFactory<SourceDecoder> {}
+
+    /** AckHandlerFactory to create AckHandler. */
+    interface AckHandlerFactory extends SafeFactory<AckHandler> {}
 }

@@ -24,6 +24,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.source.netty.ack.AckHandler;
 
 /** DefaultNettySourceFactory. */
 public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
@@ -54,9 +55,12 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
         return new DefaultNettySource(host, port, eventThreads, channel, idleSecond) {
             @Override
             protected void initChannel(SocketChannel ch, Channel channel) {
-                ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
-                ch.pipeline().addLast(nettyDecoder.createSourceDecoder());
-                ch.pipeline().addLast(new ChannelHandler(channel, nettyDecoder.isAck()));
+                final SourceDecoder sourceDecoder = nettyDecoder.createSourceDecoder();
+                final AckHandler ackHandler = nettyDecoder.createAckHandler();
+                ch.pipeline()
+                        .addLast(new IdleStateHandler(idleSecond, 0, 0))
+                        .addLast(sourceDecoder)
+                        .addLast(new ChannelHandler(channel, selectPartition(), ackHandler));
             }
         };
     }

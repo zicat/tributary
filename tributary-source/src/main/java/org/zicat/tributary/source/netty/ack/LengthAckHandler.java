@@ -16,27 +16,21 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.source.netty.ack;
 
-import org.zicat.tributary.channel.GroupOffset;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-/** CollectionFunction. */
-public class CollectionFunction extends AbstractFunction {
-
-    public List<byte[]> history = new ArrayList<>();
+/** LengthAckHandler. */
+public class LengthAckHandler implements AckHandler {
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
-        while (iterator.hasNext()) {
-            history.add(iterator.next());
-        }
-        flush(groupOffset, null);
+    public void ackSuccess(byte[] receivedData, ChannelHandlerContext ctx) {
+        ctx.writeAndFlush(ByteBufAllocator.DEFAULT.buffer(4).writeInt(receivedData.length));
     }
 
     @Override
-    public void close() {}
+    public void ackFail(byte[] receivedData, Throwable e, ChannelHandlerContext ctx) {
+        ctx.writeAndFlush(ByteBufAllocator.DEFAULT.buffer(4).writeInt(-1));
+    }
 }

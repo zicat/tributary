@@ -21,6 +21,10 @@ package org.zicat.tributary.source.netty;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.source.netty.ack.AckHandler;
+import org.zicat.tributary.source.netty.ack.LengthAckHandler;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;
@@ -30,11 +34,15 @@ import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_
 public class DefaultNettySource extends AbstractNettySource {
 
     protected final int idleSecond;
+    protected final int partitionCount;
+    protected final AtomicInteger count = new AtomicInteger();
+    protected final AckHandler ackHandler = new LengthAckHandler();
 
     public DefaultNettySource(
             String host, int port, int eventThreads, Channel channel, int idleSecond) {
         super(host, port, eventThreads, channel);
         this.idleSecond = idleSecond;
+        this.partitionCount = channel.partition();
     }
 
     public DefaultNettySource(int port, Channel channel) {
@@ -53,8 +61,18 @@ public class DefaultNettySource extends AbstractNettySource {
      */
     @Override
     protected void initChannel(SocketChannel ch, Channel channel) {
-        ch.pipeline().addLast(new IdleStateHandler(idleSecond, 0, 0));
-        ch.pipeline().addLast(new LengthDecoder());
-        ch.pipeline().addLast(new ChannelHandler(channel, true));
+        ch.pipeline()
+                .addLast(new IdleStateHandler(idleSecond, 0, 0))
+                .addLast(new LengthDecoder())
+                .addLast(new ChannelHandler(channel, selectPartition(), ackHandler));
+    }
+
+    /**
+     * select partition id.
+     *
+     * @return partition id
+     */
+    protected int selectPartition() {
+        return (count.getAndIncrement() & 0x7fffffff) % partitionCount;
     }
 }

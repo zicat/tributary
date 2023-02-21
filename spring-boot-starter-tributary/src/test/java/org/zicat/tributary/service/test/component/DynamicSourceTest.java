@@ -81,7 +81,7 @@ public class DynamicSourceTest {
     }
 
     @Test
-    public void test() throws IOException, InterruptedException {
+    public void test() throws IOException {
 
         final byte[] data1 = "lyn".getBytes();
         try (LengthDecoderClient client = new LengthDecoderClient(57132)) {
@@ -92,14 +92,12 @@ public class DynamicSourceTest {
         try (LengthDecoderClient client = new LengthDecoderClient("localhost", 57133)) {
             Assert.assertEquals(data2.length, client.append(data2));
         }
-
         dynamicChannel.flushAll();
-
-        Thread.sleep(100);
         final Map<String, List<SinkGroupManager>> sinkGroupManagerMap =
                 dynamicSinkGroupManager.getSinkGroupManagerMap();
         final List<SinkGroupManager> sinkGroupManagers = sinkGroupManagerMap.get("group_1");
         for (SinkGroupManager sinkGroupManager : sinkGroupManagers) {
+            IOUtils.closeQuietly(sinkGroupManager);
             final CollectionFunction collectionFunction =
                     (CollectionFunction) sinkGroupManager.getFunctions().get(0).get(0);
             Assert.assertEquals(1, collectionFunction.history.size());

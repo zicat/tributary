@@ -16,28 +16,27 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.netty;
+package org.zicat.tributary.source.netty.ack;
 
-/** PartitionSelect. */
-public interface PartitionSelect {
+import io.netty.channel.ChannelHandlerContext;
+
+/** AckHandler. */
+public interface AckHandler {
 
     /**
-     * select partition by bs.
+     * ack success to client.
      *
-     * @param bs bs
-     * @return partition
+     * @param receivedData receivedData
+     * @param ctx ctx
      */
-    int partition(byte[] bs, int partitionCount);
+    void ackSuccess(byte[] receivedData, ChannelHandlerContext ctx);
 
-    /** RoundRobin. */
-    class RoundRobin implements PartitionSelect {
-
-        private int nextPartition = 0;
-
-        @Override
-        public int partition(byte[] bs, int partitionCount) {
-            nextPartition++;
-            return (nextPartition & 0x7fffffff) % partitionCount;
-        }
-    }
+    /**
+     * ack fail to client.
+     *
+     * @param receivedData receivedData
+     * @param e e
+     * @param ctx ctx
+     */
+    void ackFail(byte[] receivedData, Throwable e, ChannelHandlerContext ctx);
 }
