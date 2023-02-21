@@ -33,7 +33,6 @@ import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupO
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
 
-    public static final String SPLIT_STR = ",";
     public static final String TYPE = "memory";
 
     @Override

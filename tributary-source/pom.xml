@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>tributary-channel-base</artifactId>
+            <artifactId>tributary-channel-memory</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

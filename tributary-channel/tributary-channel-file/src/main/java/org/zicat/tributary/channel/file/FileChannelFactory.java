@@ -34,12 +34,12 @@ import java.util.concurrent.TimeUnit;
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
 import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD_SECOND;
-import static org.zicat.tributary.channel.memory.MemoryChannelFactory.SPLIT_STR;
 
 /** FileChannelFactory. */
 public class FileChannelFactory implements ChannelFactory {
 
     public static final String TYPE = "file";
+    public static final String SPLIT_STR = ",";
 
     @Override
     public String type() {

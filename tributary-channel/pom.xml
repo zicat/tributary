@@ -15,5 +15,6 @@
         <module>tributary-channel-base</module>
         <module>tributary-channel-file</module>
         <module>tributary-channel-kafka</module>
+        <module>tributary-channel-memory</module>
     </modules>
 </project>

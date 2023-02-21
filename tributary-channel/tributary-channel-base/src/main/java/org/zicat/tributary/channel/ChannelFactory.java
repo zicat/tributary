@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
-import static org.zicat.tributary.channel.memory.MemoryChannelFactory.SPLIT_STR;
 
 /** ChannelFactory. */
 public interface ChannelFactory {
@@ -72,7 +71,7 @@ public interface ChannelFactory {
      * @return group set
      */
     default Set<String> groupSet(ReadableConfig config) {
-        return Arrays.stream(config.get(OPTION_GROUPS).split(SPLIT_STR))
+        return Arrays.stream(config.get(OPTION_GROUPS).split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
     }

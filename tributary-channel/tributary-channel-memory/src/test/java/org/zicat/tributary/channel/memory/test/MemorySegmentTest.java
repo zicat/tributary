@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channel.test.memory;
+package org.zicat.tributary.channel.memory.test;
 
 import org.junit.Assert;
 import org.junit.Test;

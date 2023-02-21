@@ -198,7 +198,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public synchronized void commit(GroupOffset groupOffset) throws IOException {
+    public synchronized void commit(GroupOffset groupOffset) {
         if (latestSegment.segmentId() < groupOffset.segmentId()) {
             LOG.warn("commit group offset {} over latest segment", groupOffset);
             return;
