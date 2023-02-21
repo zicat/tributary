@@ -27,17 +27,12 @@ prepare_lib() {
 prepare_config() {
 cat << EOF > "${release_dir_config}""/application.properties"
 server.port=8765
-server.metrics.ip.pattern=.*
 source.s1.channel=c1
+source.s1.implement=netty
 source.s1.netty.port=8200
 source.s1.netty.decoder=lineDecoder
-source.s1.implement=netty
-channel.c1.type=file
-channel.c1.partitions=/tmp/tributary/p1
+channel.c1.type=memory
 channel.c1.groups=group_1
-channel.c1.compression=snappy
-sink.group_1.maxRetainPerPartitionBytes=9663676414
-sink.group_1.partitionHandlerIdentity=direct
 sink.group_1.functionIdentity=print
 EOF
 cat << EOF > "${release_dir_config}""/logback.xml"
