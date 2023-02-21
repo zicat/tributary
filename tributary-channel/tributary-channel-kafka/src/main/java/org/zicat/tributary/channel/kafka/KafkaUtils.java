@@ -54,9 +54,8 @@ public class KafkaUtils {
                                             topic, NewPartitions.increaseTo(partitionCount)));
                     createPartitionsResult.all().get();
                 }
-            } catch (ExecutionException e) {
-                if (e.getCause() != null
-                        && e.getCause() instanceof UnknownTopicOrPartitionException) {
+            } catch (Throwable e) {
+                if (isUnknownTopic(e)) {
                     final NewTopic newTopic = new NewTopic(topic, partitionCount, (short) 1);
                     final CreateTopicsResult createTopicsResult =
                             adminClient.createTopics(Collections.singleton(newTopic));
@@ -66,6 +65,22 @@ public class KafkaUtils {
                 throw e;
             }
         }
+    }
+
+    /**
+     * check exception is UnknownTopicOrPartitionException.
+     *
+     * @param e e
+     * @return true if contains UnknownTopicOrPartitionException
+     */
+    private static boolean isUnknownTopic(Throwable e) {
+        if (e == null) {
+            return false;
+        }
+        if (e instanceof UnknownTopicOrPartitionException) {
+            return true;
+        }
+        return isUnknownTopic(e.getCause());
     }
 
     /**

@@ -28,6 +28,7 @@ import org.zicat.tributary.common.IOUtils;
 
 import java.io.Closeable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
@@ -43,16 +44,18 @@ public class GroupPartitionKafkaConsumer implements Closeable {
 
     private final AtomicBoolean closed = new AtomicBoolean();
     private final String groupId;
-    private final KafkaConsumer<byte[], byte[]> kafkaConsumer;
+    private final KafkaConsumer<byte[], byte[]> consumer;
     private final TopicPartition topicPartition;
+    private final Collection<TopicPartition> singleTopicPartition;
     private Offset nextExpectOffset = null;
 
     public GroupPartitionKafkaConsumer(
             String groupId, TopicPartition topicPartition, Properties properties) {
         this.groupId = groupId;
         this.topicPartition = topicPartition;
-        this.kafkaConsumer = new KafkaConsumer<>(copyProperties(groupId, properties));
-        kafkaConsumer.assign(Collections.singletonList(topicPartition));
+        this.singleTopicPartition = Collections.singletonList(topicPartition);
+        this.consumer = new KafkaConsumer<>(copyProperties(groupId, properties));
+        consumer.assign(Collections.singletonList(topicPartition));
     }
 
     /**
@@ -79,8 +82,7 @@ public class GroupPartitionKafkaConsumer implements Closeable {
      */
     public synchronized Long endOffsets() {
         checkOpen();
-        final Map<TopicPartition, Long> result =
-                kafkaConsumer.endOffsets(Collections.singletonList(topicPartition));
+        final Map<TopicPartition, Long> result = consumer.endOffsets(singleTopicPartition);
         return result == null ? null : result.get(topicPartition);
     }
 
@@ -95,14 +97,11 @@ public class GroupPartitionKafkaConsumer implements Closeable {
     public synchronized KafkaRecordsResultSet poll(Offset offset, long time, TimeUnit unit) {
         checkOpen();
         if (!offset.equals(nextExpectOffset)) {
-            kafkaConsumer.seek(topicPartition, getKafkaOffset(offset));
+            consumer.seek(topicPartition, getKafkaOffset(offset));
         }
         final ConsumerRecords<byte[], byte[]> records =
-                kafkaConsumer.poll(Duration.ofMillis(unit.toMillis(time)));
-        final GroupOffset groupOffset =
-                offset instanceof GroupOffset
-                        ? (GroupOffset) offset
-                        : new GroupOffset(offset.segmentId(), offset.offset(), groupId);
+                consumer.poll(Duration.ofMillis(unit.toMillis(time)));
+        final GroupOffset groupOffset = GroupOffset.cast(offset, groupId);
         final KafkaRecordsResultSet resultSet = new KafkaRecordsResultSet(records, groupOffset);
         this.nextExpectOffset = resultSet.nexGroupOffset();
         return resultSet;
@@ -115,15 +114,14 @@ public class GroupPartitionKafkaConsumer implements Closeable {
      */
     public synchronized void commit(Offset offset) {
         checkOpen();
-        kafkaConsumer.commitSync(
-                Collections.singletonMap(
-                        topicPartition, new OffsetAndMetadata(getKafkaOffset(offset))));
+        final OffsetAndMetadata metadata = new OffsetAndMetadata(getKafkaOffset(offset));
+        consumer.commitSync(Collections.singletonMap(topicPartition, metadata));
     }
 
     @Override
     public synchronized void close() {
         if (closed.compareAndSet(false, true)) {
-            IOUtils.closeQuietly(kafkaConsumer);
+            IOUtils.closeQuietly(consumer);
         }
     }
 

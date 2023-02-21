@@ -109,16 +109,6 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
     }
 
     /**
-     * get kafka offset with group offset.
-     *
-     * @param groupOffset groupOffset
-     * @return long offset
-     */
-    public static long getKafkaOffset(Offset groupOffset) {
-        return groupOffset.segmentId() * SEGMENT_SIZE + groupOffset.offset();
-    }
-
-    /**
      * from kafka offset.
      *
      * @param kafkaOffset kafkaOffset
@@ -129,6 +119,16 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
         final long segmentId = kafkaOffset / SEGMENT_SIZE;
         final long offset = kafkaOffset - SEGMENT_SIZE * segmentId;
         return new GroupOffset(segmentId, offset, groupId);
+    }
+
+    /**
+     * get kafka offset with group offset.
+     *
+     * @param groupOffset groupOffset
+     * @return long offset
+     */
+    public static long getKafkaOffset(Offset groupOffset) {
+        return groupOffset.segmentId() * SEGMENT_SIZE + groupOffset.offset();
     }
 
     @Override
@@ -149,7 +149,7 @@ public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
             final ListConsumerGroupOffsetsResult result =
                     adminClient.listConsumerGroupOffsets(groupId);
             try {
-                OffsetAndMetadata metadata =
+                final OffsetAndMetadata metadata =
                         result.partitionsToOffsetAndMetadata().get().get(topicPartition);
                 if (metadata == null) {
                     final Long endOffset = endOffsets(groupId);

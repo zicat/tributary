@@ -164,4 +164,26 @@ public class GroupOffset extends Offset {
     public int hashCode() {
         return Objects.hash(segmentId, offset, groupId);
     }
+
+    /**
+     * cast offset to group offset.
+     *
+     * @param offset offset
+     * @param groupId groupId
+     * @return GroupOffset
+     */
+    public static GroupOffset cast(Offset offset, String groupId) {
+        if (offset instanceof GroupOffset) {
+            final GroupOffset groupOffset = (GroupOffset) offset;
+            if (!groupOffset.groupId.equals(groupId)) {
+                throw new IllegalArgumentException(
+                        "group id match fail, expected "
+                                + groupOffset.groupId
+                                + ", real "
+                                + groupId);
+            }
+            return groupOffset;
+        }
+        return new GroupOffset(offset.segmentId, offset.offset, groupId);
+    }
 }
