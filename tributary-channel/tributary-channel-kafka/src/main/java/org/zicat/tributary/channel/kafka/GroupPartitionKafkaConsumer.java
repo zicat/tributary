@@ -77,7 +77,7 @@ public class GroupPartitionKafkaConsumer implements Closeable {
      *
      * @return offset
      */
-    public Long endOffsets() {
+    public synchronized Long endOffsets() {
         checkOpen();
         final Map<TopicPartition, Long> result =
                 kafkaConsumer.endOffsets(Collections.singletonList(topicPartition));
@@ -113,7 +113,7 @@ public class GroupPartitionKafkaConsumer implements Closeable {
      *
      * @param offset offset
      */
-    public void commit(Offset offset) {
+    public synchronized void commit(Offset offset) {
         checkOpen();
         kafkaConsumer.commitSync(
                 Collections.singletonMap(
@@ -121,7 +121,7 @@ public class GroupPartitionKafkaConsumer implements Closeable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         if (closed.compareAndSet(false, true)) {
             IOUtils.closeQuietly(kafkaConsumer);
         }

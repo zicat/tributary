@@ -133,9 +133,9 @@ public class KafkaChannel implements Channel {
 
     @Override
     public long lag(int partition, GroupOffset groupOffset) {
-        final TopicPartition topicPartition = new TopicPartition(topic, partition);
-        final Long endOffset = getConsumer(topicPartition).endOffsets(groupOffset.groupId());
-        return endOffset == null ? 0L : endOffset - groupOffset.offset();
+        // lag is use to expired segment and metrics.
+        // for kafka, broker duty to delete expired segment, and check lag metrics
+        return 0L;
     }
 
     @Override

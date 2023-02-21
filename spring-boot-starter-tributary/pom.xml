@@ -31,6 +31,16 @@
         </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
+            <artifactId>tributary-channel-memory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zicat</groupId>
+            <artifactId>tributary-channel-kafka</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zicat</groupId>
             <artifactId>tributary-channel-file</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>

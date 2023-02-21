@@ -74,8 +74,11 @@ public class KafkaChannelFactory implements ChannelFactory {
         if (topicMetaFile.exists() && topicMetaFile.length() > 0) {
             return new String(IOUtils.readFull(topicMetaFile), StandardCharsets.UTF_8);
         }
-        if (!topicMetaFile.exists() && !topicMetaFile.createNewFile()) {
-            throw new IOException("create file error name = " + topicMetaFile.getPath());
+        if (!topicMetaFile.exists()) {
+            IOUtils.makeDir(topicMetaFile.getParentFile());
+            if (!topicMetaFile.createNewFile()) {
+                throw new IOException("create file error name = " + topicMetaFile.getPath());
+            }
         }
         if (!topicMetaFile.isFile()) {
             throw new IOException("topic meta file is not a file name = " + topicMetaFile);
