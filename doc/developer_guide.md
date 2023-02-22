@@ -20,7 +20,94 @@ Goto [Intellij Plugin Install and Config](intellij_plugin.md) for more details.
 
 Note: The code shown below can be found in the [sample-code-module](../sample-code).
 
-## Developing custom sources
+## Developing a simple source of emitting records periodically
+
+The duty of source is received records and append to channel, let's try to develop a simple source emit one record periodically.
+
+### Coding
+```java
+public class EmitSource implements Source {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EmitSource.class);
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Random random = new Random();
+    private final Runnable task;
+    private Thread t;
+
+    public EmitSource(Channel channel) {
+        this.task =
+                () -> {
+                    while (!closed.get()) {
+                        final byte[] data =
+                                new SimpleDateFormat()
+                                        .format(new Date())
+                                        .getBytes(StandardCharsets.UTF_8);
+                        try {
+                            channel.append(random.nextInt(channel.partition()), data);
+                        } catch (IOException e) {
+                            LOG.warn("append fail", e);
+                        } finally {
+                            Threads.sleepQuietly(1000);
+                        }
+                    }
+                };
+    }
+
+    @Override
+    public void start() {
+        t = new Thread(task);
+        t.start();
+    }
+
+    @Override
+    public void close() {
+        if (closed.compareAndSet(false, true)) {
+            Threads.joinQuietly(t);
+        }
+    }
+}
+```   
+[EmitSource](../sample-code/src/main/java/org/zicat/tributary/demo/source/EmitSource.java) implements the 
+[Source](../tributary-source/src/main/java/org/zicat/tributary/source/Source.java) to emit current time to channel.
+
+```java
+public class EmitSourceFactory implements SourceFactory {
+    @Override
+    public Source createSource(Channel channel, ReadableConfig config) {
+        return new EmitSource(channel);
+    }
+
+    @Override
+    public String identity() {
+        return "periodEmitSource";
+    }
+}
+```
+[EmitSourceFactory](../sample-code/src/main/java/org/zicat/tributary/demo/source/EmitSourceFactory.java) implements the
+[SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java) to create the instance by Java SPI.
+
+Create a file if not exist
+named [org.zicat.tributary.source.SourceFactory](../sample-code/src/main/resources/META-INF/services/org.zicat.tributary.source.SourceFactory)
+in [resources/META-INF/services](../sample-code/src/main/resources/META-INF/services), append the full class name
+of [EmitSourceFactory](../sample-code/src/main/java/org/zicat/tributary/demo/source/EmitSourceFactory.java)
+
+### Testing
+
+1. Create a
+   properties [application-source-emit.properties](../sample-code/src/main/resources/application-source-emit.properties)
+   set source.s1.implement=periodEmitSource
+
+2. Create a main
+   class [EmitSourceDemoApplication](../sample-code/src/main/java/org/zicat/tributary/demo/EmitSourceDemoApplication.java)
+   for testing
+
+3. Using intellij Run tool start this main class
+
+4. Check whether print the records from intellij console
+
+   ![image](picture/source_emit_records.png)
+
+## Developing http source
 
 In the document [Tributary User Guide of Config Details](user_guide_config_detail.md), how to use the
 default implement of netty has been introduced.
@@ -82,6 +169,8 @@ of [HttpSourceFactory](../sample-code/src/main/java/org/zicat/tributary/demo/sou
 5. Check whether print the records from intellij console
 
    ![image](picture/source_http_demo_receive_data.png)
+   
+
 
 ## Developing custom sinks
 
