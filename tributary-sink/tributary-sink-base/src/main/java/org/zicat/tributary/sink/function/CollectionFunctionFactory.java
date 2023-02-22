@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.function;
 /** CollectionFunctionFactory. */
 public class CollectionFunctionFactory implements FunctionFactory {
     @Override
-    public Function createFunction() {
+    public Function create() {
         return new CollectionFunction();
     }
 

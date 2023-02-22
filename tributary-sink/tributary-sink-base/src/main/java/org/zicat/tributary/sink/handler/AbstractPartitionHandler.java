@@ -45,7 +45,7 @@ import static org.zicat.tributary.common.Threads.sleepQuietly;
  * <p>{@link AbstractPartitionHandler} not support to consumer multi partition data.
  *
  * <p>{@link AbstractPartitionHandler} create at least one {@link Function} instance by {@link
- * FunctionFactory#createFunction()}.
+ * FunctionFactory#create()}.
  *
  * <p>The {@link Function} instance count depends on {@link AbstractPartitionHandler} implements.
  */

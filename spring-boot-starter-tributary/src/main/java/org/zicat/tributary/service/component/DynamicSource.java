@@ -35,7 +35,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.zicat.tributary.source.SourceFactory.findSourceFactoryFactory;
+import static org.zicat.tributary.common.SpiFactory.findFactory;
 
 /** DynamicSource. */
 @Component
@@ -62,7 +62,7 @@ public class DynamicSource {
                     dynamicChannel.getChannel(dynamicSourceValue(sourceId, KEY_CHANNEL, null));
             final String implementId =
                     dynamicSourceValue(sourceId, KEY_IMPLEMENT, DEFAULT_IMPLEMENT);
-            final SourceFactory sourceFactory = findSourceFactoryFactory(implementId);
+            final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
             Source server = null;
             try {
                 server = sourceFactory.createSource(channel, getSubKeyConfig(sourceId));

@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.source.netty.ack.AckHandler;
+import org.zicat.tributary.source.netty.ack.AckHandlerFactory;
 
 /** ChannelHandler. */
 public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
@@ -35,10 +36,10 @@ public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
     private final int partition;
     private final AckHandler ackHandler;
 
-    public ChannelHandler(Channel channel, int partition, AckHandler ackHandler) {
+    public ChannelHandler(Channel channel, int partition, AckHandlerFactory factory) {
         this.channel = channel;
         this.partition = partition;
-        this.ackHandler = ackHandler;
+        this.ackHandler = factory.create();
     }
 
     @Override

@@ -29,6 +29,7 @@ import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.netty.ChannelHandler;
 import org.zicat.tributary.source.netty.DefaultNettySource;
+import org.zicat.tributary.source.netty.NettyDecoder;
 import org.zicat.tributary.source.netty.ack.LengthAckHandler;
 import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 
@@ -82,9 +83,7 @@ public class DefaultNettySourceTest {
                         ch.pipeline()
                                 .addLast(
                                         new ChannelHandler(
-                                                channel,
-                                                selectPartition(),
-                                                new LengthAckHandler()));
+                                                channel, selectPartition(), LengthAckHandler::new));
                     }
                 }) {
 
@@ -155,8 +154,8 @@ public class DefaultNettySourceTest {
         try (Source source =
                 new DefaultNettySource(port, channel) {
                     @Override
-                    protected void initChannel(SocketChannel ch, Channel channel) {
-                        super.initChannel(ch, channel);
+                    protected NettyDecoder nettyDecoder() {
+                        return NettyDecoder.lengthDecoder;
                     }
                 }) {
 

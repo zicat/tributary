@@ -19,17 +19,16 @@
 package org.zicat.tributary.channel;
 
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.SpiFactory;
 
 import java.util.Arrays;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
 
 /** ChannelFactory. */
-public interface ChannelFactory {
+public interface ChannelFactory extends SpiFactory {
 
     /**
      * get channel type.
@@ -49,22 +48,6 @@ public interface ChannelFactory {
     Channel createChannel(String topic, ReadableConfig readableConfig) throws Exception;
 
     /**
-     * find channel factory.
-     *
-     * @param type type
-     * @return ChannelFactory
-     */
-    static ChannelFactory findChannelFactory(String type) {
-        final ServiceLoader<ChannelFactory> loader = ServiceLoader.load(ChannelFactory.class);
-        for (ChannelFactory channelFactory : loader) {
-            if (type.equals(channelFactory.type())) {
-                return channelFactory;
-            }
-        }
-        throw new TributaryRuntimeException("channel type not found," + type);
-    }
-
-    /**
      * get group set by config.
      *
      * @param config config
@@ -74,5 +57,10 @@ public interface ChannelFactory {
         return Arrays.stream(config.get(OPTION_GROUPS).split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    default String identity() {
+        return type();
     }
 }

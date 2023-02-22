@@ -19,7 +19,7 @@
 package org.zicat.tributary.source.netty;
 
 import org.zicat.tributary.common.SafeFactory;
-import org.zicat.tributary.source.netty.ack.AckHandler;
+import org.zicat.tributary.source.netty.ack.AckHandlerFactory;
 import org.zicat.tributary.source.netty.ack.LengthAckHandler;
 import org.zicat.tributary.source.netty.ack.MuteAckHandler;
 
@@ -41,8 +41,8 @@ public enum NettyDecoder {
      *
      * @return AckHandler
      */
-    public AckHandler createAckHandler() {
-        return ackHandlerFactory.create();
+    public AckHandlerFactory ackHandlerFactory() {
+        return ackHandlerFactory;
     }
 
     /**
@@ -56,7 +56,4 @@ public enum NettyDecoder {
 
     /** SourceDecoderFactory to create SourceDecoder. */
     interface SourceDecoderFactory extends SafeFactory<SourceDecoder> {}
-
-    /** AckHandlerFactory to create AckHandler. */
-    interface AckHandlerFactory extends SafeFactory<AckHandler> {}
 }

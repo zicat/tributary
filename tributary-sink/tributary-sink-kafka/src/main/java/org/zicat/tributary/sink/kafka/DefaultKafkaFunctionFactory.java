@@ -25,7 +25,7 @@ import org.zicat.tributary.sink.function.FunctionFactory;
 public class DefaultKafkaFunctionFactory implements FunctionFactory {
 
     @Override
-    public Function createFunction() {
+    public Function create() {
         return new DefaultKafkaFunction();
     }
 

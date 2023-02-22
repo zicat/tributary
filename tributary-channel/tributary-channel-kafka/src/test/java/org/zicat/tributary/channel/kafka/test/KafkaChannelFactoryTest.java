@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
-import static org.zicat.tributary.channel.ChannelFactory.findChannelFactory;
 import static org.zicat.tributary.channel.kafka.KafkaChannelFactory.OPTIONS_KAFKA_TOPIC_META_DIR;
 import static org.zicat.tributary.channel.kafka.KafkaChannelFactory.getTopic;
 import static org.zicat.tributary.channel.kafka.test.EmbeddedKafkaHandler.startEmbeddedKafka;
@@ -40,6 +39,7 @@ import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrec
 import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelStorage;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
+import static org.zicat.tributary.common.SpiFactory.findFactory;
 
 /** KafkaChannelFactoryTest. */
 public class KafkaChannelFactoryTest {
@@ -63,7 +63,8 @@ public class KafkaChannelFactoryTest {
     public void testBaseStorage() throws Exception {
         startEmbeddedKafka(
                 kafka -> {
-                    final ChannelFactory factory = findChannelFactory(KafkaChannelFactory.TYPE);
+                    final ChannelFactory factory =
+                            findFactory(KafkaChannelFactory.TYPE, ChannelFactory.class);
                     final String topic = "kafka_channel_factory_test_topic2";
                     final DefaultReadableConfig config = new DefaultReadableConfig();
                     config.put("kafka.bootstrap.servers", kafka.getBrokerList());
@@ -77,7 +78,8 @@ public class KafkaChannelFactoryTest {
     public void testCreateChannel() throws Exception {
         startEmbeddedKafka(
                 kafka -> {
-                    final ChannelFactory factory = findChannelFactory(KafkaChannelFactory.TYPE);
+                    final ChannelFactory factory =
+                            findFactory(KafkaChannelFactory.TYPE, ChannelFactory.class);
                     final String topic = "kafka_channel_factory_test_topic";
                     final DefaultReadableConfig config = new DefaultReadableConfig();
                     config.put("kafka.bootstrap.servers", kafka.getBrokerList());

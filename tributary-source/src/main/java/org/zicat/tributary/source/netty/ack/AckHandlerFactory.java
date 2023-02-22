@@ -16,20 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.source.netty.ack;
 
-/** Dummy Function Factory. */
-public class DummyFunctionFactory implements FunctionFactory {
+import org.zicat.tributary.common.SafeFactory;
 
-    public static final String IDENTITY = "dummy";
-
-    @Override
-    public Function create() {
-        return new DummyFunction();
-    }
-
-    @Override
-    public String identity() {
-        return IDENTITY;
-    }
-}
+/** AckHandlerFactory. */
+public interface AckHandlerFactory extends SafeFactory<AckHandler> {}

@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.source.netty;
 
+import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.source.netty.ack.AckHandler;
-import org.zicat.tributary.source.netty.ack.LengthAckHandler;
+import org.zicat.tributary.source.netty.ack.AckHandlerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,10 +33,11 @@ import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_
 /** DefaultNettySource. */
 public class DefaultNettySource extends AbstractNettySource {
 
+    protected static final NettyDecoder DEFAULT_DECODER = NettyDecoder.lengthDecoder;
+
     protected final int idleSecond;
     protected final int partitionCount;
     protected final AtomicInteger count = new AtomicInteger();
-    protected final AckHandler ackHandler = new LengthAckHandler();
 
     public DefaultNettySource(
             String host, int port, int eventThreads, Channel channel, int idleSecond) {
@@ -61,10 +62,32 @@ public class DefaultNettySource extends AbstractNettySource {
      */
     @Override
     protected void initChannel(SocketChannel ch, Channel channel) {
+        initChannel(ch, channel, nettyDecoder());
+    }
+
+    /**
+     * get netty decoder.
+     *
+     * @return NettyDecoder
+     */
+    protected NettyDecoder nettyDecoder() {
+        return DEFAULT_DECODER;
+    }
+
+    /**
+     * init channel.
+     *
+     * @param ch ch
+     * @param channel channel
+     * @param decoder decoder
+     */
+    private void initChannel(SocketChannel ch, Channel channel, NettyDecoder decoder) {
+        final ChannelInboundHandler sourceDecoder = decoder.createSourceDecoder();
+        final AckHandlerFactory ackHandlerFactory = decoder.ackHandlerFactory();
         ch.pipeline()
-                .addLast(new IdleStateHandler(idleSecond, 0, 0))
-                .addLast(new LengthDecoder())
-                .addLast(new ChannelHandler(channel, selectPartition(), ackHandler));
+                .addLast(new IdleStateHandler(idleSecond, idleSecond, idleSecond))
+                .addLast(sourceDecoder)
+                .addLast(new ChannelHandler(channel, selectPartition(), ackHandlerFactory));
     }
 
     /**

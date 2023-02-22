@@ -35,9 +35,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_RETAIN_SIZE_CHECK_PERIOD_MILLI;
 import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.parseMaxRetainSize;
-import static org.zicat.tributary.sink.handler.PartitionHandlerFactory.findPartitionHandlerFactory;
 
 /**
  * One SinkGroupManager Instance maintain a group consumer one {@link Channel} with {@link
@@ -65,7 +65,7 @@ public class SinkGroupManager implements Closeable {
             return;
         }
         final PartitionHandlerFactory partitionHandlerFactory =
-                findPartitionHandlerFactory(sinkGroupConfig.handlerIdentity());
+                findFactory(sinkGroupConfig.handlerIdentity(), PartitionHandlerFactory.class);
         for (int partitionId = 0; partitionId < channel.partition(); partitionId++) {
             final AbstractPartitionHandler sinkHandler =
                     partitionHandlerFactory.createHandler(

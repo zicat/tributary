@@ -27,7 +27,7 @@ public class MockIdleTriggerFactory implements FunctionFactory {
     public static final String ID = "mockIdleFunction";
 
     @Override
-    public Function createFunction() {
+    public Function create() {
         return new MockTriggerFunction();
     }
 

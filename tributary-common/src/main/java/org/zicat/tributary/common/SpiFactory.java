@@ -16,20 +16,35 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.common;
 
-/** Dummy Function Factory. */
-public class DummyFunctionFactory implements FunctionFactory {
+import java.util.ServiceLoader;
 
-    public static final String IDENTITY = "dummy";
+/** SpiFactory. */
+public interface SpiFactory {
 
-    @Override
-    public Function create() {
-        return new DummyFunction();
-    }
+    /**
+     * factory identity.
+     *
+     * @return identity
+     */
+    String identity();
 
-    @Override
-    public String identity() {
-        return IDENTITY;
+    /**
+     * find source factory by id.
+     *
+     * @param identity identity
+     * @param clazz clazz
+     * @return SpiFactory
+     */
+    static <T extends SpiFactory> T findFactory(String identity, Class<T> clazz) {
+        final ServiceLoader<T> loader = ServiceLoader.load(clazz);
+        for (T factory : loader) {
+            if (identity.equals(factory.identity())) {
+                return factory;
+            }
+        }
+        throw new TributaryRuntimeException(
+                "identity not found, " + identity + ", interface " + clazz.getName());
     }
 }

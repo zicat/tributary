@@ -20,19 +20,10 @@ package org.zicat.tributary.source;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.common.TributaryRuntimeException;
-
-import java.util.ServiceLoader;
+import org.zicat.tributary.common.SpiFactory;
 
 /** SourceFactory. */
-public interface SourceFactory {
-
-    /**
-     * get factory id.
-     *
-     * @return string
-     */
-    String identity();
+public interface SourceFactory extends SpiFactory {
 
     /**
      * create source.
@@ -42,20 +33,4 @@ public interface SourceFactory {
      * @return Source
      */
     Source createSource(Channel channel, ReadableConfig config);
-
-    /**
-     * find tsource factory by id.
-     *
-     * @param identity identity
-     * @return SourceFactory
-     */
-    static SourceFactory findSourceFactoryFactory(String identity) {
-        final ServiceLoader<SourceFactory> loader = ServiceLoader.load(SourceFactory.class);
-        for (SourceFactory sourceFactory : loader) {
-            if (identity.equals(sourceFactory.identity())) {
-                return sourceFactory;
-            }
-        }
-        throw new TributaryRuntimeException("identity not found," + identity);
-    }
 }

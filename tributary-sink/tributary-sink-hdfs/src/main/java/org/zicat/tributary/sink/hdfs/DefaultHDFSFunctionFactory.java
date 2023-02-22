@@ -24,7 +24,7 @@ import org.zicat.tributary.sink.function.FunctionFactory;
 /** DefaultHDFSFunctionFactory. */
 public class DefaultHDFSFunctionFactory implements FunctionFactory {
     @Override
-    public Function createFunction() {
+    public Function create() {
         return new DefaultHDFSFunction();
     }
 

@@ -63,7 +63,7 @@ public class DynamicChannel implements Closeable {
             for (String topic : getAllTopics()) {
                 final ReadableConfig readableConfig = getTopicParams(topic);
                 final String type = readableConfig.get(OPTION_TYPE);
-                final ChannelFactory factory = ChannelFactory.findChannelFactory(type);
+                final ChannelFactory factory = SpiFactory.findFactory(type, ChannelFactory.class);
                 channels.put(topic, factory.createChannel(topic, readableConfig));
             }
         } catch (Throwable e) {

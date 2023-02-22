@@ -27,7 +27,7 @@ public class AssertFunctionFactory implements FunctionFactory {
     public static final String IDENTITY = "assert";
 
     @Override
-    public Function createFunction() {
+    public Function create() {
         return new AssertFunction();
     }
 

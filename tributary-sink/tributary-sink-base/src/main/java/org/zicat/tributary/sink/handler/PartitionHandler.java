@@ -33,8 +33,8 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.Threads.joinQuietly;
-import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
 
 /** PartitionHandler. */
 public abstract class PartitionHandler extends Thread implements Closeable, Trigger {
@@ -56,7 +56,8 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.channel = channel;
         this.partitionId = partitionId;
         this.sinkGroupConfig = sinkGroupConfig;
-        this.functionFactory = findFunctionFactory(sinkGroupConfig.functionIdentity());
+        this.functionFactory =
+                findFactory(sinkGroupConfig.functionIdentity(), FunctionFactory.class);
         this.startOffset = channel.committedGroupOffset(groupId, partitionId);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
@@ -146,7 +147,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * @return AbstractFunction
      */
     protected final AbstractFunction createFunction(String id) {
-        final Function function = functionFactory.createFunction();
+        final Function function = functionFactory.create();
         try {
             if (!(function instanceof AbstractFunction)) {
                 throw new IllegalStateException(

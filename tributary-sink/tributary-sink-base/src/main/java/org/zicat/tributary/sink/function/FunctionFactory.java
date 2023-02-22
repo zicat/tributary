@@ -18,36 +18,8 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.common.TributaryRuntimeException;
-
-import java.util.ServiceLoader;
+import org.zicat.tributary.common.SafeFactory;
+import org.zicat.tributary.common.SpiFactory;
 
 /** FunctionFactory create function. */
-public interface FunctionFactory {
-
-    /** create function. */
-    Function createFunction();
-
-    /**
-     * factory identity.
-     *
-     * @return identity
-     */
-    String identity();
-
-    /**
-     * use java spi find SinkHandlerFactory by identity.
-     *
-     * @param identity identity
-     * @return SinkHandlerFactory
-     */
-    static FunctionFactory findFunctionFactory(String identity) {
-        final ServiceLoader<FunctionFactory> loader = ServiceLoader.load(FunctionFactory.class);
-        for (FunctionFactory functionFactory : loader) {
-            if (identity.equals(functionFactory.identity())) {
-                return functionFactory;
-            }
-        }
-        throw new TributaryRuntimeException("identity not found, " + identity);
-    }
-}
+public interface FunctionFactory extends SafeFactory<Function>, SpiFactory {}
