@@ -18,13 +18,15 @@
 
 package org.zicat.tributary.channel;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 
 /** Offset. */
 public class Offset implements Comparable<Offset> {
 
-    protected final long segmentId;
-    protected final long offset;
+    @JsonProperty protected final long segmentId;
+    @JsonProperty protected final long offset;
 
     public Offset(long segmentId, long offset) {
         this.segmentId = segmentId;

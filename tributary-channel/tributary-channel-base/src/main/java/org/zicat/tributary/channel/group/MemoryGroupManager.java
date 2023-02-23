@@ -63,8 +63,10 @@ public class MemoryGroupManager implements SingleGroupManager {
      */
     protected void foreachGroup(Consumer<String, GroupOffset> action) throws IOException {
         isOpen();
+        int i = 0;
         for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
-            action.accept(entry.getKey(), entry.getValue());
+            action.accept(i, entry.getKey(), entry.getValue());
+            i++;
         }
     }
 
@@ -132,7 +134,7 @@ public class MemoryGroupManager implements SingleGroupManager {
          * @param u u
          * @throws IOException IOException
          */
-        void accept(T t, U u) throws IOException;
+        void accept(int index, T t, U u) throws IOException;
     }
 
     /**

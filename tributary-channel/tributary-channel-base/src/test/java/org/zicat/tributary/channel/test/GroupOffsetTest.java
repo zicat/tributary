@@ -18,11 +18,10 @@
 
 package org.zicat.tributary.channel.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.GroupOffset;
-
-import java.nio.ByteBuffer;
 
 /** GroupOffsetTest. */
 public class GroupOffsetTest {
@@ -40,12 +39,10 @@ public class GroupOffsetTest {
     }
 
     @Test
-    public void testByteBufferConvert() {
+    public void testByteBufferConvert() throws JsonProcessingException {
         final GroupOffset groupOffset = new GroupOffset(2, 2, "g1");
-        final ByteBuffer byteBuffer = ByteBuffer.allocate(100);
-        groupOffset.fillBuffer(byteBuffer);
-        byteBuffer.flip();
-        final GroupOffset convertGroupOffset = GroupOffset.parserByteBuffer(byteBuffer);
+        final String json = groupOffset.toJson();
+        final GroupOffset convertGroupOffset = GroupOffset.fromJson(json);
         Assert.assertEquals(groupOffset, convertGroupOffset);
     }
 

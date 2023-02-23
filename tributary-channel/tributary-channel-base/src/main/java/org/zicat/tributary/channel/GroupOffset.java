@@ -18,9 +18,11 @@
 
 package org.zicat.tributary.channel;
 
-import java.nio.ByteBuffer;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -36,19 +38,18 @@ import java.util.Objects;
  * segment not timely.
  */
 public class GroupOffset extends Offset {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    @JsonProperty protected final String groupId;
 
-    protected final String groupId;
-    protected final byte[] groupBs;
-    private static final int RECORD_LENGTH = 20;
-
-    public GroupOffset(long segmentId, long offset, String groupId) {
-
+    public GroupOffset(
+            @JsonProperty("segmentId") long segmentId,
+            @JsonProperty("offset") long offset,
+            @JsonProperty("groupId") String groupId) {
         super(segmentId, offset);
         if (groupId == null) {
             throw new IllegalArgumentException("group id not null");
         }
         this.groupId = groupId;
-        this.groupBs = groupId.getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -60,34 +61,15 @@ public class GroupOffset extends Offset {
         return groupId;
     }
 
-    public int size() {
-        return RECORD_LENGTH + groupBs.length;
-    }
-
     /**
-     * put segment id offset to byte buffer.
+     * parser from json.
      *
-     * @param byteBuffer byte buffer
+     * @param json json
+     * @return GroupOffset
+     * @throws JsonProcessingException JsonProcessingException
      */
-    public void fillBuffer(ByteBuffer byteBuffer) {
-        byteBuffer.putLong(segmentId);
-        byteBuffer.putLong(offset);
-        byteBuffer.putInt(groupBs.length);
-        byteBuffer.put(groupBs);
-    }
-
-    /**
-     * create record offset from byte buffer.
-     *
-     * @param byteBuffer byte buffer
-     * @return RecordOffset
-     */
-    public static GroupOffset parserByteBuffer(ByteBuffer byteBuffer) {
-        final long segmentId = byteBuffer.getLong();
-        final long offset = byteBuffer.getLong();
-        final byte[] groupByte = new byte[byteBuffer.getInt()];
-        byteBuffer.get(groupByte);
-        return new GroupOffset(segmentId, offset, new String(groupByte, StandardCharsets.UTF_8));
+    public static GroupOffset fromJson(String json) throws JsonProcessingException {
+        return MAPPER.readValue(json, GroupOffset.class);
     }
 
     /**
@@ -185,5 +167,15 @@ public class GroupOffset extends Offset {
             return groupOffset;
         }
         return new GroupOffset(offset.segmentId, offset.offset, groupId);
+    }
+
+    /**
+     * cast as json.
+     *
+     * @return json string
+     * @throws JsonProcessingException JsonProcessingException
+     */
+    public String toJson() throws JsonProcessingException {
+        return MAPPER.writeValueAsString(this);
     }
 }
