@@ -43,12 +43,13 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     protected static final long DEFAULT_WAIT_TIME_MILLIS = 5000;
 
     protected final String groupId;
-    protected final Channel channel;
+    private final Channel channel;
     protected final Integer partitionId;
     protected final FunctionFactory functionFactory;
     protected final SinkGroupConfig sinkGroupConfig;
     protected final GroupOffset startOffset;
     protected final AtomicBoolean closed;
+    private GroupOffset commitOffsetWaterMark;
 
     public PartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
@@ -59,6 +60,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.functionFactory =
                 findFactory(sinkGroupConfig.functionIdentity(), FunctionFactory.class);
         this.startOffset = channel.committedGroupOffset(groupId, partitionId);
+        this.commitOffsetWaterMark = startOffset;
         this.closed = new AtomicBoolean(false);
         setName(threadName());
     }
@@ -111,6 +113,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         }
         try {
             channel.commit(partitionId, groupOffset);
+            commitOffsetWaterMark = channel.committedGroupOffset(groupId, partitionId);
         } catch (Throwable e) {
             LOG.warn("commit fail", e);
         }
@@ -175,5 +178,24 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         if (closed.compareAndSet(false, true)) {
             joinQuietly(this);
         }
+    }
+
+    /**
+     * get lag by group offset.
+     *
+     * @param groupOffset groupOffset
+     * @return long lag
+     */
+    public long lag(GroupOffset groupOffset) {
+        return channel.lag(partitionId, groupOffset);
+    }
+
+    /**
+     * get commit offset watermark. for unit test visitable.
+     *
+     * @return GroupOffset
+     */
+    public GroupOffset commitOffsetWaterMark() {
+        return commitOffsetWaterMark;
     }
 }
