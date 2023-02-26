@@ -27,7 +27,6 @@ import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
@@ -65,14 +64,10 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                     .description("check retain thread check period, default 30s")
                     .defaultValue(30 * 1000);
 
-    private static final long DEFAULT_MIN_WAIT_TIME = 500;
-
     protected final Long maxRetainSize;
-    protected final Clock clock;
 
     private volatile GroupOffset fetchOffset;
     private GroupOffset commitOffsetWaterMark;
-    private long preTriggerMillis;
 
     public AbstractPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
@@ -80,8 +75,6 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         this.commitOffsetWaterMark = startOffset;
         this.fetchOffset = startOffset;
         this.maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
-        this.clock = sinkGroupConfig.getOrGetDefaultClock();
-        this.preTriggerMillis = clock.currentTimeMillis();
     }
 
     @Override
@@ -126,8 +119,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     private synchronized RecordsResultSet poll(int partitionId, long idleTimeMillis)
             throws IOException, InterruptedException {
         checkFetchOffset();
-        return super.poll(
-                partitionId, fetchOffset, Math.min(DEFAULT_MIN_WAIT_TIME, idleTimeMillis));
+        return super.poll(partitionId, fetchOffset, idleTimeMillis);
     }
 
     /**
@@ -139,16 +131,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         if (idleTimeMillis <= 0) {
             return;
         }
-        final long current = clock.currentTimeMillis();
-        if (current - preTriggerMillis <= idleTimeMillis) {
-            return;
-        }
-        try {
-            idleTrigger();
-            commit();
-        } finally {
-            preTriggerMillis = current;
-        }
+        idleTrigger();
+        commit();
     }
 
     /** commit. */
