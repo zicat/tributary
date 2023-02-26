@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
@@ -38,8 +39,11 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
 /** FileSegment storage data to file. */
 public class FileSegment extends Segment {
 
+    private static final Logger LOG = LoggerFactory.getLogger(FileSegment.class);
     private final File file;
     private final FileChannel fileChannel;
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private final AtomicBoolean recycled = new AtomicBoolean();
 
     protected FileSegment(
             long id,
@@ -52,15 +56,6 @@ public class FileSegment extends Segment {
         super(id, writer, compressionType, segmentSize, position);
         this.file = file;
         this.fileChannel = fileChannel;
-    }
-
-    /**
-     * file path.
-     *
-     * @return string
-     */
-    public final String filePath() {
-        return file.getPath();
     }
 
     @Override
@@ -80,8 +75,17 @@ public class FileSegment extends Segment {
 
     @Override
     public boolean recycle() {
-        IOUtils.closeQuietly(this);
-        return file.delete();
+        if (recycled.compareAndSet(false, true)) {
+            IOUtils.closeQuietly(this);
+            final boolean deleted = file.delete();
+            if (deleted) {
+                LOG.info("expired file " + file.getPath() + " deleted success");
+            } else {
+                LOG.warn("expired file " + file.getPath() + " deleted fail");
+            }
+            return deleted;
+        }
+        return true;
     }
 
     @Override
@@ -91,10 +95,10 @@ public class FileSegment extends Segment {
 
     @Override
     public void close() throws IOException {
-        try {
-            super.close();
-        } finally {
-            if (fileChannel.isOpen()) {
+        if (closed.compareAndSet(false, true)) {
+            try {
+                super.close();
+            } finally {
                 IOUtils.closeQuietly(fileChannel);
             }
         }

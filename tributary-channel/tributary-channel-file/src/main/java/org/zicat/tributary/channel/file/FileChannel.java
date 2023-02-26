@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.channel.file;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
@@ -50,7 +48,6 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
  */
 public class FileChannel extends AbstractChannel<FileSegment> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileChannel.class);
     private final File dir;
     private final Long segmentSize;
     private final CompressionType compressionType;
@@ -92,15 +89,6 @@ public class FileChannel extends AbstractChannel<FileSegment> {
             segment.flush(false);
         }
         return appendSuccess;
-    }
-
-    @Override
-    protected void recycleSegment(FileSegment segment) {
-        if (segment.recycle()) {
-            LOG.info("expired file " + segment.filePath() + " deleted success");
-        } else {
-            LOG.info("expired file " + segment.filePath() + " deleted fail");
-        }
     }
 
     /** load segments. */

@@ -61,15 +61,12 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private final MemoryGroupManagerFactory groupManagerFactory;
     private final MemoryGroupManager groupManager;
     private final String topic;
-
-    protected long minCommitSegmentId;
     protected volatile S latestSegment;
 
     protected AbstractChannel(String topic, MemoryGroupManagerFactory groupManagerFactory) {
         this.topic = topic;
         this.groupManagerFactory = groupManagerFactory;
         this.groupManager = groupManagerFactory.create();
-        this.minCommitSegmentId = groupManager.getMinGroupOffset().segmentId();
     }
 
     /**
@@ -146,7 +143,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      *
      * @param segment segment
      */
-    public void addSegment(S segment) {
+    protected void addSegment(S segment) {
         this.cache.put(segment.segmentId(), segment);
     }
 
@@ -182,17 +179,13 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public synchronized void commit(GroupOffset groupOffset) {
+    public void commit(GroupOffset groupOffset) {
         if (latestSegment.segmentId() < groupOffset.segmentId()) {
             LOG.warn("commit group offset {} over latest segment", groupOffset);
             return;
         }
         groupManager.commit(groupOffset);
-        final GroupOffset min = groupManager.getMinGroupOffset();
-        if (min != null && minCommitSegmentId < min.segmentId()) {
-            minCommitSegmentId = min.segmentId();
-            cleanUp();
-        }
+        cleanUp();
     }
 
     /**
@@ -247,7 +240,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      */
     protected BlockGroupOffset cast(GroupOffset groupOffset) {
         final BlockGroupOffset newRecordOffset = BlockGroupOffset.cast(groupOffset);
-        return newRecordOffset.segmentId() < minCommitSegmentId
+        return newRecordOffset.segmentId() < groupManager.getMinGroupOffset().segmentId()
                         || newRecordOffset.segmentId() > latestSegment.segmentId()
                 ? newRecordOffset.skip2Target(
                         latestSegment.segmentId(),
@@ -272,27 +265,19 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     /** clean up old segment. */
     protected void cleanUp() {
-
-        if (minCommitSegmentId <= 0) {
-            return;
-        }
+        final long minSegmentId = groupManager.getMinGroupOffset().segmentId();
         final List<S> expiredSegments = new ArrayList<>();
         for (Map.Entry<Long, S> entry : cache.entrySet()) {
             final S segment = entry.getValue();
-            if (segment.segmentId() < minCommitSegmentId
+            if (segment.segmentId() < minSegmentId
                     && segment.segmentId() < latestSegment.segmentId()) {
                 expiredSegments.add(segment);
             }
         }
         for (S segment : expiredSegments) {
             cache.remove(segment.segmentId());
-            recycleSegment(segment);
+            segment.recycle();
         }
-    }
-
-    /** recycle segment. */
-    protected void recycleSegment(S segment) {
-        segment.recycle();
     }
 
     @Override

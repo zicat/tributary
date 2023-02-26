@@ -38,12 +38,14 @@ public class MemoryGroupManager implements SingleGroupManager {
     private final Map<String, GroupOffset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private GroupOffset minGroupOffset;
 
     public MemoryGroupManager(Set<GroupOffset> groupOffsets) {
         for (GroupOffset groupOffset : groupOffsets) {
             this.cache.put(groupOffset.groupId(), groupOffset);
             this.groups.add(groupOffset.groupId());
         }
+        minGroupOffset = minGroupOffset(cache);
     }
 
     /**
@@ -83,6 +85,7 @@ public class MemoryGroupManager implements SingleGroupManager {
             return;
         }
         cache.put(groupOffset.groupId(), groupOffset);
+        minGroupOffset = minGroupOffset(cache);
     }
 
     @Override
@@ -96,13 +99,28 @@ public class MemoryGroupManager implements SingleGroupManager {
         return cache.get(groupId);
     }
 
-    public GroupOffset getMinGroupOffset() {
+    /**
+     * get min group offset.
+     *
+     * @param cache cache
+     * @return GroupOffset
+     */
+    private static GroupOffset minGroupOffset(Map<String, GroupOffset> cache) {
         GroupOffset min = null;
         for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
             final GroupOffset groupOffset = entry.getValue();
             min = min == null ? groupOffset : GroupOffset.min(min, groupOffset);
         }
         return min;
+    }
+
+    /**
+     * get min group offset.
+     *
+     * @return GroupOffset
+     */
+    public GroupOffset getMinGroupOffset() {
+        return minGroupOffset;
     }
 
     /** check whether closed. */
