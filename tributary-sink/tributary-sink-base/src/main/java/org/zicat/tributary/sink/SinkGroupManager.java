@@ -87,7 +87,7 @@ public class SinkGroupManager implements Closeable {
                     () -> {
                         for (AbstractPartitionHandler handler : handlers) {
                             try {
-                                handler.commit();
+                                handler.updateCommitOffsetWaterMark();
                             } catch (Throwable e) {
                                 LOG.warn("period commit handle error", e);
                             }

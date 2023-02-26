@@ -87,7 +87,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                 final GroupOffset nextOffset = result.nexGroupOffset();
                 if (!result.isEmpty()) {
                     process(nextOffset, result);
-                    commit();
+                    updateCommitOffsetWaterMark();
                 } else {
                     processIdleTrigger(idleTimeMillis);
                 }
@@ -129,11 +129,11 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
             return;
         }
         idleTrigger();
-        commit();
+        updateCommitOffsetWaterMark();
     }
 
     /** commit. */
-    public synchronized void commit() {
+    public synchronized void updateCommitOffsetWaterMark() {
         final GroupOffset oldWaterMark = commitOffsetWaterMark();
         final GroupOffset newWaterMark = GroupOffset.max(committableOffset(), oldWaterMark);
         final GroupOffset skipWaterMark = skipGroupOffsetByMaxRetainSize(newWaterMark);
@@ -149,7 +149,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      * @return GroupOffset
      */
     private GroupOffset rollbackFetchOffset() {
-        commit();
+        updateCommitOffsetWaterMark();
         return fetchOffset.skip2Target(commitOffsetWaterMark());
     }
 

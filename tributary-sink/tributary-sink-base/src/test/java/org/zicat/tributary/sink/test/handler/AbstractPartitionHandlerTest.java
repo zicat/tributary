@@ -284,9 +284,9 @@ public class AbstractPartitionHandlerTest {
                     }
 
                     @Override
-                    public void commit() {
+                    public void updateCommitOffsetWaterMark() {
                         final GroupOffset groupOffset = commitOffsetWaterMark();
-                        super.commit();
+                        super.updateCommitOffsetWaterMark();
                         final GroupOffset groupOffset2 = commitOffsetWaterMark();
                         skip.set(groupOffset != groupOffset2 || skip.get());
                     }
