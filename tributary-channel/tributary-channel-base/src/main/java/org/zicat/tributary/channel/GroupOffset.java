@@ -94,11 +94,11 @@ public class GroupOffset extends Offset {
     /**
      * skip to target.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return new recordOffset
      */
-    public GroupOffset skip2Target(GroupOffset groupOffset) {
-        return skip2Target(groupOffset.segmentId(), groupOffset.offset(), groupOffset.groupId());
+    public GroupOffset skip2Target(Offset offset) {
+        return skip2Target(offset.segmentId(), offset.offset(), groupId);
     }
 
     /**

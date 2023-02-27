@@ -113,8 +113,8 @@ public class BlockGroupOffset extends GroupOffset {
     }
 
     @Override
-    public BlockGroupOffset skip2Target(GroupOffset groupOffset) {
-        return skip2Target(groupOffset.segmentId(), groupOffset.offset(), groupOffset.groupId);
+    public BlockGroupOffset skip2Target(Offset offset) {
+        return skip2Target(offset.segmentId(), offset.offset(), groupId);
     }
 
     @Override

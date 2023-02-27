@@ -277,6 +277,15 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     /**
+     * get max readable offset.
+     *
+     * @return offset
+     */
+    public final Offset latestOffset() {
+        return new Offset(segmentId(), position());
+    }
+
+    /**
      * flush data.
      *
      * @throws IOException IOException

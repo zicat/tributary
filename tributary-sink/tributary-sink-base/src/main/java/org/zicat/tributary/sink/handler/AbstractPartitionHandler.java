@@ -163,37 +163,33 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     }
 
     /** skip commit offset watermark by max retain size. */
-    protected GroupOffset skipGroupOffsetByMaxRetainSize(GroupOffset groupOffset) {
+    protected GroupOffset skipGroupOffsetByMaxRetainSize(GroupOffset offset) {
+
         if (maxRetainSize == null) {
-            return groupOffset;
+            return offset;
         }
-        GroupOffset newGroupOffset = groupOffset;
-        GroupOffset preGroupOffset = groupOffset;
+
+        GroupOffset newOffset = offset;
+        GroupOffset preOffset = offset;
         while (true) {
-            final long lag = lag(newGroupOffset);
+            final long lag = lag(newOffset);
             if (lag > maxRetainSize) {
-                preGroupOffset = newGroupOffset;
-                newGroupOffset = newGroupOffset.skipNextSegmentHead();
+                preOffset = newOffset;
+                newOffset = newOffset.skipNextSegmentHead();
                 continue;
             }
             if (lag <= 0) {
-                newGroupOffset = preGroupOffset;
+                newOffset = preOffset;
             }
             break;
         }
 
-        if (preGroupOffset == groupOffset) {
-            return groupOffset;
+        if (preOffset == offset) {
+            return offset;
         }
 
-        LOG.warn(
-                "group {}, partition {}, lag over {}, current committed segment id = {}, skip to segment id = {}",
-                groupId,
-                partitionId,
-                maxRetainSize,
-                groupOffset.segmentId(),
-                newGroupOffset.segmentId());
-        return newGroupOffset;
+        LOG.warn("lag over {}, committed {}, skip target = {}", maxRetainSize, offset, newOffset);
+        return newOffset;
     }
 
     /**
@@ -222,7 +218,6 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
             super.close();
         } finally {
             closeCallback();
-            // commit fetch offset
             commit(fetchOffset);
         }
     }

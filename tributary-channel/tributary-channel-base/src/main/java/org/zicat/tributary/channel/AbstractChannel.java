@@ -149,7 +149,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     @Override
     public long lag(GroupOffset groupOffset) {
-        return latestSegment.lag(groupOffset);
+        // if group offset less than min group offset, channel will point it to latest group offset.
+        return legalOffset(groupOffset) ? latestSegment.lag(groupOffset) : 0;
     }
 
     @Override
@@ -201,13 +202,17 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private RecordsResultSet read(GroupOffset originalGroupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
 
-        final S latest = this.latestSegment;
-        final BlockGroupOffset offset = cast(originalGroupOffset);
-        S segment = latest.match(offset) ? latest : cache.get(offset.segmentId());
+        final S latestSegment = this.latestSegment;
+
+        BlockGroupOffset offset = cast(originalGroupOffset);
+        S segment = latestSegment.match(offset) ? latestSegment : cache.get(offset.segmentId());
         if (segment == null) {
-            LOG.warn("segment id {} not found, start to consume from latest offset", offset);
-            segment = latest;
+            final Offset latestOffset = this.latestSegment.latestOffset();
+            LOG.warn("{} not found, consume from latest offset {}", offset, latestOffset);
+            segment = latestSegment;
+            offset = offset.skip2Target(latestOffset);
         }
+
         // try read it first
         final RecordsResultSet resultSet = segment.readBlock(offset, time, unit).toResultSet();
         if (!segment.isReadonly() || !resultSet.isEmpty()) {
@@ -240,13 +245,23 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      */
     protected BlockGroupOffset cast(GroupOffset groupOffset) {
         final BlockGroupOffset newRecordOffset = BlockGroupOffset.cast(groupOffset);
-        return newRecordOffset.segmentId() < groupManager.getMinGroupOffset().segmentId()
-                        || newRecordOffset.segmentId() > latestSegment.segmentId()
-                ? newRecordOffset.skip2Target(
+        return legalOffset(newRecordOffset)
+                ? newRecordOffset
+                : newRecordOffset.skip2Target(
                         latestSegment.segmentId(),
                         latestSegment.position(),
-                        newRecordOffset.groupId())
-                : newRecordOffset;
+                        newRecordOffset.groupId());
+    }
+
+    /**
+     * check offset is legal.
+     *
+     * @param offset offset
+     * @return legal offset
+     */
+    private boolean legalOffset(Offset offset) {
+        return offset.compareTo(groupManager.getMinGroupOffset()) >= 0
+                || offset.compareTo(latestSegment.latestOffset()) <= 0;
     }
 
     @Override
