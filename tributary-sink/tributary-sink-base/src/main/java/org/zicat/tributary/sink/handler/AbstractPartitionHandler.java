@@ -65,7 +65,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                     .defaultValue(30 * 1000);
 
     protected final Long maxRetainSize;
-    private volatile GroupOffset fetchOffset;
+    private GroupOffset fetchOffset;
 
     public AbstractPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
@@ -113,9 +113,12 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    private synchronized RecordsResultSet poll(int partitionId, long idleTimeMillis)
+    private RecordsResultSet poll(int partitionId, long idleTimeMillis)
             throws IOException, InterruptedException {
-        checkFetchOffset();
+        final GroupOffset commitOffsetWaterMark = commitOffsetWaterMark();
+        if (fetchOffset.compareTo(commitOffsetWaterMark) < 0) {
+            fetchOffset = fetchOffset.skip2Target(commitOffsetWaterMark);
+        }
         return super.poll(partitionId, fetchOffset, idleTimeMillis);
     }
 
@@ -133,13 +136,12 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     }
 
     /** commit. */
-    public synchronized void updateCommitOffsetWaterMark() {
+    public void updateCommitOffsetWaterMark() {
         final GroupOffset oldWaterMark = commitOffsetWaterMark();
         final GroupOffset newWaterMark = GroupOffset.max(committableOffset(), oldWaterMark);
         final GroupOffset skipWaterMark = skipGroupOffsetByMaxRetainSize(newWaterMark);
         if (skipWaterMark.compareTo(oldWaterMark) > 0) {
             commit(skipWaterMark);
-            checkFetchOffset();
         }
     }
 
@@ -151,15 +153,6 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     private GroupOffset rollbackFetchOffset() {
         updateCommitOffsetWaterMark();
         return fetchOffset.skip2Target(commitOffsetWaterMark());
-    }
-
-    /** check fetch offset. fetch offset must over commit offset watermark. */
-    private void checkFetchOffset() {
-        final GroupOffset commitOffsetWaterMark = commitOffsetWaterMark();
-        if (fetchOffset.compareTo(commitOffsetWaterMark) < 0) {
-            //noinspection NonAtomicOperationOnVolatileField
-            fetchOffset = fetchOffset.skip2Target(commitOffsetWaterMark);
-        }
     }
 
     /** skip commit offset watermark by max retain size. */

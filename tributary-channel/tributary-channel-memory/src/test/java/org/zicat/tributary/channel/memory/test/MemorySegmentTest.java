@@ -59,6 +59,7 @@ public class MemorySegmentTest {
                 Assert.assertArrayEquals(bs, readBs);
                 offset += readBs.length;
             }
+            memorySegment.readonly();
         }
     }
 }

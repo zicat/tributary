@@ -21,7 +21,6 @@ package org.zicat.tributary.channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryIOException;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -31,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
 
@@ -59,6 +59,9 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     protected final BlockWriter writer;
     protected final CompressionType compressionType;
     protected long cacheUsed = 0;
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = readWriteLock.readLock();
+    private final ReentrantReadWriteLock.WriteLock closeLock = readWriteLock.writeLock();
 
     public Segment(
             long id,
@@ -93,8 +96,6 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * @throws IOException IOException
      */
     public boolean append(byte[] data, int offset, int length) throws IOException {
-
-        checkOpen();
 
         if (length <= 0) {
             return true;
@@ -150,21 +151,10 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     public BlockGroupOffset readBlock(BlockGroupOffset blockGroupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
 
-        checkOpen();
-
-        if (!match(blockGroupOffset)) {
-            throw new IllegalStateException(
-                    "segment match fail, want "
-                            + blockGroupOffset.segmentId()
-                            + " real "
-                            + segmentId());
-        }
-
         final long readablePosition = position();
         final long offset = legalOffset(blockGroupOffset.offset());
-
         if (offset < readablePosition) {
-            return read(blockGroupOffset, readablePosition);
+            return readWithLock(blockGroupOffset, readablePosition);
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -181,7 +171,30 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         } finally {
             lock.unlock();
         }
-        return read(blockGroupOffset, position());
+        return readWithLock(blockGroupOffset, position());
+    }
+
+    /**
+     * read with count.
+     *
+     * @param blockGroupOffset blockGroupOffset
+     * @param limitOffset limitOffset
+     * @return BlockGroupOffset
+     * @throws IOException IOException
+     */
+    private BlockGroupOffset readWithLock(BlockGroupOffset blockGroupOffset, long limitOffset)
+            throws IOException {
+        final ReentrantReadWriteLock.ReadLock readLock = this.readLock;
+        readLock.lock();
+        try {
+            if (closed.get()) {
+                return blockGroupOffset.reset();
+            } else {
+                return read(blockGroupOffset, limitOffset);
+            }
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -244,17 +257,6 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
                 finalNextOffset,
                 blockGroupOffset.groupId(),
                 bufferReader);
-    }
-
-    /**
-     * check segment whether open.
-     *
-     * @throws IOException IOException
-     */
-    private void checkOpen() throws IOException {
-        if (closed.get()) {
-            throw new TributaryIOException("segments storage is close, segment id = " + id);
-        }
     }
 
     /**
@@ -356,8 +358,15 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
     @Override
     public void close() throws IOException {
-        if (closed.compareAndSet(false, true)) {
-            readonly();
+        final ReentrantReadWriteLock.WriteLock closedLock = this.closeLock;
+        closedLock.lock();
+        try {
+            if (!closed.get()) {
+                readonly();
+                closed.set(true);
+            }
+        } finally {
+            closedLock.unlock();
         }
     }
 

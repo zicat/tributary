@@ -95,10 +95,10 @@ public class FileSegment extends Segment {
 
     @Override
     public void close() throws IOException {
-        if (closed.compareAndSet(false, true)) {
-            try {
-                super.close();
-            } finally {
+        try {
+            super.close();
+        } finally {
+            if (closed.compareAndSet(false, true)) {
                 IOUtils.closeQuietly(fileChannel);
             }
         }
