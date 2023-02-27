@@ -122,14 +122,13 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     /**
      * default poll data, subclass can override this function.
      *
-     * @param partitionId partitionId
      * @param groupOffset groupOffset
      * @param idleTimeMillis idleTimeMillis
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    protected RecordsResultSet poll(int partitionId, GroupOffset groupOffset, long idleTimeMillis)
+    protected RecordsResultSet poll(GroupOffset groupOffset, long idleTimeMillis)
             throws IOException, InterruptedException {
         final long waitTime = idleTimeMillis <= 0 ? DEFAULT_WAIT_TIME_MILLIS : idleTimeMillis;
         return channel.poll(partitionId, groupOffset, waitTime, TimeUnit.MILLISECONDS);

@@ -80,24 +80,20 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         while (true) {
             try {
                 final long idleTimeMillis = idleTimeMillis();
-                final RecordsResultSet result = poll(partitionId, idleTimeMillis);
+                final RecordsResultSet result = poll(fetchOffset, idleTimeMillis);
                 if (closed.get() && result.isEmpty()) {
                     break;
                 }
-                final GroupOffset nextOffset = result.nexGroupOffset();
-                if (!result.isEmpty()) {
-                    process(nextOffset, result);
-                    updateCommitOffsetWaterMark();
-                } else {
-                    processIdleTrigger(idleTimeMillis);
-                }
-                fetchOffset = nextOffset;
+                processRecords(result, idleTimeMillis);
+                updateCommitOffsetWaterMark();
+                fetchOffset = nextFetchOffset(result.nexGroupOffset());
             } catch (Throwable e) {
                 LOG.error("poll data failed.", e);
                 if (closed.get()) {
                     break;
                 }
-                fetchOffset = rollbackFetchOffset();
+                updateCommitOffsetWaterMark();
+                fetchOffset = nextFetchOffset(null);
                 // protect while true cause cpu high
                 sleepQuietly(DEFAULT_WAIT_TIME_MILLIS);
             }
@@ -105,34 +101,32 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     }
 
     /**
-     * sync poll.
+     * next fetch offset.
      *
-     * @param partitionId partitionId
-     * @param idleTimeMillis idleTimeMillis
-     * @return RecordsResultSet
-     * @throws IOException IOException
-     * @throws InterruptedException InterruptedException
+     * @param nextOffset nextOffset
+     * @return GroupOffset
      */
-    private RecordsResultSet poll(int partitionId, long idleTimeMillis)
-            throws IOException, InterruptedException {
-        final GroupOffset commitOffsetWaterMark = commitOffsetWaterMark();
-        if (fetchOffset.compareTo(commitOffsetWaterMark) < 0) {
-            fetchOffset = fetchOffset.skip2Target(commitOffsetWaterMark);
+    private GroupOffset nextFetchOffset(GroupOffset nextOffset) {
+        if (nextOffset == null || nextOffset.compareTo(commitOffsetWaterMark()) < 0) {
+            return fetchOffset.skip2Target(commitOffsetWaterMark());
+        } else {
+            return nextOffset;
         }
-        return super.poll(partitionId, fetchOffset, idleTimeMillis);
     }
 
     /**
-     * process idle trigger.
+     * process records.
      *
+     * @param result result
+     * @param idleTimeMillis idleTimeMillis
      * @throws Throwable Throwable
      */
-    private void processIdleTrigger(long idleTimeMillis) throws Throwable {
-        if (idleTimeMillis <= 0) {
-            return;
+    private void processRecords(RecordsResultSet result, long idleTimeMillis) throws Throwable {
+        if (!result.isEmpty()) {
+            process(result.nexGroupOffset(), result);
+        } else if (idleTimeMillis > 0) {
+            idleTrigger();
         }
-        idleTrigger();
-        updateCommitOffsetWaterMark();
     }
 
     /** commit. */
@@ -143,16 +137,6 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         if (skipWaterMark.compareTo(oldWaterMark) > 0) {
             commit(skipWaterMark);
         }
-    }
-
-    /**
-     * rollback fetch offset.
-     *
-     * @return GroupOffset
-     */
-    private GroupOffset rollbackFetchOffset() {
-        updateCommitOffsetWaterMark();
-        return fetchOffset.skip2Target(commitOffsetWaterMark());
     }
 
     /** skip commit offset watermark by max retain size. */
