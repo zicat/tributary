@@ -15,8 +15,8 @@ server.* from SpringBoot Document.
 The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get
 the expected matched host as metrics dimension value.
 
-Tributary provide the http restful api to exposure metrics like sink_lag, sink_counter, most metrics need the dimension
-of host.
+Tributary provide the http restful api to exposure metrics like sink_lag, sink_counter, most metrics need the value
+of host dimension.
 
 Got the metrics of the tributary service as follows, attend to the port if server.port changed.
 
@@ -43,14 +43,14 @@ source.s2.implement=netty
 We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2 (How to define the channel
 will be introduced as below).
 
-The source must config the implement to tell the source how to receive records from the network.
+The source must config the implement to get and parse data.
 
 Tributary provide the
 [SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java)
-interface to develop special sources for suitable scenarios.
+interface to develop special sources scenarios.
 
 Tributary also provide the default implement
-[netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettySourceFactory.java), shows all
+[netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettySourceFactory.java) to receive data from the network, shows all
 params netty required as follows.
 
 ```properties
@@ -74,7 +74,7 @@ Note：
 2. The lineDecoder parse the streaming to records by text line. It is suitable for demo scenarios using telnet.
 
 3. The lengthDecoder parse the streaming by length-value decode like below, lengthDecoder ack the length of the received
-   record, ack -1 if append the record to the channel fail, it's suitable for most environment.
+   record, ack -1 if append the record to the channel fail, it's suitable for most scenarios.
 
    ![image](picture/line_decoder.png)
 
@@ -123,7 +123,7 @@ channel.c3.kafka.bootstrap.servers=127.0.0.1:9092
 
 |  key              |  default       | type                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| blockSize         | 32768(32K)     | long(unit: byte)       | the size of memory to store records|
+| blockSize         | 32768(32K)     | long(unit: byte)       | the block size to store records in memory|
 | compression       | none           | enum[none,zstd,snappy]           | the type of compression to compress the block before writing block to page cache |
 | segmentSize       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
 | partitions        |                | string          | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by ','  |
@@ -135,7 +135,7 @@ channel.c3.kafka.bootstrap.servers=127.0.0.1:9092
 
 |  key              |  default       | type                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| blockSize         | 32768(32K)     | long(unit: byte)       | the size of memory to store records|
+| blockSize         | 32768(32K)     | long(unit: byte)       | the block size to store records in memory|
 | compression       | none           | enum[none,zstd,snappy]           | the type of compression to compress the block before writing block to page cache |
 | segmentSize       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
 | partitions        | 1              | int(unit: number)      | the number of partitions|
@@ -152,9 +152,8 @@ Note:
 1. In file channel, using suitable blockSize, lower value may cause disk iops high.
 2. In file channel, using suitable segmentSize like 4294967296, lower value cause frequent file creation/deletion,
    higher value cause deleting expired files not timely.
-3. If we define multi file channels, please set different paths of the partitions, set same paths may cause unknown
-   exceptions.
-4. Setting some kafka properties is useless including key.deserializer, value.deserializer, key.serializer, value.serializer, group.id, enable.auto.commit.  
+3. If define multi file channels, please set different paths of the partitions, set same paths cause unknown exceptions.
+4. Setting some kafka properties is not work including key.deserializer, value.deserializer, key.serializer, value.serializer, group.id, enable.auto.commit.  
 
 ## Sink Detail
 
@@ -170,6 +169,8 @@ sink.group_2.threads=3
 sink.group_2.functionIdentity=kafka
 ``` 
 
+### Common Config
+
 key                               |  default       | type                 | describe                                                                  |
 |  ----                             | ----           | ---                          | ---                                                                       |
 | maxRetainPerPartitionBytes        |                | long(unit: bytes)  | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful     |
@@ -181,8 +182,6 @@ Note:
 
 1. User can customize functions by
    implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
-2. Print function receive records from channels and log it, kafka function send records to kafka server, hdfs function
-   send records to hdfs.
 
 ### Sink HDFS Detail
 

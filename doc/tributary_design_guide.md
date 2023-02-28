@@ -15,13 +15,13 @@ designed.
 
 ## FileChannel Design
 
-To meet above requirements, we need to design a reliable file channel. The file channel depends on disk for persistence,
+To meet above requirements, tributary implement a reliable file channel. The file channel depends on disk for persistence,
 which ensures the reliability of records and improves the scale of unconsumed records for failure.
 
 When a large amount of records needs to be temporarily stored, the implementation of channel based on memory may cause
 serious GC, which may affect the efficiency of records sinking and even cause program crash.
 
-In order to support multiple sinks, sinks need to maintain their own group offset. In case of failure, they only need
+In order to support multiple sinks, sinks should maintain the GroupOffset by themself. In case of failure, they only need
 to design their own failure strategy, which will not affect the source and other sinks.
 
 ## FileChannel Implement
@@ -30,12 +30,12 @@ In open source products, it is relatively simple to implement the file channel b
 on [Apache Kafka](https://kafka.apache.org/), which basically meets the requirements for channel isolation and
 reliability. However [Apache Kafka](https://kafka.apache.org/) also has some features not match, including:
 
-1. The design of offset and index
+1. The design of logical offset and index
 
    Kafka locates the actual physical offset of the file based on logical offset. To do this, it is necessary to write an
    index file storing the mapping of logical offset to physical offset, which is a waste of performance.
 
-   In tributary, the channel is designed to directly store physical offset and use physical offset to fetch records
+   In tributary, the file channel is designed to directly store physical offset and use physical offset to fetch records
    directly.
 
 2. Kafka Service

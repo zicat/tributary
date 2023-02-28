@@ -112,15 +112,15 @@ of [EmitSourceFactory](../sample-code/src/main/java/org/zicat/tributary/demo/sou
 In the document [Tributary User Guide of Config Details](user_guide_config_detail.md), how to use the
 default implement of netty has been introduced.
 
-Now let's try to develop a simple http source and use it.
+Now let's try to develop a simple http source and configure it.
 
 ### Coding
 
-Http protocol is a complicated protocol, Using netty framework to finish http decoder and encoder.
+Http protocol is a complicated protocol, let's develop http decoder and encoder by the netty framework.
 
 Tributary provide
 [AbstractNettySource](../tributary-source/src/main/java/org/zicat/tributary/source/netty/AbstractNettySource.java)
-to simplify the code, let's have a look at how to extend
+to simplify the code, have a look at how to extend
 [AbstractNettySource](../tributary-source/src/main/java/org/zicat/tributary/source/netty/AbstractNettySource.java)
 implement [HttpSource](../sample-code/src/main/java/org/zicat/tributary/demo/source/HttpSource.java)
 .
@@ -131,7 +131,7 @@ Note:
    of [SimpleHttpHandler](../sample-code/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
    defined in the
    [HttpSource](../sample-code/src/main/java/org/zicat/tributary/demo/source/HttpSource.java)
-   is to parse streaming to record from http body and append to the channel.
+   is to parse streaming as records from http body and append to the channel.
 2. The channel may have multi
    partitions, [SimpleHttpHandler](../sample-code/src/main/java/org/zicat/tributary/demo/source/SimpleHttpHandler.java)
    select one partition to append by the policy of random.
@@ -139,8 +139,7 @@ Note:
 
 [HttpSourceFactory](../sample-code/src/main/java/org/zicat/tributary/demo/source/HttpSourceFactory.java)
 is a factory to create
-[HttpSource](../sample-code/src/main/java/org/zicat/tributary/demo/source/HttpSource.java)
-when the tributary service is starting, the identity will be used in application.properties.
+[HttpSource](../sample-code/src/main/java/org/zicat/tributary/demo/source/HttpSource.java), the identity will be used in application.properties.
 
 Create a file if not exist
 named [org.zicat.tributary.source.SourceFactory](../sample-code/src/main/resources/META-INF/services/org.zicat.tributary.source.SourceFactory)
@@ -228,7 +227,7 @@ kafka_demo_dispatcher'.
 Create the file if not exists named
 [org.zicat.tributary.sink.function.FunctionFactory](../sample-code/src/main/resources/META-INF/services/org.zicat.tributary.sink.function.FunctionFactory)
 in classpath [META-INF/services](../sample-code/src/main/resources/META-INF/services), append the full class name of
-DispatcherKafkaFunctionFactory to it.
+[DispatchKafkaFunctionFactory](../sample-code/src/main/java/org/zicat/tributary/demo/sink/DispatchKafkaFunctionFactory.java).
 
 All is ready, let's configure it in the application.properties
 
@@ -249,5 +248,5 @@ sink.group_kafka.kafka.flushMill=60000
 
 Note:
 
-1. The param sink.group_kafka.kafka.topic is useless, because we use records to compute topic in kafka_demo_dispatcher.
+1. The param sink.group_kafka.kafka.topic is not work, because the topic is parsed from the record in kafka_demo_dispatcher.
 2. Because DispatchKafkaFunction extends DefaultKafkaFunction, other params are still supported.

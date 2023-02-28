@@ -14,16 +14,15 @@ multi sinks.
 ### Reliability
 
 When records arrive at the tributary service, the source append into the channel and ack client, sinks fetch records
-from the channel with GroupOffset, and commit the GroupOffset after external systems store these records. This is a
-how records in Tributary provide end-to-end reliability of the flow.
+from the channel with GroupOffset, and commit the GroupOffset after external systems store these records. This's how records in Tributary provide end-to-end reliability of the flow.
 
 ### Recoverability
 
 If the channel crash e.g., disk full, source report the exception to the client. Because tributary service is stateless,
-client need to switch to other tributary services and switch back after this service recover.
+client should switch to other tributary services and switch back after recover.
 
 If the external sink system crash, the sink will roll up to the previous committed GroupOffset and reconsume records(
-at least once). The failure of some sink systems not affect others sinking records.
+at least once). The failure of some sinks not affect others sinking records.
 
 ## Setting up a tributary service
 
@@ -32,7 +31,7 @@ tributary application using Spring Boot.
 
 ### Build package
 
-Before start the tributary service, please compile and package it from source code with java and maven (jdk8 & maven3).
+Before start the tributary service, please compile and package it from source code with java8 and maven3.
 
 Download source code using Git or other tools.
 
@@ -46,7 +45,7 @@ If expected, the current dir is the release dir named tributary which contains d
 
 ### A simple example
 
-Here, the demo config of application.properties in config dir is shown as follows:
+Here, a simple config of application.properties in config dir is shown as follows:
 
 ```properties
 server.port=8765
