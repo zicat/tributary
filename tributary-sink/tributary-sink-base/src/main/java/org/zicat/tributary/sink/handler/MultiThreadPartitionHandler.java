@@ -94,7 +94,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
         this.handlers = new DataHandler[workerNumber];
         for (int i = 0; i < workerNumber; i++) {
             handlers[i] = new DataHandler(createFunction(createFunctionId(i)), error);
-            LOG.info("Disruptor Data handler initialed, GroupId:{}, Id:{}", groupId, i);
+            LOG.info("MultiThread Data handler initialed, GroupId:{}, Id:{}", groupId, i);
         }
         disruptor.handleEventsWithWorkerPool(handlers);
         disruptor.start();

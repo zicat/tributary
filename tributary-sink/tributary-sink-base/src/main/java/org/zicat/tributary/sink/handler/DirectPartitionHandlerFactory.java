@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.handler;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.sink.SinkGroupConfig;
 
-/** SimplePartitionHandlerFactory. */
+/** DirectPartitionHandlerFactory. */
 public class DirectPartitionHandlerFactory implements PartitionHandlerFactory {
 
     public static final String IDENTITY = "direct";

@@ -31,10 +31,10 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * SimplePartitionHandler.
+ * DirectPartitionHandler.
  *
- * <p>Single Thread mode, One ${@link DirectPartitionHandler} instance bind with one {@link
- * Function} instance .
+ * <p>One Thread mode, One ${@link DirectPartitionHandler} instance bind with one {@link Function}
+ * instance .
  */
 public class DirectPartitionHandler extends AbstractPartitionHandler {
 

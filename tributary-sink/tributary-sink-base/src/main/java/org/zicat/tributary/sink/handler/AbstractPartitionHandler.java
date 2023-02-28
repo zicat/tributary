@@ -129,7 +129,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         }
     }
 
-    /** commit. */
+    /** update commit offset watermark. */
     public void updateCommitOffsetWaterMark() {
         final GroupOffset oldWaterMark = commitOffsetWaterMark();
         final GroupOffset newWaterMark = GroupOffset.max(committableOffset(), oldWaterMark);

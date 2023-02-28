@@ -305,6 +305,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         return groupManager.groups();
     }
 
+    /**
+     * active segment count.
+     *
+     * @return count
+     */
     public int activeSegment() {
         return cache.size();
     }

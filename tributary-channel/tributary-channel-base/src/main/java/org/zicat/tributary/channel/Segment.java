@@ -40,6 +40,8 @@ import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
  * <p>The life cycle of a segment instance include create(construct function), writeable/readable,
  * readonly(invoke finish method), closed(invoke close method), delete(invoke delete method)
  *
+ * <p>Segment is the unit of data expired by channel.
+ *
  * <p>All public methods are @ThreadSafe
  *
  * <p>struct: doc/picture/segment.png
@@ -89,11 +91,14 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     /**
      * append bytes to log segment.
      *
+     * <p>if segment is readonly or segment current size over {@link Segment#segmentSize} , return
+     * false.
+     *
      * @param data data
      * @param offset offset
      * @param length length
      * @return true if append success
-     * @throws IOException IOException
+     * @throws IOException IOException if block flush to SegmentStorage
      */
     public boolean append(byte[] data, int offset, int length) throws IOException {
 
@@ -141,11 +146,17 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     /**
      * blocking read data from SegmentStorage.
      *
+     * <p>if Segment is closed OR read position is over {@link Segment#position} and readonly,
+     * return empty blockGroupOffset
+     *
+     * <p>if read position is over {@link Segment#position} and not readonly, block wait for writing
+     * thread wake up.
+     *
      * @param blockGroupOffset offset in SegmentStorage
      * @param time block time
      * @param unit time unit
      * @return return null if eof or timeout, else return data
-     * @throws IOException IOException
+     * @throws IOException IOException when read storage
      * @throws InterruptedException InterruptedException
      */
     public BlockGroupOffset readBlock(BlockGroupOffset blockGroupOffset, long time, TimeUnit unit)
@@ -175,7 +186,12 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     /**
-     * read with count.
+     * read with lock.
+     *
+     * <p>Use ReadWriteLock to controller closed segment operation and read operation.
+     *
+     * <p>Closed Thread will wait all read threads finish read, and read thread will check whether
+     * segment is closed, if closed return empty block group offset.
      *
      * @param blockGroupOffset blockGroupOffset
      * @param limitOffset limitOffset
@@ -187,11 +203,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         final ReentrantReadWriteLock.ReadLock readLock = this.readLock;
         readLock.lock();
         try {
-            if (closed.get()) {
-                return blockGroupOffset.reset();
-            } else {
-                return read(blockGroupOffset, limitOffset);
-            }
+            return closed.get() ? blockGroupOffset.reset() : read(blockGroupOffset, limitOffset);
         } finally {
             readLock.unlock();
         }
@@ -376,16 +388,19 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     /**
-     * estimate lag, the lag not contains data in block. if group offset over return 0
+     * estimate lag, the lag not contains data in block. if group offset over or group offset is
+     * null or illegal return 0
      *
      * @param groupOffset groupOffset
      * @return long lag
      */
     public final long lag(GroupOffset groupOffset) {
 
-        final long offset =
-                groupOffset == null ? legalOffset(0) : legalOffset(groupOffset.offset());
-        if (groupOffset == null || groupOffset.segmentId() == -1 || match(groupOffset)) {
+        if (groupOffset == null || groupOffset.segmentId() == -1) {
+            return 0L;
+        }
+        final long offset = legalOffset(groupOffset.offset());
+        if (match(groupOffset)) {
             final long lag = position() - offset;
             return lag < 0 ? 0 : lag;
         } else {
