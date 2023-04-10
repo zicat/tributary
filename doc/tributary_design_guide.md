@@ -1,13 +1,12 @@
 # Tributary Design Guide
 
-In this section, the design of key roles is introduced.
+In this section, introduction to the design of several important roles.
 
 ## Channel
 
-The channel in the tributary is designed as a streaming to append records and take records repeatedly to multi sinks.
+In tributary, the channel is designed as a data stream that supports appending data and multiple sinks for isolated record reading.
 
-It is also supported the transaction operation helping sinks promise to consume records and send external system
-successfully at least once.
+At the same time, it also supports transaction operations to assist sinks in consuming data and delivering it successfully to external systems at least once.
 
 In [Tributary Channel Module](../tributary-channel), the interface of
 [Channel](../tributary-channel/tributary-channel-base/src/main/java/org/zicat/tributary/channel/Channel.java) is
@@ -15,85 +14,65 @@ designed.
 
 ## FileChannel Design
 
-To meet above requirements, tributary implement a reliable file channel. The file channel depends on disk for persistence,
-which ensures the reliability of records and improves the scale of unconsumed records for failure.
+The file channel uses disks for data persistence to ensure data reliability. Compared to memory, it greatly improves fault tolerance.
 
-When a large amount of records needs to be temporarily stored, the implementation of channel based on memory may cause
-serious GC, which may affect the efficiency of records sinking and even cause program crash.
+In fault scenarios, it is necessary to temporarily store a large amount of unconsumed data. Implementing this based on memory may result in serious GC issues, which could affect sinks and even cause program crashes.
 
-In order to support multiple sinks, sinks should maintain the GroupOffset by themself. In case of failure, they only need
-to design their own failure strategy, which will not affect the source and other sinks.
+To support multi-sinks scenarios, each sink needs to maintain its own GroupOffset. In case of failures, each sink can be designed with different fault-tolerance strategies without affecting other sinks, sources, or channels.
 
 ## FileChannel Implement
 
-In open source products, it is relatively simple to implement the file channel based
-on [Apache Kafka](https://kafka.apache.org/), which basically meets the requirements for channel isolation and
-reliability. However [Apache Kafka](https://kafka.apache.org/) also has some features not match, including:
+In open source products, the implementation of the file channel based on [Apache Kafka](https://kafka.apache.org/) is relatively simple and basically meets the requirements for channel isolation and reliability.
+However,[Apache Kafka](https://kafka.apache.org/) also has some features that do not match the file channel, including:
 
 1. The design of logical offset and index
 
-   Kafka locates the actual physical offset of the file based on logical offset. To do this, it is necessary to write an
-   index file storing the mapping of logical offset to physical offset, which is a waste of performance.
+   Kafka uses index files to map the logical offset to the physical offset. To achieve this functionality, updating the index file is required when writing data, which is a waste of performance.
 
-   In tributary, the file channel is designed to directly store physical offset and use physical offset to fetch records
-   directly.
+   In the tributary, the offsets stored in sinks are physical offsets, which can support disk access through this offset.
 
 2. Kafka Service
 
-   Kafka provide the log operation service, so that each batch of records needs to be transmitted through the network.
+   Kafka is a logging service and data must be transmitted over the network.
 
-   In tributary, the channel is designed to write the records to the local disk reducing the cost of network
-   transmission.
+   In tributary, the file channel directly writes data to the local disk, saving unnecessary network expenses.
 
 3. Data lifecycle
 
-   In normal, tributary can delete the data file after the consumption of all sinks is completed, which ensures the fast
-   release of the operating system page cache and disk usage.
+   Under normal circumstances, when a file has been successfully consumed by all sinks, the file channel can directly delete the file to ensure the quick release of system resources.
 
-   Kafka does not support to delete segments directly, although Kafka supports setting data expiration. The expiration
-   time is too small to cope with the failure scenario.
-
-   In tributary, the channel is designed to retain the data file after the failure until the consumption is resumed.
+   Kafka not support directly deleting consumed segments. Although it is possible to set an expiration time, it is not appropriate in this scenario.
 
 For the above reasons, the [Tributary-Channel](../tributary-channel)
 implements the
 [FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
 based on disk.
 
-This design ensures that the deployment of the tributary does not require additional external dependencies, but has
-certain requirements on the disk space and storage efficiency of the machine.
+The design of file channel allows tributary deployment to be independent of Kafka components, but requires sufficient disk capacity on the machine.
 
 ### Tributary FileChannel Implement
 
 #### About Segment
 
-Because the records in the distribution system often exists in a short life cycle, in theory a record can be deleted
-from the disk after it is consumed successfully by all sinks.
+Under normal circumstances, the data lifecycle of a distribution system is transient, and in theory, a record can be deleted immediately after it has been successfully consumed by all sinks.
 
-However, in order to meet the basic characteristics of the disk, the
+However, in order to cater to the characteristics of the disk, 
 [FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
-manage files in the form of segments.
+manages data through segments.
 
-Segments should not be too small, because frequent creation and deletion will introduce additional performance overhead.
+Segments cannot be too small, as frequent creation and deletion will bring additional performance overhead. At the same time, segments cannot be too large, as large segments will cause expired data to be deleted inefficiently, resulting in waste of system resources.
 
-Similarly, segments should not be too large, because too large segments cannot be deleted in time, which will occupy too
-many operating system page cache resources.
-
-The reasonable size of the segment file is about 2G-4G.
+The appropriate size for a segment file is between 2G and 4G.
 
 ![image](picture/segment_struct.png)
 
-The internal data of the segment is managed according to the fixed-size block. The writing operation is responsible for
-writing the data to the block. When the block is filled completely, the system calls to write to page cache.
+Within the segment, data is managed using the block. The write operation is only responsible for writing the data into the block. Once the block is filled, the data will be written into the page cache of the operating system.
 
-The advantage of the block is that it shields the impact of small data (data less than 4K) , and has great benefits for
-stable writing.
+The advantage of using blocks as the minimum writing unit is that it shields the impact of small data on writing and ensures the stability of the writing process.
 
-Generally, the appropriate block is 32K. If the record itself is larger than 1K, the block can be appropriately
-increased.
+The recommended block size under normal circumstances is 32k. If a single record itself is relatively large, such as exceeding 1K, the block size can be appropriately increased.
 
-Segment supports compression(snappy, zstd) based on block granularity. The full block will be compressed first before
-written to page cache. Therefore, the size of the block written to disk is different from that in memory.
+Segment supports block-level compression, so if compression policies such as snappy or zstd are configured, the block will be compressed before being written to the page cache, resulting in a difference between the actual size written to disk and the size in memory.
 
 Go to the source code of
 [Segment](../tributary-channel/tributary-channel-base/src/main/java/org/zicat/tributary/channel/Segment.java) for more
@@ -101,34 +80,27 @@ details.
 
 #### About FileChannel
 
-The main functions of the file channel include: segment lifecycle management & disk flushing mechanism & consumption
-group management and persistence.
+The main responsibilities of the file channel include segment lifecycle management, flush strategy, and management of GroupOffset.
 
 1. segment lifecycle management
 
-   In the segment creation phase, control the thread which is reading the latest offset to wait.
-
-   The file channel ensures that only one write thread is responsible for the operation of current segment, including
-   creating a new segment to support append operation, marking it as read-only when it's full, creating a new segment
-   and switch it to the current segment, waking up the thread which is reading the latest offset.
-
-   When the file channel is created, start the thread to clean up the expired segments in the cache.
+   Each partition of the channel only has one segment running for writing, so the writing thread is blocked until the segment is successfully created during the segment creation phase.
+   
+   When a reading thread tries to read data that has not yet been produced, FileChannel control blocks it until a timeout occurs or new data arrives.
+   
+   When a segment is filled, the file channel sets that segment to read-only mode and creates a new segment.
+    
+   When a segment has been consumed by all sinks, the file channel is responsible for deleting that segment at an appropriate time.
 
 2. disk flushing mechanism
 
-   Generally, the mechanical disk is written at 200mb/s per second, and synchronous disk brushing will inevitably lead
-   to the response delay of the writing end.
-
-   Based on the above problems, when the file channel is created, a disk flushing thread is also created which is
-   responsible for asynchronous disk flushing of the currently writable segment.
-
-   At the same time, in order to ensure that page cache is overstocked, flush it synchronously when page cache usage
-   over the certain size
+   In general, synchronous writes to disks are time-consuming operations. 
+   File channel support asynchronous flush operations and monitor the size of the page cache. 
+   By configuring a trigger for synchronous writes, dirty page cache can be written to disks within a reasonable range.
 
 3. consumption group management and persistence
 
-   It is responsible for writing the offset submitted by the read thread to the disk and providing the minimum offset
-   currently consumed. The cleanup thread marks the expired segment according to the offset and cleans it up.
+   Responsible for making the GroupOffset submitted by sinks, and calculating the minimum segment ID to allow the clean-up thread to delete expired segments.
 
 Go to the source code of
 [FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
@@ -136,19 +108,15 @@ for more details.
 
 ## Sink
 
-[Tributary-Sink](../tributary-sink)
-provides two kinds of consumption models based on [Tributary-Channel](../tributary-channel), abstracts the actual
-consumption requirements and simplifies the threshold of using the channel.
+[Tributary-Sink](../tributary-sink) two consumption models, abstracting the real consumption requirements and simplifying integration with [channels](../tributary-channel).
 
 ### Sink Models
 
-The channel supports multi partitions to write and each partition is independent of each other. Based on this
-background, the sink models include direct and multi threads.
+Channel supports configuring multiple partitions, and the partitions are independent of each other. Based on this background, the sink model includes two types: direct and multi-threads.
 
 #### Direct Model
 
-The direct model binds one partition with one thread, it's applicable to scenarios where the consumption rate of a
-single thread is higher than the writing rate of a single partition.
+In direct mode, partition and threads are bound one-to-one, making it suitable for scenarios where the consumption rate of a single thread is greater than the writing rate.
 
 ![image](picture/direct_sink_model.png)
 
@@ -158,15 +126,11 @@ for details.
 
 #### Multi Threads Model
 
-The multi-threads model binds one partition with multiple threads, it's applicable to scenarios where the consumption
-rate of a single thread is lower than the writing rate of a single partition.
+In multi-threads mode, a partition can be bound to multiple consumer threads. This is suitable for scenarios where the consumption rate of a single thread is slower than the writing rate.
 
-Compared with the direct model, the multi-threads model needs to use more cpu and memory resources.
+Compared to the direct mode, multi-threads mode require more CPU and memory resources.
 
-The model has one drawback, that is, it destroys the records order in a single partition, so it is only applicable to
-scenarios that are not sensitive to disorder. If you need to ensure order, you can use the direct mode and appropriately
-increase the number of partitions from the channel to reduce the writing rate of a single partition, balancing the
-production and consumption of a single partition.
+The downside of the multi-threads mode is that it disrupts the order of records within a single partition, making it unsuitable for scenarios that are sensitive to order. The solution is to increase the number of partitions and use the direct mode, such that the write rate in each partition is slower than the consumption rate.
 
 ![image](picture/multi_thread_sink_model.png)
 
@@ -176,9 +140,9 @@ for details.
 
 ### Function
 
-Both the direct model and the multi-threads model support the configuration of
+Both direct mode and multi-threads support configuring
 [AbstractFunction](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/AbstractFunction.java)
-to develop the actual sink needs.
+to develop sinks that meet actual needs.
 
 [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
 uses Java SPI to inject

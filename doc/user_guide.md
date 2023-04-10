@@ -2,8 +2,7 @@
 
 ## Overview
 
-The duty of tributary is to provide records uploading network interface, ensure records integrity and sink records to
-multi external systems, ensure the failure of some sinks not to affect other sinks.
+The responsibilities of Tributary include providing a network interface for recording reporting, ensuring data reliability, distributing data to multiple external systems while ensuring that partial external system failures do not affect the data distribution of other external systems.
 
 ## Architecture
 
@@ -13,16 +12,14 @@ multi sinks.
 
 ### Reliability
 
-When records arrive at the tributary service, the source append into the channel and ack client, sinks fetch records
-from the channel with GroupOffset, and commit the GroupOffset after external systems store these records. This's how records in Tributary provide end-to-end reliability of the flow.
+When the record is sent to the Tributary service, the source is responsible for writing the data to the channel and acking the client. The sinks pull the records from the channel based on their respective GroupOffsets. When the external system successfully stores these records, it submits the GroupOffset, which is the end-to-end reliability flow design of Tributary.
 
 ### Recoverability
 
-If the channel crash e.g., disk full, source report the exception to the client. Because tributary service is stateless,
-client should switch to other tributary services and switch back after recover.
+If a channel experiences a malfunction, such as disk damage or reaching full capacity, the source will inform the client of the relevant problem. As Tributary service is stateless, the client is responsible for maintaining the health of all Tributary instances and making necessary adjustments in case of malfunctions.
 
-If the external sink system crash, the sink will roll up to the previous committed GroupOffset and reconsume records(
-at least once). The failure of some sinks not affect others sinking records.
+
+If there is an external system failure for the sink, it will roll back to the previously committed GroupOffset and re-consume to ensure at least one successful consumption. Partial sink failures will not affect other sinks.
 
 ## Setting up a tributary service
 
@@ -33,7 +30,7 @@ tributary application using Spring Boot.
 
 Before start the tributary service, please compile and package it from source code with java8 and maven3.
 
-Download source code using Git or other tools.
+Use git or other tools to download source code.
 
 ```shell
 $ cd tributary
@@ -41,7 +38,7 @@ $ bash sbin/package.sh
 $ cd release/tributary  
 ``` 
 
-If expected, the current dir is the release dir named tributary which contains dirs include bin, config, libs.
+If everything goes well, the current directory will be the release directory named "tributary", which includes three subdirectories: "bin", "config", and "libs".
 
 ### A simple example
 
@@ -58,16 +55,15 @@ channel.c1.groups=group_1
 sink.group_1.functionIdentity=print
 ```
 
-Note that server.port and source.s1.netty.port is not conflicting and used, channel.c1.partitions must exist and allow
-reading and writing.
+Please note that the port configuration for server.port and source.s1.netty.port should not be duplicated and must not be occupied by other processes.
 
-Given the application.properties, start the tributary service as follows:
+Start the Tributary service by using this application.properties as follows
 
 ```shell
 $ bash bin/tributary.sh start
 ```
 
-Check whether the tributary service start successfully by the log file in log dir.
+Check whether Tributary has started successfully by checking the log files in the log directory.
 
 ```shell
 $ tail -f log/tributary.log
@@ -83,7 +79,7 @@ Check whether the tributary service receive and sink records successfully by the
 
 ![image](picture/receive_success_log.png)
 
-Check the metrics of the tributary service by http restful api, attend to the port if server.port changed.
+Attempt to send some records through telnet, and please note that the port in the command needs to match the configuration of source.s1.netty.port.
 
 ```shell
 $ curl -s http://localhost:8765/metrics|grep -v '#'
@@ -93,5 +89,5 @@ $ curl -s http://localhost:8765/metrics|grep -v '#'
 
 Congratulations - you’ve successfully configured and deployed a tributary service!
 
-[Tributary User Guide Of Config Details](user_guide_config_detail.md) cover the application.properties in much more
-detail, let's continue.
+[Tributary User Guide Of Config Details](user_guide_config_detail.md) cover more details about the application.properties, let's continue.
+                                                                           

@@ -1,6 +1,6 @@
 # Tributary User Guide of Config Details
 
-Tributary Config is consists of 4 parts include server, source, channel and sink.
+Tributary Configuration consists of four parts, including server, source, channel, and sink.
 
 ## Server Detail
 
@@ -9,16 +9,11 @@ server.port=8765
 server.metrics.ip.pattern=.*
 ```
 
-Tributary service provide service metrics by http restful api based on SpringBoot, you can get more details abort
-server.* from SpringBoot Document.
+The Tributary service provides metrics indicators in the form of http restful api through SpringBoot, and more server.* details can be obtained through the SpringBoot document.
 
-The param server.metrics.ip.pattern is a pattern, filter hosts(the server may has multi network adapter cards) and get
-the expected matched host as metrics dimension value.
+The parameter "server.metrics.ip.pattern" is a regular expression that is used to filter the required hosts when there are multiple network cards in the machine, and assign the value to the host dimension in the metrics.
 
-Tributary provide the http restful api to exposure metrics like sink_lag, sink_counter, most metrics need the value
-of host dimension.
-
-Got the metrics of the tributary service as follows, attend to the port if server.port changed.
+Get tributary metrics as follows, ensure that the port matches the server.port configuration:
 
 ![image](picture/metrics_url.png)
 
@@ -29,9 +24,9 @@ Got the metrics of the tributary service as follows, attend to the port if serve
 
 ## Source Detail
 
-Tributary support to define multi sources in the application.properties.
+Tributary supports defining multiple sources in the application.properties
 
-The source must bind a channel and implement as follows
+Each source must be associated with a channel and its implementation as follows
 
 ```properties
 source.s1.channel=c1
@@ -40,18 +35,16 @@ source.s2.channel=c2
 source.s2.implement=netty
 ``` 
 
-We define two sources named s1 bind the channel named c1 and s2 bind the channel named c2 (How to define the channel
-will be introduced as below).
+Above are defined two sources named s1 and s2, in which s1 is bound to channel c1 and s2 is bound to channel c2, and their implementation is both using netty.
 
 The source must config the implement to get and parse data.
 
 Tributary provide the
 [SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java)
-interface to develop special sources scenarios.
+interface that supports the development of specific sources scenarios.
 
-Tributary also provide the default implement
-[netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettySourceFactory.java) to receive data from the network, shows all
-params netty required as follows.
+Tributary also provides the default implementation
+[netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettySourceFactory.java), which supports receiving data from the network. The configuration parameters for Netty are as follows :
 
 ```properties
 source.s1.netty.port=8200
@@ -69,12 +62,11 @@ source.s1.netty.decoder=lineDecoder
 
 Note：
 
-1. Different source use different netty.port
+1. Different netty sources have different configurations for netty.port.
+   
+2. The lineDecoder parses streaming records line by line, making it more suitable for scenarios where telnet is used for demonstrations.
 
-2. The lineDecoder parse the streaming to records by text line. It is suitable for demo scenarios using telnet.
-
-3. The lengthDecoder parse the streaming by length-value decode like below, lengthDecoder ack the length of the received
-   record, ack -1 if append the record to the channel fail, it's suitable for most scenarios.
+3. The lengthDecoder parses streaming records by length-value like below, making it more suitable for most scenarios.
 
    ![image](picture/line_decoder.png)
 
@@ -84,10 +76,9 @@ for reference.
 
 ## Channel Detail
 
-A channel like data streaming can be appended records and consumed records by sinks repeatedly, some types of channels like file has the
-ability of persistence.
+A channel is like a data stream that can append records and allow sinks to consume data independently. Some types of channels, such as file channel, support data persistence.
 
-Tributary service support to define multi channels in the application.properties.
+Tributary supports defining multiple channels in the application.properties
 
 ```properties
 channel.c1.type=file
@@ -149,15 +140,15 @@ channel.c3.kafka.bootstrap.servers=127.0.0.1:9092
 
 Note:
 
-1. In file channel, using suitable blockSize, lower value may cause disk iops high.
-2. In file channel, using suitable segmentSize like 4294967296, lower value cause frequent file creation/deletion,
-   higher value cause deleting expired files not timely.
-3. If define multi file channels, please set different paths of the partitions, set same paths cause unknown exceptions.
+1. Please configure a reasonable blockSize in the file channel. A value that is too small may increase the IOPS of the disk.
+2. Please configure a reasonable segmentSize in the file channel. A value that is too small will cause frequent creation and deletion of files, while a value that is too large will affect the duration of expired data retention.
+3. When defining multiple file channels, please make sure to set different partition directories. Setting the same directory may cause unknown exceptions.
 4. Setting some kafka properties is not work including key.deserializer, value.deserializer, key.serializer, value.serializer, group.id, enable.auto.commit.  
+5. Strongly recommend using file channel in production environment, memory channel, and kafka channel more for debugging.
 
 ## Sink Detail
 
-Tributary support to define multi sinks.
+Tributary supports defining multiple sinks in the application.properties
 
 ```properties
 sink.group_1.maxRetainPerPartitionBytes=9663676414

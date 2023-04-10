@@ -10,14 +10,14 @@ records. It has a simple and flexible architecture based on streaming records fl
 Tributary is designed to solve the reliability and isolation with multiple sinks consuming the channel.
 For example, sink data to HDFS and Kafka at the same time for batching and streaming computing requirement.
 
-It's challenging to fulfill the requirement because how to save received data when the failure occurs on hdfs, kafka or other external system must be resolved.
+Persistently receiving and forwarding data to external systems such as HDFS and Kafka while achieving mutual fault isolation is a highly challenging task.
 
-The current mainstream solution like [Apache Flume](https://flume.apache.org/) is saving received data to multiple channels, each sink consume one channel (write-amplification). 
+The current mainstream solution, such as [Apache Flume](https://flume.apache.org/), adopts a write amplification strategy to address isolation issues. Specifically, the received data is stored in multiple channels, and each sink consumes a separate channel.
+                                                                                    
+Tributary adopts a read amplification to address isolation issues and supports multiple sinks consuming the same channel based on GroupOffset.
 
-Tributary support multiple sinks to consume one channel with the design of GroupOffset (read-amplification).
-
-The benefits of read-amplification not only guarantee isolation but also reduce a lot of overhead 
-especially the increase in the amount of data and sinks. This is the greatest advantage of tributary.
+The benefits of reading amplification not only ensure fault isolation, but also greatly reduce the overhead, 
+especially when the data volume and number of sinks increase.
 
 ## Documentation
 
