@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.service.component;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +28,11 @@ import org.zicat.tributary.channel.file.FileChannelFactory;
 import org.zicat.tributary.common.*;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 
-import javax.annotation.PostConstruct;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
 
 /** DynamicChannel. */
 @Component
@@ -47,63 +46,27 @@ public class DynamicChannel implements Closeable {
                     .description("channel type")
                     .defaultValue(FileChannelFactory.TYPE);
 
-    @Autowired ChannelConfiguration channelConfiguration;
+    /* key:channel id, value: channel instance */
+    private final Map<String, Channel> channels = new HashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    /* key:channel id, value: channel instance */
-    final Map<String, Channel> channels = new HashMap<>();
-
-    @PostConstruct
-    public void init() throws Throwable {
-        if (channelConfiguration.getChannel() == null
-                || channelConfiguration.getChannel().isEmpty()) {
-            return;
-        }
+    public DynamicChannel(@Autowired ChannelConfiguration channelConfiguration) throws Exception {
+        final ReadableConfig allChannelConfig =
+                ReadableConfig.create(channelConfiguration.getChannel());
+        final Set<String> topics = allChannelConfig.groupKeys(DEFAULT_KEY_HANDLER);
         try {
-            for (String topic : getAllTopics()) {
-                final ReadableConfig readableConfig = getTopicParams(topic);
-                final String type = readableConfig.get(OPTION_TYPE);
+            for (String topic : topics) {
+                final String head = topic + ".";
+                final ReadableConfig topicConfig = allChannelConfig.filterAndRemovePrefixKey(head);
+                final String type = topicConfig.get(OPTION_TYPE);
                 final ChannelFactory factory = SpiFactory.findFactory(type, ChannelFactory.class);
-                channels.put(topic, factory.createChannel(topic, readableConfig));
+                channels.put(topic, factory.createChannel(topic, topicConfig));
             }
+            LOG.info("create channel success, topics {}", topics);
         } catch (Throwable e) {
             IOUtils.closeQuietly(this);
             throw e;
         }
-    }
-
-    /**
-     * get channel params.
-     *
-     * @param channel channel
-     * @return ReadableConfig
-     */
-    private ReadableConfig getTopicParams(String channel) {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        final String prefix = channel + ".";
-        for (Map.Entry<String, String> entry : channelConfiguration.getChannel().entrySet()) {
-            final String key = entry.getKey();
-            final int index = key.indexOf(prefix);
-            if (index != -1) {
-                config.put(key.substring(index + prefix.length()), entry.getValue());
-            }
-        }
-        return config;
-    }
-
-    /**
-     * parser channels.
-     *
-     * @return topic list
-     */
-    private Set<String> getAllTopics() {
-        final Set<String> topics = new HashSet<>();
-        for (Map.Entry<String, String> entry : channelConfiguration.getChannel().entrySet()) {
-            final String key = entry.getKey();
-            final String[] keySplit = key.split("\\.");
-            topics.add(keySplit[0]);
-        }
-        return topics;
     }
 
     /**
@@ -126,13 +89,9 @@ public class DynamicChannel implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                channels.forEach((k, v) -> IOUtils.closeQuietly(v));
-            } finally {
-                FileSystem.closeAll();
-            }
+            channels.forEach((k, v) -> IOUtils.closeQuietly(v));
         }
     }
 

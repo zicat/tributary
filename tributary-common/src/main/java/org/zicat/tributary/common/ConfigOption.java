@@ -46,6 +46,10 @@ public class ConfigOption<T> {
         return new ConfigOption<>(key, valueConvert, defaultValue, description, hasDefaultValue);
     }
 
+    public ConfigOption<T> concatHead(String head) {
+        return changeKey(head + key);
+    }
+
     public String key() {
         return key;
     }

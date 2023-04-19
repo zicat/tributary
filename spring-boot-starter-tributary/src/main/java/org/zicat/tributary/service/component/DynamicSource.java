@@ -18,54 +18,63 @@
 
 package org.zicat.tributary.service.component;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import java.io.Closeable;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 
 /** DynamicSource. */
 @Component
-public class DynamicSource {
+public class DynamicSource implements Closeable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicSource.class);
     private static final String SPLIT = ".";
 
-    private static final String DEFAULT_IMPLEMENT = "default";
-    private static final String KEY_IMPLEMENT = "implement";
+    public static final ConfigOption<String> OPTION_IMPLEMENT =
+            ConfigOptions.key("implement")
+                    .stringType()
+                    .description("source implement")
+                    .defaultValue("default");
 
-    private static final String KEY_CHANNEL = "channel";
+    public static final ConfigOption<String> OPTION_CHANNEL =
+            ConfigOptions.key("channel").stringType().description("channel name").noDefaultValue();
 
-    @Autowired DynamicChannel dynamicChannel;
-    @Autowired DynamicSinkGroupManager dynamicSinkGroupManager;
-    @Autowired SourceConfiguration sourceConfiguration;
+    private final Map<String, Source> sourceCache = new HashMap<>();
 
-    final Map<String, Source> sourceCache = new HashMap<>();
-
-    @PostConstruct
-    public void init() throws Throwable {
-        final Set<String> sourceSet = getSources();
-        for (String sourceId : sourceSet) {
+    public DynamicSource(
+            @Autowired DynamicChannel dynamicChannel,
+            @Autowired SourceConfiguration sourceConfiguration)
+            throws Exception {
+        final ReadableConfig allSourceConfig =
+                ReadableConfig.create(sourceConfiguration.getSource());
+        final Set<String> sources = allSourceConfig.groupKeys(DEFAULT_KEY_HANDLER);
+        for (String sourceId : sources) {
+            final String head = sourceId + SPLIT;
             final Channel channel =
-                    dynamicChannel.getChannel(dynamicSourceValue(sourceId, KEY_CHANNEL, null));
-            final String implementId =
-                    dynamicSourceValue(sourceId, KEY_IMPLEMENT, DEFAULT_IMPLEMENT);
+                    dynamicChannel.getChannel(allSourceConfig.get(OPTION_CHANNEL.concatHead(head)));
+            final String implementId = allSourceConfig.get(OPTION_IMPLEMENT.concatHead(head));
             final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
             Source server = null;
             try {
-                server = sourceFactory.createSource(channel, getSubKeyConfig(sourceId));
+                server =
+                        sourceFactory.createSource(
+                                channel, allSourceConfig.filterAndRemovePrefixKey(head));
                 server.start();
                 sourceCache.put(sourceId, server);
             } catch (Throwable e) {
@@ -73,72 +82,14 @@ public class DynamicSource {
                 throw e;
             }
         }
+        LOG.info("create source success, sources {}", sourceCache.keySet());
     }
 
-    @PreDestroy
-    public void destroy() {
-        try {
-            for (Map.Entry<String, Source> entry : sourceCache.entrySet()) {
-                IOUtils.closeQuietly(entry.getValue());
-            }
-            sourceCache.clear();
-        } finally {
-            try {
-                dynamicChannel.flushAll();
-            } finally {
-                IOUtils.closeQuietly(dynamicSinkGroupManager);
-                IOUtils.closeQuietly(dynamicChannel);
-            }
+    @Override
+    public void close() {
+        for (Map.Entry<String, Source> entry : sourceCache.entrySet()) {
+            IOUtils.closeQuietly(entry.getValue());
         }
-    }
-
-    /**
-     * source set.
-     *
-     * @return source set
-     */
-    private Set<String> getSources() {
-        final Set<String> sourceSet = new HashSet<>();
-        for (Map.Entry<String, String> entry : sourceConfiguration.getSource().entrySet()) {
-            final String key = entry.getKey();
-            final String[] split = key.split("\\.");
-            sourceSet.add(split[0]);
-        }
-        return sourceSet;
-    }
-
-    /**
-     * create dynamic source value.
-     *
-     * @param sourceId sourceId
-     * @param key key
-     * @param defaultValue defaultValue
-     * @return value
-     */
-    private String dynamicSourceValue(String sourceId, String key, String defaultValue) {
-        final String realKey = String.join(SPLIT, sourceId, key);
-        final String value = sourceConfiguration.getSource().get(realKey);
-        if (value == null && defaultValue == null) {
-            throw new TributaryRuntimeException("key not configuration, key = " + realKey);
-        }
-        return value == null ? defaultValue : value;
-    }
-
-    /**
-     * get sub key config.
-     *
-     * @param sourceId sourceId
-     * @return new map
-     */
-    private DefaultReadableConfig getSubKeyConfig(String sourceId) {
-        final DefaultReadableConfig result = new DefaultReadableConfig();
-        final String prefix = sourceId + SPLIT;
-        for (Map.Entry<String, String> entry : sourceConfiguration.getSource().entrySet()) {
-            final String key = entry.getKey();
-            if (key.startsWith(prefix)) {
-                result.put(key.replace(prefix, ""), entry.getValue());
-            }
-        }
-        return result;
+        sourceCache.clear();
     }
 }

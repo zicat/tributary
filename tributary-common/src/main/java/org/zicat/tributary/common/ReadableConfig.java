@@ -18,10 +18,44 @@
 
 package org.zicat.tributary.common;
 
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.BiConsumer;
 
 /** ReadableConfig. */
 public interface ReadableConfig {
+
+    /**
+     * group by keyHandler.
+     *
+     * @param keyHandler keyHandler
+     * @return set
+     */
+    Set<String> groupKeys(KeyHandler keyHandler);
+
+    /**
+     * forEach.
+     *
+     * @param consumer consumer
+     */
+    void forEach(BiConsumer<? super String, ? super Object> consumer);
+
+    /**
+     * create with values.
+     *
+     * @param values values
+     * @return Readable Config
+     */
+    static ReadableConfig create(Map<String, String> values) {
+        DefaultReadableConfig config = new DefaultReadableConfig();
+        if (values != null) {
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                config.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return config;
+    }
 
     /**
      * get value by config option.
@@ -46,4 +80,33 @@ public interface ReadableConfig {
      * @return properties.
      */
     Properties toProperties();
+
+    /** KeyHandler. */
+    interface KeyHandler {
+
+        /**
+         * get want key.
+         *
+         * @param key key
+         * @return value
+         */
+        String apply(String key);
+    }
+
+    /** first key split by . */
+    class FirstKey implements KeyHandler {
+
+        private final String split;
+
+        public FirstKey(String split) {
+            this.split = split;
+        }
+
+        @Override
+        public String apply(String key) {
+            return key.split(split)[0];
+        }
+    }
+
+    ReadableConfig.KeyHandler DEFAULT_KEY_HANDLER = new ReadableConfig.FirstKey("\\.");
 }

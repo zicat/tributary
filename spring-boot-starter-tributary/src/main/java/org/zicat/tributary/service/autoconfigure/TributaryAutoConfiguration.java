@@ -21,9 +21,7 @@ package org.zicat.tributary.service.autoconfigure;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.zicat.tributary.service.component.DynamicChannel;
-import org.zicat.tributary.service.component.DynamicSinkGroupManager;
-import org.zicat.tributary.service.component.DynamicSource;
+import org.zicat.tributary.service.component.*;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
 import org.zicat.tributary.service.configuration.MetricsConfiguration;
 import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
@@ -32,6 +30,8 @@ import org.zicat.tributary.service.configuration.SourceConfiguration;
 /** TributaryAutoConfiguration. */
 @Configuration(proxyBeanMethods = false)
 @Import({
+    TributaryContextAware.class,
+    TributaryShutdownListener.class,
     ChannelConfiguration.class,
     MetricsConfiguration.class,
     SinkGroupManagerConfiguration.class,

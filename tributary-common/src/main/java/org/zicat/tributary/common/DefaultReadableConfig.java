@@ -20,6 +20,8 @@ package org.zicat.tributary.common;
 
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** DefaultReadableConfig. */
 public class DefaultReadableConfig extends HashMap<String, Object> implements ReadableConfig {
@@ -33,6 +35,11 @@ public class DefaultReadableConfig extends HashMap<String, Object> implements Re
      */
     public <T> void put(ConfigOption<T> configOption, T value) {
         put(configOption.key(), value);
+    }
+
+    @Override
+    public Set<String> groupKeys(KeyHandler keyHandler) {
+        return keySet().stream().map(keyHandler::apply).collect(Collectors.toSet());
     }
 
     @Override

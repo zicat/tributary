@@ -75,6 +75,16 @@ public class SinkGroupManager implements Closeable {
         handlers.forEach(AbstractPartitionHandler::open);
         handlers.forEach(Thread::start);
         supportMaxRetainSize();
+        logSinkGroupManagerInfo();
+    }
+
+    /** log sink group manager info. */
+    private void logSinkGroupManagerInfo() {
+        LOG.info(
+                "create sink group manager success, groupId={}, topic={}, config={}",
+                groupId,
+                topic(),
+                sinkGroupConfig);
     }
 
     /** support max retain size. */
