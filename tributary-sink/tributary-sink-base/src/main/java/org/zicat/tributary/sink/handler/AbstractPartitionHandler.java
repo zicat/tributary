@@ -87,6 +87,10 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                 processRecords(result, idleTimeMillis);
                 updateCommitOffsetWaterMark();
                 fetchOffset = nextFetchOffset(result.nexGroupOffset());
+            } catch (InterruptedException interruptedException) {
+                if (closed.get()) {
+                    return;
+                }
             } catch (Throwable e) {
                 LOG.error("poll data failed.", e);
                 if (closed.get()) {

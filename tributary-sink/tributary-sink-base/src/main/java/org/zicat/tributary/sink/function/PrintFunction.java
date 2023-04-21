@@ -22,14 +22,22 @@ import io.prometheus.client.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 /** PrintFunction. */
-public class PrintFunction extends AbstractFunction {
+public class PrintFunction extends AbstractFunction implements Trigger {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
+
+    public static final ConfigOption<Long> CONFIG_TRIGGER_MILLIS =
+            ConfigOptions.key("trigger.millis")
+                    .longType()
+                    .description("set trigger millis, default -1")
+                    .defaultValue(-1L);
 
     private static final Counter SINK_PRINT_COUNTER =
             Counter.build()
@@ -38,9 +46,12 @@ public class PrintFunction extends AbstractFunction {
                     .labelNames("host", "groupId", "topic")
                     .register();
 
+    private long triggerMillis;
+
     @Override
     public void open(Context context) {
         super.open(context);
+        this.triggerMillis = context.get(CONFIG_TRIGGER_MILLIS);
     }
 
     @Override
@@ -56,4 +67,14 @@ public class PrintFunction extends AbstractFunction {
 
     @Override
     public void close() {}
+
+    @Override
+    public long idleTimeMillis() {
+        return triggerMillis;
+    }
+
+    @Override
+    public void idleTrigger() {
+        LOG.info("trigger idle period {}", triggerMillis);
+    }
 }

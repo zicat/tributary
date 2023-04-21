@@ -175,6 +175,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
+            interrupt();
             joinQuietly(this);
         }
     }
