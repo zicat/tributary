@@ -149,8 +149,21 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     @Override
     public long lag(GroupOffset groupOffset) {
-        // if group offset less than min group offset, channel will point it to latest group offset.
-        return legalOffset(groupOffset) ? latestSegment.lag(groupOffset) : 0;
+
+        if (groupOffset == null) {
+            return 0L;
+        }
+
+        final long latestSegmentId = latestSegment.segmentId();
+        long totalLag = 0;
+        for (long segmentId = groupOffset.segmentId; segmentId <= latestSegmentId; segmentId++) {
+            final S segment = cache.get(segmentId);
+            if (segment == null) {
+                continue;
+            }
+            totalLag += segment.lag(groupOffset);
+        }
+        return totalLag;
     }
 
     @Override

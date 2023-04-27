@@ -277,7 +277,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * @param groupOffset groupOffset
      * @return boolean match
      */
-    public final boolean match(GroupOffset groupOffset) {
+    public final boolean match(Offset groupOffset) {
         return groupOffset != null && this.segmentId() == groupOffset.segmentId();
     }
 
@@ -388,31 +388,20 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     /**
-     * estimate lag, the lag not contains data in block. if group offset over or group offset is
-     * null or illegal return 0
+     * if group offset segment is null or more than current segment than return 0, if group offset
+     * segment equals return position - offset else return position.
      *
      * @param groupOffset groupOffset
      * @return long lag
      */
-    public final long lag(GroupOffset groupOffset) {
-
-        if (groupOffset == null || groupOffset.segmentId() == -1) {
+    public final long lag(Offset groupOffset) {
+        if (groupOffset == null
+                || groupOffset.segmentId() < 0
+                || groupOffset.segmentId() > this.segmentId()) {
             return 0L;
         }
         final long offset = legalOffset(groupOffset.offset());
-        if (match(groupOffset)) {
-            final long lag = position() - offset;
-            return lag < 0 ? 0 : lag;
-        } else {
-            final long segmentIdDelta = this.segmentId() - groupOffset.segmentId();
-            if (segmentIdDelta < 0) {
-                return 0;
-            }
-            final long segmentLag = (segmentIdDelta - 1) * segmentSize;
-            // may segment size adjust, this lag is only an estimation
-            final long lagInSegment = position() + (segmentSize - offset);
-            return segmentLag + lagInSegment;
-        }
+        return match(groupOffset) ? Math.max(0, position() - offset) : position();
     }
 
     /**
