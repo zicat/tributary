@@ -43,7 +43,7 @@ public class AbstractFunctionTest {
         clock.setCurrentTimeMillis(0);
         final MockFunction function = createFunction(clock);
         final AtomicInteger callback = new AtomicInteger();
-        function.flush(
+        function.commit(
                 startGroupOffset.skipNextSegmentHead(),
                 () -> {
                     callback.incrementAndGet();
@@ -51,7 +51,7 @@ public class AbstractFunctionTest {
                 });
         Assert.assertEquals(1, callback.get());
         clock.setCurrentTimeMillis(fullMill);
-        function.flush(
+        function.commit(
                 startGroupOffset.skipNextSegmentHead(),
                 () -> {
                     callback.incrementAndGet();

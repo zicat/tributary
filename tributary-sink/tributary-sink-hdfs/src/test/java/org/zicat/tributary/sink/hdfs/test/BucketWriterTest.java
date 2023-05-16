@@ -32,10 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
-import org.zicat.tributary.sink.function.Clock;
-import org.zicat.tributary.sink.function.SystemClock;
 import org.zicat.tributary.sink.hdfs.BucketWriter;
 import org.zicat.tributary.sink.hdfs.HDFSWriter;
+import org.zicat.tributary.sink.hdfs.HDFSWriterFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -78,28 +77,15 @@ public class BucketWriterTest {
     @Test
     public void testFileSuffixNotGiven() throws IOException {
         // Need to override system time use for test so we know what to expect
-        final long testTime = System.currentTimeMillis();
-        final Clock testClock =
-                new SystemClock() {
-                    @Override
-                    public long currentTimeMillis() {
-                        return testTime;
-                    }
-                };
 
         MockHDFSWriter hdfsWriter = new MockHDFSWriter();
         BucketWriter<Void> bucketWriter =
-                new BucketWriterBuilder(hdfsWriter)
-                        .setCodeC(new GzipCodec())
-                        .setClock(testClock)
-                        .build();
+                new BucketWriterBuilder(hdfsWriter).setCodeC(new GzipCodec()).build();
 
         final byte[] e = "foo".getBytes(StandardCharsets.UTF_8);
         bucketWriter.append(e);
 
-        Assert.assertTrue(
-                "Incorrect suffix",
-                hdfsWriter.getOpenedFilePath().endsWith((testTime + 1) + ".gz.tmp"));
+        Assert.assertTrue("Incorrect suffix", hdfsWriter.getOpenedFilePath().endsWith("1.gz.tmp"));
     }
 
     @Test
@@ -137,13 +123,16 @@ public class BucketWriterTest {
         final Path dirPath = new Path(bucketPath);
         fs.delete(dirPath, true);
         fs.mkdirs(dirPath);
+        final SnappyCodec codec = new SnappyCodec();
+        codec.setConf(conf);
         final MockFileSystem mockFs = new MockFileSystem(fs, 2, true);
-        final MockDataStream writer = new MockDataStream(mockFs);
+        final MockLengthBodyHDFSWriter writer = new MockLengthBodyHDFSWriter(mockFs, codec);
         final AtomicInteger renameCount = new AtomicInteger();
         final BucketWriter<Void> bucketWriter =
                 new BucketWriterBuilder(writer)
                         .setBucketPath(bucketPath)
                         .setFileName(fileName)
+                        .setCodeC(codec)
                         .setRollSize(1)
                         .setMaxRetries(1)
                         .setWriter(writer)
@@ -183,16 +172,19 @@ public class BucketWriterTest {
         final Configuration conf = new Configuration();
         final FileSystem fs = FileSystem.get(conf);
         final Path dirPath = new Path(bucketPath);
+        final SnappyCodec codec = new SnappyCodec();
+        codec.setConf(conf);
         fs.delete(dirPath, true);
         fs.mkdirs(dirPath);
         final MockFileSystem mockFs = new MockFileSystem(fs, numberOfRetriesRequired, true);
-        final MockDataStream writer = new MockDataStream(mockFs);
+        final MockLengthBodyHDFSWriter writer = new MockLengthBodyHDFSWriter(mockFs, codec);
         final AtomicInteger renameCount = new AtomicInteger();
 
         final BucketWriter<Void> bucketWriter =
                 new BucketWriterBuilder(writer)
                         .setBucketPath(bucketPath)
                         .setFileName(fileName)
+                        .setCodeC(codec)
                         .setRollSize(1)
                         .setMaxRetries(numberOfRetriesRequired)
                         .setWriter(writer)
@@ -256,7 +248,6 @@ public class BucketWriterTest {
         private CompressionCodec codeC = null;
         private HDFSWriter writer;
         private PrivilegedExecutor proxyUser = BucketWriterTest.proxy;
-        private Clock clock = null;
         private FileSystem fileSystem;
 
         private int maxRetries = 3;
@@ -318,20 +309,12 @@ public class BucketWriterTest {
             return this;
         }
 
-        public BucketWriterBuilder setClock(Clock clock) {
-            this.clock = clock;
-            return this;
-        }
-
         public BucketWriterBuilder setRollSize(long rollSize) {
             this.rollSize = rollSize;
             return this;
         }
 
         public BucketWriter<Void> build() {
-            if (clock == null) {
-                clock = new SystemClock();
-            }
             if (writer == null) {
                 writer = new MockHDFSWriter();
             }
@@ -341,16 +324,20 @@ public class BucketWriterTest {
                 codeC.setConf(new Configuration());
                 this.codeC = codeC;
             }
+            final HDFSWriterFactory factory =
+                    new HDFSWriterFactory() {
+                        @Override
+                        public String fileExtension() {
+                            return codeC.getDefaultExtension();
+                        }
+
+                        @Override
+                        public HDFSWriter create() {
+                            return writer;
+                        }
+                    };
             return new BucketWriter<Void>(
-                    bucketPath,
-                    fileName,
-                    codeC,
-                    writer,
-                    proxyUser,
-                    rollSize,
-                    maxRetries,
-                    null,
-                    clock) {
+                    bucketPath, fileName, factory, proxyUser, rollSize, maxRetries, null) {
                 @Override
                 protected FileSystem getFileSystem(Path path, Configuration config)
                         throws IOException {

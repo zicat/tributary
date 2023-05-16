@@ -20,18 +20,16 @@ package org.zicat.tributary.sink.hdfs;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
-import org.apache.hadoop.fs.FileSystem;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.Trigger;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 /** DefaultHDFSFunction. */
-public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements Trigger {
+public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements Trigger {
 
     public static final ConfigOption<Integer> OPTION_IDLE_MILLIS =
             ConfigOptions.key("idleTriggerMillis")
@@ -80,7 +78,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     public void refresh(boolean force) throws Exception {
         String currentTimeBucket = clock.currentTime(bucketDateFormat);
         if (force || !currentTimeBucket.equals(timeBucket)) {
-            closeBucket(timeBucket);
+            closeAllBuckets();
+            commit(lastGroupOffset, null);
             timeBucket = currentTimeBucket;
         }
     }
@@ -92,32 +91,16 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
         int totalCount = 0;
         while (iterator.hasNext()) {
             final byte[] record = iterator.next();
-            final String bucket = getBucket(record);
+            final String dataBucket = getBucket(record);
+            final String bucket =
+                    dataBucket == null || dataBucket.isEmpty()
+                            ? timeBucket
+                            : timeBucket + DIRECTORY_DELIMITER + getBucket(record);
             appendData(bucket, record, 0, record.length);
             totalCount++;
         }
         lastGroupOffset = groupOffset;
         updateMetrics(totalCount);
-    }
-
-    @Override
-    protected BucketWriter<Object> initializeBucketWriter(String bucketPath, String realName) {
-        return new BucketWriter<Object>(
-                bucketPath,
-                realName,
-                snappyCodec,
-                new HDFSCompressedDataStream(),
-                privilegedExecutor,
-                rollSize,
-                maxRetry,
-                null,
-                clock) {
-            protected void renameBucket(String bucketPath, String targetPath, final FileSystem fs)
-                    throws IOException {
-                super.renameBucket(bucketPath, targetPath, fs);
-                DefaultHDFSFunction.this.flush(lastGroupOffset, null);
-            }
-        };
     }
 
     /**
@@ -138,8 +121,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
      * @param record record
      * @return string
      */
-    public String getBucket(byte[] record) {
-        return timeBucket;
+    protected String getBucket(byte[] record) {
+        return null;
     }
 
     @Override
@@ -151,5 +134,14 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Object> implements
     public void idleTrigger() throws Throwable {
         LOG.info("idle triggered, idle time is {}", idleTimeMillis());
         refresh(true);
+    }
+
+    /**
+     * get time bucket.
+     *
+     * @return time bucket
+     */
+    public String getTimeBucket() {
+        return timeBucket;
     }
 }

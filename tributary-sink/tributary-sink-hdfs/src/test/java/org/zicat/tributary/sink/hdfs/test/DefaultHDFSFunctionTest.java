@@ -119,6 +119,6 @@ public class DefaultHDFSFunctionTest {
      * @throws IOException IOException
      */
     private String currentBucketPath(DefaultHDFSFunction function) throws IOException {
-        return DIR.getCanonicalFile().getPath() + "/" + function.getBucket(null);
+        return DIR.getCanonicalFile().getPath() + "/" + function.getTimeBucket();
     }
 }

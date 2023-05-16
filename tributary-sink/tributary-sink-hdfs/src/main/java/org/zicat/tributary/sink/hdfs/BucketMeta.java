@@ -18,10 +18,7 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.apache.hadoop.io.compress.CompressionCodec;
 import org.zicat.tributary.common.Threads;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 /** BucketMeta. */
 public class BucketMeta<P> {
@@ -33,24 +30,14 @@ public class BucketMeta<P> {
     protected final long rollSize;
     protected final int maxRetries;
     protected final P payload;
-    protected final CompressionCodec codeC;
-    protected final AtomicLong fileExtensionCounter;
 
     public BucketMeta(
-            String bucketPath,
-            String fileName,
-            long rollSize,
-            int maxRetries,
-            P payload,
-            CompressionCodec codeC,
-            AtomicLong fileExtensionCounter) {
+            String bucketPath, String fileName, long rollSize, int maxRetries, P payload) {
         this.bucketPath = bucketPath;
         this.fileName = fileName;
         this.rollSize = rollSize;
         this.maxRetries = maxRetries;
         this.payload = payload;
-        this.codeC = codeC;
-        this.fileExtensionCounter = fileExtensionCounter;
     }
 
     /**
@@ -60,18 +47,6 @@ public class BucketMeta<P> {
      */
     protected String inUseSuffix() {
         return IN_USE_SUFFIX;
-    }
-
-    /**
-     * create new full file name by fileName & file extension counter & codec name.
-     *
-     * @return string
-     */
-    protected String createNewFullFileName() {
-        return fileName
-                + "."
-                + fileExtensionCounter.incrementAndGet()
-                + codeC().getDefaultExtension();
     }
 
     /**
@@ -105,15 +80,6 @@ public class BucketMeta<P> {
             }
         } while (retryCount < maxRetries());
         return exception;
-    }
-
-    /**
-     * get codec.
-     *
-     * @return CompressionCodec
-     */
-    public final CompressionCodec codeC() {
-        return codeC;
     }
 
     /**

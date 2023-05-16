@@ -61,7 +61,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
             LOG.info("data:{}", new String(iterator.next(), StandardCharsets.UTF_8));
             i++;
         }
-        flush(groupOffset, null);
+        commit(groupOffset, null);
         SINK_PRINT_COUNTER.labels(metricsHost(), context.groupId(), context.topic()).inc(i);
     }
 

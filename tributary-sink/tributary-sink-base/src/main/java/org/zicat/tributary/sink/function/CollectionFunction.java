@@ -49,7 +49,7 @@ public class CollectionFunction extends AbstractFunction {
         while (iterator.hasNext()) {
             history.add(iterator.next());
         }
-        flush(groupOffset, null);
+        commit(groupOffset, null);
     }
 
     @Override

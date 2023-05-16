@@ -124,7 +124,7 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
      * @param groupOffset groupOffset
      */
     public final void flush(GroupOffset groupOffset) {
-        flush(
+        commit(
                 groupOffset,
                 () -> {
                     producerMap.forEach((k, v) -> v.flush());

@@ -23,11 +23,9 @@ import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
-import org.apache.hadoop.io.compress.CompressionCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
-import org.zicat.tributary.sink.function.Clock;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -43,6 +41,8 @@ public class BucketWriter<P> extends BucketMeta<P> {
 
     private final HDFSWriter writer;
     private final PrivilegedExecutor proxyUser;
+    private final String fileSuffixName;
+    private final AtomicLong fileExtensionCounter;
 
     private long processSize;
     private FileSystem fileSystem;
@@ -54,23 +54,16 @@ public class BucketWriter<P> extends BucketMeta<P> {
     public BucketWriter(
             String bucketPath,
             String fileName,
-            CompressionCodec codeC,
-            HDFSWriter writer,
+            HDFSWriterFactory factory,
             PrivilegedExecutor proxyUser,
             long rollSize,
             int maxRetries,
-            P payload,
-            Clock clock) {
-        super(
-                bucketPath,
-                fileName,
-                rollSize,
-                maxRetries,
-                payload,
-                codeC,
-                new AtomicLong(clock.currentTimeMillis()));
-        this.writer = writer;
+            P payload) {
+        super(bucketPath, fileName, rollSize, maxRetries, payload);
+        this.writer = factory.create();
+        this.fileSuffixName = factory.fileExtension();
         this.proxyUser = proxyUser;
+        this.fileExtensionCounter = new AtomicLong(0L);
     }
 
     /** @throws IOException IOException */
@@ -90,7 +83,7 @@ public class BucketWriter<P> extends BucketMeta<P> {
                             LOG.info("Creating " + tmpWritePath);
                             final Path path = new Path(tmpWritePath);
                             fileSystem = getFileSystem(path, config);
-                            writer.open(fileSystem, path, codeC);
+                            writer.open(fileSystem, path);
                         });
             } catch (Throwable ex) {
                 throw castAsIOException(ex);
@@ -262,5 +255,14 @@ public class BucketWriter<P> extends BucketMeta<P> {
             return true;
         }
         return false;
+    }
+
+    /**
+     * create new full file name by fileName & file extension counter & fileSuffixName.
+     *
+     * @return string
+     */
+    protected String createNewFullFileName() {
+        return fileName + "." + fileExtensionCounter.incrementAndGet() + fileSuffixName;
     }
 }

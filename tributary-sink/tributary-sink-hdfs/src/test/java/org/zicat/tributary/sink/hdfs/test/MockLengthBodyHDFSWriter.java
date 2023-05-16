@@ -24,21 +24,22 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.zicat.tributary.sink.hdfs.HDFSCompressedDataStream;
+import org.zicat.tributary.sink.hdfs.LengthBodyHDFSWriter;
 
 import java.io.IOException;
 
 /** MockDataStream. */
-class MockDataStream extends HDFSCompressedDataStream {
+class MockLengthBodyHDFSWriter extends LengthBodyHDFSWriter {
 
     private final FileSystem fs;
 
-    MockDataStream(FileSystem fs) {
+    MockLengthBodyHDFSWriter(FileSystem fs, CompressionCodec codec) {
+        super(codec);
         this.fs = fs;
     }
 
     @Override
-    public void open(FileSystem fileSystem, Path path, CompressionCodec codec) throws IOException {
+    public void open(FileSystem fileSystem, Path path) throws IOException {
         Configuration conf = new Configuration();
         doOpen(conf, path, fs, codec);
     }

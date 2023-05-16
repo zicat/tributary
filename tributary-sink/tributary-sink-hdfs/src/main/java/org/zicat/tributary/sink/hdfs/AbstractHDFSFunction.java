@@ -22,18 +22,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
-import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+
+import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
 
 /** AbstractHDFSFunction. */
 public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
@@ -68,6 +66,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
                     .defaultValue(3);
 
     protected PrivilegedExecutor privilegedExecutor;
+    protected HDFSWriterFactory hdfsWriterFactory;
     protected String basePath;
     protected long rollSize;
     protected Integer maxRetry;
@@ -80,14 +79,14 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
 
         super.open(context);
         this.snappyCodec.setConf(new Configuration());
+        this.hdfsWriterFactory = new LengthBodyHDFSWriterFactory();
         final String basePath = context.get(BASE_SINK_PATH).toString().trim();
         this.basePath =
                 basePath.endsWith(DIRECTORY_DELIMITER)
                         ? basePath.substring(0, basePath.length() - 1)
                         : basePath;
         this.privilegedExecutor =
-                TributaryAuthenticationUtil.getAuthenticator(
-                        context.get(OPTION_PRINCIPLE), context.get(OPTION_KEYTAB));
+                getAuthenticator(context.get(OPTION_PRINCIPLE), context.get(OPTION_KEYTAB));
         this.rollSize = context.get(OPTION_ROLL_SIZE);
         this.maxRetry = context.get(OPTION_MAX_RETRIES);
         this.prefixFileName = prefixFileNameInBucket();
@@ -119,12 +118,26 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
      * @param bucket bucket.
      * @throws IOException IOException
      */
-    public BucketWriter<P> closeBucket(String bucket) throws Exception {
+    public P closeBucket(String bucket) throws Exception {
         final BucketWriter<P> bucketWriter = sfWriters.remove(bucket);
         if (bucketWriter != null) {
             bucketWriter.close();
         }
-        return bucketWriter;
+        return bucketWriter == null ? null : bucketWriter.payload();
+    }
+
+    /**
+     * close all buckets.
+     *
+     * @return list payload
+     * @throws Exception Exception
+     */
+    public List<P> closeAllBuckets() throws Exception {
+        final List<P> result = new ArrayList<>(sfWriters.size());
+        for (Map.Entry<String, BucketWriter<P>> entry : sfWriters.entrySet()) {
+            result.add(closeBucket(entry.getKey()));
+        }
+        return result;
     }
 
     /**
@@ -147,30 +160,11 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
         return new BucketWriter<>(
                 bucketPath,
                 realName,
-                snappyCodec,
-                new HDFSCompressedDataStream(),
+                hdfsWriterFactory,
                 privilegedExecutor,
                 rollSize,
                 maxRetry,
-                null,
-                clock);
-    }
-
-    /**
-     * flush file offset with writers.
-     *
-     * @param groupOffset groupOffset
-     */
-    public final void flush(GroupOffset groupOffset) {
-        final OnFlushCallback flushFunction =
-                () -> {
-                    for (Map.Entry<String, BucketWriter<P>> entry : sfWriters.entrySet()) {
-                        final BucketWriter<P> writer = entry.getValue();
-                        writer.flush();
-                    }
-                    return true;
-                };
-        flush(groupOffset, flushFunction);
+                null);
     }
 
     @Override

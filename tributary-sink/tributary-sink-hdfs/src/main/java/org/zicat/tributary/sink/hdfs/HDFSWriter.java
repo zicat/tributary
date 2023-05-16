@@ -20,7 +20,6 @@ package org.zicat.tributary.sink.hdfs;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.compress.CompressionCodec;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,10 +32,9 @@ public interface HDFSWriter extends Closeable {
      *
      * @param fileSystem fileSystem
      * @param path path
-     * @param codec codec
      * @throws IOException IOException
      */
-    void open(FileSystem fileSystem, Path path, CompressionCodec codec) throws IOException;
+    void open(FileSystem fileSystem, Path path) throws IOException;
 
     /**
      * append bs to file.

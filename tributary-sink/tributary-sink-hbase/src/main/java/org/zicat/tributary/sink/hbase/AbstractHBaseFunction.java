@@ -87,7 +87,7 @@ public abstract class AbstractHBaseFunction extends AbstractFunction {
      */
     public boolean flush(GroupOffset fileOffset) {
         final AtomicBoolean flushed = new AtomicBoolean(false);
-        flush(
+        commit(
                 fileOffset,
                 () -> {
                     for (HBaseWriter hbaseWriterAbstract : hbaseWriterMap.values()) {

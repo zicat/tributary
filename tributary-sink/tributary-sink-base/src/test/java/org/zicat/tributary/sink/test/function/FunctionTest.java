@@ -53,7 +53,7 @@ public class FunctionTest {
         Assert.assertEquals(context, function.context());
 
         final GroupOffset newGroupOffset = groupOffset.skipNextSegmentHead();
-        function.flush(newGroupOffset, null);
+        function.commit(newGroupOffset, null);
         Assert.assertEquals(function.committableOffset(), newGroupOffset);
     }
 

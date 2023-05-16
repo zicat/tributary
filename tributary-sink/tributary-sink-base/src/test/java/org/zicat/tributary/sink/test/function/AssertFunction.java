@@ -48,7 +48,7 @@ public class AssertFunction extends AbstractFunction {
             byte[] data = iterator.next();
             String value = new String(data, StandardCharsets.UTF_8);
             Assert.assertTrue(assertData.remove(value));
-            flush(groupOffset, null);
+            commit(groupOffset, null);
         }
     }
 

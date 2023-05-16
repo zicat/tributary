@@ -29,7 +29,8 @@ import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.hdfs.AbstractHDFSFunction;
 import org.zicat.tributary.sink.hdfs.BucketWriter;
-import org.zicat.tributary.sink.hdfs.HDFSCompressedDataStream;
+import org.zicat.tributary.sink.hdfs.HDFSWriter;
+import org.zicat.tributary.sink.hdfs.HDFSWriterFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,7 +66,7 @@ public class AbstractHDFSFunctionTest {
                         while (iterator.hasNext()) {
                             byte[] bs = iterator.next();
                             appendData(bucket, bs, 0, bs.length);
-                            flush(groupOffset);
+                            commit(groupOffset, null);
                         }
                     }
 
@@ -81,13 +82,11 @@ public class AbstractHDFSFunctionTest {
                         return new BucketWriter<AtomicInteger>(
                                 bucketPath,
                                 realName,
-                                snappyCodec,
-                                new HDFSCompressedDataStream(),
+                                hdfsWriterFactory,
                                 privilegedExecutor,
                                 rollSize,
                                 maxRetry,
-                                counter,
-                                clock) {
+                                counter) {
                             @Override
                             public void append(byte[] bs, int offset, int length)
                                     throws IOException {
@@ -114,14 +113,29 @@ public class AbstractHDFSFunctionTest {
         function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
         Thread.sleep(1100);
         function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
+        final List<AtomicInteger> payloads = function.closeAllBuckets();
         function.close();
         Assert.assertEquals(2 * testData.size(), counter.get());
+        Assert.assertEquals(1, payloads.size());
+        Assert.assertEquals(testData.size() * 2, payloads.get(0).get());
     }
 
     @Test
     public void testBucketClosed() throws Exception {
         final String bucket = "counter";
         final MockHDFSWriter mockWriter = new MockHDFSWriter();
+        final HDFSWriterFactory factory =
+                new HDFSWriterFactory() {
+                    @Override
+                    public String fileExtension() {
+                        return "snappy";
+                    }
+
+                    @Override
+                    public HDFSWriter create() {
+                        return mockWriter;
+                    }
+                };
         final AbstractHDFSFunction<Void> function =
                 new AbstractHDFSFunction<Void>() {
                     @Override
@@ -131,7 +145,7 @@ public class AbstractHDFSFunctionTest {
                         while (iterator.hasNext()) {
                             byte[] bs = iterator.next();
                             appendData(bucket, bs, 0, bs.length);
-                            flush(groupOffset);
+                            commit(groupOffset, null);
                         }
                         closeBucket(bucket);
                     }
@@ -147,13 +161,11 @@ public class AbstractHDFSFunctionTest {
                         return new BucketWriter<>(
                                 bucketPath,
                                 realName,
-                                snappyCodec,
-                                mockWriter,
+                                factory,
                                 privilegedExecutor,
                                 rollSize,
                                 maxRetry,
-                                null,
-                                clock);
+                                null);
                     }
                 };
         final ContextBuilder contextBuilder =
@@ -181,6 +193,18 @@ public class AbstractHDFSFunctionTest {
 
         final String bucket = "counter";
         final MockHDFSWriter mockWriter = new MockHDFSWriter();
+        final HDFSWriterFactory factory =
+                new HDFSWriterFactory() {
+                    @Override
+                    public String fileExtension() {
+                        return "snappy";
+                    }
+
+                    @Override
+                    public HDFSWriter create() {
+                        return mockWriter;
+                    }
+                };
         final AbstractHDFSFunction<Void> function =
                 new AbstractHDFSFunction<Void>() {
                     @Override
@@ -189,7 +213,7 @@ public class AbstractHDFSFunctionTest {
                         while (iterator.hasNext()) {
                             byte[] bs = iterator.next();
                             appendData(bucket, bs, 0, bs.length);
-                            flush(groupOffset);
+                            commit(groupOffset, null);
                         }
                     }
 
@@ -204,13 +228,11 @@ public class AbstractHDFSFunctionTest {
                         return new BucketWriter<>(
                                 bucketPath,
                                 realName,
-                                snappyCodec,
-                                mockWriter,
+                                factory,
                                 privilegedExecutor,
                                 rollSize,
                                 maxRetry,
-                                null,
-                                clock);
+                                null);
                     }
                 };
         final ContextBuilder contextBuilder =

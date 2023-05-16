@@ -18,21 +18,15 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
+import org.zicat.tributary.common.SafeFactory;
 
-import java.io.IOException;
-
-/** AbstractHDFSWriter. */
-public abstract class AbstractHDFSWriter implements HDFSWriter {
+/** HDFSWriterFactory. */
+public interface HDFSWriterFactory extends SafeFactory<HDFSWriter> {
 
     /**
-     * If hflush is available in this version of HDFS, then this method calls hflush, else it calls
-     * sync.
+     * get the file extension.
      *
-     * @param os - The stream to flush/sync
-     * @throws IOException IOException
+     * @return file extension.
      */
-    protected void hflushOrSync(FSDataOutputStream os) throws IOException {
-        os.hflush();
-    }
+    String fileExtension();
 }

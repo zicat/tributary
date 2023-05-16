@@ -76,7 +76,7 @@ public abstract class AbstractFunction implements Function {
      * @param newCommittableOffset newCommittableOffset
      * @param callback callback
      */
-    public final void flush(GroupOffset newCommittableOffset, OnFlushCallback callback) {
+    public final void commit(GroupOffset newCommittableOffset, OnFlushCallback callback) {
         if (newCommittableOffset == null) {
             return;
         }

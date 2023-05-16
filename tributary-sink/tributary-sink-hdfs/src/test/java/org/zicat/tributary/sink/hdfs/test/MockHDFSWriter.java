@@ -21,7 +21,6 @@ package org.zicat.tributary.sink.hdfs.test;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.compress.CompressionCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.sink.hdfs.HDFSWriter;
@@ -66,7 +65,7 @@ public class MockHDFSWriter implements HDFSWriter {
     }
 
     @Override
-    public void open(FileSystem fileSystem, Path path, CompressionCodec codec) {
+    public void open(FileSystem fileSystem, Path path) {
         this.filePath = path.getName();
         filesOpened++;
     }

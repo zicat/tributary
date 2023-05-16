@@ -30,18 +30,22 @@ import org.zicat.tributary.common.IOUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-/** HDFSCompressedDataStreamWriter. */
-public class HDFSCompressedDataStream extends AbstractHDFSWriter {
+/** LengthBodyHDFSWriter. */
+public class LengthBodyHDFSWriter implements HDFSWriter {
 
+    protected final CompressionCodec codec;
     protected Compressor compressor;
     protected FSDataOutputStream fsOut;
     protected CompressionOutputStream cmpOut;
     protected boolean isFinished = false;
     private ByteBuffer buffer = null;
 
-    @Override
-    public void open(FileSystem fileSystem, Path path, CompressionCodec codec) throws IOException {
+    public LengthBodyHDFSWriter(CompressionCodec codec) {
+        this.codec = codec;
+    }
 
+    @Override
+    public void open(FileSystem fileSystem, Path path) throws IOException {
         compressor = CodecPool.getCompressor(codec, fileSystem.getConf());
         fsOut = fileSystem.create(path);
         cmpOut = codec.createOutputStream(fsOut, compressor);
@@ -67,7 +71,7 @@ public class HDFSCompressedDataStream extends AbstractHDFSWriter {
             isFinished = true;
         }
         fsOut.flush();
-        hflushOrSync(fsOut);
+        fsOut.hflush();
     }
 
     @Override

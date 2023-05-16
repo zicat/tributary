@@ -33,17 +33,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
-import org.zicat.tributary.sink.hdfs.HDFSCompressedDataStream;
+import org.zicat.tributary.sink.hdfs.LengthBodyHDFSWriter;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 
-/** HDFSCompressedDataStreamTest. */
-public class HDFSCompressedDataStreamTest {
+/** LengthBodyHDFSWriterTest. */
+public class LengthBodyHDFSWriterTest {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(HDFSCompressedDataStreamTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(LengthBodyHDFSWriterTest.class);
     private final File dir = FileUtils.createTmpDir("hdfs_compressed_data_stream_test");
 
     @Before
@@ -67,8 +66,8 @@ public class HDFSCompressedDataStreamTest {
 
         SnappyCodec snappyCodec = new SnappyCodec();
         snappyCodec.setConf(conf);
-        final HDFSCompressedDataStream writer = new HDFSCompressedDataStream();
-        writer.open(fileSystem, path, snappyCodec);
+        final LengthBodyHDFSWriter writer = new LengthBodyHDFSWriter(snappyCodec);
+        writer.open(fileSystem, path);
 
         final String[] bodies = {"yarf!"};
         writeBodies(writer, bodies);
@@ -98,7 +97,7 @@ public class HDFSCompressedDataStreamTest {
      * @param bodies bodies
      * @throws Exception Exception
      */
-    private void writeBodies(HDFSCompressedDataStream writer, String... bodies) throws Exception {
+    private void writeBodies(LengthBodyHDFSWriter writer, String... bodies) throws Exception {
         for (String body : bodies) {
             writer.append(body.getBytes(StandardCharsets.UTF_8));
         }

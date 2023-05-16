@@ -31,7 +31,7 @@ public class DummyFunction extends AbstractFunction {
 
     @Override
     public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
-        flush(groupOffset, null);
+        commit(groupOffset, null);
     }
 
     @Override
