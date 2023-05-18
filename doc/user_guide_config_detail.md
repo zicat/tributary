@@ -196,6 +196,8 @@ key                               |  default       | type                 | desc
 | principle                         |                | string|            the principle if hdfs use kerberos authenticator|
 | idleTriggerMillis                 |60000           | long(unit: millis)| the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java)|
 
+[GOTO HDFS Sink for more details](../tributary-sink/tributary-sink-hdfs)
+
 ### Sink Kafka Detail
 
 ```properties

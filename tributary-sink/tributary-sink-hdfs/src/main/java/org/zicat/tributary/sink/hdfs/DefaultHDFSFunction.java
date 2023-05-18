@@ -76,7 +76,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
      * @throws Exception Exception
      */
     public void refresh(boolean force) throws Exception {
-        String currentTimeBucket = clock.currentTime(bucketDateFormat);
+        final String currentTimeBucket = clock.currentTime(bucketDateFormat);
         if (force || !currentTimeBucket.equals(timeBucket)) {
             closeAllBuckets();
             commit(lastGroupOffset, null);
