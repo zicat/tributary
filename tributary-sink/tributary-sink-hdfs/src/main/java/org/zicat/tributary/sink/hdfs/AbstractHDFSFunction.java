@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.Strings;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
@@ -81,10 +82,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
         this.snappyCodec.setConf(new Configuration());
         this.hdfsWriterFactory = new LengthBodyHDFSWriterFactory();
         final String basePath = context.get(BASE_SINK_PATH).toString().trim();
-        this.basePath =
-                basePath.endsWith(DIRECTORY_DELIMITER)
-                        ? basePath.substring(0, basePath.length() - 1)
-                        : basePath;
+        this.basePath = Strings.removeLastIfMatch(basePath, DIRECTORY_DELIMITER);
         this.privilegedExecutor =
                 getAuthenticator(context.get(OPTION_PRINCIPLE), context.get(OPTION_KEYTAB));
         this.rollSize = context.get(OPTION_ROLL_SIZE);
