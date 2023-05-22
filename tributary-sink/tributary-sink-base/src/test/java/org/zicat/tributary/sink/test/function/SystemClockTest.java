@@ -16,24 +16,23 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.sink.test.function;
 
-/** Clock. */
-public interface Clock {
+import org.junit.Assert;
+import org.junit.Test;
+import org.zicat.tributary.sink.function.SystemClock;
 
-    /**
-     * get current time millis, linux time ignore timezone.
-     *
-     * @return millis
-     */
-    long currentTimeMillis();
+/** SystemClockTest. */
+public class SystemClockTest {
 
-    /**
-     * current time.
-     *
-     * @param pattern pattern
-     * @param timeZoneId timeZoneId
-     * @return string
-     */
-    String currentTime(String pattern, String timeZoneId);
+    @Test
+    public void testTimeFormat() {
+        final long time = 1684726202000L;
+        final String utc = "2023-05-22 03:30:02";
+        final String gmt8 = "2023-05-22 11:30:02";
+        final String gmt22 = "2023-05-23 01:30:02";
+        Assert.assertEquals(utc, SystemClock.timeFormat(time, "yyyy-MM-dd HH:mm:ss", "UTC"));
+        Assert.assertEquals(gmt8, SystemClock.timeFormat(time, "yyyy-MM-dd HH:mm:ss", "GMT+8"));
+        Assert.assertEquals(gmt22, SystemClock.timeFormat(time, "yyyy-MM-dd HH:mm:ss", "GMT+22"));
+    }
 }

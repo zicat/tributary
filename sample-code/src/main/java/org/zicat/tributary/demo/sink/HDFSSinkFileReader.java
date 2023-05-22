@@ -23,6 +23,7 @@ import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.io.compress.SnappyCodec;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -33,20 +34,57 @@ public class HDFSSinkFileReader {
         final String fileName = "226972f3_d3b8_41dd_b9eb_1deb3334ea1a_c1_group_1_0.1.snappy";
         SnappyCodec snappyCodec = new SnappyCodec();
         snappyCodec.setConf(new Configuration());
-        final byte[] length = new byte[4];
+        final byte[] lengthBytes = new byte[4];
         try (CompressionInputStream compressionInputStream =
                 snappyCodec.createInputStream(
                         Thread.currentThread()
                                 .getContextClassLoader()
                                 .getResourceAsStream(fileName))) {
-            while (compressionInputStream.read(length) != -1) {
-                final int size = ByteBuffer.wrap(length).getInt();
-                final byte[] body = new byte[size];
-                if (compressionInputStream.read(body) != size) {
+            while (readAll(compressionInputStream, lengthBytes)) {
+                final int length = ByteBuffer.wrap(lengthBytes).getInt();
+                final byte[] body = new byte[length];
+                if (!readAll(compressionInputStream, body)) {
                     throw new IOException("read body fail");
                 }
                 System.out.println(new String(body, StandardCharsets.UTF_8));
             }
         }
+    }
+
+    /**
+     * read InputStream to bytes.
+     *
+     * @param is is
+     * @param bytes bytes
+     * @return return false, else return true.
+     * @throws IOException IOException
+     */
+    private static boolean readAll(InputStream is, byte[] bytes) throws IOException {
+        return readAll(is, bytes, 0, bytes.length);
+    }
+
+    /**
+     * read InputStream to bytes.
+     *
+     * @param is is
+     * @param bytes bytes
+     * @param offset bytes offset
+     * @param length bytes length
+     * @return return false, else return true.
+     * @throws IOException IOException
+     */
+    private static boolean readAll(InputStream is, byte[] bytes, int offset, int length)
+            throws IOException {
+        do {
+            final int remaining = length - offset;
+            int readCount = is.read(bytes, offset, remaining);
+            if (readCount == -1) {
+                return false;
+            }
+            if (readCount >= remaining) {
+                return true;
+            }
+            offset += readCount;
+        } while (true);
     }
 }

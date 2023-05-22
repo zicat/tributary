@@ -40,8 +40,14 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
     public static final ConfigOption<String> OPTION_BUCKET_DATE_FORMAT =
             ConfigOptions.key("bucketDateFormat")
                     .stringType()
-                    .description("set process time bucket format")
+                    .description("set process time bucket format, default yyyyMMdd_HH")
                     .defaultValue("yyyyMMdd_HH");
+
+    public static final ConfigOption<String> OPTION_BUCKET_DATE_TIMEZONE =
+            ConfigOptions.key("bucketDateTimeZone")
+                    .stringType()
+                    .description("set process time bucket timezone, default UTC")
+                    .defaultValue("UTC");
 
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
@@ -58,6 +64,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
 
     protected int idleTriggerMillis;
     protected String bucketDateFormat = null;
+    protected String bucketDateTimeZone = null;
     protected String timeBucket = null;
     protected GroupOffset lastGroupOffset;
 
@@ -66,7 +73,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
         super.open(context);
         idleTriggerMillis = context.get(OPTION_IDLE_MILLIS);
         bucketDateFormat = context.get(OPTION_BUCKET_DATE_FORMAT);
-        timeBucket = clock.currentTime(bucketDateFormat);
+        bucketDateTimeZone = context.get(OPTION_BUCKET_DATE_TIMEZONE);
+        timeBucket = clock.currentTime(bucketDateFormat, bucketDateTimeZone);
     }
 
     /**
@@ -76,7 +84,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
      * @throws Exception Exception
      */
     public void refresh(boolean force) throws Exception {
-        final String currentTimeBucket = clock.currentTime(bucketDateFormat);
+        final String currentTimeBucket = clock.currentTime(bucketDateFormat, bucketDateTimeZone);
         if (force || !currentTimeBucket.equals(timeBucket)) {
             closeAllBuckets();
             commit(lastGroupOffset, null);

@@ -180,6 +180,7 @@ Note:
 sink.group_1.sinkPath=/tmp/test/cache
 sink.group_1.roll.size=10240000
 sink.group_1.bucketDateFormat=yyyyMMdd_HH
+sink.group_1.bucketDateTimeZone=GMT+8
 sink.group_1.maxRetries=3
 sink.group_1.keytab=
 sink.group_1.principle=
@@ -191,12 +192,13 @@ key                               |  default       | type                 | desc
 | sinkPath                          |                | string                   | the root path to sink |
 | roll.size                         |268435456(256M) | long(unit: byte)       | the max size of the file|
 | bucketDateFormat                  |yyyyMMdd_HH     | string  | the part of the bucket, the bucket is composed of ${sinkPath}/${bucketDateFormat}/ |   
+| bucketDateTimeZone                |UTC             | string           | the timezone of bucket date format | 
 | maxRetries                        |3               | int(unit: number)| the max retry times when operate hdfs fail|
 | keytab                            |                | string|            the keytab if hdfs use kerberos authenticator|
 | principle                         |                | string|            the principle if hdfs use kerberos authenticator|
 | idleTriggerMillis                 |60000           | long(unit: millis)| the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java)|
 
-[GOTO HDFS Sink for more details](../tributary-sink/tributary-sink-hdfs)
+[GOTO HDFS Sink for more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
 ### Sink Kafka Detail
 

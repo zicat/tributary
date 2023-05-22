@@ -21,20 +21,15 @@ package org.zicat.tributary.sink.function;
 import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDateTime;
-import org.joda.time.chrono.ISOChronology;
+
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** SystemClock. default time zone is utc */
 public class SystemClock implements Clock {
 
-    private final ISOChronology isoChronology;
-
-    public SystemClock(DateTimeZone timeZone) {
-        this.isoChronology = ISOChronology.getInstance(timeZone);
-    }
-
-    public SystemClock() {
-        this(DateTimeZone.UTC);
-    }
+    private static final Map<String, DateTimeZone> ID_MAPPING = new ConcurrentHashMap<>();
 
     @Override
     public long currentTimeMillis() {
@@ -42,8 +37,22 @@ public class SystemClock implements Clock {
     }
 
     @Override
-    public String currentTime(String pattern) {
-        return new LocalDateTime(DateTimeUtils.currentTimeMillis(), isoChronology)
-                .toString(pattern);
+    public String currentTime(String pattern, String timeZoneId) {
+        return timeFormat(DateTimeUtils.currentTimeMillis(), pattern, timeZoneId);
+    }
+
+    /**
+     * get time format.
+     *
+     * @param timeMillis timeMillis
+     * @param pattern pattern
+     * @param timeZoneId timeZoneId
+     * @return string value
+     */
+    public static String timeFormat(long timeMillis, String pattern, String timeZoneId) {
+        final DateTimeZone timeZone =
+                ID_MAPPING.computeIfAbsent(
+                        timeZoneId, key -> DateTimeZone.forTimeZone(TimeZone.getTimeZone(key)));
+        return new LocalDateTime(timeMillis, timeZone).toString(pattern);
     }
 }

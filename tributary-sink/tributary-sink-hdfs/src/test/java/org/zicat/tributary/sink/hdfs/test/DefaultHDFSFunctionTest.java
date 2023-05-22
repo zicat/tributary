@@ -37,8 +37,7 @@ import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 import static org.zicat.tributary.sink.Config.OPTION_CLOCK;
 import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.BASE_SINK_PATH;
-import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.OPTION_BUCKET_DATE_FORMAT;
-import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.OPTION_IDLE_MILLIS;
+import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.*;
 
 /** DefaultHDFSFunctionTest. */
 public class DefaultHDFSFunctionTest {
@@ -63,6 +62,8 @@ public class DefaultHDFSFunctionTest {
         final DefaultHDFSFunction defaultHDFSFunction = new DefaultHDFSFunction();
         final MockClock mockClock = new MockClock();
         mockClock.setCurrentTimeMillis(System.currentTimeMillis());
+        final String timeFormat = "yyyyMMdd_HHmm";
+        final String timeZoneId = "GMT+8";
         final ContextBuilder builder =
                 new ContextBuilder()
                         .id("id1")
@@ -71,7 +72,8 @@ public class DefaultHDFSFunctionTest {
                         .topic("t1");
         builder.addCustomProperty(BASE_SINK_PATH, DIR.getCanonicalFile().getPath())
                 .addCustomProperty(OPTION_IDLE_MILLIS.key(), 10000)
-                .addCustomProperty(OPTION_BUCKET_DATE_FORMAT.key(), "yyyyMMdd_HHmm")
+                .addCustomProperty(OPTION_BUCKET_DATE_FORMAT.key(), timeFormat)
+                .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE.key(), timeZoneId)
                 .addCustomProperty(OPTION_CLOCK.key(), mockClock);
 
         defaultHDFSFunction.open(builder.build());
@@ -80,6 +82,9 @@ public class DefaultHDFSFunctionTest {
         defaultHDFSFunction.process(
                 groupOffset, Arrays.asList("aa".getBytes(), "bb".getBytes()).listIterator());
         String currentBucketPath = currentBucketPath(defaultHDFSFunction);
+
+        Assert.assertTrue(
+                currentBucketPath.contains(mockClock.currentTime(timeFormat, timeZoneId)));
 
         // refresh by time rolling
         mockClock.setCurrentTimeMillis(mockClock.currentTimeMillis() + 120 * 1000);

@@ -77,7 +77,6 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
 
     @Override
     public void open(Context context) {
-
         super.open(context);
         this.snappyCodec.setConf(new Configuration());
         this.hdfsWriterFactory = new LengthBodyHDFSWriterFactory();

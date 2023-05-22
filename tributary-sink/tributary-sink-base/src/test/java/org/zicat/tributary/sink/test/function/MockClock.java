@@ -22,6 +22,7 @@ import org.zicat.tributary.sink.function.Clock;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 /** MockClock. */
 public class MockClock implements Clock {
@@ -38,7 +39,9 @@ public class MockClock implements Clock {
     }
 
     @Override
-    public String currentTime(String pattern) {
-        return new SimpleDateFormat(pattern).format(new Date(currentTimeMillis));
+    public String currentTime(String pattern, String timeZoneId) {
+        final SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        dateFormat.setTimeZone(TimeZone.getTimeZone(timeZoneId));
+        return dateFormat.format(new Date(currentTimeMillis));
     }
 }

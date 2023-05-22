@@ -14,6 +14,7 @@ sink.group_1.functionIdentity=hdfs
 sink.group_1.sinkPath=/tmp/test/cache
 sink.group_1.roll.size=10240000
 sink.group_1.bucketDateFormat=yyyyMMdd_HH_mm
+sink.group_1.bucketDateTimeZone=UTC
 sink.group_1.maxRetries=3
 sink.group_1.keytab=
 sink.group_1.principle=
