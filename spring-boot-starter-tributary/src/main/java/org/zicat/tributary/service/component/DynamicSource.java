@@ -66,15 +66,14 @@ public class DynamicSource implements Closeable {
         final Set<String> sources = allSourceConfig.groupKeys(DEFAULT_KEY_HANDLER);
         for (String sourceId : sources) {
             final String head = sourceId + SPLIT;
-            final Channel channel =
-                    dynamicChannel.getChannel(allSourceConfig.get(OPTION_CHANNEL.concatHead(head)));
+            final String topic = allSourceConfig.get(OPTION_CHANNEL.concatHead(head));
+            final Channel channel = dynamicChannel.getChannel(topic);
             final String implementId = allSourceConfig.get(OPTION_IMPLEMENT.concatHead(head));
             final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
             Source server = null;
             try {
-                server =
-                        sourceFactory.createSource(
-                                channel, allSourceConfig.filterAndRemovePrefixKey(head));
+                final ReadableConfig sourceConfig = allSourceConfig.filterAndRemovePrefixKey(head);
+                server = sourceFactory.createSource(channel, sourceConfig);
                 server.start();
                 sourceCache.put(sourceId, server);
             } catch (Throwable e) {
