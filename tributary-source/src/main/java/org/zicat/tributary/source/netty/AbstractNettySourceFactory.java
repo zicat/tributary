@@ -51,7 +51,7 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
         final String host = config.get(OPTION_NETTY_HOST);
         final int port = config.get(OPTION_NETTY_PORT);
         final int threads = config.get(OPTION_NETTY_THREADS);
-        return createAbstractNettySource(host, port, threads, channel, config);
+        return createNettySource(host, port, threads, channel, config);
     }
 
     /**
@@ -64,6 +64,6 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
      * @param config config
      * @return AbstractNettySource
      */
-    public abstract AbstractNettySource createAbstractNettySource(
+    public abstract AbstractNettySource createNettySource(
             String host, int port, int eventThreads, Channel channel, ReadableConfig config);
 }
