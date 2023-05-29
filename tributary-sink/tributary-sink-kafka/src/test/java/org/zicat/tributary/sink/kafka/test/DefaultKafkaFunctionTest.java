@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 /** DefaultKafkaFunctionTest. */
 public class DefaultKafkaFunctionTest {
 
-    final MockProducer<byte[], byte[]> producer = new MockProducer<>();
+    final MockProducer<byte[], byte[]> mockProducer = new MockProducer<>();
 
     @Test
     public void test() {
@@ -58,8 +58,8 @@ public class DefaultKafkaFunctionTest {
                         .collect(Collectors.toList())
                         .listIterator());
 
-        Assert.assertEquals(testValues.get(0), new String(producer.history().get(0).value()));
-        Assert.assertEquals(testValues.get(1), new String(producer.history().get(1).value()));
+        Assert.assertEquals(testValues.get(0), new String(mockProducer.history().get(0).value()));
+        Assert.assertEquals(testValues.get(1), new String(mockProducer.history().get(1).value()));
         Assert.assertEquals(groupOffset, kafkaFunction.committableOffset());
 
         kafkaFunction.process(
@@ -68,16 +68,16 @@ public class DefaultKafkaFunctionTest {
                         .map(String::getBytes)
                         .collect(Collectors.toList())
                         .listIterator());
-        Assert.assertEquals(testValues.get(0), new String(producer.history().get(2).value()));
-        Assert.assertEquals(testValues.get(1), new String(producer.history().get(3).value()));
+        Assert.assertEquals(testValues.get(0), new String(mockProducer.history().get(2).value()));
+        Assert.assertEquals(testValues.get(1), new String(mockProducer.history().get(3).value()));
         Assert.assertEquals(groupOffset.skipNextSegmentHead(), kafkaFunction.committableOffset());
     }
 
     private class MockDefaultKafkaFunction extends DefaultKafkaFunction {
 
         @Override
-        protected Producer<byte[], byte[]> createProducer(String broker) {
-            return producerMap.computeIfAbsent(broker, key -> producer);
+        protected Producer<byte[], byte[]> getOrCreateProducer(String broker) {
+            return mockProducer;
         }
     }
 }

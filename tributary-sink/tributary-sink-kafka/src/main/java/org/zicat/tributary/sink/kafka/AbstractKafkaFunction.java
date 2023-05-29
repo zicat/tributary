@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.kafka;
 
+import io.prometheus.client.Counter;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -35,9 +36,16 @@ import java.util.Properties;
 /** AbstractKafkaFunction. */
 public abstract class AbstractKafkaFunction extends AbstractFunction {
 
+    private static final Counter SINK_KAFKA_COUNTER =
+            Counter.build()
+                    .name("sink_kafka_counter")
+                    .help("sink kafka counter")
+                    .labelNames("host", "groupId", "topic")
+                    .register();
+
     public static final String KAFKA_KEY_PREFIX = "kafka.";
 
-    protected Map<String, Producer<byte[], byte[]>> producerMap = new HashMap<>();
+    protected final Map<String, Producer<byte[], byte[]>> producerMap = new HashMap<>();
 
     @Override
     public void open(Context context) {
@@ -74,15 +82,14 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
      */
     protected void sendKafka(
             String clusterId, ProducerRecord<byte[], byte[]> producerRecord, Callback callback) {
-
         if (producerRecord == null) {
             return;
         }
-        createProducer(clusterId).send(producerRecord, callback);
+        getOrCreateProducer(clusterId).send(producerRecord, callback);
     }
 
     /**
-     * set kafka data.
+     * send producer record to kafka.
      *
      * @param clusterId clusterId
      * @param producerRecord producerRecord
@@ -97,7 +104,7 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
      * @param clusterId clusterId.
      * @return Producer
      */
-    protected Producer<byte[], byte[]> createProducer(String clusterId) {
+    protected Producer<byte[], byte[]> getOrCreateProducer(String clusterId) {
         return producerMap.computeIfAbsent(
                 clusterId, key -> new KafkaProducer<>(getKafkaProperties(clusterId)));
     }
@@ -130,5 +137,14 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
                     producerMap.forEach((k, v) -> v.flush());
                     return true;
                 });
+    }
+
+    /**
+     * inc sink kafka counter.
+     *
+     * @param sum sum
+     */
+    protected void incSinkKafkaCounter(int sum) {
+        SINK_KAFKA_COUNTER.labels(metricsHost(), context.groupId(), context.topic()).inc(sum);
     }
 }

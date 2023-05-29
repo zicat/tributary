@@ -61,7 +61,7 @@ public class AbstractKafkaFunctionTest {
                     }
 
                     @Override
-                    protected Producer<byte[], byte[]> createProducer(String broker) {
+                    protected Producer<byte[], byte[]> getOrCreateProducer(String broker) {
                         return producerMap.computeIfAbsent(broker, key -> producer);
                     }
                 };

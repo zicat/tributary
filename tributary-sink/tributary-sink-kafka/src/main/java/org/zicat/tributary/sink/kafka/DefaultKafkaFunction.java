@@ -18,36 +18,35 @@
 
 package org.zicat.tributary.sink.kafka;
 
-import io.prometheus.client.Counter;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.function.Context;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 /** DefaultKafkaFunction. */
 public class DefaultKafkaFunction extends AbstractKafkaFunction {
 
-    private static final Counter SINK_KAFKA_COUNTER =
-            Counter.build()
-                    .name("sink_kafka_counter")
-                    .help("sink kafka counter")
-                    .labelNames("host", "groupId", "topic")
-                    .register();
-
+    protected static final String DEFAULT_CLUSTER = null;
     private static final ConfigOption<String> OPTION_TOPIC =
             ConfigOptions.key("topic")
                     .stringType()
                     .description("the kafka topic to send data")
                     .defaultValue("sink_kafka_channel");
     protected String customTopic;
+    protected KafkaProducer<byte[], byte[]> producer;
 
     @Override
     public void open(Context context) {
         super.open(context);
-        this.customTopic = context.get(OPTION_TOPIC.changeKey(getKafkaKeyPrefix(null) + "topic"));
+        this.customTopic =
+                context.get(OPTION_TOPIC.changeKey(getKafkaKeyPrefix(DEFAULT_CLUSTER) + "topic"));
     }
 
     @Override
@@ -61,9 +60,7 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
             }
         }
         flush(groupOffset);
-        SINK_KAFKA_COUNTER
-                .labels(metricsHost(), context.groupId(), context.topic())
-                .inc(totalCount);
+        incSinkKafkaCounter(totalCount);
     }
 
     /**
@@ -75,7 +72,33 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
     protected boolean sendKafka(byte[] value) {
         final ProducerRecord<byte[], byte[]> record =
                 new ProducerRecord<>(customTopic, null, value);
-        sendKafka(null, record);
+        sendKafka(record);
         return true;
+    }
+
+    /**
+     * send producer record to kafka.
+     *
+     * @param producerRecord producerRecord
+     */
+    protected void sendKafka(ProducerRecord<byte[], byte[]> producerRecord) {
+        sendKafka(DEFAULT_CLUSTER, producerRecord);
+    }
+
+    @Override
+    protected Producer<byte[], byte[]> getOrCreateProducer(String clusterId) {
+        if (producer == null) {
+            producer = new KafkaProducer<>(getKafkaProperties(DEFAULT_CLUSTER));
+        }
+        return producer;
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            super.close();
+        } finally {
+            IOUtils.closeQuietly(producer);
+        }
     }
 }
