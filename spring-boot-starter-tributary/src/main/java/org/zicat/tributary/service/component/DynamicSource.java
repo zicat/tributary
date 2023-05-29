@@ -23,10 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.*;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;
@@ -68,6 +65,9 @@ public class DynamicSource implements Closeable {
             final String head = sourceId + SPLIT;
             final String topic = allSourceConfig.get(OPTION_CHANNEL.concatHead(head));
             final Channel channel = dynamicChannel.getChannel(topic);
+            if (channel == null) {
+                throw new TributaryRuntimeException("channel." + topic + " not defined");
+            }
             final String implementId = allSourceConfig.get(OPTION_IMPLEMENT.concatHead(head));
             final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
             Source server = null;

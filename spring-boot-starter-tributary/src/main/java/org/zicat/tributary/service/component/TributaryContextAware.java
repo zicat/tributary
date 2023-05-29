@@ -22,6 +22,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
+import org.zicat.tributary.common.TributaryRuntimeException;
 
 /** TributaryContextAware. */
 @Component
@@ -43,7 +44,7 @@ public class TributaryContextAware implements ApplicationContextAware {
      */
     public static <T> T getBean(Class<T> clazz) {
         if (applicationContext == null) {
-            throw new RuntimeException("application context is null");
+            throw new TributaryRuntimeException("application context is null");
         }
         return applicationContext.getBean(clazz);
     }

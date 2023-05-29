@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.source.utils;
 
+import org.zicat.tributary.common.TributaryRuntimeException;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -28,10 +30,6 @@ import java.util.Enumeration;
 public class HostUtils {
 
     private static final String ALL_IP_FILTER_PATTERN = ".*";
-
-    public static void main(String[] args) {
-        System.out.println(getInetAddress("localhost"));
-    }
 
     /**
      * get localhost string ip by pattern filter.
@@ -49,7 +47,7 @@ public class HostUtils {
         try {
             it = NetworkInterface.getNetworkInterfaces();
         } catch (SocketException e) {
-            throw new RuntimeException(e);
+            throw new TributaryRuntimeException(e);
         }
         while (it.hasMoreElements()) {
             final NetworkInterface networkInterface = it.nextElement();
@@ -63,6 +61,7 @@ public class HostUtils {
                 }
             }
         }
-        throw new RuntimeException("local ip not found");
+        throw new TributaryRuntimeException(
+                "inet address not found by ip filter pattern " + ipFilterPattern);
     }
 }
