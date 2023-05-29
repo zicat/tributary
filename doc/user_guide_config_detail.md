@@ -47,6 +47,7 @@ Tributary also provides the default implementation
 [netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettySourceFactory.java), which supports receiving data from the network. The configuration parameters for Netty are as follows :
 
 ```properties
+source.s1.netty.host=10\\.103\\.1\\..*,localhost
 source.s1.netty.port=8200
 source.s1.netty.threads=10
 source.s1.netty.idle.second=60
@@ -55,6 +56,7 @@ source.s1.netty.decoder=lineDecoder
 
 |  key              |  default       | type                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
+| netty.host        | null           | string                | the host to bind, default null means bind *, one port can bind multi host split by ',', localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.*|   
 | netty.port        |                | int(unit: number)                   | the port to bind, range 1000-65535                                        |
 | netty.threads     | 10             | int(unit: number)                   | the count of netty event loop threads                             |
 | netty.idle.second | 120            | int(unit: second)                   | the idle second of the channel to close |

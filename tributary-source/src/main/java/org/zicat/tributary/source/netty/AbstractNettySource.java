@@ -32,9 +32,12 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.source.Source;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.zicat.tributary.source.utils.HostUtils.getInetAddress;
 
 /** AbstractNettySource. */
 public abstract class AbstractNettySource implements Source {
@@ -133,7 +136,10 @@ public abstract class AbstractNettySource implements Source {
         }
         final String[] hosts = host.split(HOST_SPLIT);
         for (String h : hosts) {
-            channelList.add(createChannel(h));
+            if (h != null && !h.trim().isEmpty()) {
+                final InetAddress address = getInetAddress(h);
+                channelList.add(createChannel(address.getHostAddress()));
+            }
         }
         return channelList;
     }
