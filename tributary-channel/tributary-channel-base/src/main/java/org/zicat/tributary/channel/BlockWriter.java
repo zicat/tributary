@@ -34,14 +34,21 @@ import static org.zicat.tributary.common.VIntUtil.vIntLength;
 public final class BlockWriter extends Block {
 
     final int capacity;
+    final ByteBuffer tmpBuffer;
 
-    private BlockWriter(int capacity, ByteBuffer resultBuf, ByteBuffer reusedBuf) {
+    private BlockWriter(
+            int capacity, ByteBuffer resultBuf, ByteBuffer reusedBuf, ByteBuffer tmpBuffer) {
         super(resultBuf, reusedBuf);
         this.capacity = capacity;
+        this.tmpBuffer = tmpBuffer;
     }
 
     public BlockWriter(int capacity) {
-        this(capacity, ByteBuffer.allocateDirect(capacity), ByteBuffer.allocateDirect(capacity));
+        this(
+                capacity,
+                ByteBuffer.allocateDirect(capacity),
+                ByteBuffer.allocateDirect(capacity),
+                ByteBuffer.allocateDirect(capacity));
     }
 
     /**
@@ -129,7 +136,14 @@ public final class BlockWriter extends Block {
      */
     public BlockWriter reAllocate(int size) {
         return new BlockWriter(
-                size, IOUtils.reAllocate(resultBuf, size), IOUtils.reAllocate(reusedBuf, size));
+                size,
+                IOUtils.reAllocate(resultBuf, size),
+                IOUtils.reAllocate(reusedBuf, size),
+                IOUtils.reAllocate(tmpBuffer, size));
+    }
+
+    public ByteBuffer tmpBuffer() {
+        return tmpBuffer;
     }
 
     /**

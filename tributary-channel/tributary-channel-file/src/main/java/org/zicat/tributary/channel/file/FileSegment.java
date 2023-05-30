@@ -44,6 +44,7 @@ public class FileSegment extends Segment {
     private final FileChannel fileChannel;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean recycled = new AtomicBoolean();
+    private final ByteBuffer tmpBuffer;
 
     protected FileSegment(
             long id,
@@ -56,20 +57,51 @@ public class FileSegment extends Segment {
         super(id, writer, compressionType, segmentSize, position);
         this.file = file;
         this.fileChannel = fileChannel;
+        this.tmpBuffer = writer.tmpBuffer();
     }
 
     @Override
     public void writeFull(ByteBuffer byteBuffer) throws IOException {
-        IOUtils.writeFull(fileChannel, byteBuffer);
+        while (byteBuffer.hasRemaining()) {
+            if (byteBuffer.remaining() <= tmpBuffer.remaining()) {
+                tmpBuffer.put(byteBuffer);
+                return;
+            }
+            final ByteBuffer duplicate = byteBuffer.duplicate();
+            duplicate.limit(duplicate.position() + tmpBuffer.remaining());
+            tmpBuffer.put(duplicate);
+            tmpBuffer.flip();
+            IOUtils.writeFull(fileChannel, tmpBuffer);
+            tmpBuffer.clear();
+            byteBuffer.position(duplicate.limit());
+        }
     }
 
     @Override
     public void readFull(ByteBuffer byteBuffer, long offset) throws IOException {
-        IOUtils.readFully(fileChannel, byteBuffer, offset);
+        final int readInChannel =
+                Math.min((int) (fileChannel.position() - offset), byteBuffer.remaining());
+        if (readInChannel > 0) {
+            final ByteBuffer duplicate = byteBuffer.duplicate();
+            duplicate.limit(duplicate.position() + readInChannel);
+            IOUtils.readFully(fileChannel, duplicate, offset);
+            byteBuffer.position(duplicate.limit());
+        }
+        if (byteBuffer.hasRemaining()) {
+            final int bufferOffset = Math.max(0, (int) (offset - fileChannel.position()));
+            final ByteBuffer duplicate = tmpBuffer.duplicate();
+            duplicate.position(bufferOffset).limit(byteBuffer.remaining());
+            byteBuffer.put(duplicate);
+        }
     }
 
     @Override
     public void persist(boolean force) throws IOException {
+        if (force) {
+            tmpBuffer.flip();
+            IOUtils.writeFull(fileChannel, tmpBuffer);
+            tmpBuffer.clear();
+        }
         fileChannel.force(force);
     }
 
