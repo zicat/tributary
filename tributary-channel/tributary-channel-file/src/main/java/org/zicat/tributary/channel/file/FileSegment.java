@@ -61,7 +61,7 @@ public class FileSegment extends Segment {
     }
 
     @Override
-    public void writeFull(ByteBuffer byteBuffer) throws IOException {
+    public synchronized void writeFull(ByteBuffer byteBuffer) throws IOException {
         while (byteBuffer.hasRemaining()) {
             if (byteBuffer.remaining() <= tmpBuffer.remaining()) {
                 tmpBuffer.put(byteBuffer);
@@ -78,7 +78,7 @@ public class FileSegment extends Segment {
     }
 
     @Override
-    public void readFull(ByteBuffer byteBuffer, long offset) throws IOException {
+    public synchronized void readFull(ByteBuffer byteBuffer, long offset) throws IOException {
         final int readInChannel =
                 Math.min((int) (fileChannel.position() - offset), byteBuffer.remaining());
         if (readInChannel > 0) {
@@ -90,7 +90,7 @@ public class FileSegment extends Segment {
         if (byteBuffer.hasRemaining()) {
             final int bufferOffset = Math.max(0, (int) (offset - fileChannel.position()));
             final ByteBuffer duplicate = tmpBuffer.duplicate();
-            duplicate.position(bufferOffset).limit(byteBuffer.remaining());
+            duplicate.position(bufferOffset).limit(bufferOffset + byteBuffer.remaining());
             byteBuffer.put(duplicate);
         }
     }
