@@ -26,16 +26,14 @@ If there is an external system failure for the sink, it will roll back to the pr
 This section documents how to configure the tributary’s application.properties. See the following section for creating a
 tributary application using Spring Boot.
 
-### Build package
+### Download package
 
-Before start the tributary service, please compile and package it from source code with java8 and maven3.
-
-Use git or other tools to download source code.
+Before start the tributary service, please install java8 first.
 
 ```shell
-$ cd tributary
-$ bash sbin/package.sh
-$ cd release/tributary  
+$ wget https://github.com/zicat/tributary/releases/download/1.0/tributary.zip
+$ unzip tributary.zip
+$ cd tributary  
 ``` 
 
 If everything goes well, the current directory will be the release directory named "tributary", which includes three subdirectories: "bin", "config", and "libs".
