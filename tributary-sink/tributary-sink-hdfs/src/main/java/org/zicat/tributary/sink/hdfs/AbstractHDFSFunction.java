@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.compress.SnappyCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ConfigOption;
@@ -40,7 +38,12 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHDFSFunction.class);
 
     public static final String DIRECTORY_DELIMITER = System.getProperty("file.separator");
-    public static final String BASE_SINK_PATH = "sinkPath";
+
+    public static final ConfigOption<String> OPTION_SINK_PATH =
+            ConfigOptions.key("sink.path")
+                    .stringType()
+                    .description("set sink base path")
+                    .noDefaultValue();
 
     public static final ConfigOption<String> OPTION_KEYTAB =
             ConfigOptions.key("keytab")
@@ -61,10 +64,16 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
                     .defaultValue(1024 * 1024 * 256L);
 
     public static final ConfigOption<Integer> OPTION_MAX_RETRIES =
-            ConfigOptions.key("maxRetries")
+            ConfigOptions.key("max.retries")
                     .integerType()
                     .description("max retries times if operation fail")
                     .defaultValue(3);
+
+    public static final ConfigOption<String> OPTION_OUTPUT_COMPRESSION_CODEC =
+            ConfigOptions.key("output.compression.codec")
+                    .stringType()
+                    .description("set output compression codec, default null")
+                    .defaultValue(null);
 
     protected PrivilegedExecutor privilegedExecutor;
     protected HDFSWriterFactory hdfsWriterFactory;
@@ -72,15 +81,14 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     protected long rollSize;
     protected Integer maxRetry;
     protected Map<String, BucketWriter<P>> sfWriters = new HashMap<>();
-    protected SnappyCodec snappyCodec = new SnappyCodec();
     protected String prefixFileName;
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
-        this.snappyCodec.setConf(new Configuration());
-        this.hdfsWriterFactory = new LengthBodyHDFSWriterFactory();
-        final String basePath = context.get(BASE_SINK_PATH).toString().trim();
+        this.hdfsWriterFactory =
+                new LengthBodyHDFSWriterFactory(context.get(OPTION_OUTPUT_COMPRESSION_CODEC));
+        final String basePath = context.get(OPTION_SINK_PATH).trim();
         this.basePath = Strings.removeLastIfMatch(basePath, DIRECTORY_DELIMITER);
         this.privilegedExecutor =
                 getAuthenticator(context.get(OPTION_PRINCIPLE), context.get(OPTION_KEYTAB));

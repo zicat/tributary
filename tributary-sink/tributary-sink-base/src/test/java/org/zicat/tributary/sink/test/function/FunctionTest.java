@@ -31,7 +31,7 @@ import java.util.Iterator;
 public class FunctionTest {
 
     @Test
-    public void testAbstractFunction() {
+    public void testAbstractFunction() throws Exception {
 
         final AbstractFunction function =
                 new AbstractFunction() {

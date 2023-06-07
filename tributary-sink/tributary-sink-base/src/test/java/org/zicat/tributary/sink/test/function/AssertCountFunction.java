@@ -41,7 +41,7 @@ public class AssertCountFunction extends AbstractFunction {
             ConfigOptions.key("count").longType().defaultValue(-1L);
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
         count = context.get(OPTION_ASSERT_COUNT);
     }

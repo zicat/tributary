@@ -33,7 +33,7 @@ source.s1.netty.port=8200
 source.s1.netty.decoder=lineDecoder
 channel.c1.type=memory
 channel.c1.groups=group_1
-sink.group_1.functionIdentity=print
+sink.group_1.function.id=print
 EOF
 cat << EOF > "${release_dir_config}""/logback.xml"
 <?xml version="1.0" encoding="UTF-8" ?>

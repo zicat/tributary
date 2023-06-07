@@ -50,7 +50,7 @@ source.s1.netty.port=8200
 source.s1.netty.decoder=lineDecoder
 channel.c1.type=memory
 channel.c1.groups=group_1
-sink.group_1.functionIdentity=print
+sink.group_1.function.id=print
 ```
 
 Please note that the port configuration for server.port and source.s1.netty.port should not be duplicated and must not be occupied by other processes.

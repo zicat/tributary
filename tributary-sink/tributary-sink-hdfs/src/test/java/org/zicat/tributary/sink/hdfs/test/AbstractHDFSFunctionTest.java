@@ -40,7 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.BASE_SINK_PATH;
+import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.OPTION_SINK_PATH;
 
 /** AbstractHDFSFunctionTest. */
 public class AbstractHDFSFunctionTest {
@@ -102,7 +102,7 @@ public class AbstractHDFSFunctionTest {
                         .topic("t1")
                         .startGroupOffset(new GroupOffset(0, 0, "g1"));
 
-        contextBuilder.addCustomProperty(BASE_SINK_PATH, bucketPath);
+        contextBuilder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
         final Context context = contextBuilder.build();
         function.open(context);
         List<byte[]> testData =
@@ -173,7 +173,7 @@ public class AbstractHDFSFunctionTest {
                         .partitionId(0)
                         .topic("t1")
                         .startGroupOffset(new GroupOffset(0, 0, "g1"));
-        contextBuilder.addCustomProperty(BASE_SINK_PATH, bucketPath);
+        contextBuilder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
         final Context context = contextBuilder.build();
         function.open(context);
         List<byte[]> testData =
@@ -241,7 +241,7 @@ public class AbstractHDFSFunctionTest {
                         .topic("t1")
                         .startGroupOffset(new GroupOffset(0, 0, "g1"));
 
-        contextBuilder.addCustomProperty(BASE_SINK_PATH, bucketPath);
+        contextBuilder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
         final Context context = contextBuilder.build();
         function.open(context);
         List<byte[]> testData =

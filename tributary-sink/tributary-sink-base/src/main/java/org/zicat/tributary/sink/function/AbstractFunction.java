@@ -40,7 +40,7 @@ public abstract class AbstractFunction implements Function {
     private String metricsHost;
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         this.context = context;
         this.committableOffset = context.startGroupOffset();
         this.clock = context.getOrGetDefaultClock();

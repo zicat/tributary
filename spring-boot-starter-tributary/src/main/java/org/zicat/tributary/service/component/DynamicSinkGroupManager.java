@@ -43,14 +43,14 @@ import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_M
 public class DynamicSinkGroupManager implements Closeable {
 
     public static final ConfigOption<String> OPTION_SINK_HANDLER_ID =
-            ConfigOptions.key("partitionHandlerIdentity")
+            ConfigOptions.key("partition.handler.id")
                     .stringType()
                     .description(
                             "the id of partition handler, support [direct,multi_thread], default direct")
                     .defaultValue(DirectPartitionHandlerFactory.IDENTITY);
 
     public static final ConfigOption<String> OPTION_FUNCTION_ID =
-            ConfigOptions.key("functionIdentity")
+            ConfigOptions.key("function.id")
                     .stringType()
                     .description("the id of function")
                     .noDefaultValue();

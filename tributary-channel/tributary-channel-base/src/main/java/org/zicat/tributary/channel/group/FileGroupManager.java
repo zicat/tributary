@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class FileGroupManager extends MemoryGroupManager {
 
     public static final ConfigOption<Long> OPTION_GROUP_PERSIST_PERIOD_SECOND =
-            ConfigOptions.key("groupPersistPeriodSecond")
+            ConfigOptions.key("groups.persist.period.second")
                     .longType()
                     .description("how long to persist group offset to storage, default 30")
                     .defaultValue(30L);

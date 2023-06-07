@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
+import org.apache.hadoop.io.compress.SnappyCodec;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -36,7 +37,6 @@ import java.util.Objects;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 import static org.zicat.tributary.sink.Config.OPTION_CLOCK;
-import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.BASE_SINK_PATH;
 import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.*;
 
 /** DefaultHDFSFunctionTest. */
@@ -70,10 +70,12 @@ public class DefaultHDFSFunctionTest {
                         .partitionId(0)
                         .startGroupOffset(new GroupOffset(0, 0, "g1"))
                         .topic("t1");
-        builder.addCustomProperty(BASE_SINK_PATH, DIR.getCanonicalFile().getPath())
+        builder.addCustomProperty(OPTION_SINK_PATH.key(), DIR.getCanonicalFile().getPath())
                 .addCustomProperty(OPTION_IDLE_MILLIS.key(), 10000)
                 .addCustomProperty(OPTION_BUCKET_DATE_FORMAT.key(), timeFormat)
                 .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE.key(), timeZoneId)
+                .addCustomProperty(
+                        OPTION_OUTPUT_COMPRESSION_CODEC.key(), SnappyCodec.class.getName())
                 .addCustomProperty(OPTION_CLOCK.key(), mockClock);
 
         defaultHDFSFunction.open(builder.build());

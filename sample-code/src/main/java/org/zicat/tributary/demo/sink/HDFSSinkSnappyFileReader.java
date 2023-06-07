@@ -18,27 +18,36 @@
 
 package org.zicat.tributary.demo.sink;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.compress.CompressionInputStream;
+import org.apache.hadoop.io.compress.SnappyCodec;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 /** HDFSSinkFileReader. */
-public class HDFSSinkFileReader {
+public class HDFSSinkSnappyFileReader {
 
     public static void main(String[] args) throws IOException {
-        final String fileName = "2c9e7895_4538_45ff_be75_3ede02e45620_c1_group_1_0.1";
+        final String fileName = "2b97417e_bceb_48b5_8f08_f299426bb56b_c1_group_1_0.1.snappy";
+        SnappyCodec snappyCodec = new SnappyCodec();
+        snappyCodec.setConf(new Configuration());
         final byte[] lengthBytes = new byte[4];
-        try (InputStream inputStream =
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName)) {
+        try (CompressionInputStream compressionInputStream =
+                snappyCodec.createInputStream(
+                        Thread.currentThread()
+                                .getContextClassLoader()
+                                .getResourceAsStream(fileName))) {
             int readCount;
-            while ((readCount = readAll(inputStream, lengthBytes)) != -1) {
+            while ((readCount = readAll(compressionInputStream, lengthBytes)) != -1) {
                 if (readCount != lengthBytes.length) {
                     throw new IOException("error file schema");
                 }
                 final int length = ByteBuffer.wrap(lengthBytes).getInt();
                 final byte[] body = new byte[length];
-                if (readAll(inputStream, body) != length) {
+                if (readAll(compressionInputStream, body) != length) {
                     throw new IOException("read body fail");
                 }
                 System.out.println(new String(body, StandardCharsets.UTF_8));

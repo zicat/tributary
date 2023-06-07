@@ -36,7 +36,7 @@ public class AbstractFunctionTest {
     final int fullMill = 10;
 
     @Test
-    public void testFlush() {
+    public void testFlush() throws Exception {
 
         final GroupOffset startGroupOffset = new GroupOffset(0, 0, "g1");
         final MockClock clock = new MockClock();
@@ -66,7 +66,7 @@ public class AbstractFunctionTest {
      * @param clock clock
      * @return MockFunction
      */
-    private MockFunction createFunction(MockClock clock) {
+    private MockFunction createFunction(MockClock clock) throws Exception {
         final MockFunction function = new MockFunction();
         final GroupOffset startGroupOffset = new GroupOffset(0, 0, "g1");
         final ContextBuilder builder =

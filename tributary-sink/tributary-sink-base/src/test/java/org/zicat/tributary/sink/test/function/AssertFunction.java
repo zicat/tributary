@@ -34,7 +34,7 @@ public class AssertFunction extends AbstractFunction {
     public static final String KEY_ASSERT_DATA = "assert.data";
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
         // important: assert data list must thread safe.
         assertData = (List<?>) context.get(KEY_ASSERT_DATA);

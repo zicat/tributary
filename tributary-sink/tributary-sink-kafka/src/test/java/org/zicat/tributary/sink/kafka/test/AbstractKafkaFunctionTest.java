@@ -41,7 +41,7 @@ public class AbstractKafkaFunctionTest {
     private AbstractKafkaFunction function;
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         function =
                 new AbstractKafkaFunction() {
                     @Override

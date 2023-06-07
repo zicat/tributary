@@ -43,7 +43,7 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
     protected KafkaProducer<byte[], byte[]> producer;
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
         this.customTopic =
                 context.get(OPTION_TOPIC.changeKey(getKafkaKeyPrefix(DEFAULT_CLUSTER) + "topic"));

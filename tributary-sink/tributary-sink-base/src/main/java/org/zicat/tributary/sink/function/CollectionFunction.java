@@ -39,7 +39,7 @@ public class CollectionFunction extends AbstractFunction {
     private boolean clearBeforeClose;
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
         clearBeforeClose = context.get(OPTION_CLEAR_BEFORE_CLOSE);
     }

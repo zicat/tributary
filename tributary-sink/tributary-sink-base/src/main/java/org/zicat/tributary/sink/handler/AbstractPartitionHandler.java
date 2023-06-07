@@ -53,7 +53,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPartitionHandler.class);
 
     public static final ConfigOption<Long> OPTION_MAX_RETAIN_SIZE =
-            ConfigOptions.key("maxRetainPerPartitionBytes")
+            ConfigOptions.key("partition.retain.max.bytes")
                     .longType()
                     .description("delete oldest segment if one partition lag over this param")
                     .defaultValue(null);

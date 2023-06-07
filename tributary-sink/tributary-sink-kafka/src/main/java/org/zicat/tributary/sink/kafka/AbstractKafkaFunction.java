@@ -48,7 +48,7 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
     protected final Map<String, Producer<byte[], byte[]>> producerMap = new HashMap<>();
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
     }
 

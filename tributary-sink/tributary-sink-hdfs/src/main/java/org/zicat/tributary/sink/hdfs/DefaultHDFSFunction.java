@@ -32,19 +32,19 @@ import java.util.Iterator;
 public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements Trigger {
 
     public static final ConfigOption<Integer> OPTION_IDLE_MILLIS =
-            ConfigOptions.key("idleTriggerMillis")
+            ConfigOptions.key("idle.trigger.millis")
                     .integerType()
                     .description("idle trigger, default 30s")
                     .defaultValue(30 * 1000);
 
     public static final ConfigOption<String> OPTION_BUCKET_DATE_FORMAT =
-            ConfigOptions.key("bucketDateFormat")
+            ConfigOptions.key("bucket.date.format")
                     .stringType()
                     .description("set process time bucket format, default yyyyMMdd_HH")
                     .defaultValue("yyyyMMdd_HH");
 
     public static final ConfigOption<String> OPTION_BUCKET_DATE_TIMEZONE =
-            ConfigOptions.key("bucketDateTimeZone")
+            ConfigOptions.key("bucket.date.timezone")
                     .stringType()
                     .description("set process time bucket timezone, default UTC")
                     .defaultValue("UTC");
@@ -69,7 +69,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
     protected GroupOffset lastGroupOffset;
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
         idleTriggerMillis = context.get(OPTION_IDLE_MILLIS);
         bucketDateFormat = context.get(OPTION_BUCKET_DATE_FORMAT);
