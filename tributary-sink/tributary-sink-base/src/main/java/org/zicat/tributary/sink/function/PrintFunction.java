@@ -49,7 +49,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
     private long triggerMillis;
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
         this.triggerMillis = context.get(CONFIG_TRIGGER_MILLIS);
     }

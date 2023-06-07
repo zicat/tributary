@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.test.FileUtils;
+import org.zicat.tributary.sink.hdfs.LengthBodyCompressionHDFSWriter;
 import org.zicat.tributary.sink.hdfs.LengthBodyHDFSWriter;
 
 import java.io.File;
@@ -66,7 +67,7 @@ public class LengthBodyHDFSWriterTest {
 
         SnappyCodec snappyCodec = new SnappyCodec();
         snappyCodec.setConf(conf);
-        final LengthBodyHDFSWriter writer = new LengthBodyHDFSWriter(snappyCodec);
+        final LengthBodyHDFSWriter writer = new LengthBodyCompressionHDFSWriter(snappyCodec);
         writer.open(fileSystem, path);
 
         final String[] bodies = {"yarf!"};

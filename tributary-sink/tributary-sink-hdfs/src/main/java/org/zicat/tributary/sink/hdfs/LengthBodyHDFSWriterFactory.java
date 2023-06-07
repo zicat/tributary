@@ -18,41 +18,56 @@
 
 package org.zicat.tributary.sink.hdfs;
 
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.io.compress.SnappyCodec;
 
 /** LengthBodyHDFSWriterFactory. */
 public class LengthBodyHDFSWriterFactory implements HDFSWriterFactory {
 
-    private final CompressionCodec codec;
+    private final CompressionCodec compressionCodec;
 
-    public LengthBodyHDFSWriterFactory(CompressionCodec codec) {
-        this.codec = codec;
+    public LengthBodyHDFSWriterFactory()
+            throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+        this(null);
     }
 
-    public LengthBodyHDFSWriterFactory() {
-        this(defaultCodes());
+    public LengthBodyHDFSWriterFactory(String codec)
+            throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        this.compressionCodec = createCodec(codec);
     }
 
     /**
-     * default codes.
+     * create codec by name.
      *
+     * @param codec codec
      * @return CompressionCodec
+     * @throws ClassNotFoundException ClassNotFoundException
+     * @throws IllegalAccessException IllegalAccessException
+     * @throws InstantiationException InstantiationException
      */
-    private static CompressionCodec defaultCodes() {
-        final SnappyCodec snappyCodec = new SnappyCodec();
-        snappyCodec.setConf(new Configuration());
-        return snappyCodec;
+    private static CompressionCodec createCodec(String codec)
+            throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        if (codec == null || codec.trim().isEmpty()) {
+            return null;
+        }
+        final CompressionCodec compressionCodec =
+                (CompressionCodec) Class.forName(codec).newInstance();
+        if (compressionCodec instanceof Configurable) {
+            ((Configurable) compressionCodec).setConf(new Configuration());
+        }
+        return compressionCodec;
     }
 
     @Override
     public String fileExtension() {
-        return codec.getDefaultExtension();
+        return compressionCodec == null ? "" : compressionCodec.getDefaultExtension();
     }
 
     @Override
     public HDFSWriter create() {
-        return new LengthBodyHDFSWriter(codec);
+        return compressionCodec == null
+                ? new LengthBodyHDFSWriter()
+                : new LengthBodyCompressionHDFSWriter(compressionCodec);
     }
 }

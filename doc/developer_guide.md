@@ -232,8 +232,8 @@ in classpath [META-INF/services](../sample-code/src/main/resources/META-INF/serv
 All is ready, let's configure it in the application.properties
 
 ```properties
-sink.group_kafka.functionIdentity=kafka_demo_dispatcher
-sink.group_kafka.partitionHandlerIdentity=direct
+sink.group_kafka.function.id=kafka_demo_dispatcher
+sink.group_kafka.partition.handler.id=direct
 #sink.group_kafka.kafka.topic=test_topic
 # support all kafka producer configuration, please see kafka official website for more detail
 sink.group_kafka.kafka.bootstrap.servers=127.0.0.1:9092

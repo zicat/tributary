@@ -36,7 +36,7 @@ public class DefaultKafkaFunctionTest {
     final MockProducer<byte[], byte[]> mockProducer = new MockProducer<>();
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction();
         final ContextBuilder builder =
                 new ContextBuilder()

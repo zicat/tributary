@@ -87,17 +87,17 @@ channel.c1.type=file
 channel.c1.groups=group_1,group_2
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.compression=snappy
-channel.c1.blockSize=262144
-channel.c1.segmentSize=4294967296
-channel.c1.flushPeriodMills=1000
-channel.c1.groupPersistPeriodSecond=40
+channel.c1.block.size=262144
+channel.c1.segment.size=4294967296
+channel.c1.flush.period.mills=1000
+channel.c1.groups.persist.period.second=40
 channel.c2.type=memory
 channel.c2.groups=group_2
 channel.c2.partitions=2
 channel.c2.compression=snappy
-channel.c2.blockSize=262144
-channel.c2.segmentSize=4294967296
-channel.c2.flushPeriodMills=1000
+channel.c2.block.size=262144
+channel.c2.segment.size=4294967296
+channel.c2.flush.period.mills=1000
 channel.c3.type=kafka
 channel.c3.groups=group_3
 channel.c3.partitions=4
@@ -116,21 +116,21 @@ channel.c3.kafka.bootstrap.servers=127.0.0.1:9092
 
 |  key              |  default       | type                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| blockSize         | 32768(32K)     | long(unit: byte)       | the block size to store records in memory|
+| block.size         | 32768(32K)     | long(unit: byte)       | the block size to store records in memory|
 | compression       | none           | enum[none,zstd,snappy]           | the type of compression to compress the block before writing block to page cache |
-| segmentSize       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
+| segment.size       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
 | partitions        |                | string          | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by ','  |
-| flushPeriodMills  | 500            | long(unit: ms)         | the period time to async flush page cache to disk|
-| groupPersistPeriodSecond| 30       | long(unit: second)| the period time to async persist the committed group offset to disk|     
+| flush.period.mills  | 500            | long(unit: ms)         | the period time to async flush page cache to disk|
+| groups.persist.period.second| 30       | long(unit: second)| the period time to async persist the committed group offset to disk|     
 
 
 ### Memory Config
 
 |  key              |  default       | type                  | describe                                             |
 |  ----             | ----           | ---                          | ---                                                  |
-| blockSize         | 32768(32K)     | long(unit: byte)       | the block size to store records in memory|
+| block.size         | 32768(32K)     | long(unit: byte)       | the block size to store records in memory|
 | compression       | none           | enum[none,zstd,snappy]           | the type of compression to compress the block before writing block to page cache |
-| segmentSize       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
+| segment.size       | 4294967296(4G) | long(unit: byte)       | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling  |
 | partitions        | 1              | int(unit: number)      | the number of partitions|
 
 ### Kafka Config
@@ -142,8 +142,8 @@ channel.c3.kafka.bootstrap.servers=127.0.0.1:9092
 
 Note:
 
-1. Please configure a reasonable blockSize in the file channel. A value that is too small may increase the IOPS of the disk.
-2. Please configure a reasonable segmentSize in the file channel. A value that is too small will cause frequent creation and deletion of files, while a value that is too large will affect the duration of expired data retention.
+1. Please configure a reasonable block.size in the file channel. A value that is too small may increase the IOPS of the disk.
+2. Please configure a reasonable segment.size in the file channel. A value that is too small will cause frequent creation and deletion of files, while a value that is too large will affect the duration of expired data retention.
 3. When defining multiple file channels, please make sure to set different partition directories. Setting the same directory may cause unknown exceptions.
 4. Setting some kafka properties is not work including key.deserializer, value.deserializer, key.serializer, value.serializer, group.id, enable.auto.commit.  
 5. Strongly recommend using file channel in production environment, memory channel, and kafka channel more for debugging.
@@ -153,23 +153,23 @@ Note:
 Tributary supports defining multiple sinks in the application.properties
 
 ```properties
-sink.group_1.maxRetainPerPartitionBytes=9663676414
-sink.group_1.partitionHandlerIdentity=direct
-sink.group_1.functionIdentity=hdfs
-sink.group_2.maxRetainPerPartitionBytes=9663676414
-sink.group_2.partitionHandlerIdentity=multi_thread
+sink.group_1.partition.retain.max.bytes=9663676414
+sink.group_1.partition.handler.id=direct
+sink.group_1.function.id=hdfs
+sink.group_2.partition.retain.max.bytes=9663676414
+sink.group_2.partition.handler.id=multi_thread
 sink.group_2.threads=3
-sink.group_2.functionIdentity=kafka
+sink.group_2.function.id=kafka
 ``` 
 
 ### Common Config
 
 key                               |  default       | type                 | describe                                                                  |
 |  ----                             | ----           | ---                          | ---                                                                       |
-| maxRetainPerPartitionBytes        |                | long(unit: bytes)  | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful     |
-| partitionHandlerIdentity          | direct         | enum[direct,multi_thread]  | the sink model, direct model combine one channel's partition with one thread, multi_thread model combine one channel's partition with multi threads|
-| threads                           | 2              | int(unit: number) | the thread count, only valid when the value of partitionHandlerIdentity is multi_thread |  
-| functionIdentity                  |                | enum[print,kafka,hdfs]     | the function identity that configure how to consume records  |
+| partition.retain.max.bytes        |                | long(unit: bytes)  | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful     |
+| partition.handler.id          | direct         | enum[direct,multi_thread]  | the sink model, direct model combine one channel's partition with one thread, multi_thread model combine one channel's partition with multi threads|
+| threads                           | 2              | int(unit: number) | the thread count, only valid when the value of partition.handler.id is multi_thread |  
+| function.id                       |                | enum[print,kafka,hdfs]     | the function identity that configure how to consume records  |
 
 Note:
 
@@ -179,26 +179,28 @@ Note:
 ### Sink HDFS Detail
 
 ```properties
-sink.group_1.sinkPath=/tmp/test/cache
+sink.group_1.sink.path=/tmp/test/cache
 sink.group_1.roll.size=10240000
-sink.group_1.bucketDateFormat=yyyyMMdd_HH
-sink.group_1.bucketDateTimeZone=GMT+8
-sink.group_1.maxRetries=3
+sink.group_1.bucket.date.format=yyyyMMdd_HH
+sink.group_1.bucket.date.timezone=GMT+8
+sink.group_1.max.retries=3
 sink.group_1.keytab=
 sink.group_1.principle=
-sink.group_1.idleTriggerMillis=60000
+sink.group_1.output.compression.codec=
+sink.group_1.idle.trigger.millis=60000
 ```
 
 key                               |  default       | type                 | describe    |
 |  ----                             | ----           | ---                          | ---                                                                       
-| sinkPath                          |                | string                   | the root path to sink |
+| sink.path                         |                | string                   | the root path to sink |
 | roll.size                         |268435456(256M) | long(unit: byte)       | the max size of the file|
-| bucketDateFormat                  |yyyyMMdd_HH     | string  | the part of the bucket, the bucket is composed of ${sinkPath}/${bucketDateFormat}/ |   
-| bucketDateTimeZone                |UTC             | string           | the timezone of bucket date format | 
-| maxRetries                        |3               | int(unit: number)| the max retry times when operate hdfs fail|
+| bucket.date.format                  |yyyyMMdd_HH     | string  | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/ |   
+| bucket.date.timezone                |UTC             | string           | the timezone of bucket date format | 
+| max.retries                       |3               | int(unit: number)| the max retry times when operate hdfs fail|
 | keytab                            |                | string|            the keytab if hdfs use kerberos authenticator|
 | principle                         |                | string|            the principle if hdfs use kerberos authenticator|
-| idleTriggerMillis                 |60000           | long(unit: millis)| the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java)|
+| output.compression.codec          |null            |string| the compression class that implement org.apache.hadoop.io.compress.CompressionCodec, e.g. org.apache.hadoop.io.compress.SnappyCodec| 
+| idle.trigger.millis               |60000           | long(unit: millis)| the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java)|
 
 [GOTO HDFS Sink for more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
@@ -246,33 +248,33 @@ channel.c1.type=file
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.groups=group_1,group_2
 channel.c1.compression=snappy
-channel.c1.blockSize=262144
-channel.c1.segmentSize=4294967296
-channel.c1.flushPeriodMills=1000
+channel.c1.block.size=262144
+channel.c1.segment.size=4294967296
+channel.c1.flush.period.mills=1000
 
 channel.c2.type=memory
 channel.c2.partitions=2
 channel.c2.groups=group_2
 channel.c2.compression=snappy
-channel.c2.blockSize=262144
-channel.c2.segmentSize=4294967296
-channel.c2.flushPeriodMills=1000
+channel.c2.block.size=262144
+channel.c2.segment.size=4294967296
+channel.c2.flush.period.mills=1000
 
-sink.group_1.maxRetainPerPartitionBytes=9663676414
-sink.group_1.partitionHandlerIdentity=direct
-sink.group_1.functionIdentity=hdfs
-sink.group_1.sinkPath=/tmp/test/cache
+sink.group_1.partition.retain.max.bytes=9663676414
+sink.group_1.partition.handler.id=direct
+sink.group_1.function.id=hdfs
+sink.group_1.sink.path=/tmp/test/cache
 sink.group_1.roll.size=10240000
-sink.group_1.bucketDateFormat=yyyyMMdd_HH
-sink.group_1.maxRetries=3
+sink.group_1.bucket.date.format=yyyyMMdd_HH
+sink.group_1.max.retries=3
 sink.group_1.keytab=
 sink.group_1.principle=
-sink.group_1.idleTriggerMillis=60000
+sink.group_1.idle.trigger.millis=60000
 
-sink.group_2.maxRetainPerPartitionBytes=9663676414
-sink.group_2.partitionHandlerIdentity=multi_thread
+sink.group_2.partition.retain.max.bytes=9663676414
+sink.group_2.partition.handler.id=multi_thread
 sink.group_2.threads=3
-sink.group_2.functionIdentity=kafka
+sink.group_2.function.id=kafka
 sink.group_2.kafka.bootstrap.servers=127.0.0.1:9092
 sink.group_2.kafka.topic=test_topic
 sink.group_2.kafka.key.serializer=org.apache.kafka.common.serialization.ByteArraySerializer

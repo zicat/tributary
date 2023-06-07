@@ -42,7 +42,7 @@ public abstract class AbstractHBaseFunction extends AbstractFunction {
     private final Map<HTableEntity, HBaseWriter> hbaseWriterMap = new HashMap<>();
 
     @Override
-    public void open(Context context) {
+    public void open(Context context) throws Exception {
         super.open(context);
     }
 

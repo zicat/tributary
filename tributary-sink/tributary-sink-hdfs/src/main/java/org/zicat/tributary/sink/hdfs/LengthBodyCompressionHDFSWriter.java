@@ -18,63 +18,80 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.compress.CodecPool;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionOutputStream;
+import org.apache.hadoop.io.compress.Compressor;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /** LengthBodyHDFSWriter. */
-public class LengthBodyHDFSWriter implements HDFSWriter {
+public class LengthBodyCompressionHDFSWriter extends LengthBodyHDFSWriter {
 
-    protected FSDataOutputStream fsOut;
-    private ByteBuffer buffer = null;
+    protected final CompressionCodec codec;
+    protected Compressor compressor;
+    protected CompressionOutputStream cmpOut;
+    protected boolean isFinished = false;
 
-    public LengthBodyHDFSWriter() {}
+    public LengthBodyCompressionHDFSWriter(CompressionCodec codec) {
+        this.codec = codec;
+    }
 
     @Override
     public void open(FileSystem fileSystem, Path path) throws IOException {
-        fsOut = fileSystem.create(path);
+        super.open(fileSystem, path);
+        compressor = CodecPool.getCompressor(codec, fileSystem.getConf());
+        cmpOut = codec.createOutputStream(fsOut, compressor);
+        isFinished = false;
     }
 
     @Override
     public void append(byte[] bs, int offset, int length) throws IOException {
-        final int bufferSize = length + 4;
-        buffer = IOUtils.reAllocate(buffer, bufferSize, bufferSize, false);
-        buffer.putInt(length).put(bs, offset, length).flip();
-        write(buffer);
+        if (isFinished) {
+            cmpOut.resetState();
+            isFinished = false;
+        }
+        super.append(bs, offset, length);
     }
 
-    /**
-     * write byte buffer.
-     *
-     * @param byteBuffer byteBuffer
-     * @throws IOException IOException
-     */
+    @Override
     protected void write(ByteBuffer byteBuffer) throws IOException {
         if (byteBuffer.isDirect()) {
             byte[] copy = new byte[byteBuffer.remaining()];
             byteBuffer.get(copy);
-            fsOut.write(copy);
+            cmpOut.write(copy);
         } else {
-            fsOut.write(byteBuffer.array(), byteBuffer.position(), byteBuffer.remaining());
+            cmpOut.write(byteBuffer.array(), byteBuffer.position(), byteBuffer.remaining());
         }
     }
 
     @Override
     public void sync() throws IOException {
-        fsOut.flush();
-        fsOut.hflush();
+        if (!isFinished) {
+            cmpOut.finish();
+            isFinished = true;
+        }
+        super.sync();
     }
 
     @Override
     public void close() throws IOException {
         try {
-            sync();
+            if (cmpOut != null) {
+                try {
+                    sync();
+                } finally {
+                    IOUtils.closeQuietly(cmpOut);
+                    cmpOut = null;
+                }
+            }
         } finally {
-            IOUtils.closeQuietly(fsOut);
+            CodecPool.returnCompressor(compressor);
+            compressor = null;
         }
     }
 }

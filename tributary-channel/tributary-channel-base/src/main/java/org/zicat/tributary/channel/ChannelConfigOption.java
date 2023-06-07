@@ -25,13 +25,13 @@ import org.zicat.tributary.common.ConfigOptions;
 public class ChannelConfigOption {
 
     public static final ConfigOption<Integer> OPTION_BLOCK_SIZE =
-            ConfigOptions.key("blockSize")
+            ConfigOptions.key("block.size")
                     .integerType()
                     .description("block size")
                     .defaultValue(32 * 1024);
 
     public static final ConfigOption<Long> OPTION_SEGMENT_SIZE =
-            ConfigOptions.key("segmentSize")
+            ConfigOptions.key("segment.size")
                     .longType()
                     .description("segment size")
                     .defaultValue(4L * 1024L * 1024L * 1024L);
@@ -55,7 +55,7 @@ public class ChannelConfigOption {
                     .noDefaultValue();
 
     public static final ConfigOption<Integer> OPTION_FLUSH_PERIOD_MILLS =
-            ConfigOptions.key("flushPeriodMills")
+            ConfigOptions.key("flush.period.mills")
                     .integerType()
                     .description("async flush page cache to disk period millis, default 500")
                     .defaultValue(500);
