@@ -40,10 +40,14 @@ public class HDFSSinkFileReader {
                         Thread.currentThread()
                                 .getContextClassLoader()
                                 .getResourceAsStream(fileName))) {
-            while (readAll(compressionInputStream, lengthBytes)) {
+            int readCount;
+            while ((readCount = readAll(compressionInputStream, lengthBytes)) != -1) {
+                if (readCount != lengthBytes.length) {
+                    throw new IOException("error file schema");
+                }
                 final int length = ByteBuffer.wrap(lengthBytes).getInt();
                 final byte[] body = new byte[length];
-                if (!readAll(compressionInputStream, body)) {
+                if (readAll(compressionInputStream, body) != length) {
                     throw new IOException("read body fail");
                 }
                 System.out.println(new String(body, StandardCharsets.UTF_8));
@@ -59,7 +63,7 @@ public class HDFSSinkFileReader {
      * @return return false, else return true.
      * @throws IOException IOException
      */
-    private static boolean readAll(InputStream is, byte[] bytes) throws IOException {
+    public static int readAll(InputStream is, byte[] bytes) throws IOException {
         return readAll(is, bytes, 0, bytes.length);
     }
 
@@ -68,21 +72,25 @@ public class HDFSSinkFileReader {
      *
      * @param is is
      * @param bytes bytes
-     * @param offset bytes offset
+     * @param sourceOffset bytes offset
      * @param length bytes length
-     * @return return false, else return true.
+     * @return return -1 if eof, else return real read count.
      * @throws IOException IOException
      */
-    private static boolean readAll(InputStream is, byte[] bytes, int offset, int length)
+    public static int readAll(InputStream is, byte[] bytes, int sourceOffset, int length)
             throws IOException {
+        int offset = sourceOffset;
         do {
             final int remaining = length - offset;
-            int readCount = is.read(bytes, offset, remaining);
+            final int readCount = is.read(bytes, offset, remaining);
             if (readCount == -1) {
-                return false;
+                return offset == sourceOffset ? -1 : offset - sourceOffset;
             }
-            if (readCount >= remaining) {
-                return true;
+            if (readCount == remaining) {
+                return length;
+            }
+            if (readCount > remaining) {
+                throw new IOException("read overflow");
             }
             offset += readCount;
         } while (true);
