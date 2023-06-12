@@ -34,8 +34,6 @@ public abstract class AbstractFunction implements Function {
                     .defaultValue(HostUtils.getLocalHostString(".*"));
 
     protected Context context;
-    protected Clock clock;
-
     private GroupOffset committableOffset;
     private String metricsHost;
 
@@ -43,7 +41,6 @@ public abstract class AbstractFunction implements Function {
     public void open(Context context) throws Exception {
         this.context = context;
         this.committableOffset = context.startGroupOffset();
-        this.clock = context.getOrGetDefaultClock();
         this.metricsHost = context.get(OPTION_METRICS_HOST);
     }
 

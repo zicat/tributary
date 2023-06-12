@@ -20,11 +20,7 @@ package org.zicat.tributary.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.DefaultReadableConfig;
-import org.zicat.tributary.sink.function.Clock;
-import org.zicat.tributary.sink.function.SystemClock;
 
 import java.util.Map;
 import java.util.Properties;
@@ -32,20 +28,10 @@ import java.util.Properties;
 /** Config. */
 public class Config extends DefaultReadableConfig {
 
-    public static final ConfigOption<Clock> OPTION_CLOCK =
-            ConfigOptions.key("clock")
-                    .<Clock>objectType()
-                    .description("set clock instance")
-                    .defaultValue(new SystemClock());
-
     protected static final Logger LOG = LoggerFactory.getLogger(Config.class);
 
     protected Config(Map<String, Object> customConfig) {
         putAll(customConfig);
-    }
-
-    public Clock getOrGetDefaultClock() {
-        return get(OPTION_CLOCK);
     }
 
     /**

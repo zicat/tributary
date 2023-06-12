@@ -36,7 +36,6 @@ import java.util.Objects;
 
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
-import static org.zicat.tributary.sink.Config.OPTION_CLOCK;
 import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.*;
 
 /** DefaultHDFSFunctionTest. */

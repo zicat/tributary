@@ -23,7 +23,9 @@ import io.prometheus.client.Gauge;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.function.SystemClock;
 import org.zicat.tributary.sink.function.Trigger;
 
 import java.util.Iterator;
@@ -49,6 +51,12 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
                     .description("set process time bucket timezone, default UTC")
                     .defaultValue("UTC");
 
+    public static final ConfigOption<Clock> OPTION_CLOCK =
+            ConfigOptions.key("clock")
+                    .<Clock>objectType()
+                    .description("set clock instance")
+                    .defaultValue(new SystemClock());
+
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
                     .name("sink_hdfs_counter")
@@ -67,6 +75,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
     protected String bucketDateTimeZone = null;
     protected String timeBucket = null;
     protected GroupOffset lastGroupOffset;
+    protected Clock clock;
 
     @Override
     public void open(Context context) throws Exception {
@@ -74,6 +83,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
         idleTriggerMillis = context.get(OPTION_IDLE_MILLIS);
         bucketDateFormat = context.get(OPTION_BUCKET_DATE_FORMAT);
         bucketDateTimeZone = context.get(OPTION_BUCKET_DATE_TIMEZONE);
+        clock = context.get(OPTION_CLOCK);
         timeBucket = clock.currentTime(bucketDateFormat, bucketDateTimeZone);
     }
 
