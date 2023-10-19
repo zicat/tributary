@@ -20,6 +20,7 @@ package org.zicat.tributary.sink.hdfs;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
+
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -113,7 +114,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
             final String bucket =
                     dataBucket == null || dataBucket.isEmpty()
                             ? timeBucket
-                            : timeBucket + DIRECTORY_DELIMITER + getBucket(record);
+                            : timeBucket + DIRECTORY_DELIMITER + dataBucket;
             appendData(bucket, record, 0, record.length);
             totalCount++;
         }
