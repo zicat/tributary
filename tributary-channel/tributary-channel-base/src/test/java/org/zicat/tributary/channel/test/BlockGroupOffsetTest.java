@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.channel.test;
 
+import static org.zicat.tributary.common.VIntUtil.putVInt;
+import static org.zicat.tributary.common.VIntUtil.vIntLength;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.BlockGroupOffset;
@@ -27,9 +30,6 @@ import org.zicat.tributary.channel.RecordsResultSet;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.zicat.tributary.common.VIntUtil.putVInt;
-import static org.zicat.tributary.common.VIntUtil.vIntLength;
 
 /** BlockGroupOffsetTest. */
 public class BlockGroupOffsetTest {
@@ -82,7 +82,7 @@ public class BlockGroupOffsetTest {
     public static class BlockGroupOffsetMock extends BlockGroupOffset {
 
         public BlockGroupOffsetMock(ByteBuffer resultBuf, String groupId) {
-            super(1, 0, groupId, new BlockReader(resultBuf, null, resultBuf.remaining()));
+            super(1, 0, groupId, new BlockReader(resultBuf, null, null, resultBuf.remaining()));
         }
     }
 

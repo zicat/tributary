@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * <p>When invoke {@link Channel#poll(int, GroupOffset, long, TimeUnit)} no data, Method {@link
  * RecordsResultSet#isEmpty()} return true.
  *
- * <p>Method {@link RecordsResultSet#readBytes()} can got the total size of this block,
+ * <p>Method {@link RecordsResultSet#readBytes()} can get the total size of this block,
  */
 public interface RecordsResultSet extends Iterator<byte[]> {
 

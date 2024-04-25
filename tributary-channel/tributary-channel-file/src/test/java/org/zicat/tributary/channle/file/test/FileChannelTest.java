@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import static org.zicat.tributary.channel.AbstractChannel.*;
+import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -37,9 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.zicat.tributary.channel.AbstractChannel.KEY_ACTIVE_SEGMENT;
-import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 
 /** FileChannelTest. */
 public class FileChannelTest {
@@ -159,6 +159,7 @@ public class FileChannelTest {
                 1,
                 Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
                         .intValue());
+
         IOUtils.closeQuietly(channel);
     }
 
@@ -197,6 +198,11 @@ public class FileChannelTest {
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals(value2, new String(resultSet.next(), StandardCharsets.UTF_8));
         channel.commit(0, resultSet.nexGroupOffset());
+
+        Assert.assertEquals(
+                3d, channel.gaugeFamily().get(KEY_BLOCK_CACHE_QUERY_HIT_COUNT).getValue(), 0.01);
+        Assert.assertEquals(
+                3d, channel.gaugeFamily().get(KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT).getValue(), 0.01);
         IOUtils.closeQuietly(channel);
     }
 
@@ -329,11 +335,12 @@ public class FileChannelTest {
             final long segmentSize = 1024L * 1024L * 51;
             final int partitionCount = 1;
             final String consumerGroup = "consumer_group";
+            final String consumerGroup2 = "consumer_group2";
             final int maxRecordLength = 1024;
             final Channel channel =
                     FileChannelTest.createChannel(
                             "event",
-                            Collections.singleton(consumerGroup),
+                            new HashSet<>(Arrays.asList(consumerGroup, consumerGroup2)),
                             partitionCount,
                             dir,
                             segmentSize,
@@ -349,16 +356,22 @@ public class FileChannelTest {
             }
             final SinkGroup sinkGroup =
                     new SinkGroup(1, channel, consumerGroup, writeThread * perThreadWriteCount);
+            SinkGroup sinkGroup2 =
+                    new SinkGroup(
+                            1, channel, consumerGroup2, writeThread * perThreadWriteCount, 50);
 
             for (Thread thread : sourceThreads) {
                 thread.start();
             }
             sinkGroup.start();
+            sinkGroup2.start();
             sourceThreads.forEach(Threads::joinQuietly);
             channel.flush();
             Threads.joinQuietly(sinkGroup);
+            Threads.joinQuietly(sinkGroup2);
             channel.close();
             Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup.getConsumerCount());
+            Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup2.getConsumerCount());
         }
     }
 
@@ -463,7 +476,8 @@ public class FileChannelTest {
                 .blockSize(blockSize)
                 .consumerGroups(consumerGroup)
                 .topic(topic)
-                .compressionType(compressionType);
+                .compressionType(compressionType)
+                .blockCacheCount(10);
         return builder.dirs(dirs).build();
     }
 

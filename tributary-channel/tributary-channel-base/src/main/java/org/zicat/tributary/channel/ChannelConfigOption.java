@@ -59,4 +59,10 @@ public class ChannelConfigOption {
                     .integerType()
                     .description("async flush page cache to disk period millis, default 500")
                     .defaultValue(500);
+
+    public static final ConfigOption<Integer> OPTION_BLOCK_CACHE_PER_PARTITION_SIZE =
+            ConfigOptions.key("block.cache.per.partition.size")
+                    .integerType()
+                    .description("block cache size per partition, default 1024")
+                    .defaultValue(1024);
 }

@@ -18,16 +18,16 @@
 
 package org.zicat.tributary.channel.memory;
 
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
+
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
@@ -61,16 +61,54 @@ public class MemoryChannelFactory implements ChannelFactory {
                         final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
                         final CompressionType compression =
                                 CompressionType.getByName(config.get(OPTION_COMPRESSION));
+                        final int blockCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
                         return createChannels(
                                 topic,
                                 partitionCounts,
                                 groupSet,
                                 blockSize,
                                 segmentSize,
-                                compression);
+                                compression,
+                                blockCount);
                     }
                 },
                 config.get(OPTION_FLUSH_PERIOD_MILLS));
+    }
+
+    /**
+     * create channels.
+     *
+     * @param topic topic
+     * @param partitionCount partitionCount
+     * @param groups groups
+     * @param blockSize blockSize
+     * @param segmentSize segmentSize
+     * @param compressionType compressionType
+     * @return MemoryChannel arrays
+     */
+    @SuppressWarnings("resource")
+    public static MemoryChannel[] createChannels(
+            String topic,
+            int partitionCount,
+            Set<String> groups,
+            Integer blockSize,
+            Long segmentSize,
+            CompressionType compressionType,
+            int blockCount) {
+
+        final MemoryChannel[] channels = new MemoryChannel[partitionCount];
+        final Set<GroupOffset> groupOffsets = new HashSet<>();
+        for (String group : groups) {
+            groupOffsets.add(defaultGroupOffset(group));
+        }
+        final AbstractChannel.MemoryGroupManagerFactory factory =
+                createMemoryGroupManagerFactory(groupOffsets);
+        for (int i = 0; i < partitionCount; i++) {
+            channels[i] =
+                    createMemoryChannel(
+                            topic, factory, blockSize, segmentSize, compressionType, blockCount);
+        }
+        return channels;
     }
 
     /**
@@ -91,19 +129,14 @@ public class MemoryChannelFactory implements ChannelFactory {
             Integer blockSize,
             Long segmentSize,
             CompressionType compressionType) {
-
-        final MemoryChannel[] channels = new MemoryChannel[partitionCount];
-        final Set<GroupOffset> groupOffsets = new HashSet<>();
-        for (String group : groups) {
-            groupOffsets.add(defaultGroupOffset(group));
-        }
-        final AbstractChannel.MemoryGroupManagerFactory factory =
-                createMemoryGroupManagerFactory(groupOffsets);
-        for (int i = 0; i < partitionCount; i++) {
-            channels[i] =
-                    createMemoryChannel(topic, factory, blockSize, segmentSize, compressionType);
-        }
-        return channels;
+        return createChannels(
+                topic,
+                partitionCount,
+                groups,
+                blockSize,
+                segmentSize,
+                compressionType,
+                OPTION_BLOCK_CACHE_PER_PARTITION_SIZE.defaultValue());
     }
 
     /**
@@ -114,6 +147,7 @@ public class MemoryChannelFactory implements ChannelFactory {
      * @param blockSize blockSize
      * @param segmentSize segmentSize
      * @param compressionType compressionType
+     * @param blockCount blockCount
      * @return MemoryChannel
      */
     public static MemoryChannel createMemoryChannel(
@@ -121,7 +155,9 @@ public class MemoryChannelFactory implements ChannelFactory {
             AbstractChannel.MemoryGroupManagerFactory factory,
             int blockSize,
             long segmentSize,
-            CompressionType compressionType) {
-        return new MemoryChannel(topic, factory, blockSize, segmentSize, compressionType);
+            CompressionType compressionType,
+            int blockCount) {
+        return new MemoryChannel(
+                topic, factory, blockSize, segmentSize, compressionType, blockCount);
     }
 }

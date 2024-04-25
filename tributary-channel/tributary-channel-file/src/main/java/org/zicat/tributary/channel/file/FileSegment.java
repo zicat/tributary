@@ -18,9 +18,13 @@
 
 package org.zicat.tributary.channel.file;
 
+import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.BlockWriter;
+import org.zicat.tributary.channel.ChannelBlockCache;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.Segment;
 import org.zicat.tributary.common.IOUtils;
@@ -32,9 +36,6 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
-import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
 
 /** FileSegment storage data to file. */
 public class FileSegment extends Segment {
@@ -52,8 +53,9 @@ public class FileSegment extends Segment {
             long segmentSize,
             long position,
             File file,
-            FileChannel fileChannel) {
-        super(id, writer, compressionType, segmentSize, position);
+            FileChannel fileChannel,
+            ChannelBlockCache bCache) {
+        super(id, writer, compressionType, segmentSize, position, bCache);
         this.file = file;
         this.fileChannel = fileChannel;
     }
@@ -74,7 +76,7 @@ public class FileSegment extends Segment {
     }
 
     @Override
-    public boolean recycle() {
+    public void recycle() {
         if (recycled.compareAndSet(false, true)) {
             IOUtils.closeQuietly(this);
             final boolean deleted = file.delete();
@@ -83,9 +85,7 @@ public class FileSegment extends Segment {
             } else {
                 LOG.warn("expired file " + file.getPath() + " deleted fail");
             }
-            return deleted;
         }
-        return true;
     }
 
     @Override
@@ -113,6 +113,8 @@ public class FileSegment extends Segment {
         private File dir;
         private String filePrefix = null;
         private CompressionType compressionType = CompressionType.NONE;
+
+        private ChannelBlockCache bCache;
 
         /**
          * set file id.
@@ -170,6 +172,11 @@ public class FileSegment extends Segment {
          */
         public Builder dir(File dir) {
             this.dir = dir;
+            return this;
+        }
+
+        public Builder blockCache(ChannelBlockCache bCache) {
+            this.bCache = bCache;
             return this;
         }
 
@@ -262,7 +269,8 @@ public class FileSegment extends Segment {
                     segmentSize,
                     position,
                     file,
-                    channel);
+                    channel,
+                    bCache);
         }
     }
 

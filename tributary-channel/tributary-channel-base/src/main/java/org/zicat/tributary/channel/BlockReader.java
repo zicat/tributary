@@ -18,18 +18,37 @@
 
 package org.zicat.tributary.channel;
 
-import java.nio.ByteBuffer;
-
 import static org.zicat.tributary.common.VIntUtil.readVInt;
+
+import java.nio.ByteBuffer;
 
 /** BlockReader. */
 public class BlockReader extends Block {
 
+    private ByteBuffer cacheBuf;
     private long readBytes;
 
-    public BlockReader(ByteBuffer resultBuf, ByteBuffer reusedBuf, long readBytes) {
+    public BlockReader(
+            ByteBuffer resultBuf, ByteBuffer reusedBuf, ByteBuffer cacheBuf, long readBytes) {
         super(resultBuf, reusedBuf);
+        this.cacheBuf = cacheBuf;
         this.readBytes = readBytes;
+    }
+
+    public BlockReader(ByteBuffer resultBuf, ByteBuffer reusedBuf, long readBytes) {
+        this(resultBuf, reusedBuf, null, readBytes);
+    }
+
+    /**
+     * create block reader by cache.
+     *
+     * @param cache cache
+     * @param readBytes readBytes
+     * @return BlockReader
+     */
+    public BlockReader cacheBlockReader(byte[] cache, long readBytes) {
+        ByteBuffer cacheBuf = ByteBuffer.wrap(cache);
+        return new BlockReader(resultBuf, reusedBuf, cacheBuf, readBytes);
     }
 
     public long readBytes() {
@@ -42,7 +61,7 @@ public class BlockReader extends Block {
      * @return byte[]
      */
     public byte[] readNext() {
-        final ByteBuffer resultBuf = resultBuf();
+        final ByteBuffer resultBuf = cacheBuf != null ? cacheBuf : resultBuf();
         if (resultBuf == null || !resultBuf.hasRemaining()) {
             return null;
         }
@@ -56,6 +75,7 @@ public class BlockReader extends Block {
     public BlockReader reset() {
         super.reset();
         readBytes = 0;
+        cacheBuf = null;
         return this;
     }
 }

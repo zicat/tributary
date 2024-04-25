@@ -39,18 +39,21 @@ public class SinkThread extends Thread {
     private final AtomicLong readSize;
     private final long totalSize;
     private final GroupOffset startOffset;
+    private final int sleep;
 
     public SinkThread(
             Channel channel,
             int partitionId,
             String groupName,
             AtomicLong readSize,
-            long totalSize) {
+            long totalSize,
+            int sleep) {
         this.channel = channel;
         this.partitionId = partitionId;
         this.readSize = readSize;
         this.totalSize = totalSize;
         this.startOffset = channel.committedGroupOffset(groupName, partitionId);
+        this.sleep = sleep;
     }
 
     @Override
@@ -63,6 +66,8 @@ public class SinkThread extends Thread {
             long start = System.currentTimeMillis();
             DecimalFormat df = new DecimalFormat("######0.00");
             Long preFileId = null;
+            boolean firstThread = false;
+            boolean middleThread = false;
             while (readSize.get() < totalSize || (result != null && result.hasNext())) {
                 result = channel.poll(partitionId, groupOffset, 10, TimeUnit.MILLISECONDS);
                 while (result.hasNext()) {
@@ -88,6 +93,16 @@ public class SinkThread extends Thread {
                     start = System.currentTimeMillis();
                 }
                 groupOffset = result.nexGroupOffset();
+                if (sleep > 0) {
+                    if (!firstThread) {
+                        firstThread = true;
+                        Thread.sleep(sleep);
+                    }
+                    if (!middleThread && readSize.get() > totalSize / 2) {
+                        middleThread = true;
+                        Thread.sleep(sleep);
+                    }
+                }
             }
             channel.commit(partitionId, groupOffset);
         } catch (Exception e) {

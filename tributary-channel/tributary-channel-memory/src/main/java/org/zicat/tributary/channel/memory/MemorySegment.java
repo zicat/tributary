@@ -19,6 +19,7 @@
 package org.zicat.tributary.channel.memory;
 
 import org.zicat.tributary.channel.BlockWriter;
+import org.zicat.tributary.channel.ChannelBlockCache;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.Segment;
 import org.zicat.tributary.common.IOUtils;
@@ -36,8 +37,12 @@ public class MemorySegment extends Segment {
     private final int chunkSize;
 
     public MemorySegment(
-            long id, BlockWriter writer, CompressionType compressionType, long segmentSize) {
-        super(id, writer, compressionType, segmentSize, 0);
+            long id,
+            BlockWriter writer,
+            CompressionType compressionType,
+            long segmentSize,
+            ChannelBlockCache bCache) {
+        super(id, writer, compressionType, segmentSize, 0, bCache);
         this.chunkSize = (int) Math.min(CHUNK_SIZE, segmentSize);
         newChunk();
     }
@@ -117,9 +122,8 @@ public class MemorySegment extends Segment {
     public void persist(boolean force) {}
 
     @Override
-    public boolean recycle() {
+    public void recycle() {
         IOUtils.closeQuietly(this);
         chunkChain.clear();
-        return true;
     }
 }

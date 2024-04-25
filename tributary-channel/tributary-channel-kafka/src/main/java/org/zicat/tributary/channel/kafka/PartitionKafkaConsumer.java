@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** PartitionKafkaConsumer. */
+@SuppressWarnings("resource")
 public class PartitionKafkaConsumer implements Closeable, SingleGroupManager {
 
     private static final int SEGMENT_SIZE = 100_000;

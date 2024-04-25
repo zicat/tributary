@@ -19,6 +19,7 @@
 package org.zicat.tributary.common;
 
 import com.github.luben.zstd.Zstd;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;
@@ -27,6 +28,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
+import java.nio.file.Files;
 
 /** IOUtils. */
 public class IOUtils {
@@ -42,7 +44,7 @@ public class IOUtils {
      * @throws IOException IOException
      */
     public static byte[] readFull(File file) throws IOException {
-        try (InputStream in = new FileInputStream(file)) {
+        try (InputStream in = Files.newInputStream(file.toPath())) {
             return toByteArray(in);
         }
     }
@@ -363,5 +365,17 @@ public class IOUtils {
         } else {
             return makeDir(dir.getParentFile()) && dir.mkdir();
         }
+    }
+
+    /**
+     * copy byte buffer.
+     *
+     * @param byteBuffer byteBuffer
+     * @return byte array
+     */
+    public static byte[] copy(ByteBuffer byteBuffer) {
+        final byte[] copy = new byte[byteBuffer.remaining()];
+        byteBuffer.get(copy);
+        return copy;
     }
 }

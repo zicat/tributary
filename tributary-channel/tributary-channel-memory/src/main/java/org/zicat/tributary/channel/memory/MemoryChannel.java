@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel.memory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
@@ -25,6 +27,7 @@ import org.zicat.tributary.channel.CompressionType;
 /** MemoryChannel. */
 public class MemoryChannel extends AbstractChannel<MemorySegment> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MemoryChannel.class);
     private final Long segmentSize;
     private final CompressionType compressionType;
     private final BlockWriter blockWriter;
@@ -34,8 +37,9 @@ public class MemoryChannel extends AbstractChannel<MemorySegment> {
             MemoryGroupManagerFactory groupManagerFactory,
             int blockSize,
             Long segmentSize,
-            CompressionType compressionType) {
-        super(topic, groupManagerFactory);
+            CompressionType compressionType,
+            int blockCacheCount) {
+        super(topic, blockCacheCount, groupManagerFactory);
         this.blockWriter = new BlockWriter(blockSize);
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;
@@ -44,7 +48,14 @@ public class MemoryChannel extends AbstractChannel<MemorySegment> {
 
     @Override
     protected MemorySegment createSegment(long id) {
-        return new MemorySegment(id, blockWriter, compressionType, segmentSize);
+        LOG.info(
+                "create segment id: {}, compression type:{}, segment size:{}, block size:{}, block cache count:{}",
+                id,
+                compressionType.name(),
+                segmentSize,
+                blockWriter.capacity(),
+                bCache == null ? 0 : bCache.blockCount());
+        return new MemorySegment(id, blockWriter, compressionType, segmentSize, bCache);
     }
 
     /** load last segment. */

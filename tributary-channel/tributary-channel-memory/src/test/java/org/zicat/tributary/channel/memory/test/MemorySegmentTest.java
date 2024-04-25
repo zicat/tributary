@@ -21,6 +21,7 @@ package org.zicat.tributary.channel.memory.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.BlockWriter;
+import org.zicat.tributary.channel.ChannelBlockCache;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.memory.MemorySegment;
 
@@ -36,7 +37,12 @@ public class MemorySegmentTest {
     @Test
     public void testReadWrite() throws IOException {
         try (final MemorySegment memorySegment =
-                new MemorySegment(1, new BlockWriter(128), CompressionType.NONE, 10240 * 4)) {
+                new MemorySegment(
+                        1,
+                        new BlockWriter(128),
+                        CompressionType.NONE,
+                        10240 * 4,
+                        new ChannelBlockCache(1))) {
             final Random random = new Random(1023312);
             final List<byte[]> result = new ArrayList<>();
             for (int i = 0; i < 10000; i++) {

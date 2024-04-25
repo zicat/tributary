@@ -18,6 +18,11 @@
 
 package org.zicat.tributary.channel.file;
 
+import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
@@ -25,9 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
-import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
 
 /**
  * FileChannel implements {@link Channel} to Storage records and {@link GroupOffset} in local file
@@ -44,9 +46,11 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
  * can read writable segment or other segments tagged as finished(not writable).
  *
  * <p>FileChannel support commit groupOffset and support clean up expired segments(all group ids has
- * commit the offset over this segments) async}
+ * commit the offset over those segments) async}
  */
 public class FileChannel extends AbstractChannel<FileSegment> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FileChannel.class);
 
     private final File dir;
     private final Long segmentSize;
@@ -60,8 +64,9 @@ public class FileChannel extends AbstractChannel<FileSegment> {
             int blockSize,
             Long segmentSize,
             CompressionType compressionType,
-            File dir) {
-        super(topic, factory);
+            File dir,
+            int blockCacheCount) {
+        super(topic, blockCacheCount, factory);
         this.blockWriter = new BlockWriter(blockSize);
         this.flushPageCacheSize = blockSize * 10L;
         this.segmentSize = segmentSize;
@@ -72,12 +77,20 @@ public class FileChannel extends AbstractChannel<FileSegment> {
 
     @Override
     protected FileSegment createSegment(long id) {
+        LOG.info(
+                "create segment path: {}, compression type:{}, segment size:{}, block size:{}, block cache count:{}",
+                dir.getPath(),
+                compressionType.name(),
+                segmentSize,
+                blockWriter.capacity(),
+                bCache == null ? 0 : bCache.blockCount());
         return new FileSegment.Builder()
                 .fileId(id)
                 .dir(dir)
                 .segmentSize(segmentSize)
                 .filePrefix(topic())
                 .compressionType(compressionType)
+                .blockCache(bCache)
                 .build(blockWriter);
     }
 

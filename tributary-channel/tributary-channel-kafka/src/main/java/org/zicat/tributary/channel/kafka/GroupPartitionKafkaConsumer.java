@@ -18,6 +18,10 @@
 
 package org.zicat.tributary.channel.kafka;
 
+import static org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
+import static org.zicat.tributary.channel.kafka.PartitionKafkaConsumer.getKafkaOffset;
+
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -34,10 +38,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
-import static org.zicat.tributary.channel.kafka.PartitionKafkaConsumer.getKafkaOffset;
 
 /** GroupPartitionKafkaConsumer. */
 public class GroupPartitionKafkaConsumer implements Closeable {
@@ -67,9 +67,7 @@ public class GroupPartitionKafkaConsumer implements Closeable {
      */
     private static Properties copyProperties(String groupId, Properties properties) {
         final Properties result = new Properties();
-        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-            result.put(entry.getKey(), entry.getValue());
-        }
+        result.putAll(properties);
         result.put(GROUP_ID_CONFIG, groupId);
         result.put(ENABLE_AUTO_COMMIT_CONFIG, false);
         return result;

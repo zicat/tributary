@@ -48,8 +48,8 @@ public interface SegmentStorage extends Closeable {
      */
     void persist(boolean force) throws IOException;
 
-    /** @return false if recycle fail */
-    boolean recycle();
+    /** recycle resource . */
+    void recycle();
 
     /**
      * get compression type.

@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-/** KafkUtils. */
+/** KafkaUtils. */
 public class KafkaUtils {
 
     /**

@@ -18,13 +18,13 @@
 
 package org.zicat.tributary.channel;
 
+import static org.zicat.tributary.common.VIntUtil.putVInt;
+import static org.zicat.tributary.common.VIntUtil.vIntLength;
+
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import static org.zicat.tributary.common.VIntUtil.putVInt;
-import static org.zicat.tributary.common.VIntUtil.vIntLength;
 
 /**
  * BlockWriter.
@@ -76,7 +76,7 @@ public final class BlockWriter extends Block {
      * @param length length
      * @return boolean put success
      */
-    public final boolean put(byte[] data, int offset, int length) {
+    public boolean put(byte[] data, int offset, int length) {
         if (remaining() < vIntLength(length)) {
             return false;
         }
@@ -91,7 +91,7 @@ public final class BlockWriter extends Block {
      * @param data data
      * @return boolean put success
      */
-    public final boolean put(byte[] data) {
+    public boolean put(byte[] data) {
         return put(data, 0, data.length);
     }
 
@@ -100,7 +100,7 @@ public final class BlockWriter extends Block {
      *
      * @param blockFlushHandler blockFlushHandler
      */
-    public final void clear(BlockFlushHandler blockFlushHandler) throws IOException {
+    public void clear(BlockFlushHandler blockFlushHandler) throws IOException {
         if (isEmpty()) {
             return;
         }
@@ -137,7 +137,7 @@ public final class BlockWriter extends Block {
      *
      * @return capacity
      */
-    public final int capacity() {
+    public int capacity() {
         return capacity;
     }
 }

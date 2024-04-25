@@ -18,6 +18,10 @@
 
 package org.zicat.tributary.channel.file;
 
+import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_BLOCK_CACHE_PER_PARTITION_SIZE;
+import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD_SECOND;
+import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
+
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.DefaultChannel;
@@ -28,9 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-
-import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD_SECOND;
-import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
 
 /** FileChannelBuilder. */
 public class FileChannelBuilder {
@@ -43,6 +44,7 @@ public class FileChannelBuilder {
     protected CompressionType compressionType;
     protected Set<String> consumerGroups;
     protected long flushPeriodMills = 1000;
+    protected int blockCacheCount = OPTION_BLOCK_CACHE_PER_PARTITION_SIZE.defaultValue();
 
     /**
      * set flush period .
@@ -52,6 +54,11 @@ public class FileChannelBuilder {
      */
     public FileChannelBuilder flushPeriodMills(long flushPeriodMills) {
         this.flushPeriodMills = flushPeriodMills;
+        return this;
+    }
+
+    public FileChannelBuilder blockSize(int blockSize) {
+        this.blockSize = blockSize;
         return this;
     }
 
@@ -104,11 +111,11 @@ public class FileChannelBuilder {
     /**
      * set block size.
      *
-     * @param blockSize blockSize
+     * @param blockCacheCount blockCacheCount
      * @return this
      */
-    public FileChannelBuilder blockSize(Integer blockSize) {
-        this.blockSize = blockSize;
+    public FileChannelBuilder blockCacheCount(Integer blockCacheCount) {
+        this.blockCacheCount = blockCacheCount;
         return this;
     }
 
@@ -153,6 +160,7 @@ public class FileChannelBuilder {
                         return consumerGroups;
                     }
 
+                    @SuppressWarnings("resource")
                     @Override
                     public FileChannel[] create() throws IOException {
                         if (dirs == null || dirs.isEmpty()) {
@@ -208,7 +216,8 @@ public class FileChannelBuilder {
                 blockSize,
                 segmentSize,
                 compressionType,
-                dir);
+                dir,
+                blockCacheCount);
     }
 
     /**

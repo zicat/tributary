@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import static org.zicat.tributary.common.VIntUtil.putVInt;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,8 +36,6 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-
-import static org.zicat.tributary.common.VIntUtil.putVInt;
 
 /** BufferReaderWriterTest. */
 public class BlockRecordsResultSetWriterTest {
@@ -216,7 +216,7 @@ public class BlockRecordsResultSetWriterTest {
                 long position,
                 File file,
                 FileChannel fileChannel) {
-            super(id, writer, compressionType, segmentSize, position, file, fileChannel);
+            super(id, writer, compressionType, segmentSize, position, file, fileChannel, null);
         }
     }
 }

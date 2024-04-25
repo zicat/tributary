@@ -18,6 +18,12 @@
 
 package org.zicat.tributary.channel.memory.test;
 
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
+import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
+import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.*;
@@ -28,12 +34,6 @@ import org.zicat.tributary.common.DefaultReadableConfig;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
-import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
-import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 
 /** OnePartitionMemoryChannelTest. */
 public class MemoryChannelTest {
@@ -61,7 +61,8 @@ public class MemoryChannelTest {
                         createMemoryGroupManagerFactory(groupOffsets),
                         1024 * 4,
                         102400L,
-                        CompressionType.NONE);
+                        CompressionType.NONE,
+                        1);
         GroupOffset groupOffset = channel.committedGroupOffset("g1");
         final Random random = new Random(1023312);
         final List<byte[]> result = new ArrayList<>();

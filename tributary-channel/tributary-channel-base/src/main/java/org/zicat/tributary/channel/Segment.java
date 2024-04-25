@@ -18,9 +18,12 @@
 
 package org.zicat.tributary.channel;
 
+import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
+import static org.zicat.tributary.common.IOUtils.copy;
+import static org.zicat.tributary.common.IOUtils.reAllocate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.IOUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,17 +33,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
 
 /**
- * A segment instance is the represent of id.
+ * A segment instance is the represent of parts data in one channel.
  *
- * <p>The life cycle of a segment instance include create(construct function), writeable/readable,
- * readonly(invoke finish method), closed(invoke close method), delete(invoke delete method)
+ * <p>The Segment is the unit of data expired by channel.
  *
- * <p>Segment is the unit of data expired by channel.
+ * <p>The life cycle of a segment instance include {@link Segment#Segment}, {@link
+ * Segment#append}/{@link Segment#readBlock}, {@link Segment#readonly()}, {@link Segment#close()},
+ * {@link Segment#recycle()}
  *
  * <p>All public methods are @ThreadSafe
  *
@@ -48,44 +49,57 @@ import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
  */
 public abstract class Segment implements SegmentStorage, Closeable, Comparable<Segment> {
 
+    private static final String OFFSET_MESSAGE = "next offset {}, limit offset {}";
     private static final Logger LOG = LoggerFactory.getLogger(Segment.class);
     private final long id;
     private final long segmentSize;
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition readable = lock.newCondition();
-    private final AtomicBoolean readonly = new AtomicBoolean(false);
-    private final BlockWriter.BlockFlushHandler blockFlushHandler;
+
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final AtomicBoolean readonly = new AtomicBoolean();
     protected final AtomicLong position = new AtomicLong();
     protected final BlockWriter writer;
-    protected final CompressionType compressionType;
+    protected final CompressionType compression;
     protected long cacheUsed = 0;
-    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = readWriteLock.readLock();
-    private final ReentrantReadWriteLock.WriteLock closeLock = readWriteLock.writeLock();
+    private final ChannelBlockCache bCache;
+    private final BlockWriter.BlockFlushHandler blockFlushHandler;
 
     public Segment(
             long id,
             BlockWriter writer,
-            CompressionType compressionType,
+            CompressionType compression,
             long segmentSize,
-            long position) {
+            long position,
+            ChannelBlockCache bCache) {
         this.id = id;
         this.segmentSize = segmentSize;
         this.writer = writer;
-        this.compressionType = compressionType;
+        this.compression = compression;
         this.position.set(position);
-        this.blockFlushHandler =
-                (block) -> {
-                    block.reusedBuf(
-                            compressionType.compression(block.resultBuf(), block.reusedBuf()));
-                    final int writeCount = block.reusedBuf().remaining();
-                    writeFull(block.reusedBuf());
-                    this.position.addAndGet(writeCount);
-                    cacheUsed += writeCount;
-                    readable.signalAll();
-                };
+        this.bCache = bCache;
+        this.blockFlushHandler = createBlockFlushHandler();
+    }
+
+    /**
+     * create block flush handler.
+     *
+     * @return BlockFlushHandler
+     */
+    private BlockWriter.BlockFlushHandler createBlockFlushHandler() {
+        return (block) -> {
+            final ByteBuffer buff = bCache == null ? null : block.resultBuf().duplicate();
+            block.reusedBuf(compression.compression(block.resultBuf(), block.reusedBuf()));
+            final int writeCount = block.reusedBuf().remaining();
+            writeFull(block.reusedBuf());
+            final long preOffset = position.getAndAdd(writeCount);
+            if (buff != null) {
+                bCache.put(id, preOffset, preOffset + writeCount, copy(buff));
+            }
+            cacheUsed += writeCount;
+            readable.signalAll();
+        };
     }
 
     /**
@@ -165,7 +179,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         final long readablePosition = position();
         final long offset = legalOffset(blockGroupOffset.offset());
         if (offset < readablePosition) {
-            return readWithLock(blockGroupOffset, readablePosition);
+            return read(blockGroupOffset, readablePosition);
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -182,31 +196,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         } finally {
             lock.unlock();
         }
-        return readWithLock(blockGroupOffset, position());
-    }
-
-    /**
-     * read with lock.
-     *
-     * <p>Use ReadWriteLock to controller closed segment operation and read operation.
-     *
-     * <p>Closed Thread will wait all read threads finish read, and read thread will check whether
-     * segment is closed, if closed return empty block group offset.
-     *
-     * @param blockGroupOffset blockGroupOffset
-     * @param limitOffset limitOffset
-     * @return BlockGroupOffset
-     * @throws IOException IOException
-     */
-    private BlockGroupOffset readWithLock(BlockGroupOffset blockGroupOffset, long limitOffset)
-            throws IOException {
-        final ReentrantReadWriteLock.ReadLock readLock = this.readLock;
-        readLock.lock();
-        try {
-            return closed.get() ? blockGroupOffset.reset() : read(blockGroupOffset, limitOffset);
-        } finally {
-            readLock.unlock();
-        }
+        return read(blockGroupOffset, position());
     }
 
     /**
@@ -214,28 +204,33 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      *
      * @param blockGroupOffset blockGroupOffset
      * @param limitOffset limitOffset
-     * @return BlockGroupOffset BlockGroupOffset
      * @throws IOException IOException
      */
     public BlockGroupOffset read(BlockGroupOffset blockGroupOffset, long limitOffset)
             throws IOException {
-        long nextOffset = legalOffset(blockGroupOffset.offset());
-        if (nextOffset >= limitOffset) {
+
+        blockGroupOffset = blockGroupOffset.skipOffset(legalOffset(blockGroupOffset.offset()));
+        long offset = blockGroupOffset.offset();
+
+        if (offset >= limitOffset) {
             blockGroupOffset.reset();
             return blockGroupOffset;
         }
+
+        final BlockGroupOffset inCache;
+        if (bCache != null && (inCache = bCache.find(blockGroupOffset)) != null) {
+            return inCache;
+        }
+
         final Block block = blockGroupOffset.block();
-        final ByteBuffer headBuf = IOUtils.reAllocate(block.reusedBuf(), BLOCK_HEAD_SIZE);
+        final ByteBuffer headBuf = reAllocate(block.reusedBuf(), BLOCK_HEAD_SIZE);
 
-        readFull(headBuf, nextOffset);
+        readFull(headBuf, offset);
         headBuf.flip();
-        nextOffset += headBuf.remaining();
+        offset += headBuf.remaining();
 
-        if (nextOffset >= limitOffset) {
-            LOG.warn(
-                    "read block head over limit, next offset {}, limit offset {}",
-                    nextOffset,
-                    limitOffset);
+        if (offset >= limitOffset) {
+            LOG.warn("read block head over limit, " + OFFSET_MESSAGE, offset, limitOffset);
             return skip2TargetOffset(blockGroupOffset, limitOffset, headBuf);
         }
 
@@ -245,30 +240,19 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             return skip2TargetOffset(blockGroupOffset, limitOffset, headBuf);
         }
 
-        final long finalNextOffset = dataLength + nextOffset;
-        if (finalNextOffset > limitOffset) {
-            LOG.warn(
-                    "read block body over limit, next offset {}, limit offset {}",
-                    finalNextOffset,
-                    limitOffset);
+        final long finalOffset = dataLength + offset;
+        if (finalOffset > limitOffset) {
+            LOG.warn("read block body over limit, " + OFFSET_MESSAGE, finalOffset, limitOffset);
             return skip2TargetOffset(blockGroupOffset, limitOffset, headBuf);
         }
 
-        final ByteBuffer reusedBuf =
-                IOUtils.reAllocate(block.reusedBuf(), dataLength << 1, dataLength);
-        readFull(reusedBuf, nextOffset);
+        final ByteBuffer reusedBuf = reAllocate(block.reusedBuf(), dataLength << 1, dataLength);
+        readFull(reusedBuf, offset);
         reusedBuf.flip();
-
-        final BlockReader bufferReader =
-                new BlockReader(
-                        compressionType.decompression(reusedBuf, block.resultBuf()),
-                        reusedBuf,
-                        dataLength + BLOCK_HEAD_SIZE);
-        return new BlockGroupOffset(
-                blockGroupOffset.segmentId(),
-                finalNextOffset,
-                blockGroupOffset.groupId(),
-                bufferReader);
+        final ByteBuffer resultBuf = compression.decompression(reusedBuf, block.resultBuf());
+        final long readBytes = dataLength + BLOCK_HEAD_SIZE;
+        final BlockReader bufferReader = new BlockReader(resultBuf, reusedBuf, readBytes);
+        return blockGroupOffset.newOffsetReader(finalOffset, bufferReader);
     }
 
     /**
@@ -311,7 +295,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     /**
      * flush page cache data to disk.
      *
-     * @param force if force, block data will flush to page cache first.
+     * @param force if forced, block data will flush to page cache first.
      * @throws IOException IOException
      */
     public void flush(boolean force) throws IOException {
@@ -370,15 +354,8 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
     @Override
     public void close() throws IOException {
-        final ReentrantReadWriteLock.WriteLock closedLock = this.closeLock;
-        closedLock.lock();
-        try {
-            if (!closed.get()) {
-                readonly();
-                closed.set(true);
-            }
-        } finally {
-            closedLock.unlock();
+        if (closed.compareAndSet(false, true)) {
+            readonly();
         }
     }
 
@@ -411,7 +388,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      */
     @Override
     public CompressionType compressionType() {
-        return compressionType;
+        return compression;
     }
 
     /**

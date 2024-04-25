@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel;
 
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.group.MemoryGroupManager;
@@ -36,8 +38,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
-
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
 
@@ -52,6 +52,15 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     public static final GaugeKey KEY_ACTIVE_SEGMENT =
             new GaugeKey("channel_active_segment", "channel active segment");
 
+    public static final GaugeKey KEY_BLOCK_CACHE_QUERY_HIT_COUNT =
+            new GaugeKey(
+                    "channel_block_cache_query_hit_count", "channel block cache query hit count");
+
+    public static final GaugeKey KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT =
+            new GaugeKey(
+                    "channel_block_cache_query_total_count",
+                    "channel block cache query total count");
+
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition newSegmentCondition = lock.newCondition();
     private final Map<Long, S> cache = new ConcurrentHashMap<>();
@@ -61,10 +70,13 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private final MemoryGroupManagerFactory groupManagerFactory;
     private final MemoryGroupManager groupManager;
     private final String topic;
+    protected final ChannelBlockCache bCache;
     protected volatile S latestSegment;
 
-    protected AbstractChannel(String topic, MemoryGroupManagerFactory groupManagerFactory) {
+    protected AbstractChannel(
+            String topic, int blockCacheCount, MemoryGroupManagerFactory groupManagerFactory) {
         this.topic = topic;
+        this.bCache = blockCacheCount <= 0 ? null : new ChannelBlockCache(blockCacheCount);
         this.groupManagerFactory = groupManagerFactory;
         this.groupManager = groupManagerFactory.create();
     }
@@ -173,6 +185,10 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         KEY_READ_BYTES.value(readBytes.get()).register(families);
         KEY_BUFFER_USAGE.value(latestSegment.cacheUsed()).register(families);
         KEY_ACTIVE_SEGMENT.value(cache.size()).register(families);
+        if (bCache != null) {
+            KEY_BLOCK_CACHE_QUERY_HIT_COUNT.value(bCache.matchCount()).register(families);
+            KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT.value(bCache.totalCount()).register(families);
+        }
         return families;
     }
 
@@ -260,10 +276,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         final BlockGroupOffset newRecordOffset = BlockGroupOffset.cast(groupOffset);
         return legalOffset(newRecordOffset)
                 ? newRecordOffset
-                : newRecordOffset.skip2Target(
-                        latestSegment.segmentId(),
-                        latestSegment.position(),
-                        newRecordOffset.groupId());
+                : newRecordOffset.skip2Target(latestSegment.segmentId(), latestSegment.position());
     }
 
     /**
@@ -292,6 +305,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     /** clean up old segment. */
+    @SuppressWarnings("resource")
     protected void cleanUp() {
         final long minSegmentId = groupManager.getMinGroupOffset().segmentId();
         final List<S> expiredSegments = new ArrayList<>();

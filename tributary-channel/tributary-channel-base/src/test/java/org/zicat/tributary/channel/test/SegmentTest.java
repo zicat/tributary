@@ -33,15 +33,14 @@ public class SegmentTest {
 
     @Test
     public void test() throws IOException, InterruptedException {
-
         final BlockWriter writer = new BlockWriter(10);
         final long segmentSize = 100;
         final long id = 2;
         final CompressionType compressionType = CompressionType.NONE;
         final Buffer buffer = new Buffer();
-
-        final Segment segment =
-                new Segment(id, writer, compressionType, segmentSize, 0L) {
+        try (final Segment segment =
+                new Segment(
+                        id, writer, compressionType, segmentSize, 0L, new ChannelBlockCache(1)) {
                     @Override
                     protected long legalOffset(long offset) {
                         return offset;
@@ -61,11 +60,52 @@ public class SegmentTest {
                     public void persist(boolean force) {}
 
                     @Override
-                    public boolean recycle() {
+                    public void recycle() {
                         buffer.clear();
-                        return true;
                     }
-                };
+                }) {
+            test(segment);
+        }
+    }
+
+    @Test
+    public void testWithCountBlockCache() throws IOException, InterruptedException {
+        final BlockWriter writer = new BlockWriter(10);
+        final long segmentSize = 100;
+        final long id = 2;
+        final CompressionType compressionType = CompressionType.NONE;
+        final Buffer buffer = new Buffer();
+        try (final Segment segment =
+                new Segment(id, writer, compressionType, segmentSize, 0L, null) {
+                    @Override
+                    protected long legalOffset(long offset) {
+                        return offset;
+                    }
+
+                    @Override
+                    public void writeFull(ByteBuffer byteBuffer) {
+                        buffer.writeFull(byteBuffer);
+                    }
+
+                    @Override
+                    public void readFull(ByteBuffer byteBuffer, long offset) {
+                        buffer.readFull(byteBuffer, offset);
+                    }
+
+                    @Override
+                    public void persist(boolean force) {}
+
+                    @Override
+                    public void recycle() {
+                        buffer.clear();
+                    }
+                }) {
+            test(segment);
+        }
+    }
+
+    private void test(Segment segment) throws IOException, InterruptedException {
+
         final byte[] data = new byte[] {(byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 2};
         for (int i = 0; i < 11; i++) {
             // (5 + 4) * 11 = 99, 5 is data size, 4 is data length
@@ -79,7 +119,8 @@ public class SegmentTest {
         Assert.assertEquals(50, segment.lag(new Offset(2L, 70L)));
         Assert.assertEquals(0, segment.lag(new Offset(3L, 70L)));
 
-        BlockGroupOffset newRecordOffset = BlockGroupOffset.cast(new GroupOffset(id, 0L, "g1"));
+        BlockGroupOffset newRecordOffset =
+                BlockGroupOffset.cast(new GroupOffset(segment.segmentId(), 0L, "g1"));
 
         int count = 0;
         while (true) {

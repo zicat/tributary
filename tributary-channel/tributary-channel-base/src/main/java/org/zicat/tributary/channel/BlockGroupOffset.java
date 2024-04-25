@@ -25,7 +25,7 @@ public class BlockGroupOffset extends GroupOffset {
 
     public BlockGroupOffset(long segmentId, long offset, String groupId, BlockReader blockReader) {
         super(segmentId, offset, groupId);
-        this.blockReader = blockReader == null ? new BlockReader(null, null, 0) : blockReader;
+        this.blockReader = blockReader == null ? new BlockReader(null, null, null, 0) : blockReader;
     }
 
     private BlockGroupOffset(long segmentId, long offset, String groupId) {
@@ -119,6 +119,41 @@ public class BlockGroupOffset extends GroupOffset {
 
     @Override
     public BlockGroupOffset skip2Target(long segmentId, long offset, String groupId) {
+        return new BlockGroupOffset(segmentId, offset, groupId, blockReader);
+    }
+
+    /**
+     * skip 2 target.
+     *
+     * @param segmentId segmentId
+     * @param offset offset
+     * @return BlockGroupOffset
+     */
+    public BlockGroupOffset skip2Target(long segmentId, long offset) {
+        return skip2Target(segmentId, offset, groupId);
+    }
+
+    /**
+     * skip to new offset.
+     *
+     * @param offset offset
+     * @return BlockGroupOffset
+     */
+    public BlockGroupOffset skipOffset(long offset) {
+        if (offset == this.offset) {
+            return this;
+        }
+        return skip2Target(segmentId, offset, groupId);
+    }
+
+    /**
+     * new offset reader.
+     *
+     * @param offset offset
+     * @param blockReader blockReader
+     * @return BlockGroupOffset
+     */
+    public BlockGroupOffset newOffsetReader(long offset, BlockReader blockReader) {
         return new BlockGroupOffset(segmentId, offset, groupId, blockReader);
     }
 
