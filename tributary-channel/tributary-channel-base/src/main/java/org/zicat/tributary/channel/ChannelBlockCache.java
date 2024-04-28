@@ -59,7 +59,7 @@ public class ChannelBlockCache extends CircularOrderedQueue<ChannelBlockCache.Bl
     }
 
     /** Block. */
-    public static class Block {
+    public static class Block implements Comparable<Block> {
         private final long segmentId;
         private final long currentOffset;
         private final long nextOffset;
@@ -89,6 +89,11 @@ public class ChannelBlockCache extends CircularOrderedQueue<ChannelBlockCache.Bl
             } else {
                 return this.currentOffset - offset;
             }
+        }
+
+        @Override
+        public int compareTo(Block o) {
+            return (int) compare(o.segmentId, o.currentOffset);
         }
     }
 }

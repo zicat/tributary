@@ -21,7 +21,7 @@ package org.zicat.tributary.common;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** CircularOrderedQueue. */
-public class CircularOrderedQueue<T> {
+public class CircularOrderedQueue<T extends Comparable<T>> {
     private final AtomicLong matchCount = new AtomicLong(0);
     private final AtomicLong totalCount = new AtomicLong(0);
     private final int capacity;
@@ -40,6 +40,15 @@ public class CircularOrderedQueue<T> {
      * @param value the value must order
      */
     public synchronized void put(T value) {
+        if (value == null) {
+            throw new IllegalArgumentException("The value must not null");
+        }
+
+        final T maxObject = headElement.object;
+        if (maxObject != null && maxObject.compareTo(value) > 0) {
+            throw new IllegalArgumentException("The value must order");
+        }
+
         int offset = headElement.offset;
         array[offset] = value;
         offset++;
@@ -88,7 +97,6 @@ public class CircularOrderedQueue<T> {
      * @param <T2> T
      */
     private <T2> T findInner(final HeadElement<T> maxElement, T2 key, Compare<T, T2> handler) {
-        final T maxObject = maxElement.object;
         int end = maxElement.offset;
         int start = maxElement.offset - capacity;
         while (start < end) {
@@ -108,7 +116,7 @@ public class CircularOrderedQueue<T> {
             } else if (compare < 0) {
                 start = offset + 1;
             } else {
-                if (maxObject != null && handler.compare(maxObject, key) < 0) {
+                if (current.compareTo(maxElement.object) > 0) {
                     return null;
                 }
                 end = offset;
@@ -154,7 +162,7 @@ public class CircularOrderedQueue<T> {
         return capacity;
     }
 
-    private static class HeadElement<T> {
+    private static class HeadElement<T extends Comparable<T>> {
         private final int offset;
         private final T object;
 
