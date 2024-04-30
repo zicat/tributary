@@ -2,7 +2,7 @@
 
 Tributary Configuration consists of four parts, including server, source, channel, and sink.
 
-## Server Detail
+## Server
 
 ```properties
 server.port=8765
@@ -25,7 +25,7 @@ Get tributary metrics as follows, ensure that the port matches the server.port c
 | server.port               |         | int(unit: number) | the port to bind, range 1000-65535                                         |
 | server.metrics.ip.pattern | .*      | string            | the pattern to filter expected host as the metrics value of host dimension |
 
-## Source Detail
+## Source
 
 Tributary supports defining multiple sources in the application.properties
 
@@ -60,13 +60,13 @@ source.s1.netty.idle.second=60
 source.s1.netty.decoder=lineDecoder
 ```
 
-| key               | default       | type                            | describe                                                                                                                                                                                                                         |
-|-------------------|---------------|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host        | null          | string                          | the host to bind, default null means bind *, one port can bind multi host split by ',', localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
-| netty.port        |               | int(unit: number)               | the port to bind, range 1000-65535                                                                                                                                                                                               |
-| netty.threads     | 10            | int(unit: number)               | the count of netty event loop threads                                                                                                                                                                                            |
-| netty.idle.second | 120           | int(unit: second)               | the idle second of the channel to close                                                                                                                                                                                          |
-| netty.decoder     | lengthDecoder | enum[lengthDecoder,lineDecoder] | the parser of streaming                                                                                                                                                                                                          |
+| key               | default       | type                            | describe                                                                                                                                                                                                                          |
+|-------------------|---------------|---------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.host        | null          | string                          | the host to bind, default null means bind \*, one port can bind multi host split by ',', localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
+| netty.port        |               | int(unit: number)               | the port to bind, range 1000-65535                                                                                                                                                                                                |
+| netty.threads     | 10            | int(unit: number)               | the count of netty event loop threads                                                                                                                                                                                             |
+| netty.idle.second | 120           | int(unit: second)               | the idle second of the channel to close                                                                                                                                                                                           |
+| netty.decoder     | lengthDecoder | enum[lengthDecoder,lineDecoder] | the parser of streaming                                                                                                                                                                                                           |
 
 Note：
 
@@ -84,7 +84,7 @@ Tributary provide the lengthDecoder java client
 [LengthDecoderClient](../tributary-source/src/main/java/org/zicat/tributary/source/netty/client/LengthDecoderClient.java)
 for reference.
 
-## Channel Detail
+## Channel
 
 A channel is like a data stream that can append records and allow sinks to consume data
 independently. Some types of channels, such as file channel, support data persistence.
@@ -167,7 +167,7 @@ Note:
 5. Strongly recommend using file channel in production environment, memory channel, and kafka
    channel more for debugging.
 
-## Sink Detail
+## Sink
 
 Tributary supports defining multiple sinks in the application.properties
 
