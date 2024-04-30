@@ -18,10 +18,10 @@
 
 package org.zicat.tributary.channel.kafka.test;
 
+import static net.mguenther.kafka.junit.EmbeddedKafkaCluster.provisionWith;
+
 import net.mguenther.kafka.junit.EmbeddedKafkaCluster;
 import net.mguenther.kafka.junit.EmbeddedKafkaClusterConfig;
-
-import static net.mguenther.kafka.junit.EmbeddedKafkaCluster.provisionWith;
 
 /** EmbeddedKafkaHandler. */
 public class EmbeddedKafkaHandler {
@@ -31,7 +31,7 @@ public class EmbeddedKafkaHandler {
      *
      * @param consumer consumer
      */
-    public static void startEmbeddedKafka(Consumer<EmbeddedKafkaCluster> consumer)
+    public static synchronized void startEmbeddedKafka(Consumer<EmbeddedKafkaCluster> consumer)
             throws Exception {
         try (EmbeddedKafkaCluster kafka = provisionWith(EmbeddedKafkaClusterConfig.useDefaults())) {
             kafka.start();
