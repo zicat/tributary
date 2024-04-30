@@ -25,11 +25,14 @@ import org.joda.time.LocalDateTime;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /** SystemClock. default time zone is utc */
 public class SystemClock implements Clock {
 
     private static final Map<String, DateTimeZone> ID_MAPPING = new ConcurrentHashMap<>();
+    private static final Function<String, DateTimeZone> TIME_ZONE_FUNCTION =
+            key -> DateTimeZone.forTimeZone(TimeZone.getTimeZone(key));
 
     @Override
     public long currentTimeMillis() {
@@ -50,9 +53,7 @@ public class SystemClock implements Clock {
      * @return string value
      */
     public static String timeFormat(long timeMillis, String pattern, String timeZoneId) {
-        final DateTimeZone timeZone =
-                ID_MAPPING.computeIfAbsent(
-                        timeZoneId, key -> DateTimeZone.forTimeZone(TimeZone.getTimeZone(key)));
+        final DateTimeZone timeZone = ID_MAPPING.computeIfAbsent(timeZoneId, TIME_ZONE_FUNCTION);
         return new LocalDateTime(timeMillis, timeZone).toString(pattern);
     }
 }

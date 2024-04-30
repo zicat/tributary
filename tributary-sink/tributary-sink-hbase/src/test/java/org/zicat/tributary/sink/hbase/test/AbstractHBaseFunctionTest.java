@@ -204,7 +204,7 @@ public class AbstractHBaseFunctionTest {
         final Configuration configuration = new Configuration();
         final MockConnection connection = Mockito.spy(new MockConnection(configuration));
         Mockito.when(ConnectionFactory.createConnection(configuration)).thenReturn(connection);
-        final AbstractHBaseFunction function =
+        try (final AbstractHBaseFunction function =
                 new AbstractHBaseFunction() {
                     @Override
                     public Configuration createHBaseConf(HTableEntity hTableEntity) {
@@ -219,17 +219,18 @@ public class AbstractHBaseFunctionTest {
 
                     @Override
                     public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
-                };
-        final ContextBuilder contextBuilder =
-                ContextBuilder.newBuilder()
-                        .id("id")
-                        .partitionId(0)
-                        .topic("t1")
-                        .startGroupOffset(new GroupOffset(1, 1, "g1"));
-        // always flush
-        function.open(contextBuilder.build());
-        final GroupOffset flushRecordOffset = new GroupOffset(1, 5, "g1");
-        Assert.assertTrue(function.flush(flushRecordOffset));
-        Assert.assertEquals(function.committableOffset(), flushRecordOffset);
+                }) {
+            final ContextBuilder contextBuilder =
+                    ContextBuilder.newBuilder()
+                            .id("id")
+                            .partitionId(0)
+                            .topic("t1")
+                            .startGroupOffset(new GroupOffset(1, 1, "g1"));
+            // always flush
+            function.open(contextBuilder.build());
+            final GroupOffset flushRecordOffset = new GroupOffset(1, 5, "g1");
+            Assert.assertTrue(function.flush(flushRecordOffset));
+            Assert.assertEquals(function.committableOffset(), flushRecordOffset);
+        }
     }
 }

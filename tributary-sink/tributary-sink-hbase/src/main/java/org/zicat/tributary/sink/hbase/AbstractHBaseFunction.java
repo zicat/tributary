@@ -34,12 +34,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 /** AbstractHBaseFunction. */
+@SuppressWarnings("resource")
 public abstract class AbstractHBaseFunction extends AbstractFunction {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHBaseFunction.class);
     private final Map<HTableEntity, HBaseWriter> hbaseWriterMap = new HashMap<>();
+    private final Function<HTableEntity, HBaseWriter> function =
+            key -> {
+                try {
+                    return createHBaseWriter(key);
+                } catch (Exception e) {
+                    LOG.error(key + " data discard", e);
+                    return new DiscardHBaseWriter();
+                }
+            };
 
     @Override
     public void open(Context context) throws Exception {
@@ -53,12 +64,12 @@ public abstract class AbstractHBaseFunction extends AbstractFunction {
      * @param mutation mutation
      * @throws IOException IOException
      */
-    protected boolean sendDataToHbase(HTableEntity hTableEntity, Mutation mutation)
+    protected void sendDataToHbase(HTableEntity hTableEntity, Mutation mutation)
             throws IOException {
         if (Objects.isNull(mutation)) {
-            return false;
+            return;
         }
-        return createHBaseWriterIfAbsent(hTableEntity).appendData(mutation);
+        createHBaseWriterIfAbsent(hTableEntity).appendData(mutation);
     }
 
     @Override
@@ -110,16 +121,7 @@ public abstract class AbstractHBaseFunction extends AbstractFunction {
      * @return HbaseWriter
      */
     protected HBaseWriter createHBaseWriterIfAbsent(HTableEntity hTableEntity) {
-        return hbaseWriterMap.computeIfAbsent(
-                hTableEntity,
-                key -> {
-                    try {
-                        return createHBaseWriter(hTableEntity);
-                    } catch (Exception e) {
-                        LOG.error(hTableEntity + " data discard", e);
-                        return new DiscardHBaseWriter();
-                    }
-                });
+        return hbaseWriterMap.computeIfAbsent(hTableEntity, function);
     }
 
     /**

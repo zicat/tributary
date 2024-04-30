@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import static org.zicat.tributary.common.IOUtils.deleteDir;
+import static org.zicat.tributary.common.IOUtils.makeDir;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,9 +33,6 @@ import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
 
 /** FileSegmentBuilderTest. */
 public class FileSegmentBuilderTest {
@@ -53,12 +53,14 @@ public class FileSegmentBuilderTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws IOException {
 
         final FileSegment.Builder builder = new FileSegment.Builder();
         try {
-            builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BlockWriter(1024));
-            Assert.fail();
+            try (FileSegment ignored =
+                    builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BlockWriter(1024))) {
+                Assert.fail();
+            }
         } catch (RuntimeException e) {
             Assert.assertTrue(true);
         }

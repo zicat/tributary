@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.hdfs.test;
 
 import com.google.common.base.Charsets;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,8 +38,8 @@ import org.zicat.tributary.sink.hdfs.LengthBodyCompressionHDFSWriter;
 import org.zicat.tributary.sink.hdfs.LengthBodyHDFSWriter;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 /** LengthBodyHDFSWriterTest. */
 public class LengthBodyHDFSWriterTest {
@@ -75,20 +76,21 @@ public class LengthBodyHDFSWriterTest {
 
         final byte[] buf = new byte[256];
 
-        final CompressionInputStream cmpIn =
-                snappyCodec.createInputStream(new FileInputStream(file));
-        int len = cmpIn.read(buf);
-        String result = new String(buf, 0, len, Charsets.UTF_8);
-        result = result.trim(); // BodyTextEventSerializer adds a newline
+        try (final CompressionInputStream cmpIn =
+                snappyCodec.createInputStream(Files.newInputStream(file.toPath()))) {
+            int len = cmpIn.read(buf);
+            String result = new String(buf, 0, len, Charsets.UTF_8);
+            result = result.trim(); // BodyTextEventSerializer adds a newline
 
-        Assert.assertEquals("input and output must match", bodies[0], result);
+            Assert.assertEquals("input and output must match", bodies[0], result);
 
-        writeBodies(writer, bodies);
-        writer.close();
-        len = cmpIn.read(buf);
-        result = new String(buf, 0, len, Charsets.UTF_8);
-        result = result.trim(); // BodyTextEventSerializer adds a newline
-        Assert.assertEquals("input and output must match", bodies[0], result);
+            writeBodies(writer, bodies);
+            writer.close();
+            len = cmpIn.read(buf);
+            result = new String(buf, 0, len, Charsets.UTF_8);
+            result = result.trim(); // BodyTextEventSerializer adds a newline
+            Assert.assertEquals("input and output must match", bodies[0], result);
+        }
     }
 
     /**

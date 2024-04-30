@@ -71,10 +71,9 @@ public abstract class AbstractHBaseWriter implements HBaseWriter {
     }
 
     @Override
-    public boolean appendData(Mutation mutation) throws IOException {
+    public void appendData(Mutation mutation) throws IOException {
         checkErrorAndRethrow();
         mutator.mutate(mutation);
-        return true;
     }
 
     /**

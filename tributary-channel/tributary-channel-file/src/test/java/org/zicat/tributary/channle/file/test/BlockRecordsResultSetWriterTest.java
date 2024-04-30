@@ -40,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 /** BufferReaderWriterTest. */
 public class BlockRecordsResultSetWriterTest {
 
+    RandomAccessFile randomAccessFile;
     FileChannel fileChannel;
     File dir = FileUtils.createTmpDir("buffer_records_result_set_writer_test");
     File file = new File(dir, "foo.log");
@@ -48,7 +49,7 @@ public class BlockRecordsResultSetWriterTest {
     public void before() throws IOException {
         IOUtils.deleteDir(dir);
         IOUtils.makeDir(dir);
-        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+        randomAccessFile = new RandomAccessFile(file, "rw");
         fileChannel = randomAccessFile.getChannel();
         ByteBuffer segmentHeader = ByteBuffer.allocate(FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE);
         IOUtils.writeFull(fileChannel, segmentHeader);
@@ -56,7 +57,7 @@ public class BlockRecordsResultSetWriterTest {
 
     @After
     public void after() {
-        IOUtils.closeQuietly(fileChannel);
+        IOUtils.closeQuietly(fileChannel, randomAccessFile);
         IOUtils.deleteDir(dir);
     }
 

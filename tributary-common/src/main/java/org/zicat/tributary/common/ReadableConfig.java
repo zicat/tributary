@@ -48,11 +48,9 @@ public interface ReadableConfig {
      * @return Readable Config
      */
     static ReadableConfig create(Map<String, String> values) {
-        DefaultReadableConfig config = new DefaultReadableConfig();
+        final DefaultReadableConfig config = new DefaultReadableConfig();
         if (values != null) {
-            for (Map.Entry<String, String> entry : values.entrySet()) {
-                config.put(entry.getKey(), entry.getValue());
-            }
+            config.putAll(values);
         }
         return config;
     }

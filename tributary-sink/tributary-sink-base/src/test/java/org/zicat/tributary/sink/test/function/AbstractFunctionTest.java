@@ -35,22 +35,23 @@ public class AbstractFunctionTest {
     public void testFlush() throws Exception {
 
         final GroupOffset startGroupOffset = new GroupOffset(0, 0, "g1");
-        final MockFunction function = createFunction();
-        final AtomicInteger callback = new AtomicInteger();
-        function.commit(
-                startGroupOffset.skipNextSegmentHead(),
-                () -> {
-                    callback.incrementAndGet();
-                    return true;
-                });
-        Assert.assertEquals(1, callback.get());
-        function.commit(
-                startGroupOffset.skipNextSegmentHead(),
-                () -> {
-                    callback.incrementAndGet();
-                    return true;
-                });
-        Assert.assertEquals(2, callback.get());
+        try (final MockFunction function = createFunction()) {
+            final AtomicInteger callback = new AtomicInteger();
+            function.commit(
+                    startGroupOffset.skipNextSegmentHead(),
+                    () -> {
+                        callback.incrementAndGet();
+                        return true;
+                    });
+            Assert.assertEquals(1, callback.get());
+            function.commit(
+                    startGroupOffset.skipNextSegmentHead(),
+                    () -> {
+                        callback.incrementAndGet();
+                        return true;
+                    });
+            Assert.assertEquals(2, callback.get());
+        }
     }
 
     /**

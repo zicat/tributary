@@ -56,6 +56,7 @@ public class SinkThread extends Thread {
         this.sleep = sleep;
     }
 
+    @SuppressWarnings("BusyWait")
     @Override
     public void run() {
 

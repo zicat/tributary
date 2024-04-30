@@ -33,44 +33,46 @@ public class FunctionTest {
     @Test
     public void testAbstractFunction() throws Exception {
 
-        final AbstractFunction function =
+        try (final AbstractFunction function =
                 new AbstractFunction() {
                     @Override
                     public void close() {}
 
                     @Override
                     public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
-                };
-        final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
-        final ContextBuilder builder =
-                ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
-        final Context context = builder.build();
-        function.open(context);
-        Assert.assertEquals(function.committableOffset(), groupOffset);
-        Assert.assertEquals(context.groupId(), function.context().groupId());
-        Assert.assertEquals(context.partitionId(), function.context().partitionId());
-        Assert.assertNull(context.topic(), function.context().topic());
-        Assert.assertEquals(context, function.context());
+                }) {
+            final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
+            final ContextBuilder builder =
+                    ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
+            final Context context = builder.build();
+            function.open(context);
+            Assert.assertEquals(function.committableOffset(), groupOffset);
+            Assert.assertEquals(context.groupId(), function.context().groupId());
+            Assert.assertEquals(context.partitionId(), function.context().partitionId());
+            Assert.assertNull(context.topic(), function.context().topic());
+            Assert.assertEquals(context, function.context());
 
-        final GroupOffset newGroupOffset = groupOffset.skipNextSegmentHead();
-        function.commit(newGroupOffset, null);
-        Assert.assertEquals(function.committableOffset(), newGroupOffset);
+            final GroupOffset newGroupOffset = groupOffset.skipNextSegmentHead();
+            function.commit(newGroupOffset, null);
+            Assert.assertEquals(function.committableOffset(), newGroupOffset);
+        }
     }
 
     @Test
     public void testDummyFunction() throws Exception {
 
-        final Function function = new DummyFunction();
-        final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
-        final ContextBuilder builder =
-                ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
-        final Context context = builder.build();
-        function.open(context);
+        try (final Function function = new DummyFunction()) {
+            final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
+            final ContextBuilder builder =
+                    ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
+            final Context context = builder.build();
+            function.open(context);
 
-        final GroupOffset newGroupOffset = groupOffset.skip2TargetHead(2);
-        function.process(
-                groupOffset.skip2TargetHead(2),
-                Collections.singleton("data".getBytes(StandardCharsets.UTF_8)).iterator());
-        Assert.assertEquals(function.committableOffset(), newGroupOffset);
+            final GroupOffset newGroupOffset = groupOffset.skip2TargetHead(2);
+            function.process(
+                    groupOffset.skip2TargetHead(2),
+                    Collections.singleton("data".getBytes(StandardCharsets.UTF_8)).iterator());
+            Assert.assertEquals(function.committableOffset(), newGroupOffset);
+        }
     }
 }

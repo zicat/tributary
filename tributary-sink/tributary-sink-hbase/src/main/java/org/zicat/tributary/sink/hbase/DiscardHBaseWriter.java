@@ -25,9 +25,7 @@ import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 /** DiscardHBaseWriter. */
 public class DiscardHBaseWriter implements HBaseWriter {
     @Override
-    public boolean appendData(Mutation mutation) {
-        return false;
-    }
+    public void appendData(Mutation mutation) {}
 
     @Override
     public void flush() {}

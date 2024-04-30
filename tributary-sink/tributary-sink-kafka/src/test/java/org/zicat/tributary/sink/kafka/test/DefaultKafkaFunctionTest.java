@@ -37,40 +37,46 @@ public class DefaultKafkaFunctionTest {
 
     @Test
     public void test() throws Exception {
-        DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction();
-        final ContextBuilder builder =
-                new ContextBuilder()
-                        .id("id2")
-                        .partitionId(0)
-                        .startGroupOffset(new GroupOffset(0, 0, "g2"))
-                        .topic("t2");
+        try (DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction()) {
+            final ContextBuilder builder =
+                    new ContextBuilder()
+                            .id("id2")
+                            .partitionId(0)
+                            .startGroupOffset(new GroupOffset(0, 0, "g2"))
+                            .topic("t2");
 
-        builder.addCustomProperty("kafka.topic", "kt1");
+            builder.addCustomProperty("kafka.topic", "kt1");
 
-        kafkaFunction.open(builder.build());
+            kafkaFunction.open(builder.build());
 
-        final List<String> testValues = Arrays.asList("cc", "dd");
-        GroupOffset groupOffset = new GroupOffset(2, 0, "g2");
-        kafkaFunction.process(
-                groupOffset,
-                testValues.stream()
-                        .map(String::getBytes)
-                        .collect(Collectors.toList())
-                        .listIterator());
+            final List<String> testValues = Arrays.asList("cc", "dd");
+            GroupOffset groupOffset = new GroupOffset(2, 0, "g2");
+            kafkaFunction.process(
+                    groupOffset,
+                    testValues.stream()
+                            .map(String::getBytes)
+                            .collect(Collectors.toList())
+                            .listIterator());
 
-        Assert.assertEquals(testValues.get(0), new String(mockProducer.history().get(0).value()));
-        Assert.assertEquals(testValues.get(1), new String(mockProducer.history().get(1).value()));
-        Assert.assertEquals(groupOffset, kafkaFunction.committableOffset());
+            Assert.assertEquals(
+                    testValues.get(0), new String(mockProducer.history().get(0).value()));
+            Assert.assertEquals(
+                    testValues.get(1), new String(mockProducer.history().get(1).value()));
+            Assert.assertEquals(groupOffset, kafkaFunction.committableOffset());
 
-        kafkaFunction.process(
-                groupOffset.skipNextSegmentHead(),
-                testValues.stream()
-                        .map(String::getBytes)
-                        .collect(Collectors.toList())
-                        .listIterator());
-        Assert.assertEquals(testValues.get(0), new String(mockProducer.history().get(2).value()));
-        Assert.assertEquals(testValues.get(1), new String(mockProducer.history().get(3).value()));
-        Assert.assertEquals(groupOffset.skipNextSegmentHead(), kafkaFunction.committableOffset());
+            kafkaFunction.process(
+                    groupOffset.skipNextSegmentHead(),
+                    testValues.stream()
+                            .map(String::getBytes)
+                            .collect(Collectors.toList())
+                            .listIterator());
+            Assert.assertEquals(
+                    testValues.get(0), new String(mockProducer.history().get(2).value()));
+            Assert.assertEquals(
+                    testValues.get(1), new String(mockProducer.history().get(3).value()));
+            Assert.assertEquals(
+                    groupOffset.skipNextSegmentHead(), kafkaFunction.committableOffset());
+        }
     }
 
     private class MockDefaultKafkaFunction extends DefaultKafkaFunction {

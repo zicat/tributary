@@ -54,7 +54,7 @@ public class HostUtils {
             final NetworkInterface networkInterface = it.nextElement();
             final Enumeration<InetAddress> addressIt = networkInterface.getInetAddresses();
             while (addressIt.hasMoreElements()) {
-                InetAddress inetAddress = addressIt.nextElement();
+                final InetAddress inetAddress = addressIt.nextElement();
                 if (!inetAddress.isLoopbackAddress()
                         && inetAddress instanceof Inet4Address
                         && (metricsIpPattern == null

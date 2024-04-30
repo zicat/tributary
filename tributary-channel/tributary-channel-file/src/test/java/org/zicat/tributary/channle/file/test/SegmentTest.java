@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import static org.zicat.tributary.common.IOUtils.deleteDir;
+import static org.zicat.tributary.common.IOUtils.makeDir;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -36,9 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
 
 /** SegmentTest. */
 public class SegmentTest {
@@ -71,53 +71,59 @@ public class SegmentTest {
         makeDir(childDir);
         final FileSegment.Builder builder = new FileSegment.Builder();
         final int fileId = 1;
-        final FileSegment segment =
-                builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));
-        Thread writerThread =
-                new Thread(
-                        () -> {
-                            try {
-                                Assert.assertTrue(segment.append("".getBytes(), 0, 0));
-                                testAppend(6, segment);
-                                testAppend(20, segment);
-                            } catch (IOException ioException) {
-                                throw new RuntimeException(ioException);
-                            }
-                        });
-        Thread readThread =
-                new Thread(
-                        () -> {
-                            final List<String> result = new ArrayList<>();
-                            result.add(createStringByLength(6));
-                            result.add(createStringByLength(20));
-
-                            BlockGroupOffset groupOffset =
-                                    BlockGroupOffset.cast(new GroupOffset(fileId, 0, "g1"));
-                            while (!result.isEmpty()) {
-                                RecordsResultSet resultSet;
+        try (final FileSegment segment =
+                builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16))) {
+            Thread writerThread =
+                    new Thread(
+                            () -> {
                                 try {
-                                    resultSet =
-                                            segment.readBlock(groupOffset, 1, TimeUnit.MILLISECONDS)
-                                                    .toResultSet();
-                                    Assert.assertTrue(resultSet.hasNext());
-                                    while (resultSet.hasNext()) {
-                                        byte[] bs = resultSet.next();
-                                        Assert.assertTrue(
-                                                result.remove(
-                                                        new String(bs, StandardCharsets.UTF_8)));
-                                    }
-                                    groupOffset = BlockGroupOffset.cast(resultSet.nexGroupOffset());
-                                } catch (Exception e) {
-                                    throw new RuntimeException(e);
+                                    Assert.assertTrue(segment.append("".getBytes(), 0, 0));
+                                    testAppend(6, segment);
+                                    testAppend(20, segment);
+                                } catch (IOException ioException) {
+                                    throw new RuntimeException(ioException);
                                 }
-                            }
-                        });
-        writerThread.start();
-        readThread.start();
-        writerThread.join();
-        segment.readonly();
-        readThread.join(1000);
-        readThread.interrupt();
+                            });
+            Thread readThread =
+                    new Thread(
+                            () -> {
+                                final List<String> result = new ArrayList<>();
+                                result.add(createStringByLength(6));
+                                result.add(createStringByLength(20));
+
+                                BlockGroupOffset groupOffset =
+                                        BlockGroupOffset.cast(new GroupOffset(fileId, 0, "g1"));
+                                while (!result.isEmpty()) {
+                                    RecordsResultSet resultSet;
+                                    try {
+                                        resultSet =
+                                                segment.readBlock(
+                                                                groupOffset,
+                                                                1,
+                                                                TimeUnit.MILLISECONDS)
+                                                        .toResultSet();
+                                        Assert.assertTrue(resultSet.hasNext());
+                                        while (resultSet.hasNext()) {
+                                            byte[] bs = resultSet.next();
+                                            Assert.assertTrue(
+                                                    result.remove(
+                                                            new String(
+                                                                    bs, StandardCharsets.UTF_8)));
+                                        }
+                                        groupOffset =
+                                                BlockGroupOffset.cast(resultSet.nexGroupOffset());
+                                    } catch (Exception e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                            });
+            writerThread.start();
+            readThread.start();
+            writerThread.join();
+            segment.readonly();
+            readThread.join(1000);
+            readThread.interrupt();
+        }
     }
 
     @Test

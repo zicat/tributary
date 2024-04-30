@@ -31,10 +31,9 @@ public interface HBaseWriter extends BufferedMutator.ExceptionListener, Closeabl
      * append mutation to hbase.
      *
      * @param mutation mutation
-     * @return append success.
      * @throws IOException IOException
      */
-    boolean appendData(Mutation mutation) throws IOException;
+    void appendData(Mutation mutation) throws IOException;
 
     /**
      * flush mutator.

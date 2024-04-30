@@ -25,6 +25,7 @@ import org.zicat.tributary.common.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +54,7 @@ public class FileGroupManager extends MemoryGroupManager {
 
     public static final String FILE_SUFFIX = "_group_id.index";
     public static final String TMP_SUFFIX = ".tmp";
+    private static final String THREAD_PREFIX = "group_persist";
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final File groupIndexFile;
@@ -70,7 +72,7 @@ public class FileGroupManager extends MemoryGroupManager {
         this.groupIndexFile = groupIndexFile;
         this.schedule =
                 Executors.newSingleThreadScheduledExecutor(
-                        Threads.createThreadFactoryByName("group_persist", true));
+                        Threads.createThreadFactoryByName(THREAD_PREFIX));
         schedule.scheduleWithFixedDelay(
                 this::persist, periodSecond, periodSecond, TimeUnit.SECONDS);
     }
@@ -81,18 +83,17 @@ public class FileGroupManager extends MemoryGroupManager {
         if (tmpFile == null) {
             return;
         }
-        try (BufferedWriter writer =
-                new BufferedWriter(
-                        new OutputStreamWriter(
-                                new FileOutputStream(tmpFile), StandardCharsets.UTF_8))) {
+        try (final OutputStream os = Files.newOutputStream(tmpFile.toPath());
+                final Writer writer = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+                final BufferedWriter buffer = new BufferedWriter(writer)) {
             foreachGroup(
                     (index, group, groupOffset) -> {
                         if (index != 0) {
-                            writer.newLine();
+                            buffer.newLine();
                         }
-                        writer.write(groupOffset.toJson());
+                        buffer.write(groupOffset.toJson());
                     });
-            writer.flush();
+            buffer.flush();
         } catch (Throwable e) {
             LOG.error("flush groups to tmp file error, file {}", tmpFile.getPath(), e);
         }
@@ -143,19 +144,14 @@ public class FileGroupManager extends MemoryGroupManager {
      * @param tmpFile tmpFile
      */
     private void swapIndexFileQuietly(File tmpFile) {
+        final String renameFail =
+                "rename tmp file to group index file fail, tmp file {}, group index file {}";
         try {
             if (deleteGroupIndexFile() && !tmpFile.renameTo(groupIndexFile)) {
-                LOG.warn(
-                        "rename tmp file to group index file fail, tmp file {}, group index file {}",
-                        tmpFile.getPath(),
-                        groupIndexFile.getPath());
+                LOG.warn(renameFail, tmpFile.getPath(), groupIndexFile.getPath());
             }
         } catch (Throwable e) {
-            LOG.warn(
-                    "rename tmp file to group index file fail, tmp file {}, group index file {}",
-                    tmpFile.getPath(),
-                    groupIndexFile.getPath(),
-                    e);
+            LOG.warn(renameFail, tmpFile.getPath(), groupIndexFile.getPath(), e);
         }
     }
 
@@ -164,7 +160,7 @@ public class FileGroupManager extends MemoryGroupManager {
      *
      * @param groupIndexFile groupIndexFile
      * @param groupIds groupIds groupIds
-     * @return group group offset
+     * @return group offset
      */
     private static Set<GroupOffset> getGroupOffsets(File groupIndexFile, Set<String> groupIds) {
 
@@ -221,12 +217,11 @@ public class FileGroupManager extends MemoryGroupManager {
             return existsGroups;
         }
         final File realGroupIndexFile = maxTmpFile != null ? maxTmpFile : groupIndexFile;
-        try (BufferedReader reader =
-                new BufferedReader(
-                        new InputStreamReader(
-                                new FileInputStream(realGroupIndexFile), StandardCharsets.UTF_8))) {
+        try (final InputStream is = Files.newInputStream(realGroupIndexFile.toPath());
+                final Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
+                final BufferedReader buffer = new BufferedReader(reader)) {
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = buffer.readLine()) != null) {
                 final GroupOffset offset = GroupOffset.fromJson(line);
                 if (allGroups.remove(offset.groupId())) {
                     existsGroups.add(offset);
@@ -250,7 +245,7 @@ public class FileGroupManager extends MemoryGroupManager {
     /**
      * filter the tmp file name start with groupIndexFile and end with .tmp.
      *
-     * <p>the .tmp file size must equals or over groupIndexFile, and the lastModified over
+     * <p>the .tmp file size must equal or over groupIndexFile, and the lastModified over
      * groupIndexFile.
      *
      * @param groupIndexFile groupIndexFile.
