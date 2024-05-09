@@ -18,9 +18,7 @@
 
 package org.zicat.tributary.sink.kafka;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.*;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -41,16 +39,20 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                     .defaultValue("sink_kafka_channel");
     protected String customTopic;
     protected KafkaProducer<byte[], byte[]> producer;
+    protected DefaultCallback callback;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        this.customTopic =
-                context.get(OPTION_TOPIC.changeKey(getKafkaKeyPrefix(DEFAULT_CLUSTER) + "topic"));
+        final String keyPrefix = getKafkaKeyPrefix(DEFAULT_CLUSTER) + "topic";
+        this.customTopic = context.get(OPTION_TOPIC.changeKey(keyPrefix));
+        this.callback = new DefaultCallback();
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception {
+
+        callback.checkState();
 
         int totalCount = 0;
         while (iterator.hasNext()) {
@@ -82,7 +84,7 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
      * @param producerRecord producerRecord
      */
     protected void sendKafka(ProducerRecord<byte[], byte[]> producerRecord) {
-        sendKafka(DEFAULT_CLUSTER, producerRecord);
+        sendKafka(DEFAULT_CLUSTER, producerRecord, callback);
     }
 
     @Override
@@ -99,6 +101,32 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
             super.close();
         } finally {
             IOUtils.closeQuietly(producer);
+        }
+    }
+
+    /** DefaultCallback. */
+    public static class DefaultCallback implements Callback {
+
+        private Exception lastException;
+
+        @Override
+        public void onCompletion(RecordMetadata metadata, Exception exception) {
+            if (exception != null) {
+                this.lastException = exception;
+            }
+        }
+
+        /**
+         * throw last exception.
+         *
+         * @throws Exception exception
+         */
+        public void checkState() throws Exception {
+            final Exception tmp = lastException;
+            if (tmp != null) {
+                lastException = null;
+                throw tmp;
+            }
         }
     }
 }

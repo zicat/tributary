@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.kafka;
 
 import io.prometheus.client.Counter;
+
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -46,10 +47,13 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
     public static final String KAFKA_KEY_PREFIX = "kafka.";
 
     protected final Map<String, Producer<byte[], byte[]>> producerMap = new HashMap<>();
+    protected Counter.Child sinkCounterChild;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
+        sinkCounterChild =
+                SINK_KAFKA_COUNTER.labels(metricsHost(), context.groupId(), context.topic());
     }
 
     /**
@@ -145,6 +149,6 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
      * @param sum sum
      */
     protected void incSinkKafkaCounter(int sum) {
-        SINK_KAFKA_COUNTER.labels(metricsHost(), context.groupId(), context.topic()).inc(sum);
+        sinkCounterChild.inc(sum);
     }
 }

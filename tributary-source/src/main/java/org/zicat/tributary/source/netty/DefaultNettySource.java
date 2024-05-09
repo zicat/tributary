@@ -18,17 +18,18 @@
 
 package org.zicat.tributary.source.netty;
 
+import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
+import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;
+import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE_SECOND;
+
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.source.netty.ack.AckHandlerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
-import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;
-import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE_SECOND;
 
 /** DefaultNettySource. */
 public class DefaultNettySource extends AbstractNettySource {
@@ -53,6 +54,10 @@ public class DefaultNettySource extends AbstractNettySource {
                 OPTION_NETTY_THREADS.defaultValue(),
                 channel,
                 OPTION_NETTY_IDLE_SECOND.defaultValue());
+    }
+
+    public DefaultNettySource(Channel channel) {
+        this(0, channel);
     }
 
     /**

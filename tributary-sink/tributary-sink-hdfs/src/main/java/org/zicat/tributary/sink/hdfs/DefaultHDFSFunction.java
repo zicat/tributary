@@ -68,7 +68,7 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
             Gauge.build()
                     .name("hdfs_opened_files")
                     .help("hdfs opened files")
-                    .labelNames("host", "groupId", "threadName")
+                    .labelNames("host", "groupId", "id")
                     .register();
 
     protected int idleTriggerMillis;
@@ -77,6 +77,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
     protected String timeBucket = null;
     protected GroupOffset lastGroupOffset;
     protected Clock clock;
+    protected Counter.Child sinkCounterChild;
+    protected Gauge.Child openFilesGaugeChild;
 
     @Override
     public void open(Context context) throws Exception {
@@ -86,6 +88,10 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
         bucketDateTimeZone = context.get(OPTION_BUCKET_DATE_TIMEZONE);
         clock = context.get(OPTION_CLOCK);
         timeBucket = clock.currentTime(bucketDateFormat, bucketDateTimeZone);
+        sinkCounterChild =
+                HDFS_SINK_COUNTER.labels(metricsHost(), context.groupId(), context.topic());
+        openFilesGaugeChild =
+                HDFS_OPEN_FILES_GAUGE.labels(metricsHost(), context.groupId(), context.id());
     }
 
     /**
@@ -128,10 +134,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
      * @param count count
      */
     private void updateMetrics(int count) {
-        HDFS_SINK_COUNTER.labels(metricsHost(), context.groupId(), context.topic()).inc(count);
-        HDFS_OPEN_FILES_GAUGE
-                .labels(metricsHost(), context.groupId(), Thread.currentThread().getName())
-                .set(sfWriters.size());
+        sinkCounterChild.inc(count);
+        openFilesGaugeChild.set(sfWriters.size());
     }
 
     /**

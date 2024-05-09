@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.source.netty;
 
+import static org.zicat.tributary.source.utils.HostUtils.getInetAddress;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
@@ -26,6 +28,7 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +36,10 @@ import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.source.Source;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.zicat.tributary.source.utils.HostUtils.getInetAddress;
 
 /** AbstractNettySource. */
 public abstract class AbstractNettySource implements Source {
@@ -46,7 +48,7 @@ public abstract class AbstractNettySource implements Source {
     private static final String HOST_SPLIT = ",";
 
     protected final String host;
-    protected final int port;
+    protected int port;
     protected final int eventThreads;
     protected final org.zicat.tributary.channel.Channel channel;
     protected final EventLoopGroup bossGroup;
@@ -113,6 +115,10 @@ public abstract class AbstractNettySource implements Source {
                 host == null
                         ? serverBootstrap.bind(port).sync()
                         : serverBootstrap.bind(host, port).sync();
+
+        final Channel serverChannel = syncFuture.channel();
+        port = ((InetSocketAddress) serverChannel.localAddress()).getPort();
+
         if (syncFuture.isSuccess()) {
             final String realHost = host == null ? "*" : host;
             LOG.info(">>> TcpServer started on ip {}, port {} ", realHost, port);
@@ -203,5 +209,14 @@ public abstract class AbstractNettySource implements Source {
         if (bossGroup != null) {
             bossGroup.shutdownGracefully();
         }
+    }
+
+    /**
+     * get port.
+     *
+     * @return port
+     */
+    public int getPort() {
+        return port;
     }
 }

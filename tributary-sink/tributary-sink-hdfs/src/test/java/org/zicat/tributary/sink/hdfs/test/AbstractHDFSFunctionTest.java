@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.OPTION_SINK_PATH;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -39,8 +42,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.OPTION_SINK_PATH;
 
 /** AbstractHDFSFunctionTest. */
 public class AbstractHDFSFunctionTest {
@@ -103,6 +104,7 @@ public class AbstractHDFSFunctionTest {
                         .startGroupOffset(new GroupOffset(0, 0, "g1"));
 
         contextBuilder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
+        contextBuilder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
         final Context context = contextBuilder.build();
         function.open(context);
         List<byte[]> testData =
@@ -242,6 +244,7 @@ public class AbstractHDFSFunctionTest {
                         .startGroupOffset(new GroupOffset(0, 0, "g1"));
 
         contextBuilder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
+        contextBuilder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
         final Context context = contextBuilder.build();
         function.open(context);
         List<byte[]> testData =

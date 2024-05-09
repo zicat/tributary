@@ -18,6 +18,10 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
+import static org.zicat.tributary.common.IOUtils.deleteDir;
+import static org.zicat.tributary.common.IOUtils.makeDir;
+import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.*;
+
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -33,10 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
-
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
-import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.*;
 
 /** DefaultHDFSFunctionTest. */
 public class DefaultHDFSFunctionTest {
@@ -76,6 +76,7 @@ public class DefaultHDFSFunctionTest {
                 .addCustomProperty(
                         OPTION_OUTPUT_COMPRESSION_CODEC.key(), SnappyCodec.class.getName())
                 .addCustomProperty(OPTION_CLOCK.key(), mockClock);
+        builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
 
         defaultHDFSFunction.open(builder.build());
 

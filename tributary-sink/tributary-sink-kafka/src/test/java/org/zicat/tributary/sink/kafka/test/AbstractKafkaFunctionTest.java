@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -68,7 +70,9 @@ public class AbstractKafkaFunctionTest {
         final ContextBuilder builder =
                 ContextBuilder.newBuilder()
                         .partitionId(0)
+                        .topic("t1")
                         .startGroupOffset(new GroupOffset(1, 1, "g1"));
+        builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
         final Context config = builder.build();
         function.open(config);
     }

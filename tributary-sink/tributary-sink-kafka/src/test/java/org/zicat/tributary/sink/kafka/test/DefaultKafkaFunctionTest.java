@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.Assert;
@@ -46,6 +48,7 @@ public class DefaultKafkaFunctionTest {
                             .topic("t2");
 
             builder.addCustomProperty("kafka.topic", "kt1");
+            builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
 
             kafkaFunction.open(builder.build());
 
