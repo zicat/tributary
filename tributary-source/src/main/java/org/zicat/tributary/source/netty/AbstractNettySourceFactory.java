@@ -47,16 +47,18 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
                     .defaultValue("");
 
     @Override
-    public final Source createSource(Channel channel, ReadableConfig config) {
+    public final Source createSource(String sourceId, Channel channel, ReadableConfig config)
+            throws Exception {
         final String host = config.get(OPTION_NETTY_HOST);
         final int port = config.get(OPTION_NETTY_PORT);
         final int threads = config.get(OPTION_NETTY_THREADS);
-        return createNettySource(host, port, threads, channel, config);
+        return createNettySource(sourceId, host, port, threads, channel, config);
     }
 
     /**
      * create netty source instance.
      *
+     * @param sourceId sourceId
      * @param host host
      * @param port port
      * @param eventThreads eventThreads.
@@ -65,5 +67,11 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
      * @return AbstractNettySource
      */
     public abstract AbstractNettySource createNettySource(
-            String host, int port, int eventThreads, Channel channel, ReadableConfig config);
+            String sourceId,
+            String host,
+            int port,
+            int eventThreads,
+            Channel channel,
+            ReadableConfig config)
+            throws Exception;
 }

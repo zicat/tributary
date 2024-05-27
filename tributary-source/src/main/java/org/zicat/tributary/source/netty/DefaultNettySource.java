@@ -18,37 +18,43 @@
 
 package org.zicat.tributary.source.netty;
 
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.source.netty.length.LengthPipelineInitialization;
+
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;
 import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE_SECOND;
 
-import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
-
-import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.source.netty.ack.AckHandlerFactory;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
 /** DefaultNettySource. */
 public class DefaultNettySource extends AbstractNettySource {
 
-    protected static final NettyDecoder DEFAULT_DECODER = NettyDecoder.lengthDecoder;
-
     protected final int idleSecond;
-    protected final int partitionCount;
-    protected final AtomicInteger count = new AtomicInteger();
+    protected final PipelineInitialization pipelineInitialization;
 
     public DefaultNettySource(
-            String host, int port, int eventThreads, Channel channel, int idleSecond) {
-        super(host, port, eventThreads, channel);
+            String sourceId,
+            ReadableConfig config,
+            String host,
+            int port,
+            int eventThreads,
+            Channel channel,
+            int idleSecond)
+            throws Exception {
+        super(sourceId, config, host, port, eventThreads, channel);
         this.idleSecond = idleSecond;
-        this.partitionCount = channel.partition();
+        this.pipelineInitialization = createPipelineInitialization();
     }
 
-    public DefaultNettySource(int port, Channel channel) {
+    public DefaultNettySource(int port, Channel channel) throws Exception {
         this(
+                "",
+                new DefaultReadableConfig(),
                 OPTION_NETTY_HOST.defaultValue(),
                 port,
                 OPTION_NETTY_THREADS.defaultValue(),
@@ -56,7 +62,39 @@ public class DefaultNettySource extends AbstractNettySource {
                 OPTION_NETTY_IDLE_SECOND.defaultValue());
     }
 
-    public DefaultNettySource(Channel channel) {
+    public DefaultNettySource(String host, Channel channel) throws Exception {
+        this(host, 0, channel);
+    }
+
+    public DefaultNettySource(ReadableConfig config, String host, Channel channel)
+            throws Exception {
+        this(config, host, 0, channel);
+    }
+
+    public DefaultNettySource(ReadableConfig config, String host, int port, Channel channel)
+            throws Exception {
+        this(
+                "",
+                config,
+                host,
+                port,
+                OPTION_NETTY_THREADS.defaultValue(),
+                channel,
+                OPTION_NETTY_IDLE_SECOND.defaultValue());
+    }
+
+    public DefaultNettySource(String host, int port, Channel channel) throws Exception {
+        this(
+                "",
+                new DefaultReadableConfig(),
+                host,
+                port,
+                OPTION_NETTY_THREADS.defaultValue(),
+                channel,
+                OPTION_NETTY_IDLE_SECOND.defaultValue());
+    }
+
+    public DefaultNettySource(Channel channel) throws Exception {
         this(0, channel);
     }
 
@@ -67,7 +105,7 @@ public class DefaultNettySource extends AbstractNettySource {
      */
     @Override
     protected void initChannel(SocketChannel ch, Channel channel) {
-        initChannel(ch, channel, nettyDecoder());
+        pipelineInitialization.init(ch.pipeline());
     }
 
     /**
@@ -75,32 +113,25 @@ public class DefaultNettySource extends AbstractNettySource {
      *
      * @return NettyDecoder
      */
-    protected NettyDecoder nettyDecoder() {
-        return DEFAULT_DECODER;
+    protected PipelineInitialization createPipelineInitialization() throws Exception {
+        return new LengthPipelineInitialization(this);
     }
 
     /**
-     * init channel.
+     * idleStateHandler.
      *
-     * @param ch ch
-     * @param channel channel
-     * @param decoder decoder
+     * @return ChannelHandler
      */
-    private void initChannel(SocketChannel ch, Channel channel, NettyDecoder decoder) {
-        final ChannelInboundHandler sourceDecoder = decoder.createSourceDecoder();
-        final AckHandlerFactory ackHandlerFactory = decoder.ackHandlerFactory();
-        ch.pipeline()
-                .addLast(new IdleStateHandler(idleSecond, idleSecond, idleSecond))
-                .addLast(sourceDecoder)
-                .addLast(new ChannelHandler(channel, selectPartition(), ackHandlerFactory));
+    public ChannelHandler idleStateHandler() {
+        return new IdleStateHandler(idleSecond, idleSecond, idleSecond);
     }
 
-    /**
-     * select partition id.
-     *
-     * @return partition id
-     */
-    protected int selectPartition() {
-        return (count.getAndIncrement() & 0x7fffffff) % partitionCount;
+    @Override
+    public void close() {
+        try {
+            super.close();
+        } finally {
+            IOUtils.closeQuietly(pipelineInitialization);
+        }
     }
 }

@@ -21,6 +21,7 @@ package org.zicat.tributary.channel;
 import org.zicat.tributary.common.*;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -106,8 +107,8 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public void append(int partition, byte[] record, int offset, int length) throws IOException {
-        getPartitionChannel(partition).append(record, offset, length);
+    public void append(int partition, ByteBuffer byteBuffer) throws IOException {
+        getPartitionChannel(partition).append(byteBuffer);
     }
 
     @Override

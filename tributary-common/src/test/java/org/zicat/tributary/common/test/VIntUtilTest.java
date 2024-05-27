@@ -34,9 +34,9 @@ public class VIntUtilTest {
             final int a = (1 << (7 * offset));
             final int b = a - 1;
             final int c = a + 1;
-            Assert.assertEquals(offset + 1, VIntUtil.vIntLength(a) - a);
-            Assert.assertEquals(offset, VIntUtil.vIntLength(b) - b);
-            Assert.assertEquals(offset + 1, VIntUtil.vIntLength(c) - c);
+            Assert.assertEquals(offset + 1, VIntUtil.vIntLength(a));
+            Assert.assertEquals(offset, VIntUtil.vIntLength(b));
+            Assert.assertEquals(offset + 1, VIntUtil.vIntLength(c));
             testReadPutVint(a);
             testReadPutVint(b);
             testReadPutVint(c);
@@ -46,7 +46,7 @@ public class VIntUtilTest {
     @Test
     public void testFail() {
         try {
-            Assert.fail(String.valueOf(VIntUtil.vIntLength(-1)));
+            Assert.fail(String.valueOf(VIntUtil.vIntEncodeLength(-1)));
         } catch (Exception ignore) {
             Assert.assertTrue(true);
         }

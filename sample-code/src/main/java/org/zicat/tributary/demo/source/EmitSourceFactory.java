@@ -26,7 +26,7 @@ import org.zicat.tributary.source.SourceFactory;
 /** EmitSourceFactory. */
 public class EmitSourceFactory implements SourceFactory {
     @Override
-    public Source createSource(Channel channel, ReadableConfig config) {
+    public Source createSource(String sourceId, Channel channel, ReadableConfig config) {
         return new EmitSource(channel);
     }
 

@@ -18,42 +18,38 @@
 
 package org.zicat.tributary.sink.kafka;
 
-import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Context;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 /** DefaultKafkaFunction. */
 public class DefaultKafkaFunction extends AbstractKafkaFunction {
 
-    protected static final String DEFAULT_CLUSTER = null;
-    private static final ConfigOption<String> OPTION_TOPIC =
-            ConfigOptions.key("topic")
+    public static final ConfigOption<String> OPTION_BYTE_2_RECORD_IDENTITY =
+            ConfigOptions.key("decoder.identity")
                     .stringType()
-                    .description("the kafka topic to send data")
-                    .defaultValue("sink_kafka_channel");
-    protected String customTopic;
-    protected KafkaProducer<byte[], byte[]> producer;
-    protected DefaultCallback callback;
+                    .description("the byte2Record identity")
+                    .defaultValue("default");
+    protected transient DefaultCallback callback;
+    protected transient Byte2Record byte2Record;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        final String keyPrefix = getKafkaKeyPrefix(DEFAULT_CLUSTER) + "topic";
-        this.customTopic = context.get(OPTION_TOPIC.changeKey(keyPrefix));
+        this.byte2Record = createByte2Record(context);
         this.callback = new DefaultCallback();
     }
 
     @Override
     public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception {
-
         callback.checkState();
-
         int totalCount = 0;
         while (iterator.hasNext()) {
             final byte[] value = iterator.next();
@@ -72,36 +68,8 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
      * @return boolean send.
      */
     protected boolean sendKafka(byte[] value) {
-        final ProducerRecord<byte[], byte[]> record =
-                new ProducerRecord<>(customTopic, null, value);
-        sendKafka(record);
+        sendKafka(byte2Record.convert(value), callback);
         return true;
-    }
-
-    /**
-     * send producer record to kafka.
-     *
-     * @param producerRecord producerRecord
-     */
-    protected void sendKafka(ProducerRecord<byte[], byte[]> producerRecord) {
-        sendKafka(DEFAULT_CLUSTER, producerRecord, callback);
-    }
-
-    @Override
-    protected Producer<byte[], byte[]> getOrCreateProducer(String clusterId) {
-        if (producer == null) {
-            producer = new KafkaProducer<>(getKafkaProperties(DEFAULT_CLUSTER));
-        }
-        return producer;
-    }
-
-    @Override
-    public void close() throws IOException {
-        try {
-            super.close();
-        } finally {
-            IOUtils.closeQuietly(producer);
-        }
     }
 
     /** DefaultCallback. */
@@ -128,5 +96,17 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                 throw tmp;
             }
         }
+    }
+
+    /**
+     * create byte 2 record.
+     *
+     * @param config config
+     * @return byte2Record
+     */
+    private static Byte2Record createByte2Record(ReadableConfig config) {
+        return SpiFactory.findFactory(
+                        config.get(OPTION_BYTE_2_RECORD_IDENTITY), Byte2RecordFactory.class)
+                .create(config);
     }
 }

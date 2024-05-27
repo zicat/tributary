@@ -32,5 +32,5 @@ public interface SourceFactory extends SpiFactory {
      * @param config config
      * @return Source
      */
-    Source createSource(Channel channel, ReadableConfig config);
+    Source createSource(String sourceId, Channel channel, ReadableConfig config) throws Exception;
 }

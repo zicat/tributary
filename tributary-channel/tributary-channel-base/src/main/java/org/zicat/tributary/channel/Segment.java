@@ -18,10 +18,6 @@
 
 package org.zicat.tributary.channel;
 
-import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
-import static org.zicat.tributary.common.IOUtils.copy;
-import static org.zicat.tributary.common.IOUtils.reAllocate;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +29,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
+import static org.zicat.tributary.common.BytesUtils.toBytes;
+import static org.zicat.tributary.common.IOUtils.reAllocate;
 
 /**
  * A segment instance is the represent of parts data in one channel.
@@ -95,7 +95,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             writeFull(block.reusedBuf());
             final long preOffset = position.getAndAdd(writeCount);
             if (buff != null) {
-                bCache.put(id, preOffset, preOffset + writeCount, copy(buff));
+                bCache.put(id, preOffset, preOffset + writeCount, toBytes(buff));
             }
             cacheUsed += writeCount;
             readable.signalAll();
@@ -115,8 +115,25 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * @throws IOException IOException if block flush to SegmentStorage
      */
     public boolean append(byte[] data, int offset, int length) throws IOException {
-
         if (length <= 0) {
+            return true;
+        }
+        return append(ByteBuffer.wrap(data, offset, length));
+    }
+
+    /**
+     * append bytes to log segment.
+     *
+     * <p>if segment is readonly or segment current size over {@link Segment#segmentSize} , return
+     * false.
+     *
+     * @param byteBuffer byteBuffer
+     * @return true if append success
+     * @throws IOException IOException if block flush to SegmentStorage
+     */
+    public boolean append(ByteBuffer byteBuffer) throws IOException {
+
+        if (byteBuffer == null || byteBuffer.remaining() == 0) {
             return true;
         }
 
@@ -127,7 +144,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
                 return false;
             }
 
-            if (writer.put(data, offset, length)) {
+            if (writer.put(byteBuffer)) {
                 return true;
             }
 
@@ -135,14 +152,14 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
              * then try to put data to writer again.
              */
             writer.clear(blockFlushHandler);
-            if (writer.put(data, offset, length)) {
+            if (writer.put(byteBuffer)) {
                 return true;
             }
 
             /* data length is over writer.size,
              * wrap new writer which match data length and flush channel directly
              */
-            BlockWriter.wrap(data, offset, length).clear(blockFlushHandler);
+            BlockWriter.wrap(byteBuffer).clear(blockFlushHandler);
             return true;
         } finally {
             lock.unlock();

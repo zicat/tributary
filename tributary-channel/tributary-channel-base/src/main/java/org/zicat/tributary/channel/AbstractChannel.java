@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.channel;
 
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.group.MemoryGroupManager;
@@ -30,6 +28,7 @@ import org.zicat.tributary.common.SafeFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
@@ -105,14 +106,14 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     /**
      * append record data without partition.
      *
-     * @param record record
+     * @param byteBuffer byteBuffer
      * @throws IOException IOException
      */
     @Override
-    public void append(byte[] record, int offset, int length) throws IOException {
+    public void append(ByteBuffer byteBuffer) throws IOException {
 
         final S segment = this.latestSegment;
-        if (append2Segment(segment, record, offset, length)) {
+        if (append2Segment(segment, byteBuffer)) {
             return;
         }
         final ReentrantLock lock = this.lock;
@@ -120,11 +121,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         try {
             segment.readonly();
             final S retrySegment = this.latestSegment;
-            if (!retrySegment.append(record, offset, length)) {
+            if (!retrySegment.append(byteBuffer)) {
                 retrySegment.readonly();
                 final long newSegmentId = retrySegment.segmentId() + 1L;
                 final S newSegment = createSegment(newSegmentId);
-                append2Segment(newSegment, record, offset, length);
+                append2Segment(newSegment, byteBuffer);
                 writeBytes.addAndGet(latestSegment.position());
                 addSegment(newSegment);
                 this.latestSegment = newSegment;
@@ -139,15 +140,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * append record 2 segment.
      *
      * @param segment segment
-     * @param record record
-     * @param offset offset
-     * @param length length
      * @return boolean append
      * @throws IOException IOException
      */
-    protected boolean append2Segment(Segment segment, byte[] record, int offset, int length)
-            throws IOException {
-        return segment.append(record, offset, length);
+    protected boolean append2Segment(Segment segment, ByteBuffer byteBuffer) throws IOException {
+        return segment.append(byteBuffer);
     }
 
     /**

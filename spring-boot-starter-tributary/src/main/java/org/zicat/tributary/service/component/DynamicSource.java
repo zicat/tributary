@@ -72,7 +72,7 @@ public class DynamicSource implements Closeable {
             final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
             try {
                 final ReadableConfig sourceConfig = allSourceConfig.filterAndRemovePrefixKey(head);
-                final Source source = sourceFactory.createSource(channel, sourceConfig);
+                final Source source = sourceFactory.createSource(sourceId, channel, sourceConfig);
                 source.start();
                 sourceCache.put(sourceId, source);
             } catch (Throwable e) {

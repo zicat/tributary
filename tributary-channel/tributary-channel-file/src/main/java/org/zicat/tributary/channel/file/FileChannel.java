@@ -18,9 +18,6 @@
 
 package org.zicat.tributary.channel.file;
 
-import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
-import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
@@ -28,8 +25,12 @@ import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
 
 /**
  * FileChannel implements {@link Channel} to Storage records and {@link GroupOffset} in local file
@@ -95,9 +96,8 @@ public class FileChannel extends AbstractChannel<FileSegment> {
     }
 
     @Override
-    protected boolean append2Segment(Segment segment, byte[] record, int offset, int length)
-            throws IOException {
-        final boolean appendSuccess = super.append2Segment(segment, record, offset, length);
+    protected boolean append2Segment(Segment segment, ByteBuffer byteBuffer) throws IOException {
+        final boolean appendSuccess = super.append2Segment(segment, byteBuffer);
         if (appendSuccess && segment.cacheUsed() >= flushPageCacheSize) {
             segment.flush(false);
         }

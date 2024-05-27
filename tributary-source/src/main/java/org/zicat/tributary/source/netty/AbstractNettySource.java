@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.source.netty;
 
-import static org.zicat.tributary.source.utils.HostUtils.getInetAddress;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
@@ -28,18 +26,21 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.source.Source;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.zicat.tributary.source.utils.HostUtils.getInetAddress;
 
 /** AbstractNettySource. */
 public abstract class AbstractNettySource implements Source {
@@ -55,15 +56,26 @@ public abstract class AbstractNettySource implements Source {
     protected final EventLoopGroup workGroup;
     protected final ServerBootstrap serverBootstrap;
     protected List<Channel> channelList;
+    protected final ReadableConfig config;
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final List<String> hostNames;
+    protected final String sourceId;
 
     public AbstractNettySource(
-            String host, int port, int eventThreads, org.zicat.tributary.channel.Channel channel) {
+            String sourceId,
+            ReadableConfig config,
+            String host,
+            int port,
+            int eventThreads,
+            org.zicat.tributary.channel.Channel channel) {
+        this.sourceId = sourceId;
+        this.config = config;
         this.host = host;
         this.port = port;
         this.eventThreads = eventThreads;
         this.channel = channel;
+        this.hostNames = realHostName(host);
         this.bossGroup = createBossGroup();
         this.workGroup = createWorkGroup();
         this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
@@ -92,14 +104,14 @@ public abstract class AbstractNettySource implements Source {
      * @param ch ch
      */
     protected abstract void initChannel(
-            SocketChannel ch, org.zicat.tributary.channel.Channel channel);
+            SocketChannel ch, org.zicat.tributary.channel.Channel channel) throws IOException;
 
     /** init handlers. */
     private void initHandlers() {
         serverBootstrap.childHandler(
                 new ChannelInitializer<SocketChannel>() {
                     @Override
-                    protected void initChannel(SocketChannel ch) {
+                    protected void initChannel(SocketChannel ch) throws IOException {
                         AbstractNettySource.this.initChannel(ch, channel);
                     }
                 });
@@ -110,6 +122,7 @@ public abstract class AbstractNettySource implements Source {
      *
      * @param host host
      */
+    @SuppressWarnings("VulnerableCodeUsages")
     private Channel createChannel(String host) throws InterruptedException {
         final ChannelFuture syncFuture =
                 host == null
@@ -136,18 +149,35 @@ public abstract class AbstractNettySource implements Source {
      */
     private List<Channel> createChannelList() throws InterruptedException {
         final List<Channel> channelList = new ArrayList<>();
-        if (host == null || host.isEmpty()) {
+        if (hostNames.isEmpty()) {
             channelList.add(createChannel(null));
             return channelList;
+        }
+        for (String h : hostNames) {
+            channelList.add(createChannel(h));
+        }
+        return channelList;
+    }
+
+    /**
+     * parse host.
+     *
+     * @param host host
+     * @return list.
+     */
+    private static List<String> realHostName(String host) {
+        final List<String> hostName = new ArrayList<>();
+        if (host == null || host.isEmpty()) {
+            return hostName;
         }
         final String[] hosts = host.split(HOST_SPLIT);
         for (String h : hosts) {
             if (h != null && !h.trim().isEmpty()) {
                 final InetAddress address = getInetAddress(h);
-                channelList.add(createChannel(address.getHostAddress()));
+                hostName.add(address.getHostAddress());
             }
         }
-        return channelList;
+        return hostName;
     }
 
     /**
@@ -193,6 +223,7 @@ public abstract class AbstractNettySource implements Source {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
+        LOG.error("stop listen {}:{}", host, port);
         if (channelList != null) {
             channelList.forEach(
                     f -> {
@@ -218,5 +249,46 @@ public abstract class AbstractNettySource implements Source {
      */
     public int getPort() {
         return port;
+    }
+
+    /**
+     * get hosts.
+     *
+     * @return hosts
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
+     * get channel.
+     *
+     * @return channel
+     */
+    public org.zicat.tributary.channel.Channel getChannel() {
+        return channel;
+    }
+
+    /**
+     * get config.
+     *
+     * @return config
+     */
+    public ReadableConfig getConfig() {
+        return config;
+    }
+
+    /**
+     * get host names.
+     *
+     * @return host name.
+     */
+    public List<String> getHostNames() {
+        return hostNames;
+    }
+
+    @Override
+    public String sourceId() {
+        return sourceId;
     }
 }

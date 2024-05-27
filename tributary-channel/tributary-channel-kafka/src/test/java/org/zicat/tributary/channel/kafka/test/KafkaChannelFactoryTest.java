@@ -24,12 +24,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
+import org.zicat.tributary.channel.kafka.KafkaChannel;
 import org.zicat.tributary.channel.kafka.KafkaChannelFactory;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
 import static org.zicat.tributary.channel.kafka.KafkaChannelFactory.OPTIONS_KAFKA_TOPIC_META_DIR;
@@ -60,7 +65,14 @@ public class KafkaChannelFactoryTest {
     }
 
     @Test
-    public void testBaseStorage() throws Exception {
+    public void test() throws Exception {
+        testCorrection();
+        testBaseStorage();
+        testCreateChannel();
+        testGetTopic();
+    }
+
+    private void testBaseStorage() throws Exception {
         startEmbeddedKafka(
                 kafka -> {
                     final ChannelFactory factory =
@@ -74,8 +86,20 @@ public class KafkaChannelFactoryTest {
                 });
     }
 
-    @Test
-    public void testCreateChannel() throws Exception {
+    private void testCorrection() throws Exception {
+        startEmbeddedKafka(
+                kafka -> {
+                    final Set<String> groups = new HashSet<>(Arrays.asList("g1", "g2"));
+                    final Properties properties = new Properties();
+                    properties.put("bootstrap.servers", kafka.getBrokerList());
+                    try (Channel channel =
+                            new KafkaChannel("test_topic_t1", 2, groups, properties)) {
+                        testChannelCorrect(channel);
+                    }
+                });
+    }
+
+    private void testCreateChannel() throws Exception {
         startEmbeddedKafka(
                 kafka -> {
                     final ChannelFactory factory =
@@ -91,8 +115,7 @@ public class KafkaChannelFactoryTest {
                 });
     }
 
-    @Test
-    public void testGetTopic() throws IOException {
+    private void testGetTopic() throws IOException {
         final File topicMetaFile = new File(DIR, "my_test_file");
         final String topic1 = getTopic(topicMetaFile);
 

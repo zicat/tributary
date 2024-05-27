@@ -18,11 +18,10 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
-
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,10 +35,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+
 /** AbstractKafkaFunctionTest. */
 public class AbstractKafkaFunctionTest {
 
-    final MockProducer<byte[], byte[]> producer = new MockProducer<>();
+    final MockProducer<byte[], byte[]> mockProducer =
+            new MockProducer<>(true, new ByteArraySerializer(), new ByteArraySerializer());
+
     private AbstractKafkaFunction function;
 
     @Before
@@ -48,23 +51,23 @@ public class AbstractKafkaFunctionTest {
                 new AbstractKafkaFunction() {
                     @Override
                     public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
-                        int count = 0;
                         while (iterator.hasNext()) {
-                            sendKafka(
-                                    "broker_test" + count % 10,
-                                    new ProducerRecord<>("topic_test", iterator.next()));
-                            count++;
+                            sendKafka(new ProducerRecord<>("topic_test", iterator.next()), null);
                         }
                         sendKafka(
-                                "broker_test" + count,
                                 new ProducerRecord<>("topic_test", "test_value".getBytes()),
                                 (metadata, exception) -> Assert.assertNull(exception));
                         flush(groupOffset);
                     }
 
                     @Override
-                    protected Producer<byte[], byte[]> getOrCreateProducer(String broker) {
-                        return producerMap.computeIfAbsent(broker, key -> producer);
+                    protected Producer<byte[], byte[]> getOrCreateProducer() {
+                        return mockProducer;
+                    }
+
+                    @Override
+                    public void close() {
+                        mockProducer.close();
                     }
                 };
         final ContextBuilder builder =
@@ -85,7 +88,7 @@ public class AbstractKafkaFunctionTest {
         function.process(
                 nextGroupOffset,
                 Collections.singleton(value.getBytes(StandardCharsets.UTF_8)).iterator());
-        Assert.assertEquals(value, new String(producer.history().get(0).value()));
+        Assert.assertEquals(value, new String(mockProducer.history().get(0).value()));
         Assert.assertEquals(nextGroupOffset, function.committableOffset());
     }
 

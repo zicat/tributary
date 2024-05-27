@@ -18,9 +18,6 @@
 
 package org.zicat.tributary.channel.test;
 
-import static org.zicat.tributary.common.VIntUtil.putVInt;
-import static org.zicat.tributary.common.VIntUtil.vIntLength;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.BlockGroupOffset;
@@ -30,6 +27,9 @@ import org.zicat.tributary.channel.RecordsResultSet;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zicat.tributary.common.VIntUtil.putVInt;
+import static org.zicat.tributary.common.VIntUtil.vIntEncodeLength;
 
 /** BlockGroupOffsetTest. */
 public class BlockGroupOffsetTest {
@@ -95,7 +95,7 @@ public class BlockGroupOffsetTest {
     private static ByteBuffer toBuffer(List<byte[]> testData) {
         int length = 0;
         for (byte[] bs : testData) {
-            length += vIntLength(bs.length);
+            length += vIntEncodeLength(bs.length);
         }
         final ByteBuffer resultBuf = ByteBuffer.allocate(length);
         for (byte[] bs : testData) {

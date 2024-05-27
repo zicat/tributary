@@ -30,6 +30,7 @@ import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +41,7 @@ import static org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZE
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 import static org.zicat.tributary.channel.kafka.KafkaUtils.adjustTopicPartition;
+import static org.zicat.tributary.common.BytesUtils.toBytes;
 
 /** KafkaChannel. */
 public class KafkaChannel implements Channel {
@@ -64,28 +66,10 @@ public class KafkaChannel implements Channel {
     }
 
     @Override
-    public void append(int partition, byte[] record, int offset, int length) {
+    public void append(int partition, ByteBuffer byteBuffer) {
         final ProducerRecord<byte[], byte[]> producerRecord =
-                new ProducerRecord<>(topic, partition, null, copyRecord(record, offset, length));
+                new ProducerRecord<>(topic, partition, null, toBytes(byteBuffer));
         producer.send(producerRecord);
-    }
-
-    /**
-     * copy record if need.
-     *
-     * @param record record
-     * @param offset offset
-     * @param length length
-     * @return byte array
-     */
-    private static byte[] copyRecord(byte[] record, int offset, int length) {
-        if (record == null) {
-            return null;
-        }
-        if (offset == 0 && record.length == length) {
-            return record;
-        }
-        return Arrays.copyOfRange(record, offset, offset + length);
     }
 
     @Override

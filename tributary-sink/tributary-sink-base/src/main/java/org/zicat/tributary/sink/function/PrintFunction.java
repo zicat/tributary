@@ -19,7 +19,6 @@
 package org.zicat.tributary.sink.function;
 
 import io.prometheus.client.Counter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.GroupOffset;
@@ -32,7 +31,7 @@ import java.util.Iterator;
 /** PrintFunction. */
 public class PrintFunction extends AbstractFunction implements Trigger {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
 
     public static final ConfigOption<Long> CONFIG_TRIGGER_MILLIS =
             ConfigOptions.key("trigger.millis")
@@ -48,7 +47,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
                     .register();
 
     private long triggerMillis;
-    private Counter.Child sinkCountChild;
+    protected Counter.Child sinkCountChild;
 
     @Override
     public void open(Context context) throws Exception {

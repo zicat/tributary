@@ -22,6 +22,7 @@ import org.zicat.tributary.channel.group.GroupManager;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,12 +43,29 @@ public interface Channel extends Closeable, ChannelMetric, GroupManager {
      * <p>invoke {@link Channel#flush()} will flush logs from memory block and page cache to disk.
      *
      * @param partition partition
+     * @param byteBuffer byteBuffer
+     * @throws IOException IOException
+     */
+    void append(int partition, ByteBuffer byteBuffer) throws IOException;
+
+    /**
+     * append record to channel.
+     *
+     * <p>append operator only make sure put record to memory block or page cache.
+     *
+     * <p>invoke {@link Channel#flush()} will flush logs from memory block and page cache to disk.
+     *
+     * @param partition partition
      * @param record record
      * @param offset offset the record offset
      * @param length length the record length to append
      * @throws IOException IOException
      */
-    void append(int partition, byte[] record, int offset, int length) throws IOException;
+    default void append(int partition, byte[] record, int offset, int length) throws IOException {
+        if (record != null) {
+            append(partition, ByteBuffer.wrap(record, offset, length));
+        }
+    }
 
     /**
      * append record to channel.
@@ -62,7 +80,7 @@ public interface Channel extends Closeable, ChannelMetric, GroupManager {
      */
     default void append(int partition, byte[] record) throws IOException {
         if (record != null) {
-            append(partition, record, 0, record.length);
+            append(partition, ByteBuffer.wrap(record));
         }
     }
 

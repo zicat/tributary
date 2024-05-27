@@ -21,6 +21,7 @@ package org.zicat.tributary.channel;
 import org.zicat.tributary.channel.group.SingleGroupManager;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 /** SingleChannel for {@link Channel} without partition. @ThreadSafe */
@@ -49,6 +50,11 @@ public interface SingleChannel extends Channel, SingleGroupManager {
         append(record, offset, length);
     }
 
+    @Override
+    default void append(int partition, ByteBuffer byteBuffer) throws IOException {
+        append(byteBuffer);
+    }
+
     /**
      * append record to channel without partition.
      *
@@ -61,7 +67,21 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      * @param length length the record length to append
      * @throws IOException IOException
      */
-    void append(byte[] record, int offset, int length) throws IOException;
+    default void append(byte[] record, int offset, int length) throws IOException {
+        append(ByteBuffer.wrap(record, offset, length));
+    }
+
+    /**
+     * append record to channel without partition.
+     *
+     * <p>append operator only make sure put record to memory block or page cache.
+     *
+     * <p>invoke {@link Channel#flush()} will flush logs from memory block and page cache to disk.
+     *
+     * @param byteBuffer byteBuffer
+     * @throws IOException IOException
+     */
+    void append(ByteBuffer byteBuffer) throws IOException;
 
     @Override
     default RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit)

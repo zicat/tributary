@@ -18,13 +18,13 @@
 
 package org.zicat.tributary.channel;
 
-import static org.zicat.tributary.common.VIntUtil.putVInt;
-import static org.zicat.tributary.common.VIntUtil.vIntLength;
-
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import static org.zicat.tributary.common.VIntUtil.putVInt;
+import static org.zicat.tributary.common.VIntUtil.vIntEncodeLength;
 
 /**
  * BlockWriter.
@@ -53,8 +53,18 @@ public final class BlockWriter extends Block {
      * @return BlockWriter
      */
     public static BlockWriter wrap(byte[] data, int offset, int length) {
-        final BlockWriter blockWriter = new BlockWriter(vIntLength(length));
-        blockWriter.put(data, offset, length);
+        return wrap(ByteBuffer.wrap(data, offset, length));
+    }
+
+    /**
+     * wrap from byte array.
+     *
+     * @param byteBuffer byteBuffer
+     * @return BlockWriter
+     */
+    public static BlockWriter wrap(ByteBuffer byteBuffer) {
+        final BlockWriter blockWriter = new BlockWriter(vIntEncodeLength(byteBuffer.remaining()));
+        blockWriter.put(byteBuffer);
         return blockWriter;
     }
 
@@ -77,12 +87,7 @@ public final class BlockWriter extends Block {
      * @return boolean put success
      */
     public boolean put(byte[] data, int offset, int length) {
-        if (remaining() < vIntLength(length)) {
-            return false;
-        }
-        putVInt(resultBuf, length);
-        resultBuf.put(data, offset, length);
-        return true;
+        return put(ByteBuffer.wrap(data, offset, length));
     }
 
     /**
@@ -92,7 +97,22 @@ public final class BlockWriter extends Block {
      * @return boolean put success
      */
     public boolean put(byte[] data) {
-        return put(data, 0, data.length);
+        return put(ByteBuffer.wrap(data));
+    }
+
+    /**
+     * append data. to block set.
+     *
+     * @param byteBuffer byteBuffer
+     * @return boolean put success
+     */
+    public boolean put(ByteBuffer byteBuffer) {
+        if (remaining() < vIntEncodeLength(byteBuffer.remaining())) {
+            return false;
+        }
+        putVInt(resultBuf, byteBuffer.remaining());
+        resultBuf.put(byteBuffer);
+        return true;
     }
 
     /**

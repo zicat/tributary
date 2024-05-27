@@ -24,13 +24,14 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 
 /** HttpSource. */
 public class HttpSource extends AbstractNettySource {
 
-    public HttpSource(String host, int port, int eventThreads, Channel channel) {
-        super(host, port, eventThreads, channel);
+    public HttpSource(String sourceId, String host, int port, int eventThreads, Channel channel) {
+        super(sourceId, new DefaultReadableConfig(), host, port, eventThreads, channel);
     }
 
     /**

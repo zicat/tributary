@@ -66,6 +66,11 @@ public class EmitSource implements Source {
     }
 
     @Override
+    public String sourceId() {
+        return String.valueOf(this.hashCode());
+    }
+
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             Threads.joinQuietly(t);

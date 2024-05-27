@@ -20,48 +20,44 @@ package org.zicat.tributary.source.netty;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.source.netty.ack.AckHandler;
-import org.zicat.tributary.source.netty.ack.AckHandlerFactory;
+import org.zicat.tributary.common.IOUtils;
+
+import java.io.IOException;
 
 /** ChannelHandler. */
-public class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
+public abstract class ChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChannelHandler.class);
+    private final AbstractNettySource source;
     private final Channel channel;
     private final int partition;
-    private final AckHandler ackHandler;
 
-    public ChannelHandler(Channel channel, int partition, AckHandlerFactory factory) {
-        this.channel = channel;
+    public ChannelHandler(AbstractNettySource source, int partition) {
+        this.source = source;
+        this.channel = source.getChannel();
         this.partition = partition;
-        this.ackHandler = factory.create();
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-        if (!(evt instanceof IdleStateEvent)) {
-            return;
-        }
-        final IdleStateEvent e = (IdleStateEvent) evt;
-        if (e.state() == IdleState.READER_IDLE || e.state() == IdleState.WRITER_IDLE) {
-            LOG.info("channel idled, close it, {}", ctx.channel().remoteAddress().toString());
-            ctx.channel().close();
-        }
-    }
-
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) {
+    protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) throws IOException {
         try {
             channel.append(partition, packet);
-            ackHandler.ackSuccess(packet, ctx);
-        } catch (Throwable e) {
-            LOG.error("append data error", e);
-            ackHandler.ackFail(packet, e, ctx);
+            ackSuccess(packet, ctx);
+        } catch (IOException e) {
+            LOG.error("append data error, stop listen  {}:{}", source.host, source.port, e);
+            IOUtils.closeQuietly(source);
+            throw e;
         }
     }
+
+    /**
+     * ack success to client.
+     *
+     * @param receivedData receivedData
+     * @param ctx ctx
+     */
+    public abstract void ackSuccess(byte[] receivedData, ChannelHandlerContext ctx);
 }

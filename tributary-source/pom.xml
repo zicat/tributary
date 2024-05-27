@@ -10,9 +10,38 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tributary-source</artifactId>
+    <properties>
+        <curator-version>5.2.0</curator-version>
+    </properties>
 
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+            <version>${curator-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>${curator-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>${curator-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-x-discovery</artifactId>
+            <version>${curator-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_servlet</artifactId>
+            <version>${prometheus-version}</version>
+        </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
             <artifactId>tributary-channel-base</artifactId>
@@ -28,6 +57,11 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
             <version>4.1.65.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka-version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

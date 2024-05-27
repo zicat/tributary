@@ -19,7 +19,6 @@
 package org.zicat.tributary.common;
 
 import com.github.luben.zstd.Zstd;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;
@@ -365,17 +364,5 @@ public class IOUtils {
         } else {
             return makeDir(dir.getParentFile()) && dir.mkdir();
         }
-    }
-
-    /**
-     * copy byte buffer.
-     *
-     * @param byteBuffer byteBuffer
-     * @return byte array
-     */
-    public static byte[] copy(ByteBuffer byteBuffer) {
-        final byte[] copy = new byte[byteBuffer.remaining()];
-        byteBuffer.get(copy);
-        return copy;
     }
 }

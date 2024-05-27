@@ -34,20 +34,30 @@ public class VIntUtil {
      * @param length length
      * @return length
      */
+    public static int vIntEncodeLength(int length) {
+        return vIntLength(length) + length;
+    }
+
+    /**
+     * get vint length.
+     *
+     * @param length length
+     * @return length
+     */
     public static int vIntLength(int length) {
         if (length < 0) {
             throw new IllegalArgumentException("length < 0, param length = " + length);
         }
         if (length < VINT_1_BYTE_LIMIT) {
-            return 1 + length;
+            return 1;
         } else if (length < VINT_2_BYTE_LIMIT) {
-            return 2 + length;
+            return 2;
         } else if (length < VINT_3_BYTE_LIMIT) {
-            return 3 + length;
+            return 3;
         } else if (length < VINT_4_BYTE_LIMIT) {
-            return 4 + length;
+            return 4;
         }
-        return 5 + length;
+        return 5;
     }
 
     /**

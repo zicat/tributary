@@ -1,0 +1,3 @@
+org.zicat.tributary.source.netty.line.LinePipelineInitializationFactory
+org.zicat.tributary.source.netty.length.LengthPipelineInitializationFactory
+org.zicat.tributary.source.netty.kafka.KafkaPipelineInitializationFactory

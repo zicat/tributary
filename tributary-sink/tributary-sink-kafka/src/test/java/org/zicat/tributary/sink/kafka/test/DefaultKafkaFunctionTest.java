@@ -18,36 +18,40 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
-
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.kafka.Byte2RecordFactory;
 import org.zicat.tributary.sink.kafka.DefaultKafkaFunction;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+
 /** DefaultKafkaFunctionTest. */
 public class DefaultKafkaFunctionTest {
 
-    final MockProducer<byte[], byte[]> mockProducer = new MockProducer<>();
+    final MockProducer<byte[], byte[]> mockProducer =
+            new MockProducer<>(true, new ByteArraySerializer(), new ByteArraySerializer());
 
     @Test
     public void test() throws Exception {
         try (DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction()) {
+
+            final String topic = "kt1";
             final ContextBuilder builder =
                     new ContextBuilder()
                             .id("id2")
                             .partitionId(0)
                             .startGroupOffset(new GroupOffset(0, 0, "g2"))
                             .topic("t2");
-
-            builder.addCustomProperty("kafka.topic", "kt1");
+            builder.addCustomProperty(Byte2RecordFactory.OPTION_TOPIC.key(), "kt1");
             builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
 
             kafkaFunction.open(builder.build());
@@ -61,6 +65,7 @@ public class DefaultKafkaFunctionTest {
                             .collect(Collectors.toList())
                             .listIterator());
 
+            Assert.assertEquals(topic, mockProducer.history().get(0).topic());
             Assert.assertEquals(
                     testValues.get(0), new String(mockProducer.history().get(0).value()));
             Assert.assertEquals(
@@ -82,11 +87,17 @@ public class DefaultKafkaFunctionTest {
         }
     }
 
+    /** MockDefaultKafkaFunction. */
     private class MockDefaultKafkaFunction extends DefaultKafkaFunction {
 
         @Override
-        protected Producer<byte[], byte[]> getOrCreateProducer(String broker) {
+        protected Producer<byte[], byte[]> getOrCreateProducer() {
             return mockProducer;
+        }
+
+        @Override
+        public void close() {
+            mockProducer.close();
         }
     }
 }

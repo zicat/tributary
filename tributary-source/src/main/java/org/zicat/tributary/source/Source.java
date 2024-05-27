@@ -29,4 +29,11 @@ public interface Source extends Closeable {
      * @throws Exception Exception
      */
     void start() throws Exception;
+
+    /**
+     * get id.
+     *
+     * @return id
+     */
+    String sourceId();
 }

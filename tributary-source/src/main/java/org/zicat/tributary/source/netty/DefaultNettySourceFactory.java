@@ -18,13 +18,18 @@
 
 package org.zicat.tributary.source.netty;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.SpiFactory;
 
 /** DefaultNettySourceFactory. */
 public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultNettySourceFactory.class);
 
     public static final ConfigOption<Integer> OPTION_NETTY_IDLE_SECOND =
             ConfigOptions.key("netty.idle.second")
@@ -35,7 +40,8 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
     public static final ConfigOption<String> OPTION_NETTY_DECODER =
             ConfigOptions.key("netty.decoder")
                     .stringType()
-                    .description("set netty streaming decoder, values[lengthDecoder,lineDecoder]")
+                    .description(
+                            "set netty streaming decoder, values[lengthDecoder,lineDecoder,kafkaDecoder]")
                     .defaultValue("lengthDecoder");
 
     @Override
@@ -45,14 +51,23 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
 
     @Override
     public AbstractNettySource createNettySource(
-            String host, int port, int eventThreads, Channel channel, ReadableConfig config) {
-
+            String sourceId,
+            String host,
+            int port,
+            int eventThreads,
+            Channel channel,
+            ReadableConfig config)
+            throws Exception {
         final int idleSecond = config.get(OPTION_NETTY_IDLE_SECOND);
-        final NettyDecoder nettyDecoder = NettyDecoder.valueOf(config.get(OPTION_NETTY_DECODER));
-        return new DefaultNettySource(host, port, eventThreads, channel, idleSecond) {
+        final String decode = config.get(OPTION_NETTY_DECODER);
+        final PipelineInitializationFactory initializationFactory =
+                SpiFactory.findFactory(decode, PipelineInitializationFactory.class);
+        LOG.info("netty decode register success, identity = {}", decode);
+        return new DefaultNettySource(
+                sourceId, config, host, port, eventThreads, channel, idleSecond) {
             @Override
-            protected NettyDecoder nettyDecoder() {
-                return nettyDecoder;
+            protected PipelineInitialization createPipelineInitialization() throws Exception {
+                return initializationFactory.createPipelineInitialization(this);
             }
         };
     }
