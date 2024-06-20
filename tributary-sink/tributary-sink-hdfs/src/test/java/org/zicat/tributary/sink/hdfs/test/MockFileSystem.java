@@ -19,6 +19,7 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
@@ -74,9 +75,10 @@ public class MockFileSystem extends FileSystem {
             long arg5,
             Progressable arg6)
             throws IOException {
-        throw new IOException("Not a real file system");
+        return create(arg0);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     @Deprecated
     public boolean delete(Path arg0) throws IOException {
@@ -134,6 +136,11 @@ public class MockFileSystem extends FileSystem {
         } else {
             throw new IOException("MockIOException");
         }
+    }
+
+    @Override
+    public Configuration getConf() {
+        return new Configuration();
     }
 
     @Override

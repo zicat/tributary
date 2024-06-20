@@ -122,7 +122,6 @@ public abstract class AbstractNettySource implements Source {
      *
      * @param host host
      */
-    @SuppressWarnings("VulnerableCodeUsages")
     private Channel createChannel(String host) throws InterruptedException {
         final ChannelFuture syncFuture =
                 host == null

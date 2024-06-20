@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.channle.file.test;
 
-import static org.zicat.tributary.common.VIntUtil.putVInt;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,6 +34,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+
+import static org.zicat.tributary.common.VIntUtil.putVInt;
 
 /** BufferReaderWriterTest. */
 public class BlockRecordsResultSetWriterTest {
@@ -147,7 +147,7 @@ public class BlockRecordsResultSetWriterTest {
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
-        // test over flow.
+        // test overflow.
         resultSet =
                 fileSegment.read(bufferRecordsResultSet, fileChannel.position() - 1).toResultSet();
         Assert.assertFalse(resultSet.hasNext());

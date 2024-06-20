@@ -23,6 +23,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.hdfs.HDFSWriter;
 
 import java.io.IOException;
@@ -71,9 +73,14 @@ public class MockHDFSWriter implements HDFSWriter {
     }
 
     @Override
-    public void append(byte[] bs, int offset, int length) throws IOException {
-        eventsWritten++;
-        bytesWritten += length;
+    public int append(Records records) throws IOException {
+        eventsWritten += records.count();
+        int size = 0;
+        for (Record record : records) {
+            size += record.value().length;
+        }
+        bytesWritten += size;
+        return size;
     }
 
     public void sync() {}

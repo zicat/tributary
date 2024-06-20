@@ -27,12 +27,58 @@ import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /** FileBaseTest. */
 public class ChannelBaseTest {
+
+    /** DataOffset. */
+    public static class DataOffset {
+        public List<byte[]> data;
+        public GroupOffset groupOffset;
+
+        public DataOffset(List<byte[]> data, GroupOffset groupOffset) {
+            this.data = data;
+            this.groupOffset = groupOffset;
+        }
+    }
+
+    /**
+     * read channel with size.
+     *
+     * @param channel channel
+     * @param partition partition
+     * @param groupOffset groupOffset
+     * @param size size
+     * @return list byte[]
+     * @throws IOException IOException
+     * @throws InterruptedException InterruptedException
+     */
+    public static DataOffset readChannel(
+            Channel channel, int partition, GroupOffset groupOffset, int size)
+            throws IOException, InterruptedException {
+        final List<byte[]> result = new ArrayList<>();
+        GroupOffset offset = groupOffset;
+        while (result.size() < size) {
+            final RecordsResultSet recordsResultSet =
+                    channel.poll(partition, offset, 10, TimeUnit.MILLISECONDS);
+            if (!recordsResultSet.hasNext()) {
+                throw new RuntimeException("no full, expect " + size + ", real " + result.size());
+            }
+            while (recordsResultSet.hasNext()) {
+                result.add(recordsResultSet.next());
+                if (result.size() >= size) {
+                    return new DataOffset(result, recordsResultSet.nexGroupOffset());
+                }
+            }
+            offset = recordsResultSet.nexGroupOffset();
+        }
+        throw new RuntimeException("no full, expect " + size + ", real 0");
+    }
 
     /**
      * test channel storage.
@@ -63,16 +109,13 @@ public class ChannelBaseTest {
             }
             for (String group : channel.groups()) {
                 for (int i = 0; i < channel.partition(); i++) {
-                    RecordsResultSet recordsResultSet =
-                            channel.poll(
-                                    i, startOffset.get(group).get(i), 1000, TimeUnit.MILLISECONDS);
-                    Assert.assertTrue(recordsResultSet.hasNext());
-                    Assert.assertEquals(
-                            "partition-" + i + "-value-0",
-                            new String(recordsResultSet.next(), StandardCharsets.UTF_8));
-                    Assert.assertEquals(
-                            "partition-" + i + "-value-1",
-                            new String(recordsResultSet.next(), StandardCharsets.UTF_8));
+                    final DataOffset dataOffset =
+                            readChannel(channel, i, startOffset.get(group).get(i), 2);
+                    for (int j = 0; j < dataOffset.data.size(); j++) {
+                        Assert.assertEquals(
+                                "partition-" + i + "-value-" + j,
+                                new String(dataOffset.data.get(j), StandardCharsets.UTF_8));
+                    }
                 }
             }
         }
@@ -87,17 +130,14 @@ public class ChannelBaseTest {
             }
             for (String group : channel.groups()) {
                 for (int i = 0; i < channel.partition(); i++) {
-                    RecordsResultSet recordsResultSet =
-                            channel.poll(
-                                    i, startOffset.get(group).get(i), 1000, TimeUnit.MILLISECONDS);
-                    Assert.assertTrue(recordsResultSet.hasNext());
-                    Assert.assertEquals(
-                            "partition-" + i + "-value-0",
-                            new String(recordsResultSet.next(), StandardCharsets.UTF_8));
-                    Assert.assertEquals(
-                            "partition-" + i + "-value-1",
-                            new String(recordsResultSet.next(), StandardCharsets.UTF_8));
-                    channel.commit(i, recordsResultSet.nexGroupOffset());
+                    final DataOffset result =
+                            readChannel(channel, i, startOffset.get(group).get(i), 2);
+                    for (int j = 0; j < result.data.size(); j++) {
+                        Assert.assertEquals(
+                                "partition-" + i + "-value-" + j,
+                                new String(result.data.get(j), StandardCharsets.UTF_8));
+                    }
+                    channel.commit(i, result.groupOffset);
                 }
             }
         }

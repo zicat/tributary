@@ -59,7 +59,18 @@ public class BytesUtils {
      * @return String
      */
     public static String toString(ByteBuffer byteBuffer) {
-        return new String(toBytes(byteBuffer), StandardCharsets.UTF_8);
+        return toString(byteBuffer, byteBuffer.remaining());
+    }
+
+    /**
+     * to string with utf-8.
+     *
+     * @param byteBuffer byteBuffer
+     * @param size size
+     * @return string
+     */
+    public static String toString(ByteBuffer byteBuffer, int size) {
+        return new String(toBytes(byteBuffer, size), StandardCharsets.UTF_8);
     }
 
     /**
@@ -69,8 +80,42 @@ public class BytesUtils {
      * @return bytes
      */
     public static byte[] toBytes(ByteBuffer byteBuffer) {
-        final byte[] bytes = new byte[byteBuffer.remaining()];
+        return toBytes(byteBuffer, byteBuffer.remaining());
+    }
+
+    /**
+     * to bytes.
+     *
+     * @param byteBuffer byteBuffer
+     * @param size size
+     * @return byte array
+     */
+    public static byte[] toBytes(ByteBuffer byteBuffer, int size) {
+        if (size > byteBuffer.remaining()) {
+            throw new IllegalArgumentException("size must be less than remaining bytes");
+        }
+        final byte[] bytes = new byte[size];
         byteBuffer.get(bytes);
         return bytes;
+    }
+
+    /**
+     * get vint bytes.
+     *
+     * @param byteBuffer byteBuffer
+     * @return byte array
+     */
+    public static byte[] toVIntBytes(ByteBuffer byteBuffer) {
+        return BytesUtils.toBytes(byteBuffer, VIntUtil.readVInt(byteBuffer));
+    }
+
+    /**
+     * get vint string.
+     *
+     * @param byteBuffer byteBuffer
+     * @return string
+     */
+    public static String toVIntString(ByteBuffer byteBuffer) {
+        return BytesUtils.toString(byteBuffer, VIntUtil.readVInt(byteBuffer));
     }
 }

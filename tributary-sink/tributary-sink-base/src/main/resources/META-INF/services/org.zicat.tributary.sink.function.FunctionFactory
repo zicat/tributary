@@ -1,4 +1,3 @@
 org.zicat.tributary.sink.function.DummyFunctionFactory
 org.zicat.tributary.sink.function.PrintFunctionFactory
 org.zicat.tributary.sink.function.CollectionFunctionFactory
-org.zicat.tributary.sink.function.KafkaRecordPrintFunctionFactory

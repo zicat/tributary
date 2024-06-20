@@ -29,6 +29,7 @@ import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
@@ -77,16 +78,25 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     private Disruptor<Block> disruptor;
     private DataHandler[] handlers;
     private final AtomicReference<Throwable> error = new AtomicReference<>(null);
+    private final int workerNumber;
 
     public MultiThreadPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
+        this(groupId, channel, partitionId, sinkGroupConfig.get(OPTION_THREADS), sinkGroupConfig);
+    }
+
+    public MultiThreadPartitionHandler(
+            String groupId,
+            Channel channel,
+            int partitionId,
+            int workerNumber,
+            SinkGroupConfig sinkGroupConfig) {
         super(groupId, channel, partitionId, sinkGroupConfig);
+        this.workerNumber = workerNumber;
     }
 
     @Override
     public void open() {
-
-        final int workerNumber = sinkGroupConfig.get(OPTION_THREADS);
         if (workerNumber <= 1) {
             throw new IllegalStateException(OPTION_THREADS.key() + " must over 1");
         }
@@ -232,7 +242,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
             if (Objects.nonNull(block) && block.getIterator() != null) {
                 synchronized (this) {
                     try {
-                        function.process(block.offset, block.getIterator());
+                        function.process(block.offset, RecordsIterator.wrap(block.getIterator()));
                     } catch (Throwable e) {
                         if (!error.compareAndSet(null, e)) {
                             LOG.error("process function error", e);
@@ -287,7 +297,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     }
 
     /** block. */
-    static class Block {
+    public static class Block {
 
         private Iterator<byte[]> iterator;
         private GroupOffset offset;

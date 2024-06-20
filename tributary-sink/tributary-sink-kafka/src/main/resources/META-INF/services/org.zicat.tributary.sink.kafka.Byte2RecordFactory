@@ -1,2 +1,0 @@
-org.zicat.tributary.sink.kafka.DefaultByte2RecordFactory
-org.zicat.tributary.sink.kafka.ProxyKafkaRecord2RecordFactory

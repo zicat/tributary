@@ -25,6 +25,8 @@ import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
+import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
+import org.zicat.tributary.source.netty.pipeline.PipelineInitializationFactory;
 
 /** DefaultNettySourceFactory. */
 public class DefaultNettySourceFactory extends AbstractNettySourceFactory {

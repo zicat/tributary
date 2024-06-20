@@ -21,15 +21,14 @@ package org.zicat.tributary.sink.hdfs.test;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.io.compress.GzipCodec;
-import org.apache.hadoop.io.compress.SnappyCodec;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
 import org.zicat.tributary.sink.hdfs.BucketWriter;
@@ -37,7 +36,6 @@ import org.zicat.tributary.sink.hdfs.HDFSWriter;
 import org.zicat.tributary.sink.hdfs.HDFSWriterFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,9 +58,8 @@ public class BucketWriterTest {
         final BucketWriter<Void> bucketWriter =
                 new BucketWriterBuilder(hdfsWriter).setRollSize(maxBytes).build();
 
-        final byte[] e = "foo".getBytes(StandardCharsets.UTF_8);
         for (int i = 0; i < 1000; i++) {
-            bucketWriter.append(e);
+            bucketWriter.append(RecordsUtils.createStringRecords("t1", "foo"));
         }
 
         logger.info("Number of events written: {}", hdfsWriter.getEventsWritten());
@@ -76,16 +73,17 @@ public class BucketWriterTest {
 
     @Test
     public void testFileSuffixNotGiven() throws IOException {
-        // Need to override system time use for test so we know what to expect
+        // Need to override system time use for test, so we know what to expect
 
         MockHDFSWriter hdfsWriter = new MockHDFSWriter();
         BucketWriter<Void> bucketWriter =
-                new BucketWriterBuilder(hdfsWriter).setCodeC(new GzipCodec()).build();
+                new BucketWriterBuilder(hdfsWriter).setCodeC("snappy").build();
 
-        final byte[] e = "foo".getBytes(StandardCharsets.UTF_8);
-        bucketWriter.append(e);
+        bucketWriter.append(RecordsUtils.createStringRecords("t1", "foo"));
 
-        Assert.assertTrue("Incorrect suffix", hdfsWriter.getOpenedFilePath().endsWith("1.gz.tmp"));
+        Assert.assertTrue(
+                "Incorrect suffix",
+                hdfsWriter.getOpenedFilePath().endsWith("1.snappy.parquet.tmp"));
     }
 
     @Test
@@ -96,8 +94,7 @@ public class BucketWriterTest {
         final BucketWriter<Void> bucketWriter =
                 new BucketWriterBuilder(hdfsWriter).setInUseSuffix(suffix).build();
 
-        final byte[] e = "foo".getBytes(StandardCharsets.UTF_8);
-        bucketWriter.append(e);
+        bucketWriter.append(RecordsUtils.createStringRecords("t1", "foo"));
         Assert.assertTrue(
                 "Incorrect in use suffix", hdfsWriter.getOpenedFilePath().contains(suffix));
     }
@@ -122,36 +119,39 @@ public class BucketWriterTest {
         final FileSystem fs = FileSystem.get(conf);
         final Path dirPath = new Path(bucketPath);
         fs.delete(dirPath, true);
-        fs.mkdirs(dirPath);
-        final SnappyCodec codec = new SnappyCodec();
-        codec.setConf(conf);
-        final MockFileSystem mockFs = new MockFileSystem(fs, 2, true);
-        final MockLengthBodyHDFSWriter writer = new MockLengthBodyHDFSWriter(mockFs, codec);
-        final AtomicInteger renameCount = new AtomicInteger();
-        final BucketWriter<Void> bucketWriter =
-                new BucketWriterBuilder(writer)
-                        .setBucketPath(bucketPath)
-                        .setFileName(fileName)
-                        .setCodeC(codec)
-                        .setRollSize(1)
-                        .setMaxRetries(1)
-                        .setWriter(writer)
-                        .setFileSystem(mockFs)
-                        .renameCount(renameCount)
-                        .build();
+        try {
+            fs.mkdirs(dirPath);
+            final String codec = "snappy";
+            final MockFileSystem mockFs = new MockFileSystem(fs, 2, true);
+            final MockParquetHDFSWriter writer = new MockParquetHDFSWriter(mockFs, codec);
+            final AtomicInteger renameCount = new AtomicInteger();
+            final BucketWriter<Void> bucketWriter =
+                    new BucketWriterBuilder(writer)
+                            .setBucketPath(bucketPath)
+                            .setFileName(fileName)
+                            .setCodeC(codec)
+                            .setRollSize(1)
+                            .setMaxRetries(1)
+                            .setWriter(writer)
+                            .setFileSystem(mockFs)
+                            .renameCount(renameCount)
+                            .build();
 
-        // At this point, we checked if isFileClosed is available in
-        // this JVM, so lets make it check again.
-        final byte[] event = "test".getBytes(StandardCharsets.UTF_8);
-        bucketWriter.append(event);
-        for (int i = 0; i < 2; i++) {
-            try {
-                bucketWriter.append(event);
-            } catch (Exception e) {
-                Assert.assertTrue(true);
+            // At this point, we checked if isFileClosed is available in
+            // this JVM, so lets make it check again.
+            final Records records = RecordsUtils.createStringRecords("t1", "test");
+            bucketWriter.append(records);
+            for (int i = 0; i < 2; i++) {
+                try {
+                    bucketWriter.append(records);
+                } catch (Exception e) {
+                    Assert.assertTrue(true);
+                }
             }
+            bucketWriter.append(records);
+        } finally {
+            fs.delete(dirPath, true);
         }
-        bucketWriter.append(event);
     }
 
     /**
@@ -172,12 +172,11 @@ public class BucketWriterTest {
         final Configuration conf = new Configuration();
         final FileSystem fs = FileSystem.get(conf);
         final Path dirPath = new Path(bucketPath);
-        final SnappyCodec codec = new SnappyCodec();
-        codec.setConf(conf);
+        final String codec = "snappy";
         fs.delete(dirPath, true);
         fs.mkdirs(dirPath);
         final MockFileSystem mockFs = new MockFileSystem(fs, numberOfRetriesRequired, true);
-        final MockLengthBodyHDFSWriter writer = new MockLengthBodyHDFSWriter(mockFs, codec);
+        final MockParquetHDFSWriter writer = new MockParquetHDFSWriter(mockFs, codec);
         final AtomicInteger renameCount = new AtomicInteger();
 
         final BucketWriter<Void> bucketWriter =
@@ -194,10 +193,9 @@ public class BucketWriterTest {
 
         // At this point, we checked if isFileClosed is available in
         // this JVM, so lets make it check again.
-        final byte[] event = "test".getBytes(StandardCharsets.UTF_8);
-        bucketWriter.append(event);
+        bucketWriter.append(RecordsUtils.createStringRecords("t1", "test"));
         // This is what triggers the close, so a 2nd append is required :/
-        bucketWriter.append(event);
+        bucketWriter.append(RecordsUtils.createStringRecords("t1", "test"));
 
         Assert.assertEquals(
                 "Expected " + numberOfRetriesRequired + " " + "but got " + renameCount.get(),
@@ -218,17 +216,17 @@ public class BucketWriterTest {
                         .setProxyUser(ugiProxy)
                         .setRollSize(rollSize)
                         .build();
-        final byte[] e = "foo".getBytes(StandardCharsets.UTF_8);
 
+        Records records = RecordsUtils.createStringRecords("t1", "foo");
         // Write one event successfully.
-        bucketWriter.append(e, 0, e.length);
+        bucketWriter.append(records);
 
         // Fail the next write.
         final IOException expectedIOException = new IOException("Test injected IOException");
-        Mockito.doThrow(expectedIOException).when(hdfsWriter).append(e, 0, e.length);
+        Mockito.doThrow(expectedIOException).when(hdfsWriter).append(records);
 
         try {
-            bucketWriter.append(e, 0, e.length);
+            bucketWriter.append(records);
             Assert.fail("append wait fail");
         } catch (IOException ioException) {
             Assert.assertEquals(expectedIOException, ioException);
@@ -245,7 +243,7 @@ public class BucketWriterTest {
         private String bucketPath = "/tmp";
         private String fileName = "file";
         private long rollSize = 0;
-        private CompressionCodec codeC = null;
+        private String codeC = "snappy";
         private HDFSWriter writer;
         private PrivilegedExecutor proxyUser = BucketWriterTest.proxy;
         private FileSystem fileSystem;
@@ -288,7 +286,7 @@ public class BucketWriterTest {
             return this;
         }
 
-        public BucketWriterBuilder setCodeC(CompressionCodec codeC) {
+        public BucketWriterBuilder setCodeC(String codeC) {
             this.codeC = codeC;
             return this;
         }
@@ -318,17 +316,11 @@ public class BucketWriterTest {
             if (writer == null) {
                 writer = new MockHDFSWriter();
             }
-
-            if (codeC == null) {
-                SnappyCodec codeC = new SnappyCodec();
-                codeC.setConf(new Configuration());
-                this.codeC = codeC;
-            }
             final HDFSWriterFactory factory =
                     new HDFSWriterFactory() {
                         @Override
                         public String fileExtension() {
-                            return codeC.getDefaultExtension();
+                            return "." + codeC + ".parquet";
                         }
 
                         @Override

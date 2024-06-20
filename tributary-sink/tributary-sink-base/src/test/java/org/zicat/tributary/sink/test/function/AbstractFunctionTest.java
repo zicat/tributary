@@ -21,6 +21,7 @@ package org.zicat.tributary.sink.test.function;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -73,7 +74,7 @@ public class AbstractFunctionTest {
     private static class MockFunction extends AbstractFunction {
 
         @Override
-        public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
+        public void process(GroupOffset groupOffset, Iterator<Records> iterator) {}
 
         @Override
         public void close() {}

@@ -24,8 +24,12 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.Random;
+
+import static org.zicat.tributary.common.BytesUtils.toBytes;
+import static org.zicat.tributary.common.records.RecordsUtils.createBytesRecords;
 
 /** ConsumerThread. */
 public class SourceThread extends Thread {
@@ -72,7 +76,11 @@ public class SourceThread extends Thread {
         for (int id = 0; id < dataSize; id++) {
             try {
                 int length = realR.nextInt(halfMax) + halfMax;
-                channel.append(partition, data, 0, length);
+                channel.append(
+                        partition,
+                        createBytesRecords(
+                                        channel.topic(), toBytes(ByteBuffer.wrap(data, 0, length)))
+                                .toByteBuffer());
                 writeLength += length;
                 long spend = System.currentTimeMillis() - start;
                 if (writeLength >= 1024 * 1024 * 1024 && spend > 0) {

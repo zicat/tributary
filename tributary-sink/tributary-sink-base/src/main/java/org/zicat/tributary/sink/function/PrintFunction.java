@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.records.Records;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 /** PrintFunction. */
@@ -58,14 +58,15 @@ public class PrintFunction extends AbstractFunction implements Trigger {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {
         int i = 0;
         while (iterator.hasNext()) {
-            LOG.info("data:{}", new String(iterator.next(), StandardCharsets.UTF_8));
-            i++;
+            final Records records = iterator.next();
+            LOG.info(records.toString());
+            i += records.count();
         }
-        commit(groupOffset, null);
         sinkCountChild.inc(i);
+        commit(groupOffset, null);
     }
 
     @Override

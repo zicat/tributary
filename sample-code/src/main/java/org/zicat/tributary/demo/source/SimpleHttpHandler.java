@@ -24,9 +24,16 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.records.DefaultRecord;
+import org.zicat.tributary.common.records.DefaultRecords;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+
+import static org.zicat.tributary.source.utils.SourceHeaders.sourceHeaders;
 
 /** SimpleHttpHandler. */
 public class SimpleHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -46,7 +53,10 @@ public class SimpleHttpHandler extends SimpleChannelInboundHandler<FullHttpReque
         final int readerIndex = byteBuf.readerIndex();
         byteBuf.getBytes(readerIndex, bytes);
         byteBuf.discardReadBytes();
-        channel.append(random.nextInt(channel.partition()), bytes);
+
+        final DefaultRecords records = new DefaultRecords(channel.topic(), 0, headers(msg));
+        records.addRecord(new DefaultRecord(null, null, bytes));
+        channel.append(random.nextInt(channel.partition()), records.toByteBuffer());
 
         // response
         final String resBody = "response, length " + bytes.length;
@@ -60,6 +70,15 @@ public class SimpleHttpHandler extends SimpleChannelInboundHandler<FullHttpReque
                 .add(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
                 .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         ctx.write(response);
+    }
+
+    private static Map<String, byte[]> headers(FullHttpRequest msg) {
+        Map<String, byte[]> result = new HashMap<>();
+        for (Map.Entry<String, String> entry : msg.headers()) {
+            result.put(entry.getKey(), entry.getValue().getBytes(StandardCharsets.UTF_8));
+        }
+        result.putAll(sourceHeaders((int) (System.currentTimeMillis() / 1000), null));
+        return result;
     }
 
     @Override

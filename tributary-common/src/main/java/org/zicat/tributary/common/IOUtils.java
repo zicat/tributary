@@ -25,8 +25,8 @@ import org.xerial.snappy.Snappy;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.GatheringByteChannel;
+import java.nio.ByteOrder;
+import java.nio.channels.*;
 import java.nio.file.Files;
 
 /** IOUtils. */
@@ -364,5 +364,52 @@ public class IOUtils {
         } else {
             return makeDir(dir.getParentFile()) && dir.mkdir();
         }
+    }
+
+    /**
+     * write data to channel.
+     *
+     * @param socketChannel socketChannel
+     * @param data data
+     * @throws IOException IOException
+     */
+    public static int writeData(SocketChannel socketChannel, byte[] data) throws IOException {
+        final ByteBuffer len =
+                ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(data.length);
+        len.flip();
+        writeToChannel(socketChannel, len);
+        writeToChannel(socketChannel, ByteBuffer.wrap(data));
+        final ByteBuffer response = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN);
+        readFromChannel(socketChannel, response);
+        return response.getInt();
+    }
+
+    /**
+     * write to channel.
+     *
+     * @param socketChannel socketChannel
+     * @param byteBuffer byteBuffer
+     * @throws IOException IOException
+     */
+    public static void writeToChannel(WritableByteChannel socketChannel, ByteBuffer byteBuffer)
+            throws IOException {
+        while (byteBuffer.hasRemaining()) {
+            socketChannel.write(byteBuffer);
+        }
+    }
+
+    /**
+     * read from channel.
+     *
+     * @param fileChannel fileChannel
+     * @param byteBuffer byteBuffer
+     * @throws IOException IOException
+     */
+    public static void readFromChannel(ReadableByteChannel fileChannel, ByteBuffer byteBuffer)
+            throws IOException {
+        while (byteBuffer.hasRemaining()) {
+            fileChannel.read(byteBuffer);
+        }
+        byteBuffer.flip();
     }
 }

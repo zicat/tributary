@@ -22,10 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.source.Source;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
@@ -44,12 +45,12 @@ public class EmitSource implements Source {
         this.task =
                 () -> {
                     while (!closed.get()) {
-                        final byte[] data =
-                                new SimpleDateFormat()
-                                        .format(new Date())
-                                        .getBytes(StandardCharsets.UTF_8);
+                        final Records records =
+                                RecordsUtils.createStringRecords(
+                                        channel.topic(), new SimpleDateFormat().format(new Date()));
                         try {
-                            channel.append(random.nextInt(channel.partition()), data);
+                            channel.append(
+                                    random.nextInt(channel.partition()), records.toByteBuffer());
                         } catch (IOException e) {
                             LOG.warn("append fail", e);
                         } finally {

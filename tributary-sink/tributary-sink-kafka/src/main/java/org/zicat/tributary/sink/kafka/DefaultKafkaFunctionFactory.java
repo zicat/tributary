@@ -18,11 +18,21 @@
 
 package org.zicat.tributary.sink.kafka;
 
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
 /** DefaultKafkaFunctionFactory. */
 public class DefaultKafkaFunctionFactory implements FunctionFactory {
+
+    public static final ConfigOption<String> OPTION_TOPIC =
+            ConfigOptions.key("topic")
+                    .stringType()
+                    .description("the kafka topic to send data")
+                    .defaultValue(null);
+
+    public static final String IDENTITY = "kafka";
 
     @Override
     public Function create() {
@@ -31,6 +41,6 @@ public class DefaultKafkaFunctionFactory implements FunctionFactory {
 
     @Override
     public String identity() {
-        return "kafka";
+        return IDENTITY;
     }
 }

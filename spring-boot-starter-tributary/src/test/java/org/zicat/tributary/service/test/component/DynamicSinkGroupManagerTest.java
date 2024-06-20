@@ -30,6 +30,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.service.component.DynamicChannel;
 import org.zicat.tributary.service.component.DynamicSinkGroupManager;
 import org.zicat.tributary.service.configuration.ChannelConfiguration;
@@ -86,26 +87,29 @@ public class DynamicSinkGroupManagerTest {
         Assert.assertEquals(2, c2GroupManagers.size());
 
         final Channel channel1 = dynamicChannel.getChannel("c1");
-        channel1.append(0, "zhangjun".getBytes());
+        channel1.append(0, RecordsUtils.createStringRecords("c1", "zhangjun").toByteBuffer());
         channel1.flush();
         final Channel channel2 = dynamicChannel.getChannel("c2");
-        channel2.append(0, "zicat".getBytes());
+        channel2.append(0, RecordsUtils.createStringRecords("c2", "zicat").toByteBuffer());
         channel2.flush();
 
         Thread.sleep(100);
         final SinkGroupManager c1GroupManager = c1GroupManagers.get(0);
         CollectionFunction function =
                 (CollectionFunction) c1GroupManager.getFunctions().get(0).get(0);
-        Assert.assertArrayEquals("zhangjun".getBytes(), function.history.get(0));
+        Assert.assertArrayEquals(
+                "zhangjun".getBytes(), function.history.get(0).iterator().next().value());
         Assert.assertEquals("c1", c1GroupManagers.get(0).topic());
 
         for (SinkGroupManager c2GroupManager : c2GroupManagers) {
             CollectionFunction function2 =
                     (CollectionFunction) c2GroupManager.getFunctions().get(0).get(0);
             if (c2GroupManager.topic().equals("c1")) {
-                Assert.assertArrayEquals("zhangjun".getBytes(), function2.history.get(0));
+                Assert.assertArrayEquals(
+                        "zhangjun".getBytes(), function2.history.get(0).iterator().next().value());
             } else {
-                Assert.assertArrayEquals("zicat".getBytes(), function2.history.get(0));
+                Assert.assertArrayEquals(
+                        "zicat".getBytes(), function2.history.get(0).iterator().next().value());
                 Assert.assertEquals("c2", c2GroupManager.topic());
             }
         }

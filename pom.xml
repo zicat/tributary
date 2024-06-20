@@ -9,12 +9,12 @@
     <packaging>pom</packaging>
     <version>1.2-SNAPSHOT</version>
     <modules>
-        <module>sample-code</module>
-        <module>spring-boot-starter-tributary</module>
-        <module>tributary-channel</module>
         <module>tributary-common</module>
+        <module>tributary-channel</module>
         <module>tributary-sink</module>
         <module>tributary-source</module>
+        <module>spring-boot-starter-tributary</module>
+        <module>sample-code</module>
     </modules>
     <properties>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>
@@ -67,7 +67,7 @@
                 </executions>
 
                 <configuration>
-                    <excludes>org/zicat/tributary/source/netty/kafka/inner/*</excludes>
+                    <excludes>org/zicat/tributary/source/netty/handler/kafka/*</excludes>
                     <suppressionsLocation>/doc/suppressions.xml</suppressionsLocation>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     <configLocation>/doc/checkstyle.xml</configLocation>

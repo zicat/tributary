@@ -19,15 +19,17 @@
 package org.zicat.tributary.demo;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.env.AbstractEnvironment;
 
 /** KafkaSourceDemoApplication. */
+@SpringBootApplication
 public class KafkaSourcePrintSinkApplication {
 
     private static final String ACTIVE_PROFILE = "kafka-source-print-sink";
 
     public static void main(String[] args) {
         System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
-        SpringApplication.run(SimpleDemoApplication.class, args);
+        SpringApplication.run(LineSourcePrintSinkApplication.class, args);
     }
 }

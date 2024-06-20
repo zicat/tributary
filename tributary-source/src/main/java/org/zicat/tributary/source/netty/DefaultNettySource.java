@@ -25,7 +25,8 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.netty.length.LengthPipelineInitialization;
+import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
+import org.zicat.tributary.source.netty.pipeline.LengthPipelineInitialization;
 
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;

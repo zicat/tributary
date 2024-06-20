@@ -23,11 +23,13 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.Strings;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.*;
 
 import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
@@ -37,7 +39,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHDFSFunction.class);
 
-    public static final String DIRECTORY_DELIMITER = System.getProperty("file.separator");
+    public static final String DIRECTORY_DELIMITER = FileSystems.getDefault().getSeparator();
 
     public static final ConfigOption<String> OPTION_SINK_PATH =
             ConfigOptions.key("sink.path")
@@ -72,8 +74,8 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     public static final ConfigOption<String> OPTION_OUTPUT_COMPRESSION_CODEC =
             ConfigOptions.key("output.compression.codec")
                     .stringType()
-                    .description("set output compression codec, default null")
-                    .defaultValue(null);
+                    .description("set output compression codec, default snappy")
+                    .defaultValue("snappy");
 
     protected PrivilegedExecutor privilegedExecutor;
     protected HDFSWriterFactory hdfsWriterFactory;
@@ -87,7 +89,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
     public void open(Context context) throws Exception {
         super.open(context);
         this.hdfsWriterFactory =
-                new LengthBodyHDFSWriterFactory(context.get(OPTION_OUTPUT_COMPRESSION_CODEC));
+                new ParquetHDFSWriterFactory(context.get(OPTION_OUTPUT_COMPRESSION_CODEC));
         final String basePath = context.get(OPTION_SINK_PATH).trim();
         this.basePath = Strings.removeLastIfMatch(basePath, DIRECTORY_DELIMITER);
         this.privilegedExecutor =
@@ -101,20 +103,18 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
      * append data.
      *
      * @param bucket bucket
-     * @param bs bs
-     * @param offset offset
-     * @param length length
+     * @param records records
      * @throws IOException IOException
      */
-    public void appendData(String bucket, byte[] bs, int offset, int length) throws IOException {
-
+    public void appendData(String bucket, Records records) throws IOException {
         BucketWriter<P> bucketWriter = sfWriters.get(bucket);
         if (bucketWriter == null) {
             final String bucketPath = basePath + DIRECTORY_DELIMITER + bucket;
             bucketWriter = initializeBucketWriter(bucketPath, prefixFileName);
             sfWriters.put(bucket, bucketWriter);
+            LOG.info("create hdfs file {}", bucket);
         }
-        bucketWriter.append(bs, offset, length);
+        bucketWriter.append(records);
     }
 
     /**

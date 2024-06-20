@@ -25,11 +25,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.security.PrivilegedExceptionAction;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.zicat.tributary.sink.utils.Exceptions.castAsIOException;
@@ -66,7 +68,9 @@ public class BucketWriter<P> extends BucketMeta<P> {
         this.fileExtensionCounter = new AtomicLong(0L);
     }
 
-    /** @throws IOException IOException */
+    /**
+     * @throws IOException IOException
+     */
     public void open() throws IOException {
 
         final Configuration config = new Configuration();
@@ -202,24 +206,12 @@ public class BucketWriter<P> extends BucketMeta<P> {
     }
 
     /**
-     * append bs.
-     *
-     * @param bs bs
-     * @throws IOException IOException
-     */
-    public void append(byte[] bs) throws IOException {
-        append(bs, 0, bs.length);
-    }
-
-    /**
      * append data.
      *
-     * @param bs bs
-     * @param offset offset
-     * @param length length
+     * @param records records
      * @throws IOException IOException
      */
-    public void append(byte[] bs, int offset, int length) throws IOException {
+    public void append(Records records) throws IOException {
 
         if (!open) {
             open();
@@ -229,14 +221,15 @@ public class BucketWriter<P> extends BucketMeta<P> {
             open();
         }
 
+        final AtomicInteger total = new AtomicInteger();
         final Throwable e =
                 runWithRetry(
-                        () -> callWithPrivileged(() -> writer.append(bs, offset, length)),
+                        () -> callWithPrivileged(() -> total.set(writer.append(records))),
                         sleepOnFail());
         if (e != null) {
             throw castAsIOException(e);
         }
-        processSize += length;
+        processSize += total.get();
     }
 
     /** CompressionOutputStream.finish FSDataOutputStream.flush hdfs hflush or hsync. */

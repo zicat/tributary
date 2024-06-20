@@ -29,7 +29,6 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -68,15 +67,6 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
         properties.put(KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         properties.put(VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         return properties;
-    }
-
-    /**
-     * set kafka data.
-     *
-     * @param producerRecord producerRecord
-     */
-    protected void sendKafka(ProducerRecord<byte[], byte[]> producerRecord, Callback callback) {
-        sendKafka(Collections.singletonList(producerRecord), callback);
     }
 
     /**

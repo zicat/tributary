@@ -21,6 +21,7 @@ package org.zicat.tributary.sink.function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.common.records.Records;
 
 import java.util.Iterator;
 
@@ -30,7 +31,7 @@ public class DummyFunction extends AbstractFunction {
     private static final Logger LOG = LoggerFactory.getLogger(DummyFunction.class);
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {
         commit(groupOffset, null);
     }
 

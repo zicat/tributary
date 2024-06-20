@@ -19,43 +19,45 @@
 package org.zicat.tributary.sink.kafka;
 
 import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.zicat.tributary.channel.GroupOffset;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.common.SpiFactory;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.Context;
 
-import java.util.Iterator;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
+import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
+import static org.zicat.tributary.sink.kafka.DefaultKafkaFunctionFactory.OPTION_TOPIC;
 
 /** DefaultKafkaFunction. */
 public class DefaultKafkaFunction extends AbstractKafkaFunction {
 
-    public static final ConfigOption<String> OPTION_BYTE_2_RECORD_IDENTITY =
-            ConfigOptions.key("decoder.identity")
-                    .stringType()
-                    .description("the byte2Record identity")
-                    .defaultValue("default");
+    public static final String HEAD_KEY_ORIGIN_TOPIC = "_origin_topic";
+    public static final String TOPIC_TEMPLATE = "${topic}";
+
     protected transient DefaultCallback callback;
-    protected transient Byte2Record byte2Record;
+    protected transient String defaultTopic;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        this.byte2Record = createByte2Record(context);
+        this.defaultTopic = context.get(OPTION_TOPIC);
         this.callback = new DefaultCallback();
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception {
+    public void process(GroupOffset groupOffset, Iterator<Records> iterator) throws Exception {
         callback.checkState();
         int totalCount = 0;
         while (iterator.hasNext()) {
-            final byte[] value = iterator.next();
-            if (sendKafka(value)) {
-                totalCount++;
-            }
+            final Records records = iterator.next();
+            totalCount += sendKafka(records);
         }
         flush(groupOffset);
         incSinkKafkaCounter(totalCount);
@@ -64,18 +66,53 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
     /**
      * send kafka.
      *
-     * @param value value
+     * @param records records
      * @return boolean send.
      */
-    protected boolean sendKafka(byte[] value) {
-        sendKafka(byte2Record.convert(value), callback);
-        return true;
+    protected int sendKafka(Records records) throws Exception {
+
+        final String originTopic = records.topic();
+        final String targetTopic =
+                defaultTopic == null
+                        ? originTopic
+                        : defaultTopic.replace(TOPIC_TEMPLATE, originTopic);
+
+        final Map<String, byte[]> extraHeaders = new HashMap<>(defaultSinkExtraHeaders());
+        extraHeaders.put(HEAD_KEY_ORIGIN_TOPIC, originTopic.getBytes(StandardCharsets.UTF_8));
+
+        final List<ProducerRecord<byte[], byte[]>> producerRecords =
+                new ArrayList<>(records.count());
+        foreachRecord(
+                records,
+                (topic, partition, key, value, headers) ->
+                        producerRecords.add(createProducerRecord(targetTopic, key, value, headers)),
+                extraHeaders);
+        sendKafka(producerRecords, callback);
+        return producerRecords.size();
+    }
+
+    /**
+     * create producer record.
+     *
+     * @param targetTopic targetTopic
+     * @param key key
+     * @param value value
+     * @param headers headers
+     * @return ProducerRecord
+     */
+    private ProducerRecord<byte[], byte[]> createProducerRecord(
+            String targetTopic, byte[] key, byte[] value, Map<String, byte[]> headers) {
+        final Collection<Header> kafkaHeaders = new ArrayList<>(headers.size());
+        for (Entry<String, byte[]> entry : headers.entrySet()) {
+            kafkaHeaders.add(new RecordHeader(entry.getKey(), entry.getValue()));
+        }
+        return new ProducerRecord<>(targetTopic, null, null, key, value, kafkaHeaders);
     }
 
     /** DefaultCallback. */
     public static class DefaultCallback implements Callback {
 
-        private Exception lastException;
+        private volatile Exception lastException;
 
         @Override
         public void onCompletion(RecordMetadata metadata, Exception exception) {
@@ -96,17 +133,5 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                 throw tmp;
             }
         }
-    }
-
-    /**
-     * create byte 2 record.
-     *
-     * @param config config
-     * @return byte2Record
-     */
-    private static Byte2Record createByte2Record(ReadableConfig config) {
-        return SpiFactory.findFactory(
-                        config.get(OPTION_BYTE_2_RECORD_IDENTITY), Byte2RecordFactory.class)
-                .create(config);
     }
 }

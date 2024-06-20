@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
@@ -55,7 +56,7 @@ public interface Function extends Closeable {
      * @param groupOffset groupOffset
      * @param iterator iterator
      */
-    void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception;
+    void process(GroupOffset groupOffset, Iterator<Records> iterator) throws Exception;
 
     /**
      * return the committable partition offset.

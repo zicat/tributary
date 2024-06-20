@@ -46,7 +46,7 @@ public class DynamicSinkGroupManager implements Closeable {
             ConfigOptions.key("partition.handler.id")
                     .stringType()
                     .description(
-                            "the id of partition handler, support [direct,multi_thread], default direct")
+                            "the id of partition handler, support [direct,multi_thread,default], default default")
                     .defaultValue(DirectPartitionHandlerFactory.IDENTITY);
 
     public static final ConfigOption<String> OPTION_FUNCTION_ID =

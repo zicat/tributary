@@ -21,6 +21,7 @@ package org.zicat.tributary.sink.function;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.records.Records;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,8 +36,8 @@ public class CollectionFunction extends AbstractFunction {
                     .description("whether clear received data before close")
                     .defaultValue(true);
 
-    public List<byte[]> history = new ArrayList<>();
-    private boolean clearBeforeClose;
+    public final List<Records> history = new ArrayList<>();
+    private transient boolean clearBeforeClose;
 
     @Override
     public void open(Context context) throws Exception {
@@ -45,7 +46,7 @@ public class CollectionFunction extends AbstractFunction {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
+    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {
         while (iterator.hasNext()) {
             history.add(iterator.next());
         }

@@ -83,7 +83,7 @@ public class MultiThreadPartitionHandlerTest {
 
         threads = 10;
         builder.addCustomProperty(OPTION_THREADS.key(), threads);
-        handler =
+        try (MultiThreadPartitionHandler handler2 =
                 new MultiThreadPartitionHandler(
                         "g1",
                         new DefaultChannel<>(
@@ -112,10 +112,10 @@ public class MultiThreadPartitionHandlerTest {
                                 },
                                 0),
                         0,
-                        builder.build());
-        handler.open();
-        Assert.assertEquals(threads, handler.handlers().length);
-        IOUtils.closeQuietly(handler);
+                        builder.build())) {
+            handler2.open();
+            Assert.assertEquals(threads, handler2.handlers().length);
+        }
     }
 
     @Test

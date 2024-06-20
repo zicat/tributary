@@ -18,15 +18,13 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
-import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.OPTION_SINK_PATH;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.test.FileUtils;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -37,11 +35,15 @@ import org.zicat.tributary.sink.hdfs.HDFSWriterFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.hdfs.AbstractHDFSFunction.OPTION_SINK_PATH;
 
 /** AbstractHDFSFunctionTest. */
 public class AbstractHDFSFunctionTest {
@@ -62,13 +64,12 @@ public class AbstractHDFSFunctionTest {
         final AbstractHDFSFunction<AtomicInteger> function =
                 new AbstractHDFSFunction<AtomicInteger>() {
                     @Override
-                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
+                    public void process(GroupOffset groupOffset, Iterator<Records> iterator)
                             throws IOException {
                         while (iterator.hasNext()) {
-                            byte[] bs = iterator.next();
-                            appendData(bucket, bs, 0, bs.length);
-                            commit(groupOffset, null);
+                            appendData(bucket, iterator.next());
                         }
+                        commit(groupOffset, null);
                     }
 
                     @Override
@@ -89,10 +90,9 @@ public class AbstractHDFSFunctionTest {
                                 maxRetry,
                                 counter) {
                             @Override
-                            public void append(byte[] bs, int offset, int length)
-                                    throws IOException {
-                                super.append(bs, offset, length);
-                                payload.incrementAndGet();
+                            public void append(Records records) throws IOException {
+                                super.append(records);
+                                payload.addAndGet(records.count());
                             }
                         };
                     }
@@ -107,14 +107,14 @@ public class AbstractHDFSFunctionTest {
         contextBuilder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
         final Context context = contextBuilder.build();
         function.open(context);
-        List<byte[]> testData =
-                Arrays.asList(
-                        "1".getBytes(StandardCharsets.UTF_8),
-                        "2".getBytes(StandardCharsets.UTF_8),
-                        "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
+        List<String> testData = Arrays.asList("1", "2", "3");
+        function.process(
+                new GroupOffset(1, 1, "g1"),
+                Collections.singletonList(createStringRecords("t1", testData)).iterator());
         Thread.sleep(1100);
-        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
+        function.process(
+                new GroupOffset(1, 1, "g1"),
+                Collections.singletonList(createStringRecords("t1", testData)).iterator());
         final List<AtomicInteger> payloads = function.closeAllBuckets();
         function.close();
         Assert.assertEquals(2 * testData.size(), counter.get());
@@ -141,14 +141,12 @@ public class AbstractHDFSFunctionTest {
         final AbstractHDFSFunction<Void> function =
                 new AbstractHDFSFunction<Void>() {
                     @Override
-                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
+                    public void process(GroupOffset groupOffset, Iterator<Records> iterator)
                             throws Exception {
-
                         while (iterator.hasNext()) {
-                            byte[] bs = iterator.next();
-                            appendData(bucket, bs, 0, bs.length);
-                            commit(groupOffset, null);
+                            appendData(bucket, iterator.next());
                         }
+                        commit(groupOffset, null);
                         closeBucket(bucket);
                     }
 
@@ -178,13 +176,13 @@ public class AbstractHDFSFunctionTest {
         contextBuilder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
         final Context context = contextBuilder.build();
         function.open(context);
-        List<byte[]> testData =
-                Arrays.asList(
-                        "1".getBytes(StandardCharsets.UTF_8),
-                        "2".getBytes(StandardCharsets.UTF_8),
-                        "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
-        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
+        final List<String> testData = Arrays.asList("1", "2", "3");
+        function.process(
+                new GroupOffset(1, 1, "g1"),
+                Collections.singletonList(createStringRecords("t1", testData)).iterator());
+        function.process(
+                new GroupOffset(1, 1, "g1"),
+                Collections.singletonList(createStringRecords("t1", testData)).iterator());
         function.close();
 
         Assert.assertEquals(6, mockWriter.getEventsWritten());
@@ -210,13 +208,12 @@ public class AbstractHDFSFunctionTest {
         final AbstractHDFSFunction<Void> function =
                 new AbstractHDFSFunction<Void>() {
                     @Override
-                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
+                    public void process(GroupOffset groupOffset, Iterator<Records> iterator)
                             throws IOException {
                         while (iterator.hasNext()) {
-                            byte[] bs = iterator.next();
-                            appendData(bucket, bs, 0, bs.length);
-                            commit(groupOffset, null);
+                            appendData(bucket, iterator.next());
                         }
+                        commit(groupOffset, null);
                     }
 
                     @Override
@@ -247,14 +244,13 @@ public class AbstractHDFSFunctionTest {
         contextBuilder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
         final Context context = contextBuilder.build();
         function.open(context);
-        List<byte[]> testData =
-                Arrays.asList(
-                        "1".getBytes(StandardCharsets.UTF_8),
-                        "2".getBytes(StandardCharsets.UTF_8),
-                        "3".getBytes(StandardCharsets.UTF_8));
-        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
-
-        function.process(new GroupOffset(1, 1, "g1"), testData.listIterator());
+        final List<String> testData = Arrays.asList("1", "2", "3");
+        function.process(
+                new GroupOffset(1, 1, "g1"),
+                Collections.singletonList(createStringRecords("t1", testData)).iterator());
+        function.process(
+                new GroupOffset(1, 1, "g1"),
+                Collections.singletonList(createStringRecords("t1", testData)).iterator());
         function.close();
         Assert.assertEquals(6, mockWriter.getEventsWritten());
     }

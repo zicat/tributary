@@ -37,12 +37,15 @@ import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
 import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.function.CollectionFunction;
-import org.zicat.tributary.source.netty.client.LengthDecoderClient;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.Map;
+
+import static org.zicat.tributary.common.IOUtils.writeData;
 
 /** DynamicSourceTest. */
 @RunWith(SpringRunner.class)
@@ -84,13 +87,13 @@ public class DynamicSourceTest {
     public void test() throws IOException {
 
         final byte[] data1 = "lyn".getBytes();
-        try (LengthDecoderClient client = new LengthDecoderClient(57132)) {
-            Assert.assertEquals(data1.length, client.append(data1));
-        }
 
+        try (SocketChannel channel = SocketChannel.open(new InetSocketAddress(57132))) {
+            writeData(channel, data1);
+        }
         final byte[] data2 = "zicat".getBytes();
-        try (LengthDecoderClient client = new LengthDecoderClient("localhost", 57133)) {
-            Assert.assertEquals(data2.length, client.append(data2));
+        try (SocketChannel channel = SocketChannel.open(new InetSocketAddress(57133))) {
+            writeData(channel, data2);
         }
         dynamicChannel.flushAll();
         final Map<String, List<SinkGroupManager>> sinkGroupManagerMap =
@@ -102,9 +105,13 @@ public class DynamicSourceTest {
                     (CollectionFunction) sinkGroupManager.getFunctions().get(0).get(0);
             Assert.assertEquals(1, collectionFunction.history.size());
             if (sinkGroupManager.topic().equals("c1")) {
-                Assert.assertArrayEquals("lyn".getBytes(), collectionFunction.history.get(0));
+                Assert.assertArrayEquals(
+                        "lyn".getBytes(),
+                        collectionFunction.history.get(0).iterator().next().value());
             } else {
-                Assert.assertArrayEquals("zicat".getBytes(), collectionFunction.history.get(0));
+                Assert.assertArrayEquals(
+                        "zicat".getBytes(),
+                        collectionFunction.history.get(0).iterator().next().value());
             }
         }
     }

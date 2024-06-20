@@ -20,6 +20,7 @@ package org.zicat.tributary.sink.hdfs;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.zicat.tributary.common.records.Records;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -39,22 +40,10 @@ public interface HDFSWriter extends Closeable {
     /**
      * append bs to file.
      *
-     * @param bs bs
-     * @param offset offset
-     * @param length length
+     * @param records records
      * @throws IOException IOException
      */
-    void append(byte[] bs, int offset, int length) throws IOException;
-
-    /**
-     * append bs.
-     *
-     * @param bs bs
-     * @throws IOException IOException
-     */
-    default void append(byte[] bs) throws IOException {
-        append(bs, 0, bs.length);
-    }
+    int append(Records records) throws Exception;
 
     /**
      * sync stream.

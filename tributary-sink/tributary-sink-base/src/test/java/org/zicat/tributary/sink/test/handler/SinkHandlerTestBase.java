@@ -24,7 +24,6 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.DefaultChannel;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
-import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -32,11 +31,12 @@ import org.zicat.tributary.sink.test.function.AssertFunction;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
 
 /** SinkHandlerTestBase. */
 public class SinkHandlerTestBase {
@@ -54,7 +54,7 @@ public class SinkHandlerTestBase {
 
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;
-        final Channel channel =
+        try (Channel channel =
                 new DefaultChannel<>(
                         new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
                             @Override
@@ -78,24 +78,25 @@ public class SinkHandlerTestBase {
                                         CompressionType.SNAPPY);
                             }
                         },
-                        0);
-        final SinkGroupConfigBuilder builder =
-                SinkGroupConfigBuilder.newBuilder()
-                        .handlerIdentity(handlerIdentity)
-                        .functionIdentity(AssertFunctionFactory.IDENTITY);
-        builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData);
-        final SinkGroupConfig sinkGroupConfig = builder.build();
-        final SinkGroupManager sinkManager =
-                new SinkGroupManager(groupId, channel, sinkGroupConfig);
-        sinkManager.createPartitionHandlesAndStart();
-
-        for (int i = 0; i < copyData.size(); i++) {
-            channel.append(i % partitionCount, copyData.get(i).getBytes(StandardCharsets.UTF_8));
+                        0)) {
+            final SinkGroupConfigBuilder builder =
+                    SinkGroupConfigBuilder.newBuilder()
+                            .handlerIdentity(handlerIdentity)
+                            .functionIdentity(AssertFunctionFactory.IDENTITY);
+            builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData);
+            final SinkGroupConfig sinkGroupConfig = builder.build();
+            try (SinkGroupManager sinkManager =
+                    new SinkGroupManager(groupId, channel, sinkGroupConfig)) {
+                sinkManager.createPartitionHandlesAndStart();
+                for (int i = 0; i < copyData.size(); i++) {
+                    channel.append(
+                            i % partitionCount,
+                            createStringRecords("t1", copyData.get(i)).toByteBuffer());
+                }
+                channel.flush();
+            }
         }
-        channel.flush();
 
-        IOUtils.closeQuietly(sinkManager);
-        IOUtils.closeQuietly(channel);
         Assert.assertEquals(0, testData.size());
     }
 }

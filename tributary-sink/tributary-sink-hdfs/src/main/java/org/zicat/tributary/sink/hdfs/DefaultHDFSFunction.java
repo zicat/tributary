@@ -20,10 +20,10 @@ package org.zicat.tributary.sink.hdfs;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
-
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.SystemClock;
@@ -110,19 +110,16 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception {
+    public void process(GroupOffset groupOffset, Iterator<Records> iterator) throws Exception {
 
         refresh(false);
         int totalCount = 0;
         while (iterator.hasNext()) {
-            final byte[] record = iterator.next();
-            final String dataBucket = getBucket(record);
-            final String bucket =
-                    dataBucket == null || dataBucket.isEmpty()
-                            ? timeBucket
-                            : timeBucket + DIRECTORY_DELIMITER + dataBucket;
-            appendData(bucket, record, 0, record.length);
-            totalCount++;
+            final Records records = iterator.next();
+            final String dataBucket = records.topic();
+            final String bucket = timeBucket + DIRECTORY_DELIMITER + dataBucket;
+            appendData(bucket, records);
+            totalCount += records.count();
         }
         lastGroupOffset = groupOffset;
         updateMetrics(totalCount);
@@ -136,16 +133,6 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
     private void updateMetrics(int count) {
         sinkCounterChild.inc(count);
         openFilesGaugeChild.set(sfWriters.size());
-    }
-
-    /**
-     * get bucket by item.
-     *
-     * @param record record
-     * @return string
-     */
-    protected String getBucket(byte[] record) {
-        return null;
     }
 
     @Override

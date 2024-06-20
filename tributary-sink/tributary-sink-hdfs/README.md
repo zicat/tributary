@@ -18,77 +18,56 @@ sink.group_1.bucket.date.timezone=UTC
 sink.group_1.max.retries=3
 sink.group_1.keytab=
 sink.group_1.principle=
-sink.group_1.output.compression.codec=
+sink.group_1.output.compression.codec=snappy
 sink.group_1.idle.trigger.millis=30000
 ```
 
-[Let's start the tributary service](../../doc/user_guide.md) using the above configuration and construct some data.
+[Let's start the tributary service](../../doc/user_guide.md) using the above configuration and
+construct some data.
 
-Try to use the telnet to send some records, please attend to the port if source.s1.netty.port changed.
-![image](../../doc/picture/sink_hdfs_telnet.png)
+Try to use the telnet to send some records, please attend to the port if source.s1.netty.port
+changed.
 
+```shell
+$ telnet localhost 8200
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+213123
+dsafasdf
+sadfasfasdfasdf
+```
 
-Due to the configuration setting of sink.group_1.bucket.date.format to create a new bucket every minute, a data file will be generated in the subdirectory where sink.group_1.sink.path is located after a one-minute wait.
+Due to the configuration setting of sink.group_1.bucket.date.format to create a new bucket every
+minute, a data file will be generated in the subdirectory where sink.group_1.sink.path is located
+after a one-minute wait.
 
-At the same time, due to the configuration of sink.group_1.idle.trigger.millis as 30 seconds, if the input data channel is idle for 30 seconds, a data file will also be generated in the subdirectory where sink.group_1.sink.path is located.
+At the same time, due to the configuration of sink.group_1.idle.trigger.millis as 30 seconds, if the
+input data channel is idle for 30 seconds, a data file will also be generated in the subdirectory
+where sink.group_1.sink.path is located.
 
-![image](../../doc/picture/sink_hdfs_ouput_file.png)
+```shell
+$ ll /tmp/test/cache/20240624_05_57/s1/
+1.7K  6 24 13:58 7420ae3d_8f57_4105_9875_3ca0a495b003_c1_group_1_0.1.snappy.parquet
+```
 
-The above demo uses the local HDFS file system. How can I switch to another file system? Simply add the related HDFS configuration files such as hdfs-site.xml and core-site.xml to TRIBUTARY_CONF.
+The above demo uses the local HDFS file system. How can I switch to another file system? Simply add
+the related HDFS configuration files such as hdfs-site.xml and core-site.xml to CLASSPATH.
 
 ## Questions
 
-1. How to read those data files?
-  
-   [Read Demo](../../sample-code/src/main/java/org/zicat/tributary/demo/sink/HDFSSinkFileReader.java)
-   
-2. How to set compression and read those data file?
-    
-    - config sink.group_1.output.compression.codec, e.g. org.apache.hadoop.io.compress.SnappyCodec
-    - [Read Demo](../../sample-code/src/main/java/org/zicat/tributary/demo/sink/HDFSSinkSnappyFileReader.java)    
-   
-3. How to change data format in HDFS sink
+1. How to read those parquet files?
 
-   The HDFS sink controls the file format for writing to HDFS through the [HDFSWriterFactory](src/main/java/org/zicat/tributary/sink/hdfs/HDFSWriterFactory.java).
-   
-   Therefore, the first step is to inherit from [HDFSWriterFactory](src/main/java/org/zicat/tributary/sink/hdfs/HDFSWriterFactory.java) to implement customized requirements.
-   
-   The second step is to inherit from [DefaultHDFSFunction](src/main/java/org/zicat/tributary/sink/hdfs/DefaultHDFSFunction.java) to override like below.
-   
-   ```java
-   
-   @Override
-   protected BucketWriter<P> initializeBucketWriter(String bucketPath, String realName) {
-           return new BucketWriter<>(
-                   bucketPath,
-                   realName,
-                   //create your HDFSWriterFactory 
-                   yourHDFSWriterFactory,
-                   privilegedExecutor,
-                   rollSize,
-                   maxRetry,
-                   null);
-   }
+   The parquet schema is defined
+   in [ParquetHDFSWriter.SCHEMA](src/main/java/org/zicat/tributary/sink/hdfs/ParquetHDFSWriter.java).
+
+   [Read Demo](../../sample-code/src/main/java/org/zicat/tributary/demo/sink/HDFSSinkParquetReader.java)
+
+   ```text
+   topic:s1, partition:0, headers:[_rec_ts:1719208673, _sent_ts:1719208675], key:, value:213123
+   topic:s1, partition:0, headers:[_rec_ts:1719208674, _sent_ts:1719208675], key:, value:dsafasdf
+   topic:s1, partition:0, headers:[_rec_ts:1719208675, _sent_ts:1719208675], key:, value:sadfasfasdfasdf
    ```
-   
-   The third step is to inherit from [DefaultHDFSFunctionFactory](src/main/java/org/zicat/tributary/sink/hdfs/DefaultHDFSFunctionFactory.java) to override like below. 
-   
-   ```java
-    @Override
-    public Function create() {
-         // create Your HDFS Function
-        return new YourHDFSFunction();
-    }
-
-    @Override
-    public String identity() {
-        //set your hdfs function id
-        return "your_hdfs";
-    }
-   ```
-
-    The forth step is add the file named org.zicat.tributary.sink.function.FunctionFactory in resources/META-INF.services, and add the full name of Your HDFSFunctionFactory in it. 
-    Modify sink.group_1.function.id to your hdfs function id.
    
   
    

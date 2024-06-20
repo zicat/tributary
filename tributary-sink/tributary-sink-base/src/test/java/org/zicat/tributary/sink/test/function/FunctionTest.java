@@ -21,11 +21,13 @@ package org.zicat.tributary.sink.test.function;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.*;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
+
+import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
 
 /** FunctionTest. */
 public class FunctionTest {
@@ -39,7 +41,7 @@ public class FunctionTest {
                     public void close() {}
 
                     @Override
-                    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
+                    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {}
                 }) {
             final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
             final ContextBuilder builder =
@@ -71,7 +73,7 @@ public class FunctionTest {
             final GroupOffset newGroupOffset = groupOffset.skip2TargetHead(2);
             function.process(
                     groupOffset.skip2TargetHead(2),
-                    Collections.singleton("data".getBytes(StandardCharsets.UTF_8)).iterator());
+                    Collections.singletonList(createStringRecords("t1", "data")).iterator());
             Assert.assertEquals(function.committableOffset(), newGroupOffset);
         }
     }
