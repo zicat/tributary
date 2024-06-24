@@ -237,7 +237,6 @@ sink.group_1.idle.trigger.millis=60000
 ### Sink Kafka Detail
 
 ```properties
-sink.group_2.decoder.identity=default
 sink.group_2.topic=test_topic
 sink.group_2.kafka.bootstrap.servers=127.0.0.1:9092
 sink.group_2.kafka.buffer.memory=134217728
@@ -247,10 +246,9 @@ sink.group_2.kafka.compression.type=snappy
 sink.group_2.kafka.flushMill=60000
 ```
 
-| key              | default | type                             | describe                                                                                                                                                                                              |
-|------------------|---------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| decoder.identity | default | enum[default,kafkaRecordDecoder] | the decoder id to parse data from the channel, the spi interface is [Byte2RecordFactory](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/Byte2RecordFactory.java) |
-| topic            |         | string                           | the name of kafka topic                                                                                                                                                                               |
+| key   | default | type   | describe                |
+|-------|---------|--------|-------------------------|
+| topic |         | string | the name of kafka topic |
 
 Tributary support all kafka producer params,
 [apache kafka producer config](https://kafka.apache.org/documentation/#producerconfigs) .
@@ -260,11 +258,8 @@ Note:
 1. The value of keys `key.serializer` and `value.serializer` is always
    `org.apache.kafka.common.serialization.ByteArraySerializer`. Setting value to other is ignored.
 
-2. The decoder identity of kafkaRecordDecoder only support to consume the channel data
-   writing by the source netty decoder of kafkaDecoder.
-
-3. The topic support param of ${topic} like dispatcher_proxy_sink_${topic} to sink data to specify
-   topic use setting from kafka client when The decoder identity is kafkaRecordDecoder.
+2. The topic support param of ${topic} like dispatcher_proxy_sink_${topic} to sink data to specify
+   topic setting by source site.
 
 ## The complete demo config
 

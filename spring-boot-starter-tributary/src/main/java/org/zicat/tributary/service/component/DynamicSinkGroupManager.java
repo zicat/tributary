@@ -27,7 +27,7 @@ import org.zicat.tributary.service.configuration.SinkGroupManagerConfiguration;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
-import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import org.zicat.tributary.sink.utils.HostUtils;
 
 import java.io.Closeable;
@@ -47,7 +47,7 @@ public class DynamicSinkGroupManager implements Closeable {
                     .stringType()
                     .description(
                             "the id of partition handler, support [direct,multi_thread,default], default default")
-                    .defaultValue(DirectPartitionHandlerFactory.IDENTITY);
+                    .defaultValue(DefaultPartitionHandlerFactory.IDENTITY);
 
     public static final ConfigOption<String> OPTION_FUNCTION_ID =
             ConfigOptions.key("function.id")

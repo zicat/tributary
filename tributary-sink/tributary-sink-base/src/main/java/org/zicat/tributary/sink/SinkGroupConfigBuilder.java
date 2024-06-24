@@ -18,15 +18,17 @@
 
 package org.zicat.tributary.sink;
 
-import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 
 /** SinkGroupConfigBuilder. */
 public class SinkGroupConfigBuilder extends CustomConfigBuilder {
 
-    private String handlerIdentity = DirectPartitionHandlerFactory.IDENTITY;
+    private String handlerIdentity = DefaultPartitionHandlerFactory.IDENTITY;
     private String functionIdentity;
 
-    /** @return builder */
+    /**
+     * @return builder
+     */
     public static SinkGroupConfigBuilder newBuilder() {
         return new SinkGroupConfigBuilder();
     }

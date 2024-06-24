@@ -42,7 +42,7 @@ tributary application using Spring Boot.
 Before start the tributary service, please install java8 first.
 
 ```shell
-$ wget https://github.com/zicat/tributary/releases/download/1.3/tributary.zip
+$ wget https://github.com/zicat/tributary/releases/download/v1.3.0/tributary.zip
 $ unzip tributary.zip
 $ cd tributary  
 ``` 

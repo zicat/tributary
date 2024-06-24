@@ -26,6 +26,7 @@ import org.zicat.tributary.sink.SinkGroupConfig;
 /** DefaultPartitionHandlerFactory. */
 public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
 
+    public static final String IDENTITY = "default";
     public static final ConfigOption<Integer> OPTION_THREADS =
             ConfigOptions.key("partition.concurrent")
                     .integerType()
@@ -34,7 +35,7 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
 
     @Override
     public String identity() {
-        return "default";
+        return IDENTITY;
     }
 
     @Override
