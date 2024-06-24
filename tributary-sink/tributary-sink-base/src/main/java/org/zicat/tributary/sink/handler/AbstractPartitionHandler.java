@@ -59,9 +59,9 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                     .defaultValue(null);
 
     public static final ConfigOption<Integer> OPTION_RETAIN_SIZE_CHECK_PERIOD_MILLI =
-            ConfigOptions.key("retainPerPartitionCheckPeriodMilli")
+            ConfigOptions.key("partition.group.commit.period.mill")
                     .integerType()
-                    .description("check retain thread check period, default 30s")
+                    .description("partition group commit period millisecond, default 30s")
                     .defaultValue(30 * 1000);
 
     protected final Long maxRetainSize;

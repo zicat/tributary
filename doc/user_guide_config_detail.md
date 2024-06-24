@@ -195,11 +195,12 @@ sink.group_2.function.id=kafka
 
 ### Common Config
 
-| key                        | default | type                   | describe                                                                                                                                         |
-|----------------------------|---------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| partition.retain.max.bytes |         | long(byte)             | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful |
-| partition.concurrent       | 1       | int(number)            | the threads to consume one partition data from channel                                                                                           |  
-| function.id                |         | enum[print,kafka,hdfs] | the function identity that configure how to consume records                                                                                      |
+| key                                | default | type                   | describe                                                                                                                                         |
+|------------------------------------|---------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| partition.retain.max.bytes         |         | long(byte)             | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful |
+| partition.group.commit.period.mill | 30000   | long(mill)             | the period to commit consume group id                                                                                                            |
+| partition.concurrent               | 1       | int(number)            | the threads to consume one partition data from channel                                                                                           |  
+| function.id                        |         | enum[print,kafka,hdfs] | the function identity that configure how to consume records                                                                                      |
 
 Note:
 
@@ -243,7 +244,6 @@ sink.group_2.kafka.buffer.memory=134217728
 sink.group_2.kafka.linger.ms=1000
 sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
-sink.group_2.kafka.flushMill=60000
 ```
 
 | key   | default | type   | describe                |
@@ -314,6 +314,7 @@ channel.c2.segment.size=4294967296
 channel.c2.flush.period.mills=1000
 
 sink.group_1.partition.retain.max.bytes=9663676414
+sink.group_1.partition.group.commit.period.mill=30000
 sink.group_1.function.id=hdfs
 sink.group_1.sink.path=/tmp/test/cache
 sink.group_1.roll.size=10240000
@@ -324,6 +325,7 @@ sink.group_1.principle=
 sink.group_1.idle.trigger.millis=60000
 
 sink.group_2.partition.retain.max.bytes=9663676414
+sink.group_2.partition.group.commit.period.mill=30000
 sink.group_2.partition.concurrent=3
 sink.group_2.function.id=kafka
 sink.group_2.kafka.bootstrap.servers=127.0.0.1:9092
@@ -332,5 +334,4 @@ sink.group_2.kafka.buffer.memory=134217728
 sink.group_2.kafka.linger.ms=1000
 sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
-sink.group_2.kafka.flushMill=60000
 ```       
