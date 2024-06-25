@@ -18,15 +18,15 @@
 
 package org.zicat.tributary.demo.source;
 
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;
 
 /** EmitSourceFactory. */
 public class EmitSourceFactory implements SourceFactory {
     @Override
-    public Source createSource(String sourceId, Channel channel, ReadableConfig config) {
+    public Source createSource(String sourceId, RecordsChannel channel, ReadableConfig config) {
         return new EmitSource(channel);
     }
 

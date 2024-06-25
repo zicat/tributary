@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.demo.source;
 
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 import org.zicat.tributary.source.netty.AbstractNettySourceFactory;
 
@@ -37,7 +37,7 @@ public class HttpSourceFactory extends AbstractNettySourceFactory {
             String host,
             int port,
             int eventThreads,
-            Channel channel,
+            RecordsChannel channel,
             ReadableConfig config) {
         return new HttpSource(sourceId, host, port, eventThreads, channel);
     }

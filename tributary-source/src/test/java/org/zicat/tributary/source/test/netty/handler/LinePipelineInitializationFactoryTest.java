@@ -28,6 +28,7 @@ import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.pipeline.LinePipelineInitializationFactory;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
@@ -49,7 +50,8 @@ public class LinePipelineInitializationFactoryTest {
         final String groupId = "g1";
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         try (Channel channel = memoryChannelFactory(groupId).createChannel("t1", null);
-                DefaultNettySource source = new DefaultNettySource(channel)) {
+                DefaultNettySource source =
+                        new DefaultNettySource(RecordsChannel.create(channel))) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel.pipeline());

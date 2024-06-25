@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.netty.pipeline;
 
-import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractPipelineInitialization implements PipelineInitialization {
 
     protected final AtomicInteger count = new AtomicInteger();
-    protected final Channel channel;
+    protected final RecordsChannel channel;
     protected final AbstractNettySource source;
 
     public AbstractPipelineInitialization(AbstractNettySource source) {

@@ -36,11 +36,11 @@ import org.apache.kafka.common.record.Record;
 import org.apache.kafka.common.utils.AbstractIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.BytesUtils;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 import org.zicat.tributary.source.netty.handler.kafka.*;
 import org.zicat.tributary.source.netty.handler.kafka.MetadataResponse.PartitionMetadata;
@@ -81,7 +81,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
     protected final AbstractNettySource source;
     protected final String clusterId;
     protected final int partitions;
-    protected final Channel channel;
+    protected final RecordsChannel channel;
     protected volatile List<Node> nodes;
     protected volatile Node currentNode;
     protected final String host;
@@ -287,7 +287,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
             }
             final int channelPartition = tp.partition() % channel.partition();
             try {
-                channel.append(channelPartition, defaultRecords.toByteBuffer());
+                channel.append(channelPartition, defaultRecords);
             } catch (Throwable e) {
                 LOG.error("append data error", e);
                 IOUtils.closeQuietly(source);

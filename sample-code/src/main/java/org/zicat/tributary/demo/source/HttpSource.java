@@ -23,14 +23,15 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 
 /** HttpSource. */
 public class HttpSource extends AbstractNettySource {
 
-    public HttpSource(String sourceId, String host, int port, int eventThreads, Channel channel) {
+    public HttpSource(
+            String sourceId, String host, int port, int eventThreads, RecordsChannel channel) {
         super(sourceId, new DefaultReadableConfig(), host, port, eventThreads, channel);
     }
 
@@ -40,7 +41,7 @@ public class HttpSource extends AbstractNettySource {
      * @param ch ch
      */
     @Override
-    protected void initChannel(SocketChannel ch, Channel channel) {
+    protected void initChannel(SocketChannel ch, RecordsChannel channel) {
         final ChannelPipeline pip = ch.pipeline();
         pip.addLast(new HttpResponseEncoder());
         pip.addLast(new HttpRequestDecoder());

@@ -39,6 +39,7 @@ import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.handler.KafkaMessageDecoder;
 import org.zicat.tributary.source.netty.handler.kafka.*;
@@ -294,7 +295,7 @@ public class KafkaPipelineInitializationFactoryTest {
 
     private static DefaultNettySource createSource(ReadableConfig config, Channel channel, int port)
             throws Exception {
-        return new DefaultNettySource(config, HOST, port, channel);
+        return new DefaultNettySource(config, HOST, port, RecordsChannel.create(channel));
     }
 
     private static void initChannel(DefaultNettySource source, EmbeddedChannel nettyChannel)

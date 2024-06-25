@@ -20,10 +20,10 @@ package org.zicat.tributary.demo.source;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.Source;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class EmitSource implements Source {
     private final Runnable task;
     private Thread t;
 
-    public EmitSource(Channel channel) {
+    public EmitSource(RecordsChannel channel) {
         this.task =
                 () -> {
                     while (!closed.get()) {
@@ -49,8 +49,7 @@ public class EmitSource implements Source {
                                 RecordsUtils.createStringRecords(
                                         channel.topic(), new SimpleDateFormat().format(new Date()));
                         try {
-                            channel.append(
-                                    random.nextInt(channel.partition()), records.toByteBuffer());
+                            channel.append(random.nextInt(channel.partition()), records);
                         } catch (IOException e) {
                             LOG.warn("append fail", e);
                         } finally {

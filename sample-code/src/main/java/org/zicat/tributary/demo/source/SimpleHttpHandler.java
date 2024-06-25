@@ -23,9 +23,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
+import org.zicat.tributary.source.RecordsChannel;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,9 +39,9 @@ import static org.zicat.tributary.source.utils.SourceHeaders.sourceHeaders;
 public class SimpleHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     final Random random = new Random();
-    private final Channel channel;
+    private final RecordsChannel channel;
 
-    public SimpleHttpHandler(Channel channel) {
+    public SimpleHttpHandler(RecordsChannel channel) {
         this.channel = channel;
     }
 
@@ -56,7 +56,7 @@ public class SimpleHttpHandler extends SimpleChannelInboundHandler<FullHttpReque
 
         final DefaultRecords records = new DefaultRecords(channel.topic(), 0, headers(msg));
         records.addRecord(new DefaultRecord(null, null, bytes));
-        channel.append(random.nextInt(channel.partition()), records.toByteBuffer());
+        channel.append(random.nextInt(channel.partition()), records);
 
         // response
         final String resBody = "response, length " + bytes.length;
@@ -83,7 +83,6 @@ public class SimpleHttpHandler extends SimpleChannelInboundHandler<FullHttpReque
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        super.channelReadComplete(ctx);
         ctx.flush();
     }
 

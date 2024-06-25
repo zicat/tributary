@@ -23,9 +23,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 import org.zicat.tributary.source.utils.SourceHeaders;
 
@@ -39,7 +39,7 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
 
     private static final Logger LOG = LoggerFactory.getLogger(BytesChannelHandler.class);
     private final AbstractNettySource source;
-    private final Channel channel;
+    private final RecordsChannel channel;
     private final int partition;
 
     public BytesChannelHandler(AbstractNettySource source, int partition) {
@@ -58,7 +58,7 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
                         SourceHeaders.sourceHeaders(receivedTs),
                         Collections.singletonList(packet));
         try {
-            channel.append(partition, records.toByteBuffer());
+            channel.append(partition, records);
         } catch (IOException e) {
             LOG.error("append error, stop listen {}:{}", source.getHost(), source.getPort(), e);
             IOUtils.closeQuietly(source);

@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.Source;
 
 import java.io.IOException;
@@ -51,7 +52,7 @@ public abstract class AbstractNettySource implements Source {
     protected final String host;
     protected int port;
     protected final int eventThreads;
-    protected final org.zicat.tributary.channel.Channel channel;
+    protected final RecordsChannel channel;
     protected final EventLoopGroup bossGroup;
     protected final EventLoopGroup workGroup;
     protected final ServerBootstrap serverBootstrap;
@@ -68,7 +69,7 @@ public abstract class AbstractNettySource implements Source {
             String host,
             int port,
             int eventThreads,
-            org.zicat.tributary.channel.Channel channel) {
+            RecordsChannel channel) {
         this.sourceId = sourceId;
         this.config = config;
         this.host = host;
@@ -103,8 +104,8 @@ public abstract class AbstractNettySource implements Source {
      *
      * @param ch ch
      */
-    protected abstract void initChannel(
-            SocketChannel ch, org.zicat.tributary.channel.Channel channel) throws IOException;
+    protected abstract void initChannel(SocketChannel ch, RecordsChannel channel)
+            throws IOException;
 
     /** init handlers. */
     private void initHandlers() {
@@ -122,6 +123,7 @@ public abstract class AbstractNettySource implements Source {
      *
      * @param host host
      */
+    @SuppressWarnings("VulnerableCodeUsages")
     private Channel createChannel(String host) throws InterruptedException {
         final ChannelFuture syncFuture =
                 host == null
@@ -264,7 +266,7 @@ public abstract class AbstractNettySource implements Source {
      *
      * @return channel
      */
-    public org.zicat.tributary.channel.Channel getChannel() {
+    public RecordsChannel getChannel() {
         return channel;
     }
 

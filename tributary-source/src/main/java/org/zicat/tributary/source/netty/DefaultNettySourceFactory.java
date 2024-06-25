@@ -20,11 +20,11 @@ package org.zicat.tributary.source.netty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
+import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitializationFactory;
 
@@ -57,7 +57,7 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
             String host,
             int port,
             int eventThreads,
-            Channel channel,
+            RecordsChannel channel,
             ReadableConfig config)
             throws Exception {
         final int idleSecond = config.get(OPTION_NETTY_IDLE_SECOND);
