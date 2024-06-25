@@ -19,11 +19,8 @@
 package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
-import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.DefaultChannel;
-import org.zicat.tributary.channel.memory.MemoryChannelFactory;
+import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -32,9 +29,7 @@ import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
 
@@ -54,31 +49,9 @@ public class SinkHandlerTestBase {
 
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;
+
         try (Channel channel =
-                new DefaultChannel<>(
-                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
-                            @Override
-                            public String topic() {
-                                return "t1";
-                            }
-
-                            @Override
-                            public Set<String> groups() {
-                                return Collections.singleton(groupId);
-                            }
-
-                            @Override
-                            public AbstractChannel<?>[] create() {
-                                return MemoryChannelFactory.createChannels(
-                                        "t1",
-                                        partitionCount,
-                                        Collections.singleton(groupId),
-                                        1024 * 3,
-                                        102400L,
-                                        CompressionType.SNAPPY);
-                            }
-                        },
-                        0)) {
+                MemoryChannelTestUtils.createChannel("t1", partitionCount, groupId)) {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
                             .handlerIdentity(handlerIdentity)

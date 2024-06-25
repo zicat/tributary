@@ -22,8 +22,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.*;
-import org.zicat.tributary.channel.memory.MemoryChannelFactory;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -54,31 +56,7 @@ public class AbstractPartitionHandlerTest {
 
     @Test
     public void testIdleTrigger() throws InterruptedException, IOException {
-        try (Channel channel =
-                new DefaultChannel<>(
-                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
-                            @Override
-                            public String topic() {
-                                return "t1";
-                            }
-
-                            @Override
-                            public Set<String> groups() {
-                                return Collections.singleton(groupId);
-                            }
-
-                            @Override
-                            public AbstractChannel<?>[] create() {
-                                return MemoryChannelFactory.createChannels(
-                                        "t1",
-                                        1,
-                                        Collections.singleton(groupId),
-                                        1024 * 3,
-                                        102400L,
-                                        CompressionType.SNAPPY);
-                            }
-                        },
-                        0)) {
+        try (Channel channel = MemoryChannelTestUtils.createChannel("t1", groupId)) {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder().functionIdentity(MockIdleTriggerFactory.ID);
             final SinkGroupConfig sinkGroupConfig = builder.build();
@@ -134,30 +112,8 @@ public class AbstractPartitionHandlerTest {
 
         AbstractPartitionHandler handler;
         try (Channel channel =
-                new DefaultChannel<>(
-                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
-                            @Override
-                            public String topic() {
-                                return "t1";
-                            }
-
-                            @Override
-                            public Set<String> groups() {
-                                return Collections.singleton(groupId);
-                            }
-
-                            @Override
-                            public AbstractChannel<?>[] create() {
-                                return MemoryChannelFactory.createChannels(
-                                        "t1",
-                                        2,
-                                        Collections.singleton(groupId),
-                                        50,
-                                        50L,
-                                        CompressionType.NONE);
-                            }
-                        },
-                        0)) {
+                MemoryChannelTestUtils.createChannel(
+                        "t1", 2, 50, 50, CompressionType.NONE, groupId)) {
             final int partitionId = 0;
             handler =
                     new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
@@ -188,20 +144,23 @@ public class AbstractPartitionHandlerTest {
                             return new GroupOffset(0, 0, groupId);
                         }
                     };
-            handler.start();
-            final List<String> testData =
-                    Arrays.asList(
-                            createStringByLength(55),
-                            createStringByLength(66),
-                            createStringByLength(77),
-                            createStringByLength(77),
-                            createStringByLength(77),
-                            createStringByLength(77));
-            for (String data : testData) {
-                channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
-                channel.flush();
+            try {
+                handler.start();
+                final List<String> testData =
+                        Arrays.asList(
+                                createStringByLength(55),
+                                createStringByLength(66),
+                                createStringByLength(77),
+                                createStringByLength(77),
+                                createStringByLength(77),
+                                createStringByLength(77));
+                for (String data : testData) {
+                    channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
+                    channel.flush();
+                }
+            } finally {
+                IOUtils.closeQuietly(handler);
             }
-            IOUtils.closeQuietly(handler);
         }
         Assert.assertEquals(5, handler.commitOffsetWaterMark().segmentId());
     }
@@ -212,30 +171,8 @@ public class AbstractPartitionHandlerTest {
         final AtomicBoolean skip = new AtomicBoolean(false);
         AbstractPartitionHandler handler;
         try (Channel channel =
-                new DefaultChannel<>(
-                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
-                            @Override
-                            public String topic() {
-                                return "t1";
-                            }
-
-                            @Override
-                            public Set<String> groups() {
-                                return Collections.singleton(groupId);
-                            }
-
-                            @Override
-                            public AbstractChannel<?>[] create() {
-                                return MemoryChannelFactory.createChannels(
-                                        "t1",
-                                        2,
-                                        Collections.singleton(groupId),
-                                        50,
-                                        50L,
-                                        CompressionType.NONE);
-                            }
-                        },
-                        0)) {
+                MemoryChannelTestUtils.createChannel(
+                        "t1", 2, 50, 50L, CompressionType.NONE, groupId)) {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
                             .functionIdentity(AssertFunctionFactory.IDENTITY);
@@ -301,13 +238,16 @@ public class AbstractPartitionHandlerTest {
                             return null;
                         }
                     };
-            handler.start();
+            try {
+                handler.start();
 
-            for (String data : testData) {
-                channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
-                channel.flush();
+                for (String data : testData) {
+                    channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
+                    channel.flush();
+                }
+            } finally {
+                IOUtils.closeQuietly(handler);
             }
-            IOUtils.closeQuietly(handler);
         }
         Assert.assertEquals(5, handler.commitOffsetWaterMark().segmentId());
         Assert.assertTrue(skip.get());
@@ -316,31 +256,7 @@ public class AbstractPartitionHandlerTest {
     @Test
     public void testRun() throws IOException, InterruptedException {
 
-        try (Channel channel =
-                new DefaultChannel<>(
-                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
-                            @Override
-                            public String topic() {
-                                return "t1";
-                            }
-
-                            @Override
-                            public Set<String> groups() {
-                                return Collections.singleton(groupId);
-                            }
-
-                            @Override
-                            public AbstractChannel<?>[] create() {
-                                return MemoryChannelFactory.createChannels(
-                                        "t1",
-                                        2,
-                                        Collections.singleton(groupId),
-                                        1024 * 3,
-                                        102400L,
-                                        CompressionType.SNAPPY);
-                            }
-                        },
-                        0)) {
+        try (Channel channel = MemoryChannelTestUtils.createChannel("t1", 2, groupId)) {
             final SinkGroupConfig sinkGroupConfig =
                     SinkGroupConfigBuilder.newBuilder()
                             .functionIdentity(AssertFunctionFactory.IDENTITY)
@@ -403,15 +319,20 @@ public class AbstractPartitionHandlerTest {
                             return groupOffset;
                         }
                     }) {
-                handler.start();
 
-                for (String data : testData) {
-                    channel.append(0, data.getBytes(StandardCharsets.UTF_8));
-                    channel.flush();
+                try {
+                    handler.start();
+
+                    for (String data : testData) {
+                        channel.append(0, data.getBytes(StandardCharsets.UTF_8));
+                        channel.flush();
+                    }
+
+                    countDownLatch.await();
+                    Assert.assertTrue(countDownLatch.await(10, TimeUnit.SECONDS));
+                } finally {
+                    IOUtils.closeQuietly(handler);
                 }
-
-                countDownLatch.await();
-                Assert.assertTrue(countDownLatch.await(10, TimeUnit.SECONDS));
             }
         }
     }

@@ -32,11 +32,12 @@ import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.pipeline.LinePipelineInitializationFactory;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitializationFactory;
-import org.zicat.tributary.source.test.netty.ChannelTestUtils;
 
+import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.readChannel;
 
 /** LinePipelineInitializationFactoryTest. */
+@SuppressWarnings("VulnerableCodeUsages")
 public class LinePipelineInitializationFactoryTest {
 
     @Test
@@ -47,8 +48,7 @@ public class LinePipelineInitializationFactoryTest {
                         PipelineInitializationFactory.class);
         final String groupId = "g1";
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
-        try (Channel channel =
-                        ChannelTestUtils.memoryChannelFactory(groupId).createChannel("t1", null);
+        try (Channel channel = memoryChannelFactory(groupId).createChannel("t1", null);
                 DefaultNettySource source = new DefaultNettySource(channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);

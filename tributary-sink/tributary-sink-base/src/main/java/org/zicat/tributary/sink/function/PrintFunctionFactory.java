@@ -20,6 +20,9 @@ package org.zicat.tributary.sink.function;
 
 /** PrintFunctionFactory. */
 public class PrintFunctionFactory implements FunctionFactory {
+
+    public static final String IDENTITY = "print";
+
     @Override
     public Function create() {
         return new PrintFunction();
@@ -27,6 +30,6 @@ public class PrintFunctionFactory implements FunctionFactory {
 
     @Override
     public String identity() {
-        return "print";
+        return IDENTITY;
     }
 }

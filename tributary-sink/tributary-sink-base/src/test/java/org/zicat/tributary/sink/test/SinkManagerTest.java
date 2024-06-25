@@ -20,11 +20,8 @@ package org.zicat.tributary.sink.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.DefaultChannel;
-import org.zicat.tributary.channel.memory.MemoryChannelFactory;
+import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.channle.file.test.SourceThread;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.Threads;
@@ -68,60 +65,38 @@ public class SinkManagerTest {
         for (int i = 0; i < sinkGroups; i++) {
             consumerGroup.add("consumer_group_" + i);
         }
-        final Channel channel =
-                new DefaultChannel<>(
-                        new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
-                            @Override
-                            public String topic() {
-                                return "voqa";
-                            }
+        try (final Channel channel =
+                MemoryChannelTestUtils.createChannel(
+                        "voqa", partitionCount, consumerGroup.toArray(new String[] {}))) {
+            final SinkGroupConfigBuilder builder =
+                    SinkGroupConfigBuilder.newBuilder()
+                            .handlerIdentity("direct")
+                            .functionIdentity("assertCount");
+            builder.addCustomProperty(OPTION_ASSERT_COUNT.key(), dataSize);
+            final SinkGroupConfig sinkGroupConfig = builder.build();
+            // waiting source threads finish and flush
+            final List<SinkGroupManager> groupManagers = new ArrayList<>();
+            consumerGroup.forEach(
+                    groupId -> {
+                        SinkGroupManager sinkManager =
+                                new SinkGroupManager(groupId, channel, sinkGroupConfig);
+                        groupManagers.add(sinkManager);
+                    });
+            groupManagers.forEach(SinkGroupManager::createPartitionHandlesAndStart);
 
-                            @Override
-                            public Set<String> groups() {
-                                return consumerGroup;
-                            }
+            // create sources
+            final List<Thread> sourceThread = new ArrayList<>();
+            for (int i = 0; i < partitionCount; i++) {
+                Thread t = new SourceThread(channel, i, dataSize, maxRecordLength);
+                sourceThread.add(t);
+            }
 
-                            @Override
-                            public AbstractChannel<?>[] create() {
-                                return MemoryChannelFactory.createChannels(
-                                        "voqa",
-                                        partitionCount,
-                                        consumerGroup,
-                                        1024 * 3,
-                                        1024 * 4L,
-                                        CompressionType.SNAPPY);
-                            }
-                        },
-                        0);
-        final SinkGroupConfigBuilder builder =
-                SinkGroupConfigBuilder.newBuilder()
-                        .handlerIdentity("direct")
-                        .functionIdentity("assertCount");
-        builder.addCustomProperty(OPTION_ASSERT_COUNT.key(), dataSize);
-        final SinkGroupConfig sinkGroupConfig = builder.build();
-        // waiting source threads finish and flush
-        final List<SinkGroupManager> groupManagers = new ArrayList<>();
-        consumerGroup.forEach(
-                groupId -> {
-                    SinkGroupManager sinkManager =
-                            new SinkGroupManager(groupId, channel, sinkGroupConfig);
-                    groupManagers.add(sinkManager);
-                });
-        groupManagers.forEach(SinkGroupManager::createPartitionHandlesAndStart);
-
-        // create sources
-        final List<Thread> sourceThread = new ArrayList<>();
-        for (int i = 0; i < partitionCount; i++) {
-            Thread t = new SourceThread(channel, i, dataSize, maxRecordLength);
-            sourceThread.add(t);
+            // start source and sink threads
+            sourceThread.forEach(Thread::start);
+            sourceThread.forEach(Threads::joinQuietly);
+            channel.flush();
+            groupManagers.forEach(IOUtils::closeQuietly);
+            groupManagers.forEach(manager -> Assert.assertEquals(0, manager.lag()));
         }
-
-        // start source and sink threads
-        sourceThread.forEach(Thread::start);
-        sourceThread.forEach(Threads::joinQuietly);
-        channel.flush();
-        groupManagers.forEach(IOUtils::closeQuietly);
-        groupManagers.forEach(manager -> Assert.assertEquals(0, manager.lag()));
-        IOUtils.closeQuietly(channel);
     }
 }

@@ -20,16 +20,12 @@ package org.zicat.tributary.sink.test.handler;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.AbstractChannel;
-import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.DefaultChannel;
-import org.zicat.tributary.channel.memory.MemoryChannelFactory;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,127 +36,51 @@ public class MultiThreadPartitionHandlerTest {
 
     @Test
     public void testThreadCount() throws IOException {
+        final String topic = "t1";
+        final String groupId = "g1";
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         int threads = 0;
         builder.addCustomProperty(OPTION_THREADS.key(), threads);
-        MultiThreadPartitionHandler handler =
-                new MultiThreadPartitionHandler(
-                        "g1",
-                        new DefaultChannel<>(
-                                new DefaultChannel.AbstractChannelArrayFactory<
-                                        AbstractChannel<?>>() {
-                                    @Override
-                                    public String topic() {
-                                        return "t1";
-                                    }
-
-                                    @Override
-                                    public Set<String> groups() {
-                                        return Collections.singleton("g1");
-                                    }
-
-                                    @Override
-                                    public AbstractChannel<?>[] create() {
-                                        return MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                1,
-                                                Collections.singleton("g1"),
-                                                1024 * 3,
-                                                102400L,
-                                                CompressionType.SNAPPY);
-                                    }
-                                },
-                                0),
-                        0,
-                        builder.build());
-        try {
-            handler.open();
-            Assert.fail();
-        } catch (IllegalStateException e) {
-            Assert.assertTrue(true);
-        }
-
-        threads = 10;
-        builder.addCustomProperty(OPTION_THREADS.key(), threads);
-        try (MultiThreadPartitionHandler handler2 =
-                new MultiThreadPartitionHandler(
-                        "g1",
-                        new DefaultChannel<>(
-                                new DefaultChannel.AbstractChannelArrayFactory<
-                                        AbstractChannel<?>>() {
-                                    @Override
-                                    public String topic() {
-                                        return "t1";
-                                    }
-
-                                    @Override
-                                    public Set<String> groups() {
-                                        return Collections.singleton("g1");
-                                    }
-
-                                    @Override
-                                    public AbstractChannel<?>[] create() {
-                                        return MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                1,
-                                                Collections.singleton("g1"),
-                                                1024 * 3,
-                                                102400L,
-                                                CompressionType.SNAPPY);
-                                    }
-                                },
-                                0),
-                        0,
-                        builder.build())) {
-            handler2.open();
-            Assert.assertEquals(threads, handler2.handlers().length);
+        try (Channel channel = MemoryChannelTestUtils.createChannel(topic, groupId)) {
+            try (MultiThreadPartitionHandler handler =
+                    new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
+                try {
+                    handler.open();
+                    Assert.fail();
+                } catch (IllegalStateException e) {
+                    Assert.assertTrue(true);
+                }
+            }
+            threads = 10;
+            builder.addCustomProperty(OPTION_THREADS.key(), threads);
+            try (MultiThreadPartitionHandler handler2 =
+                    new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
+                handler2.open();
+                Assert.assertEquals(threads, handler2.handlers().length);
+            }
         }
     }
 
     @Test
     public void testFunctionId() throws IOException {
+
+        final String topic = "t1";
+        final String groupId = "g1";
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         final int threads = 4;
         builder.addCustomProperty(OPTION_THREADS.key(), threads);
-        MultiThreadPartitionHandler handler =
-                new MultiThreadPartitionHandler(
-                        "g1",
-                        new DefaultChannel<>(
-                                new DefaultChannel.AbstractChannelArrayFactory<
-                                        AbstractChannel<?>>() {
-                                    @Override
-                                    public String topic() {
-                                        return "t1";
-                                    }
-
-                                    @Override
-                                    public Set<String> groups() {
-                                        return Collections.singleton("g1");
-                                    }
-
-                                    @Override
-                                    public AbstractChannel<?>[] create() {
-                                        return MemoryChannelFactory.createChannels(
-                                                "t1",
-                                                1,
-                                                Collections.singleton("g1"),
-                                                1024 * 3,
-                                                102400L,
-                                                CompressionType.SNAPPY);
-                                    }
-                                },
-                                0),
-                        0,
-                        builder.build());
-        handler.open();
-        Assert.assertEquals(threads, handler.handlers().length);
-        Set<String> distinctIds = new HashSet<>();
-        for (MultiThreadPartitionHandler.DataHandler dataHandler : handler.handlers()) {
-            distinctIds.add(dataHandler.functionId());
+        try (Channel channel = MemoryChannelTestUtils.createChannel(topic, groupId);
+                MultiThreadPartitionHandler handler =
+                        new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
+            handler.open();
+            Assert.assertEquals(threads, handler.handlers().length);
+            final Set<String> distinctIds = new HashSet<>();
+            for (MultiThreadPartitionHandler.DataHandler dataHandler : handler.handlers()) {
+                distinctIds.add(dataHandler.functionId());
+            }
+            Assert.assertEquals(threads, distinctIds.size());
         }
-        Assert.assertEquals(threads, distinctIds.size());
-        IOUtils.closeQuietly(handler);
     }
 }

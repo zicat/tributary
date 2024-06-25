@@ -54,11 +54,12 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.source.netty.handler.kafka.ApiKeys.*;
 import static org.zicat.tributary.source.netty.pipeline.KafkaPipelineInitialization.*;
-import static org.zicat.tributary.source.test.netty.ChannelTestUtils.memoryChannelFactory;
 
 /** KafkaPipelineInitializationFactoryTest. */
+@SuppressWarnings("VulnerableCodeUsages")
 public class KafkaPipelineInitializationFactoryTest {
 
     private static final int partitions = 40;
