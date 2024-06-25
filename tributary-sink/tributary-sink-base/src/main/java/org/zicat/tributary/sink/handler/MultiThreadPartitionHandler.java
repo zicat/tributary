@@ -67,7 +67,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
                     .defaultValue(2);
 
     public static final ConfigOption<Integer> OPTION_BUFFER_SIZE =
-            ConfigOptions.key("bufferSize")
+            ConfigOptions.key("buffer.size")
                     .integerType()
                     .description("the buffer size of memory queue")
                     .defaultValue(128);
