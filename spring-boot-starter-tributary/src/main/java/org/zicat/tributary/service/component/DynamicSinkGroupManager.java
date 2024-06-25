@@ -61,7 +61,7 @@ public class DynamicSinkGroupManager implements Closeable {
 
     private final DynamicChannel dynamicChannel;
     private final ReadableConfig allSinkConfig;
-    private final String metricsIpPattern;
+    private final String metricsIp;
 
     public DynamicSinkGroupManager(
             @Autowired DynamicChannel dynamicChannel,
@@ -69,7 +69,7 @@ public class DynamicSinkGroupManager implements Closeable {
             @Value("${server.metrics.ip.pattern:.*}") String metricsIpPattern) {
         this.dynamicChannel = dynamicChannel;
         this.allSinkConfig = ReadableConfig.create(sinkGroupManagerConfiguration.getSink());
-        this.metricsIpPattern = metricsIpPattern;
+        this.metricsIp = HostUtils.getLocalHostString(metricsIpPattern);
         initSinkGroupManagers();
     }
 
@@ -159,7 +159,7 @@ public class DynamicSinkGroupManager implements Closeable {
      * @return ip
      */
     public String getMetricsIp() {
-        return HostUtils.getLocalHostString(metricsIpPattern);
+        return metricsIp;
     }
 
     /**
