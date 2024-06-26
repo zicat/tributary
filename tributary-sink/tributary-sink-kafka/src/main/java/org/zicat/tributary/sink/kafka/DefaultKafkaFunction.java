@@ -72,11 +72,7 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
     protected int sendKafka(Records records) throws Exception {
 
         final String originTopic = records.topic();
-        final String targetTopic =
-                defaultTopic == null
-                        ? originTopic
-                        : defaultTopic.replace(TOPIC_TEMPLATE, originTopic);
-
+        final String targetTopic = targetTopic(originTopic);
         final Map<String, byte[]> extraHeaders = new HashMap<>(defaultSinkExtraHeaders());
         extraHeaders.put(HEAD_KEY_ORIGIN_TOPIC, originTopic.getBytes(StandardCharsets.UTF_8));
 
@@ -84,11 +80,23 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
                 new ArrayList<>(records.count());
         foreachRecord(
                 records,
-                (topic, partition, key, value, headers) ->
+                (key, value, headers) ->
                         producerRecords.add(createProducerRecord(targetTopic, key, value, headers)),
                 extraHeaders);
         sendKafka(producerRecords, callback);
         return producerRecords.size();
+    }
+
+    /**
+     * get target topic by origin topic.
+     *
+     * @param originTopic originTopic
+     * @return string target topic
+     */
+    protected String targetTopic(String originTopic) {
+        return defaultTopic == null
+                ? originTopic
+                : defaultTopic.replace(TOPIC_TEMPLATE, originTopic);
     }
 
     /**

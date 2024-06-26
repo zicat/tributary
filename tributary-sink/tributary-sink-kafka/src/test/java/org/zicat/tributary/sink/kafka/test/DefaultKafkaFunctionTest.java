@@ -61,6 +61,7 @@ public class DefaultKafkaFunctionTest {
     @Test
     public void test() throws Exception {
         final String topic = "kt1";
+        final String groupId = "g2";
         final Map<String, byte[]> recordHeader1 = new HashMap<>();
         recordHeader1.put("rhk1", "rhv1".getBytes());
         final Record record1 = new DefaultRecord(recordHeader1, "rk1".getBytes(), "rv1".getBytes());
@@ -78,12 +79,12 @@ public class DefaultKafkaFunctionTest {
                     new ContextBuilder()
                             .id("id2")
                             .partitionId(0)
-                            .startGroupOffset(new GroupOffset(0, 0, "g2"))
-                            .topic("t2");
+                            .startGroupOffset(new GroupOffset(0, 0, groupId))
+                            .topic(topic);
             builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
             kafkaFunction.open(builder.build());
 
-            final GroupOffset groupOffset = new GroupOffset(2, 0, "g2");
+            final GroupOffset groupOffset = new GroupOffset(2, 0, groupId);
             kafkaFunction.process(groupOffset, Collections.singletonList(records).iterator());
 
             assertData(topic, record1, mockProducer.history().get(0));
@@ -113,13 +114,13 @@ public class DefaultKafkaFunctionTest {
                     new ContextBuilder()
                             .id("id2")
                             .partitionId(0)
-                            .startGroupOffset(new GroupOffset(0, 0, "g2"))
-                            .topic("t2");
+                            .startGroupOffset(new GroupOffset(0, 0, groupId))
+                            .topic(topic2);
             builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
             builder.addCustomProperty(
                     DefaultKafkaFunctionFactory.OPTION_TOPIC.key(), "aa_${topic}");
             kafkaFunction.open(builder.build());
-            final GroupOffset groupOffset = new GroupOffset(2, 0, "g2");
+            final GroupOffset groupOffset = new GroupOffset(2, 0, groupId);
             kafkaFunction.process(groupOffset, Collections.singletonList(records2).iterator());
             assertData(topic2, record1, mockProducer.history().get(0));
             assertData(topic2, record2, mockProducer.history().get(1));

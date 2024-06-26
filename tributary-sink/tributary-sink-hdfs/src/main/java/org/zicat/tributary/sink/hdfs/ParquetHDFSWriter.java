@@ -31,7 +31,6 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.HadoopOutputFile;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.common.records.RecordsUtils.RecordConsumer;
 
 import java.io.IOException;
 import java.util.Map;
@@ -40,7 +39,7 @@ import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHe
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 
 /** ParquetHDFSWriter. */
-public class ParquetHDFSWriter implements HDFSWriter, RecordConsumer {
+public class ParquetHDFSWriter implements HDFSWriter {
 
     public static final String FIELD_TOPIC = "topic";
     public static final String FIELD_PARTITION = "partition";
@@ -98,7 +97,18 @@ public class ParquetHDFSWriter implements HDFSWriter, RecordConsumer {
     @Override
     public int append(Records records) throws Exception {
         final Map<String, byte[]> extraHeaders = defaultSinkExtraHeaders();
-        foreachRecord(records, this, extraHeaders);
+        foreachRecord(
+                records,
+                (key, value, headers) -> {
+                    final GenericRecord record = new GenericData.Record(SCHEMA);
+                    record.put(FIELD_TOPIC, records.topic());
+                    record.put(FIELD_PARTITION, records.partition());
+                    record.put(FIELD_HEADERS, headers);
+                    record.put(FIELD_KEY, key);
+                    record.put(FIELD_VALUE, value);
+                    writer.write(record);
+                },
+                extraHeaders);
         return records.count();
     }
 
@@ -108,18 +118,5 @@ public class ParquetHDFSWriter implements HDFSWriter, RecordConsumer {
     @Override
     public void close() throws IOException {
         IOUtils.closeQuietly(writer);
-    }
-
-    @Override
-    public void accept(
-            String topic, int partition, byte[] key, byte[] value, Map<String, byte[]> headers)
-            throws Exception {
-        final GenericRecord record = new GenericData.Record(SCHEMA);
-        record.put(FIELD_TOPIC, topic);
-        record.put(FIELD_PARTITION, partition);
-        record.put(FIELD_HEADERS, headers);
-        record.put(FIELD_KEY, key);
-        record.put(FIELD_VALUE, value);
-        writer.write(record);
     }
 }

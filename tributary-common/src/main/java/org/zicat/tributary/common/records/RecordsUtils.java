@@ -168,8 +168,7 @@ public class RecordsUtils {
             if (extraHeaders != null) {
                 headers.putAll(extraHeaders);
             }
-            consumer.accept(
-                    records.topic(), records.partition(), record.key(), record.value(), headers);
+            consumer.accept(record.key(), record.value(), headers);
         }
     }
 
@@ -179,15 +178,11 @@ public class RecordsUtils {
         /**
          * consume record.
          *
-         * @param topic topic
-         * @param partition partition
          * @param key key
          * @param value value
          * @param headers headers
          */
-        void accept(
-                String topic, int partition, byte[] key, byte[] value, Map<String, byte[]> headers)
-                throws Exception;
+        void accept(byte[] key, byte[] value, Map<String, byte[]> headers) throws Exception;
     }
 
     /**

@@ -193,18 +193,6 @@ public class AbstractHDFSFunctionTest {
 
         final String bucket = "counter";
         final MockHDFSWriter mockWriter = new MockHDFSWriter();
-        final HDFSWriterFactory factory =
-                new HDFSWriterFactory() {
-                    @Override
-                    public String fileExtension() {
-                        return "snappy";
-                    }
-
-                    @Override
-                    public HDFSWriter create() {
-                        return mockWriter;
-                    }
-                };
         final AbstractHDFSFunction<Void> function =
                 new AbstractHDFSFunction<Void>() {
                     @Override
@@ -227,7 +215,17 @@ public class AbstractHDFSFunctionTest {
                         return new BucketWriter<>(
                                 bucketPath,
                                 realName,
-                                factory,
+                                new HDFSWriterFactory() {
+                                    @Override
+                                    public String fileExtension() {
+                                        return "snappy";
+                                    }
+
+                                    @Override
+                                    public HDFSWriter create() {
+                                        return mockWriter;
+                                    }
+                                },
                                 privilegedExecutor,
                                 rollSize,
                                 maxRetry,

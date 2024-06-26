@@ -133,6 +133,7 @@ public class DefaultHDFSFunctionTest {
         Assert.assertEquals(groupOffset, defaultHDFSFunction.committableOffset());
 
         final File parquetFile = parquetFiles.get(0);
+        Assert.assertTrue(parquetFile.getParent().endsWith("/" + topic));
         final Configuration conf = new Configuration();
         try (ParquetReader<GenericRecord> reader =
                 AvroParquetReader.<GenericRecord>builder(
