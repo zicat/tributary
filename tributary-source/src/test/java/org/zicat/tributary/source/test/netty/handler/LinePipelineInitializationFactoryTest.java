@@ -25,7 +25,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.GroupOffset;
-import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.RecordsChannel;
@@ -33,6 +32,8 @@ import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.pipeline.LinePipelineInitializationFactory;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitializationFactory;
+
+import java.util.List;
 
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.readChannel;
@@ -56,24 +57,25 @@ public class LinePipelineInitializationFactoryTest {
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel.pipeline());
             final ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
-            byteBuf.writeBytes("lynn".getBytes());
-            byteBuf.writeBytes(System.lineSeparator().getBytes());
-            byteBuf.writeBytes("zhangjun".getBytes());
-            byteBuf.writeBytes(System.lineSeparator().getBytes());
-            byteBuf.writeBytes("quit".getBytes());
-            byteBuf.writeBytes(System.lineSeparator().getBytes());
-            embeddedChannel.writeInbound(byteBuf);
-
-            channel.flush();
+            try {
+                byteBuf.writeBytes("lynn".getBytes());
+                byteBuf.writeBytes(System.lineSeparator().getBytes());
+                byteBuf.writeBytes("zhangjun".getBytes());
+                byteBuf.writeBytes(System.lineSeparator().getBytes());
+                byteBuf.writeBytes("quit".getBytes());
+                byteBuf.writeBytes(System.lineSeparator().getBytes());
+                embeddedChannel.writeInbound(byteBuf);
+                channel.flush();
+            } finally {
+                byteBuf.release();
+            }
             final GroupOffset groupOffset = new GroupOffset(0L, 0L, groupId);
-            final DataOffset dataOffset = readChannel(channel, 0, groupOffset, 2);
+            final List<byte[]> data = readChannel(channel, 0, groupOffset, 2).data;
 
             Assert.assertEquals(
-                    "lynn",
-                    new String(Records.parse(dataOffset.data.get(0)).iterator().next().value()));
+                    "lynn", new String(Records.parse(data.get(0)).iterator().next().value()));
             Assert.assertEquals(
-                    "zhangjun",
-                    new String(Records.parse(dataOffset.data.get(1)).iterator().next().value()));
+                    "zhangjun", new String(Records.parse(data.get(1)).iterator().next().value()));
         }
     }
 }

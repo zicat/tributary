@@ -40,13 +40,6 @@ public interface Records extends Iterable<Record> {
     String topic();
 
     /**
-     * Get the partitions of records.
-     *
-     * @return records
-     */
-    int partition();
-
-    /**
      * get headers of records.
      *
      * @return headers
@@ -63,11 +56,10 @@ public interface Records extends Iterable<Record> {
     default ByteBuffer toByteBuffer() {
 
         final byte[] topic = topic().getBytes(StandardCharsets.UTF_8);
-        final int partition = partition();
         final List<ByteBuffer> headerBuffers = headBuffers(headers());
         final List<ByteBuffer> recordBuffers = recordBuffer();
 
-        int size = vIntEncodeLength(topic.length) + vIntLength(partition);
+        int size = vIntEncodeLength(topic.length);
 
         size += vIntLength(headerBuffers.size());
         for (ByteBuffer headBuffer : headerBuffers) {
@@ -82,8 +74,6 @@ public interface Records extends Iterable<Record> {
         final ByteBuffer result = ByteBuffer.allocate(size);
         putVInt(result, topic.length);
         result.put(topic);
-
-        putVInt(result, partition);
 
         putVInt(result, headerBuffers.size());
         for (ByteBuffer headerBuffer : headerBuffers) {
@@ -120,15 +110,13 @@ public interface Records extends Iterable<Record> {
      */
     static Records parse(ByteBuffer byteBuffer) {
         final String topic = toVIntString(byteBuffer);
-        final int partition = readVInt(byteBuffer);
         final Map<String, byte[]> headers = parseHeaders(byteBuffer);
-
         final int recordCount = readVInt(byteBuffer);
         final List<Record> records = new ArrayList<>(recordCount);
         for (int i = 0; i < recordCount; i++) {
             records.add(Record.parse(byteBuffer));
         }
-        return new DefaultRecords(topic, partition, headers, records);
+        return new DefaultRecords(topic, headers, records);
     }
 
     /**

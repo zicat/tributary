@@ -26,7 +26,11 @@ import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.records.Records;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.Map;
+
+import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 
 /** PrintFunction. */
 public class PrintFunction extends AbstractFunction implements Trigger {
@@ -58,14 +62,38 @@ public class PrintFunction extends AbstractFunction implements Trigger {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {
-        int i = 0;
+    public void process(GroupOffset groupOffset, Iterator<Records> iterator) throws Exception {
         while (iterator.hasNext()) {
             final Records records = iterator.next();
-            LOG.info(records.toString());
-            i += records.count();
+            foreachRecord(
+                    records,
+                    (key, value, allHeaders) -> {
+                        final StringBuilder sb =
+                                new StringBuilder()
+                                        .append(System.lineSeparator())
+                                        .append("       Key: ")
+                                        .append(new String(key, StandardCharsets.UTF_8))
+                                        .append(System.lineSeparator())
+                                        .append("       Value: ")
+                                        .append(new String(value, StandardCharsets.UTF_8))
+                                        .append(System.lineSeparator())
+                                        .append("       Headers: [");
+                        final Iterator<Map.Entry<String, byte[]>> it =
+                                allHeaders.entrySet().iterator();
+                        while (it.hasNext()) {
+                            final Map.Entry<String, byte[]> entry = it.next();
+                            sb.append(entry.getKey())
+                                    .append(":")
+                                    .append(new String(entry.getValue(), StandardCharsets.UTF_8));
+                            if (it.hasNext()) {
+                                sb.append(",");
+                            }
+                        }
+                        sb.append("]");
+                        LOG.info(sb.toString());
+                    });
+            sinkCountChild.inc(records.count());
         }
-        sinkCountChild.inc(i);
         commit(groupOffset, null);
     }
 

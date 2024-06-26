@@ -72,7 +72,7 @@ public class DefaultKafkaFunctionTest {
         final Map<String, byte[]> recordsHeader = new HashMap<>();
         recordHeader1.put("rshk1", "rshv1".getBytes());
         final Records records =
-                new DefaultRecords(topic, 1, recordsHeader, Arrays.asList(record1, record2));
+                new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2));
 
         try (DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction()) {
             final ContextBuilder builder =
@@ -108,7 +108,7 @@ public class DefaultKafkaFunctionTest {
 
         final String topic2 = "kt2";
         final Records records2 =
-                new DefaultRecords(topic2, 1, recordsHeader, Arrays.asList(record1, record2));
+                new DefaultRecords(topic2, recordsHeader, Arrays.asList(record1, record2));
         try (DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction()) {
             final ContextBuilder builder =
                     new ContextBuilder()

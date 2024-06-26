@@ -57,7 +57,6 @@ public class DefaultHDFSFunctionTest {
 
     private static final File DIR = FileUtils.createTmpDir("default_hdfs_function_test");
     private static final String topic = "t1";
-    private static final int partition = 1;
 
     @BeforeClass
     public static void before() throws IOException {
@@ -86,8 +85,7 @@ public class DefaultHDFSFunctionTest {
         final Map<String, byte[]> recordsHeader = new HashMap<>();
         recordHeader1.put("rshk1", "rshv1".getBytes());
         final Records records =
-                new DefaultRecords(
-                        topic, partition, recordsHeader, Arrays.asList(record1, record2));
+                new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2));
 
         final DefaultHDFSFunction defaultHDFSFunction = new DefaultHDFSFunction();
         final MockClock mockClock = new MockClock();
@@ -144,7 +142,6 @@ public class DefaultHDFSFunctionTest {
             GenericRecord record;
             Assert.assertNotNull((record = reader.read()));
             Assert.assertEquals(topic, record.get(FIELD_TOPIC).toString());
-            Assert.assertEquals(partition, record.get(FIELD_PARTITION));
             Assert.assertArrayEquals(record1.key(), toBytes((ByteBuffer) record.get(FIELD_KEY)));
             Assert.assertArrayEquals(
                     record1.value(), toBytes((ByteBuffer) record.get(FIELD_VALUE)));
@@ -161,7 +158,6 @@ public class DefaultHDFSFunctionTest {
 
             Assert.assertNotNull((record = reader.read()));
             Assert.assertEquals(topic, record.get(FIELD_TOPIC).toString());
-            Assert.assertEquals(partition, record.get(FIELD_PARTITION));
             Assert.assertArrayEquals(record2.key(), toBytes((ByteBuffer) record.get(FIELD_KEY)));
             Assert.assertArrayEquals(
                     record2.value(), toBytes((ByteBuffer) record.get(FIELD_VALUE)));

@@ -35,7 +35,7 @@ public class SourceHeaders {
      * @param authUser authUser
      * @return headers.
      */
-    public static Map<String, byte[]> sourceHeaders(int receivedTs, String authUser) {
+    public static Map<String, byte[]> sourceHeaders(long receivedTs, String authUser) {
         final Map<String, byte[]> result = new HashMap<>();
         result.put(HEADER_KEY_REC_TS, String.valueOf(receivedTs).getBytes(StandardCharsets.UTF_8));
         if (authUser != null) {
@@ -50,7 +50,7 @@ public class SourceHeaders {
      * @param receivedTs receivedTs
      * @return headers
      */
-    public static Map<String, byte[]> sourceHeaders(int receivedTs) {
+    public static Map<String, byte[]> sourceHeaders(long receivedTs) {
         return sourceHeaders(receivedTs, null);
     }
 }

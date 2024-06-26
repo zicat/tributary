@@ -28,117 +28,17 @@ import java.util.stream.Collectors;
 /** RecordsUtils. */
 public class RecordsUtils {
 
-    public static final int DEFAULT_PARTITION = 0;
-
     public static final String HEAD_KEY_SENT_TS = "_sent_ts";
 
     /**
      * create string records.
      *
      * @param topic topic
-     * @param partition partition
      * @param value value
      * @return Records
      */
-    public static Records createStringRecords(String topic, int partition, String... value) {
-        return createStringRecords(topic, partition, Arrays.asList(value));
-    }
-
-    /**
-     * create string records.
-     *
-     * @param topic topic
-     * @param values values
-     * @return Records
-     */
-    public static Records createStringRecords(String topic, String... values) {
-        return createStringRecords(topic, DEFAULT_PARTITION, values);
-    }
-
-    /**
-     * create string records.
-     *
-     * @param topic topic
-     * @param partition partition
-     * @param values values
-     * @return Records
-     */
-    public static Records createStringRecords(
-            String topic, int partition, Collection<String> values) {
-        return createStringRecords(topic, partition, null, values);
-    }
-
-    /**
-     * create bytes records.
-     *
-     * @param topic topic
-     * @param partition partition
-     * @param values values
-     * @return Records
-     */
-    public static Records createBytesRecords(
-            String topic, int partition, Map<String, byte[]> headers, Collection<byte[]> values) {
-        return new DefaultRecords(
-                topic,
-                partition,
-                headers,
-                values.stream()
-                        .map(v -> new DefaultRecord(null, null, v))
-                        .collect(Collectors.toList()));
-    }
-
-    /**
-     * create bytes records.
-     *
-     * @param topic topic
-     * @param partition partition
-     * @param values values
-     * @return Records
-     */
-    public static Records createBytesRecords(
-            String topic, int partition, Collection<byte[]> values) {
-        return createBytesRecords(topic, partition, null, values);
-    }
-
-    /**
-     * create bytes records.
-     *
-     * @param topic topic
-     * @param values values
-     * @return Records
-     */
-    public static Records createBytesRecords(String topic, Collection<byte[]> values) {
-        return createBytesRecords(topic, 0, null, values);
-    }
-
-    /**
-     * create bytes records.
-     *
-     * @param topic topic
-     * @param values values
-     * @return Records
-     */
-    public static Records createBytesRecords(String topic, byte[]... values) {
-        return createBytesRecords(topic, 0, null, Arrays.asList(values));
-    }
-
-    /**
-     * create string records.
-     *
-     * @param topic topic
-     * @param partition partition
-     * @param values values
-     * @return Records
-     */
-    public static Records createStringRecords(
-            String topic, int partition, Map<String, byte[]> headers, Collection<String> values) {
-        return createBytesRecords(
-                topic,
-                partition,
-                headers,
-                values.stream()
-                        .map(v -> v.getBytes(StandardCharsets.UTF_8))
-                        .collect(Collectors.toList()));
+    public static Records createStringRecords(String topic, String... value) {
+        return createStringRecords(topic, Arrays.asList(value));
     }
 
     /**
@@ -149,7 +49,63 @@ public class RecordsUtils {
      * @return Records
      */
     public static Records createStringRecords(String topic, Collection<String> values) {
-        return createStringRecords(topic, DEFAULT_PARTITION, values);
+        return createStringRecords(topic, null, values);
+    }
+
+    /**
+     * create bytes records.
+     *
+     * @param topic topic
+     * @param values values
+     * @return Records
+     */
+    public static Records createBytesRecords(
+            String topic, Map<String, byte[]> headers, Collection<byte[]> values) {
+        return new DefaultRecords(
+                topic,
+                headers,
+                values.stream()
+                        .map(v -> new DefaultRecord(null, null, v))
+                        .collect(Collectors.toList()));
+    }
+
+    /**
+     * create bytes records.
+     *
+     * @param topic topic
+     * @param values values
+     * @return Records
+     */
+    public static Records createBytesRecords(String topic, Collection<byte[]> values) {
+        return createBytesRecords(topic, null, values);
+    }
+
+    /**
+     * create bytes records.
+     *
+     * @param topic topic
+     * @param values values
+     * @return Records
+     */
+    public static Records createBytesRecords(String topic, byte[]... values) {
+        return createBytesRecords(topic, null, Arrays.asList(values));
+    }
+
+    /**
+     * create string records.
+     *
+     * @param topic topic
+     * @param values values
+     * @return Records
+     */
+    public static Records createStringRecords(
+            String topic, Map<String, byte[]> headers, Collection<String> values) {
+        return createBytesRecords(
+                topic,
+                headers,
+                values.stream()
+                        .map(v -> v.getBytes(StandardCharsets.UTF_8))
+                        .collect(Collectors.toList()));
     }
 
     /**
@@ -172,6 +128,16 @@ public class RecordsUtils {
         }
     }
 
+    /**
+     * foreach record.
+     *
+     * @param records records
+     * @param consumer consumer
+     */
+    public static void foreachRecord(Records records, RecordConsumer consumer) throws Exception {
+        foreachRecord(records, consumer, null);
+    }
+
     /** RecordConsumer. */
     public interface RecordConsumer {
 
@@ -180,9 +146,9 @@ public class RecordsUtils {
          *
          * @param key key
          * @param value value
-         * @param headers headers
+         * @param allHeaders allHeaders
          */
-        void accept(byte[] key, byte[] value, Map<String, byte[]> headers) throws Exception;
+        void accept(byte[] key, byte[] value, Map<String, byte[]> allHeaders) throws Exception;
     }
 
     /**
@@ -192,7 +158,7 @@ public class RecordsUtils {
      */
     public static Map<String, byte[]> defaultSinkExtraHeaders() {
         final Map<String, byte[]> headers = new HashMap<>();
-        final int sentTs = (int) (System.currentTimeMillis() / 1000L);
+        final long sentTs = System.currentTimeMillis();
         headers.put(HEAD_KEY_SENT_TS, String.valueOf(sentTs).getBytes(StandardCharsets.UTF_8));
         return headers;
     }

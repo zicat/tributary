@@ -72,6 +72,10 @@ public class DefaultNettySource extends AbstractNettySource {
         this(config, host, 0, channel);
     }
 
+    public DefaultNettySource(ReadableConfig config, RecordsChannel channel) throws Exception {
+        this(config, OPTION_NETTY_HOST.defaultValue(), 0, channel);
+    }
+
     public DefaultNettySource(ReadableConfig config, String host, int port, RecordsChannel channel)
             throws Exception {
         this(

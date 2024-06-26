@@ -304,10 +304,10 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
      * @return DefaultRecords
      */
     private static DefaultRecords createRecords(ChannelHandlerContext ctx, TopicPartition tp) {
-        final int receivedTs = (int) (System.currentTimeMillis() / 1000);
+        final long receivedTs = System.currentTimeMillis();
         final String user = ctx.channel().attr(KEY_AUTHENTICATED_USER).get();
         final Map<String, byte[]> headers = sourceHeaders(receivedTs, user);
-        return new DefaultRecords(tp.topic(), tp.partition(), headers);
+        return new DefaultRecords(tp.topic(), headers);
     }
 
     /**

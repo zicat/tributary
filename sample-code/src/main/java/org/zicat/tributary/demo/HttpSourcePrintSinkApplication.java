@@ -29,6 +29,12 @@ public class HttpSourcePrintSinkApplication {
     private static final String ACTIVE_PROFILE = "http-source-print-sink";
 
     public static void main(String[] args) {
+        /*
+            curl -X POST http://localhost:8200/tributary/send?topic=my_topic    \
+                -H "Content-Type: application/json; charset=UTF-8"              \
+                -H "my_records_header: hv1"                                     \
+                -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i
+        */
         System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
         SpringApplication.run(HttpSourcePrintSinkApplication.class, args);
     }

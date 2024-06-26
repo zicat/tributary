@@ -35,12 +35,12 @@ public class RecordsTest {
     public void test() {
 
         try {
-            new DefaultRecords(null, 1, null, null);
+            new DefaultRecords(null, null, null);
             Assert.fail();
         } catch (IllegalArgumentException ignore) {
         }
 
-        test(new DefaultRecords("s1", 1, null, null));
+        test(new DefaultRecords("s1", null, null));
 
         final Map<String, byte[]> headers = new HashMap<>();
         headers.put("h1", "hv1".getBytes());
@@ -58,7 +58,7 @@ public class RecordsTest {
                         new DefaultRecord(record1Headers, "kr1".getBytes(), "vr1".getBytes()),
                         new DefaultRecord(record2Headers, "kr2".getBytes(), "vr2".getBytes()));
 
-        test(new DefaultRecords("s1", 1, headers, records));
+        test(new DefaultRecords("s1", headers, records));
     }
 
     public static void test(Records records) {
@@ -68,7 +68,6 @@ public class RecordsTest {
 
         final Records newRecords = Records.parse(buffer);
         Assert.assertEquals(records.topic(), newRecords.topic());
-        Assert.assertEquals(records.partition(), newRecords.partition());
         Assert.assertEquals(records.count(), newRecords.count());
 
         final Iterator<Record> it = records.iterator();

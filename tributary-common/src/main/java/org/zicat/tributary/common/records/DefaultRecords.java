@@ -25,33 +25,25 @@ import java.util.*;
 public class DefaultRecords implements Records {
 
     private final String topic;
-    private final int partition;
     private final Map<String, byte[]> headers;
     private final Collection<Record> records;
 
-    public DefaultRecords(
-            String topic, int partition, Map<String, byte[]> headers, Collection<Record> records) {
+    public DefaultRecords(String topic, Map<String, byte[]> headers, Collection<Record> records) {
         if (topic == null) {
             throw new IllegalArgumentException("topic is null");
         }
         this.topic = topic;
-        this.partition = partition;
         this.headers = headers == null ? new HashMap<>() : headers;
         this.records = records == null ? new ArrayList<>() : records;
     }
 
-    public DefaultRecords(String topic, int partition, Map<String, byte[]> headers) {
-        this(topic, partition, headers, new ArrayList<>());
+    public DefaultRecords(String topic, Map<String, byte[]> headers) {
+        this(topic, headers, new ArrayList<>());
     }
 
     @Override
     public String topic() {
         return topic;
-    }
-
-    @Override
-    public int partition() {
-        return partition;
     }
 
     @Override
@@ -79,7 +71,6 @@ public class DefaultRecords implements Records {
                 new StringBuilder("{topic:")
                         .append(topic)
                         .append(", partition:")
-                        .append(partition)
                         .append(", headers:[");
         final Iterator<Map.Entry<String, byte[]>> it = headers.entrySet().iterator();
         while (it.hasNext()) {

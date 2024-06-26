@@ -16,29 +16,23 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.demo.source;
+package org.zicat.tributary.source.netty.pipeline;
 
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.RecordsChannel;
-import org.zicat.tributary.source.netty.AbstractNettySource;
-import org.zicat.tributary.source.netty.AbstractNettySourceFactory;
+import org.zicat.tributary.source.netty.DefaultNettySource;
 
-/** HttpSourceFactory. */
-public class HttpSourceFactory extends AbstractNettySourceFactory {
+/** HttpPipelineInitializationFactory. */
+public class HttpPipelineInitializationFactory implements PipelineInitializationFactory {
+
+    public static final String IDENTITY = "httpDecoder";
 
     @Override
     public String identity() {
-        return "http";
+        return IDENTITY;
     }
 
     @Override
-    public AbstractNettySource createNettySource(
-            String sourceId,
-            String host,
-            int port,
-            int eventThreads,
-            RecordsChannel channel,
-            ReadableConfig config) {
-        return new HttpSource(sourceId, host, port, eventThreads, channel);
+    public PipelineInitialization createPipelineInitialization(DefaultNettySource source)
+            throws Exception {
+        return new HttpPipelineInitialization(source);
     }
 }

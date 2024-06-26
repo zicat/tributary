@@ -55,7 +55,12 @@ public class DefaultRecord implements Record {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("{headers:[");
+        final StringBuilder sb =
+                new StringBuilder("{Key:")
+                        .append(new String(key, StandardCharsets.UTF_8))
+                        .append(", Value:")
+                        .append(new String(value, StandardCharsets.UTF_8))
+                        .append(", Headers:[");
         final Iterator<Map.Entry<String, byte[]>> it = headers.entrySet().iterator();
         while (it.hasNext()) {
             final Map.Entry<String, byte[]> entry = it.next();
@@ -66,11 +71,6 @@ public class DefaultRecord implements Record {
                 sb.append(",");
             }
         }
-        return sb.append("], key:")
-                .append(new String(key, StandardCharsets.UTF_8))
-                .append(", value:")
-                .append(new String(value, StandardCharsets.UTF_8))
-                .append("}")
-                .toString();
+        return sb.append("]").toString();
     }
 }

@@ -42,7 +42,6 @@ import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 public class ParquetHDFSWriter implements HDFSWriter {
 
     public static final String FIELD_TOPIC = "topic";
-    public static final String FIELD_PARTITION = "partition";
     public static final String FIELD_HEADERS = "headers";
     public static final String FIELD_KEY = "key";
     public static final String FIELD_VALUE = "value";
@@ -54,10 +53,6 @@ public class ParquetHDFSWriter implements HDFSWriter {
                     .name(FIELD_TOPIC)
                     .type()
                     .stringType()
-                    .noDefault()
-                    .name(FIELD_PARTITION)
-                    .type()
-                    .intType()
                     .noDefault()
                     .name(FIELD_HEADERS)
                     .type()
@@ -99,11 +94,10 @@ public class ParquetHDFSWriter implements HDFSWriter {
         final Map<String, byte[]> extraHeaders = defaultSinkExtraHeaders();
         foreachRecord(
                 records,
-                (key, value, headers) -> {
+                (key, value, allHeaders) -> {
                     final GenericRecord record = new GenericData.Record(SCHEMA);
                     record.put(FIELD_TOPIC, records.topic());
-                    record.put(FIELD_PARTITION, records.partition());
-                    record.put(FIELD_HEADERS, headers);
+                    record.put(FIELD_HEADERS, allHeaders);
                     record.put(FIELD_KEY, key);
                     record.put(FIELD_VALUE, value);
                     writer.write(record);

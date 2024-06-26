@@ -50,11 +50,10 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) throws IOException {
-        final int receivedTs = (int) (System.currentTimeMillis() / 1000);
+        final long receivedTs = System.currentTimeMillis();
         final Records records =
                 createBytesRecords(
                         source.sourceId(),
-                        partition,
                         SourceHeaders.sourceHeaders(receivedTs),
                         Collections.singletonList(packet));
         try {

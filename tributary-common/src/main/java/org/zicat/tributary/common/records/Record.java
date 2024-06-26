@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.common.records;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.zicat.tributary.common.VIntUtil;
 
 import java.nio.ByteBuffer;
@@ -33,6 +34,7 @@ import static org.zicat.tributary.common.BytesUtils.toVIntString;
 import static org.zicat.tributary.common.VIntUtil.*;
 
 /** Record. */
+@JsonTypeInfo(defaultImpl = JsonRecord.class, use = JsonTypeInfo.Id.CLASS)
 public interface Record {
 
     /**

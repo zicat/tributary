@@ -70,13 +70,13 @@ source.s1.netty.idle.second=60
 source.s1.netty.decoder=lineDecoder
 ```
 
-| key               | default       | type                                         | describe                                                                                                                                                                                                                         |
-|-------------------|---------------|----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host        | null          | string                                       | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
-| netty.port        |               | int(number)                                  | the port to bind, range 1000-65535                                                                                                                                                                                               |
-| netty.threads     | 10            | int(number)                                  | the count of netty event loop threads                                                                                                                                                                                            |
-| netty.idle.second | 120           | int(second)                                  | the second to close the idle socket                                                                                                                                                                                              |
-| netty.decoder     | lengthDecoder | enum[lengthDecoder,lineDecoder,kafkaDecoder] | the parser of network streaming                                                                                                                                                                                                  |
+| key               | default       | type                                                     | describe                                                                                                                                                                                                                         |
+|-------------------|---------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.host        | null          | string                                                   | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
+| netty.port        |               | int(number)                                              | the port to bind, range 1000-65535                                                                                                                                                                                               |
+| netty.threads     | 10            | int(number)                                              | the count of netty event loop threads                                                                                                                                                                                            |
+| netty.idle.second | 120           | int(second)                                              | the second to close the idle socket                                                                                                                                                                                              |
+| netty.decoder     | lengthDecoder | enum[lengthDecoder,lineDecoder,kafkaDecoder,httpDecoder] | the parser of network streaming                                                                                                                                                                                                  |
 
 Note：
 
@@ -95,8 +95,8 @@ Note：
    for reference.
 
 4. The kafkaDecoder parses streaming records
-   by [kafka-producer-protocol](https://kafka.apache.org/protocol#The_Messages_Produce). The
-   kafkaDecoder support more configuration as follows:
+   by [kafka-producer-protocol](https://kafka.apache.org/protocol#The_Messages_Produce). It supports
+   more configuration as follows:
 
 | key                                                   | default     | type        | describe                                                                                                                                                                                                        |
 |-------------------------------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -110,6 +110,14 @@ Note：
 | netty.decoder.kafka.topic.partitions                  | 60          | int(number) | the topic partitions to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata), recommend to set as multiples of tributary instances count for load balancing |
 | netty.decoder.kafka.sasl.plain                        | false       | bool        | the security switch whether open sasl plain                                                                                                                                                                     |
 | netty.decoder.kafka.sasl.plain.usernames              | null        | string      | the plain users configuration, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                                              |
+
+5. The httpDecoder parses streaming records by http protocol. It supports more configuration as
+   follows:
+
+| key                                   | default | type   | describe                                                                                                                   |
+|---------------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------------|
+| netty.decoder.http.path               | null    | string | the http path to match, if null means match any path. If the http path not matched, will return http 400 code(bad request) |
+| netty.decoder.http.content.length.max | 16mb    | int    | the limited content length, the http body over this will refused                                                           |
 
 ## Channel
 
@@ -246,9 +254,9 @@ sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
 ```
 
-| key   | default | type   | describe                |
-|-------|---------|--------|-------------------------|
-| topic |         | string | the name of kafka topic |
+| key   | default | type   | descr ibe                |
+|-------|---------|--------|--------------------------|
+| topic |         | string | the n ame of kafka topic |
 
 Tributary support all kafka producer params,
 [apache kafka producer config](https://kafka.apache.org/documentation/#producerconfigs) .

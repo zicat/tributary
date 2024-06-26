@@ -102,7 +102,10 @@ Check whether the tributary service receive and sink records successfully by the
 dir.
 
 ```text
-PrintFunction - {topic:s1, partition:0, headers:[_rec_ts:1718959019], records:[{headers:[], key:, value:This is my first tributary service, Hello tributary service!}]}
+[DirectPartitionHandler-thread-c1-group-1-0] INFO  o.z.t.s.function.PrintFunction -
+       Key: 
+       Value: This is my first tributary service, Hello tributary service!
+       Headers: [_rec_ts:1719543829930]
 ```
 
 Attempt to send some records through telnet, and please note that the port in the command needs to

@@ -75,13 +75,13 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
         final String targetTopic = targetTopic(originTopic);
         final Map<String, byte[]> extraHeaders = new HashMap<>(defaultSinkExtraHeaders());
         extraHeaders.put(HEAD_KEY_ORIGIN_TOPIC, originTopic.getBytes(StandardCharsets.UTF_8));
-
         final List<ProducerRecord<byte[], byte[]>> producerRecords =
                 new ArrayList<>(records.count());
         foreachRecord(
                 records,
-                (key, value, headers) ->
-                        producerRecords.add(createProducerRecord(targetTopic, key, value, headers)),
+                (key, value, allHeaders) ->
+                        producerRecords.add(
+                                createProducerRecord(targetTopic, key, value, allHeaders)),
                 extraHeaders);
         sendKafka(producerRecords, callback);
         return producerRecords.size();
