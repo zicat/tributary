@@ -62,13 +62,13 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
             Counter.build()
                     .name("sink_hdfs_counter")
                     .help("sink hdfs counter")
-                    .labelNames("host", "groupId", "topic")
+                    .labelNames("host", "id")
                     .register();
     private static final Gauge HDFS_OPEN_FILES_GAUGE =
             Gauge.build()
                     .name("hdfs_opened_files")
                     .help("hdfs opened files")
-                    .labelNames("host", "groupId", "id")
+                    .labelNames("host", "id")
                     .register();
 
     protected int idleTriggerMillis;
@@ -88,10 +88,8 @@ public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements T
         bucketDateTimeZone = context.get(OPTION_BUCKET_DATE_TIMEZONE);
         clock = context.get(OPTION_CLOCK);
         timeBucket = clock.currentTime(bucketDateFormat, bucketDateTimeZone);
-        sinkCounterChild =
-                HDFS_SINK_COUNTER.labels(metricsHost(), context.groupId(), context.topic());
-        openFilesGaugeChild =
-                HDFS_OPEN_FILES_GAUGE.labels(metricsHost(), context.groupId(), context.id());
+        sinkCounterChild = labelHostId(HDFS_SINK_COUNTER);
+        openFilesGaugeChild = labelHostId(HDFS_OPEN_FILES_GAUGE);
     }
 
     /**

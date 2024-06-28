@@ -113,14 +113,14 @@ match the configuration of source.s1.netty.port.
 
 ```shell
 $ curl -s http://localhost:8765/metrics|grep -v '#'
-sink_print_counter{host="10.103.1.130",groupId="group_1",topic="c1",} 6.0
-sink_lag{host="10.103.1.130",groupId="group_1",topic="c1",} 0.0
-channel_block_cache_query_hit_count{topic="c1",host="10.103.1.130",} 6.0
+sink_print_counter{host="10.103.1.130",id="c1_group_1_0",} 1.0
+channel_block_cache_query_hit_count{topic="c1",host="10.103.1.130",} 1.0
 channel_buffer_usage{topic="c1",host="10.103.1.130",} 0.0
-channel_write_bytes{topic="c1",host="10.103.1.130",} 340.0
+channel_write_bytes{topic="c1",host="10.103.1.130",} 95.0
 channel_active_segment{topic="c1",host="10.103.1.130",} 1.0
-channel_read_bytes{topic="c1",host="10.103.1.130",} 340.0
-channel_block_cache_query_total_count{topic="c1",host="10.103.1.130",} 6.0
+channel_read_bytes{topic="c1",host="10.103.1.130",} 95.0
+channel_block_cache_query_total_count{topic="c1",host="10.103.1.130",} 1.0
+sink_lag{host="10.103.1.130",id="c1_group_1",} 0.0
 ```
 
 Congratulations - you’ve successfully configured and deployed a tributary service!

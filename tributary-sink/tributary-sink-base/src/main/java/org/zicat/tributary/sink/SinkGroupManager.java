@@ -142,6 +142,10 @@ public class SinkGroupManager implements Closeable {
         }
     }
 
+    public String id() {
+        return channel.topic() + "_" + groupId;
+    }
+
     /**
      * get topic.
      *

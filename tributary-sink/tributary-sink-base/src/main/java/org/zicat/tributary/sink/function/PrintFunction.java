@@ -47,7 +47,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
             Counter.build()
                     .name("sink_print_counter")
                     .help("sink print counter")
-                    .labelNames("host", "groupId", "topic")
+                    .labelNames("host", "id")
                     .register();
 
     private long triggerMillis;
@@ -57,8 +57,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
     public void open(Context context) throws Exception {
         super.open(context);
         this.triggerMillis = context.get(CONFIG_TRIGGER_MILLIS);
-        this.sinkCountChild =
-                SINK_PRINT_COUNTER.labels(metricsHost(), context.groupId(), context.topic());
+        this.sinkCountChild = labelHostId(SINK_PRINT_COUNTER);
     }
 
     @Override

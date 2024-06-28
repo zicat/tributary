@@ -42,7 +42,7 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
             Counter.build()
                     .name("sink_kafka_counter")
                     .help("sink kafka counter")
-                    .labelNames("host", "groupId", "topic")
+                    .labelNames("host", "id")
                     .register();
 
     public static final String KAFKA_KEY_PREFIX = "kafka.";
@@ -53,8 +53,7 @@ public abstract class AbstractKafkaFunction extends AbstractFunction {
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        sinkCounterChild =
-                SINK_KAFKA_COUNTER.labels(metricsHost(), context.groupId(), context.topic());
+        sinkCounterChild = labelHostId(SINK_KAFKA_COUNTER);
     }
 
     /**

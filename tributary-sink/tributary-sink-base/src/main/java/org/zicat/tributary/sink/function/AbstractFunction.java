@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
+import io.prometheus.client.SimpleCollector;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -80,6 +81,17 @@ public abstract class AbstractFunction implements Function {
         if (callback == null || callback.run()) {
             this.committableOffset = newCommittableOffset;
         }
+    }
+
+    /**
+     * label host group id topic.
+     *
+     * @param collector collector
+     * @return child
+     * @param <CHILD> CHILD
+     */
+    protected <CHILD> CHILD labelHostId(SimpleCollector<CHILD> collector) {
+        return collector.labels(metricsHost(), context.id());
     }
 
     /** OnFlushCallback. */

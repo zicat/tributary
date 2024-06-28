@@ -31,7 +31,7 @@ import java.util.Map;
 public class SinkGroupManagerCollector extends Collector {
 
     private final Map<String, List<SinkGroupManager>> sinkGroupManagerMap;
-    private final List<String> labels = Arrays.asList("host", "groupId", "topic");
+    private final List<String> labels = Arrays.asList("host", "id");
     private final String metricsIp;
 
     public SinkGroupManagerCollector(
@@ -56,12 +56,10 @@ public class SinkGroupManagerCollector extends Collector {
         final GaugeMetricFamily labeledGauge =
                 new GaugeMetricFamily("sink_lag", "sink lag", labels);
         for (Map.Entry<String, List<SinkGroupManager>> entry : sinkGroupManagerMap.entrySet()) {
-            final String groupId = entry.getKey();
             final List<SinkGroupManager> sinkGroupManagers = entry.getValue();
             for (SinkGroupManager sinkGroupManager : sinkGroupManagers) {
                 labeledGauge.addMetric(
-                        Arrays.asList(metricsIp, groupId, sinkGroupManager.topic()),
-                        sinkGroupManager.lag());
+                        Arrays.asList(metricsIp, sinkGroupManager.id()), sinkGroupManager.lag());
             }
         }
         return labeledGauge;
