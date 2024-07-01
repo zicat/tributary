@@ -21,11 +21,7 @@ package org.zicat.tributary.source.netty.handler;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 import org.zicat.tributary.source.utils.SourceHeaders;
 
@@ -37,14 +33,11 @@ import static org.zicat.tributary.common.records.RecordsUtils.createBytesRecords
 /** ChannelHandler. */
 public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BytesChannelHandler.class);
     private final AbstractNettySource source;
-    private final RecordsChannel channel;
     private final int partition;
 
     public BytesChannelHandler(AbstractNettySource source, int partition) {
         this.source = source;
-        this.channel = source.getChannel();
         this.partition = partition;
     }
 
@@ -56,13 +49,7 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
                         source.sourceId(),
                         SourceHeaders.sourceHeaders(receivedTs),
                         Collections.singletonList(packet));
-        try {
-            channel.append(partition, records);
-        } catch (IOException e) {
-            LOG.error("append error, stop listen {}:{}", source.getHost(), source.getPort(), e);
-            IOUtils.closeQuietly(source);
-            throw e;
-        }
+        source.append(partition, records);
         ackSuccess(packet, ctx);
     }
 

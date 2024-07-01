@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.source.netty.pipeline;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -35,10 +34,10 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.handler.IdleCloseHandler;
-import org.zicat.tributary.source.netty.handler.kafka.HostPort;
 import org.zicat.tributary.source.netty.handler.KafkaMessageDecoder;
-import org.zicat.tributary.source.netty.handler.kafka.PlainServerCallbackHandler;
 import org.zicat.tributary.source.netty.handler.LengthDecoder;
+import org.zicat.tributary.source.netty.handler.kafka.HostPort;
+import org.zicat.tributary.source.netty.handler.kafka.PlainServerCallbackHandler;
 
 import javax.security.sasl.SaslServer;
 import java.io.IOException;
@@ -196,47 +195,40 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
                 }
 
                 @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        try {
-                            executor.shutdown();
-                        } finally {
-                            try {
-                                finalServiceDiscovery.unregisterService(currentInstance);
-                            } catch (Exception ignore) {
-                            } finally {
-                                IOUtils.closeQuietly(finalServiceDiscovery, finalClient);
-                            }
-                        }
-                    }
-                }
-
-                @Override
-                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-                        throws Exception {
-                    try {
-                        Thread.sleep(baseSleepTimeMs);
-                    } finally {
-                        super.exceptionCaught(ctx, cause);
-                    }
+                public void close() {
+                    closeResources(executor, currentInstance, finalServiceDiscovery, finalClient);
                 }
             };
         } catch (Exception e) {
-            try {
-                executor.shutdown();
-            } finally {
-                try {
-                    if (serviceDiscovery != null) {
-                        serviceDiscovery.unregisterService(currentInstance);
-                    }
-                } catch (Exception ignore) {
-                } finally {
-                    IOUtils.closeQuietly(serviceDiscovery, client);
-                }
-            }
+            closeResources(executor, currentInstance, serviceDiscovery, client);
             throw e;
+        }
+    }
+
+    /**
+     * close resources.
+     *
+     * @param executor executor
+     * @param currentInstance currentInstance
+     * @param serviceDiscovery serviceDiscovery
+     * @param client client
+     */
+    private static void closeResources(
+            ScheduledExecutorService executor,
+            ServiceInstance<HostPort> currentInstance,
+            ServiceDiscovery<HostPort> serviceDiscovery,
+            CuratorFramework client) {
+        try {
+            executor.shutdown();
+        } finally {
+            try {
+                if (serviceDiscovery != null) {
+                    serviceDiscovery.unregisterService(currentInstance);
+                }
+            } catch (Exception ignore) {
+            } finally {
+                IOUtils.closeQuietly(serviceDiscovery, client);
+            }
         }
     }
 
@@ -281,7 +273,11 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
     }
 
     @Override
-    public void close() {
-        IOUtils.closeQuietly(kafkaMessageDecoder);
+    public void close() throws IOException {
+        try {
+            super.close();
+        } finally {
+            IOUtils.closeQuietly(kafkaMessageDecoder);
+        }
     }
 }

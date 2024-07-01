@@ -21,16 +21,13 @@ package org.zicat.tributary.source.netty;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
-import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.pipeline.LengthPipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 
-import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
-import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;
-import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE_SECOND;
+import java.io.IOException;
 
 /** DefaultNettySource. */
 public class DefaultNettySource extends AbstractNettySource {
@@ -44,63 +41,12 @@ public class DefaultNettySource extends AbstractNettySource {
             String host,
             int port,
             int eventThreads,
-            RecordsChannel channel,
+            Channel channel,
             int idleSecond)
             throws Exception {
         super(sourceId, config, host, port, eventThreads, channel);
         this.idleSecond = idleSecond;
         this.pipelineInitialization = createPipelineInitialization();
-    }
-
-    public DefaultNettySource(int port, RecordsChannel channel) throws Exception {
-        this(
-                "",
-                new DefaultReadableConfig(),
-                OPTION_NETTY_HOST.defaultValue(),
-                port,
-                OPTION_NETTY_THREADS.defaultValue(),
-                channel,
-                OPTION_NETTY_IDLE_SECOND.defaultValue());
-    }
-
-    public DefaultNettySource(String host, RecordsChannel channel) throws Exception {
-        this(host, 0, channel);
-    }
-
-    public DefaultNettySource(ReadableConfig config, String host, RecordsChannel channel)
-            throws Exception {
-        this(config, host, 0, channel);
-    }
-
-    public DefaultNettySource(ReadableConfig config, RecordsChannel channel) throws Exception {
-        this(config, OPTION_NETTY_HOST.defaultValue(), 0, channel);
-    }
-
-    public DefaultNettySource(ReadableConfig config, String host, int port, RecordsChannel channel)
-            throws Exception {
-        this(
-                "",
-                config,
-                host,
-                port,
-                OPTION_NETTY_THREADS.defaultValue(),
-                channel,
-                OPTION_NETTY_IDLE_SECOND.defaultValue());
-    }
-
-    public DefaultNettySource(String host, int port, RecordsChannel channel) throws Exception {
-        this(
-                "",
-                new DefaultReadableConfig(),
-                host,
-                port,
-                OPTION_NETTY_THREADS.defaultValue(),
-                channel,
-                OPTION_NETTY_IDLE_SECOND.defaultValue());
-    }
-
-    public DefaultNettySource(RecordsChannel channel) throws Exception {
-        this(0, channel);
     }
 
     /**
@@ -109,7 +55,7 @@ public class DefaultNettySource extends AbstractNettySource {
      * @param ch ch
      */
     @Override
-    protected void initChannel(SocketChannel ch, RecordsChannel channel) {
+    protected void initChannel(SocketChannel ch) {
         pipelineInitialization.init(ch.pipeline());
     }
 
@@ -132,7 +78,7 @@ public class DefaultNettySource extends AbstractNettySource {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         try {
             super.close();
         } finally {

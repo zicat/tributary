@@ -29,9 +29,10 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.TributaryRuntimeException;
-import org.zicat.tributary.source.RecordsChannel;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.Source;
 
 import java.io.IOException;
@@ -52,7 +53,7 @@ public abstract class AbstractNettySource implements Source {
     protected final String host;
     protected int port;
     protected final int eventThreads;
-    protected final RecordsChannel channel;
+    protected final org.zicat.tributary.channel.Channel channel;
     protected final EventLoopGroup bossGroup;
     protected final EventLoopGroup workGroup;
     protected final ServerBootstrap serverBootstrap;
@@ -69,7 +70,7 @@ public abstract class AbstractNettySource implements Source {
             String host,
             int port,
             int eventThreads,
-            RecordsChannel channel) {
+            org.zicat.tributary.channel.Channel channel) {
         this.sourceId = sourceId;
         this.config = config;
         this.host = host;
@@ -104,8 +105,7 @@ public abstract class AbstractNettySource implements Source {
      *
      * @param ch ch
      */
-    protected abstract void initChannel(SocketChannel ch, RecordsChannel channel)
-            throws IOException;
+    protected abstract void initChannel(SocketChannel ch) throws IOException;
 
     /** init handlers. */
     private void initHandlers() {
@@ -113,7 +113,7 @@ public abstract class AbstractNettySource implements Source {
                 new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws IOException {
-                        AbstractNettySource.this.initChannel(ch, channel);
+                        AbstractNettySource.this.initChannel(ch);
                     }
                 });
     }
@@ -220,7 +220,33 @@ public abstract class AbstractNettySource implements Source {
     }
 
     @Override
-    public void close() {
+    public void append(int partition, Records records) throws IOException {
+        try {
+            channel.append(partition, records.toByteBuffer());
+        } catch (IOException e) {
+            LOG.error("append data error, close source", e);
+            IOUtils.closeQuietly(this);
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public void flush() throws IOException {
+        channel.flush();
+    }
+
+    @Override
+    public String topic() {
+        return channel.topic();
+    }
+
+    @Override
+    public int partition() {
+        return channel.partition();
+    }
+
+    @Override
+    public void close() throws IOException {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
@@ -241,6 +267,7 @@ public abstract class AbstractNettySource implements Source {
         if (bossGroup != null) {
             bossGroup.shutdownGracefully();
         }
+        channel.flush();
     }
 
     /**
@@ -259,15 +286,6 @@ public abstract class AbstractNettySource implements Source {
      */
     public String getHost() {
         return host;
-    }
-
-    /**
-     * get channel.
-     *
-     * @return channel
-     */
-    public RecordsChannel getChannel() {
-        return channel;
     }
 
     /**

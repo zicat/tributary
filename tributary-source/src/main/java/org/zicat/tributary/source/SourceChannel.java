@@ -23,8 +23,8 @@ import org.zicat.tributary.common.records.Records;
 
 import java.io.IOException;
 
-/** RecordsChannel. */
-public interface RecordsChannel {
+/** SourceChannel. */
+public interface SourceChannel {
 
     /**
      * append records to channel.
@@ -54,43 +54,4 @@ public interface RecordsChannel {
      * @return partition
      */
     int partition();
-
-    /**
-     * create records channel.
-     *
-     * @param channel channel
-     * @return RecordsChannel
-     */
-    static RecordsChannel create(Channel channel) {
-        return new DefaultRecordsChannel(channel);
-    }
-
-    /** DefaultRecordsChannel. */
-    class DefaultRecordsChannel implements RecordsChannel {
-        private final Channel channel;
-
-        public DefaultRecordsChannel(Channel channel) {
-            this.channel = channel;
-        }
-
-        @Override
-        public void append(int partition, Records records) throws IOException {
-            channel.append(partition, records.toByteBuffer());
-        }
-
-        @Override
-        public void flush() throws IOException {
-            channel.flush();
-        }
-
-        @Override
-        public String topic() {
-            return channel.topic();
-        }
-
-        @Override
-        public int partition() {
-            return channel.partition();
-        }
-    }
 }

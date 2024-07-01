@@ -30,12 +30,12 @@ import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.pipeline.HttpPipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.HttpPipelineInitializationFactory;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitializationFactory;
+import org.zicat.tributary.source.test.netty.DefaultNettySourceMock;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -69,8 +69,7 @@ public class HttpPipelineInitializationFactoryTest {
         config.put(HttpPipelineInitialization.OPTIONS_PATH, path);
 
         try (Channel channel = memoryChannelFactory(groupId).createChannel(topic, null);
-                DefaultNettySource source =
-                        new DefaultNettySource(config, RecordsChannel.create(channel))) {
+                DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             assertNotPostRequest(pipelineInitialization);

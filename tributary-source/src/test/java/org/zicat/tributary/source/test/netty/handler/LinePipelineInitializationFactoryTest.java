@@ -19,7 +19,6 @@
 package org.zicat.tributary.source.test.netty.handler;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,11 +26,11 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 import org.zicat.tributary.source.netty.pipeline.LinePipelineInitializationFactory;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitializationFactory;
+import org.zicat.tributary.source.test.netty.DefaultNettySourceMock;
 
 import java.util.List;
 
@@ -51,12 +50,11 @@ public class LinePipelineInitializationFactoryTest {
         final String groupId = "g1";
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         try (Channel channel = memoryChannelFactory(groupId).createChannel("t1", null);
-                DefaultNettySource source =
-                        new DefaultNettySource(RecordsChannel.create(channel))) {
+                DefaultNettySource source = new DefaultNettySourceMock(channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel.pipeline());
-            final ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
+            final ByteBuf byteBuf = embeddedChannel.alloc().buffer();
             try {
                 byteBuf.writeBytes("lynn".getBytes());
                 byteBuf.writeBytes(System.lineSeparator().getBytes());

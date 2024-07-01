@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.source;
 
+import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 
@@ -31,6 +32,5 @@ public interface SourceFactory extends SpiFactory {
      * @param config config
      * @return Source
      */
-    Source createSource(String sourceId, RecordsChannel channel, ReadableConfig config)
-            throws Exception;
+    Source createSource(String sourceId, Channel channel, ReadableConfig config) throws Exception;
 }

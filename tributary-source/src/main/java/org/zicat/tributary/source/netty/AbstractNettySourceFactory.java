@@ -18,10 +18,10 @@
 
 package org.zicat.tributary.source.netty;
 
+import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;
 
@@ -47,7 +47,7 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
                     .defaultValue("");
 
     @Override
-    public final Source createSource(String sourceId, RecordsChannel channel, ReadableConfig config)
+    public final Source createSource(String sourceId, Channel channel, ReadableConfig config)
             throws Exception {
         final String host = config.get(OPTION_NETTY_HOST);
         final int port = config.get(OPTION_NETTY_PORT);
@@ -71,7 +71,7 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
             String host,
             int port,
             int eventThreads,
-            RecordsChannel channel,
+            Channel channel,
             ReadableConfig config)
             throws Exception;
 }

@@ -25,7 +25,6 @@ import org.springframework.stereotype.Component;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.*;
 import org.zicat.tributary.service.configuration.SourceConfiguration;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.Source;
 import org.zicat.tributary.source.SourceFactory;
 
@@ -73,9 +72,7 @@ public class DynamicSource implements Closeable {
             final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
             try {
                 final ReadableConfig sourceConfig = allSourceConfig.filterAndRemovePrefixKey(head);
-                final Source source =
-                        sourceFactory.createSource(
-                                sourceId, RecordsChannel.create(channel), sourceConfig);
+                final Source source = sourceFactory.createSource(sourceId, channel, sourceConfig);
                 source.start();
                 sourceCache.put(sourceId, source);
             } catch (Throwable e) {

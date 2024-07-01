@@ -37,10 +37,8 @@ import org.apache.kafka.common.utils.AbstractIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.BytesUtils;
-import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 import org.zicat.tributary.source.netty.handler.kafka.*;
 import org.zicat.tributary.source.netty.handler.kafka.MetadataResponse.PartitionMetadata;
@@ -81,7 +79,6 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
     protected final AbstractNettySource source;
     protected final String clusterId;
     protected final int partitions;
-    protected final RecordsChannel channel;
     protected volatile List<Node> nodes;
     protected volatile Node currentNode;
     protected final String host;
@@ -99,7 +96,6 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
             ScheduledExecutorService executor)
             throws Exception {
         this.source = source;
-        this.channel = source.getChannel();
         this.host = hostPort.getHost();
         this.port = String.valueOf(hostPort.getPort());
         this.clusterId = clusterId;
@@ -240,7 +236,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (!(cause.getMessage() != null && cause.getMessage().contains("Connection reset by peer"))
                 && !(cause instanceof SaslAuthenticationException)) {
             LOG.error("channel error", cause);
@@ -264,7 +260,8 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
      * @param header header
      */
     private void handleProduceRequest(
-            ProduceRequest request, ChannelHandlerContext ctx, RequestHeader header) {
+            ProduceRequest request, ChannelHandlerContext ctx, RequestHeader header)
+            throws IOException {
         final Map<TopicPartition, PartitionResponse> partitionRes = new HashMap<>();
         final Map<TopicPartition, MemoryRecords> allRecords = request.partitionRecordsOrFail();
         final List<Node> nodes = this.nodes;
@@ -285,13 +282,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
                     defaultRecords.addRecord(toRecord(record));
                 }
             }
-            final int channelPartition = tp.partition() % channel.partition();
-            try {
-                channel.append(channelPartition, defaultRecords);
-            } catch (Throwable e) {
-                LOG.error("append data error", e);
-                IOUtils.closeQuietly(source);
-            }
+            source.append(tp.partition() % source.partition(), defaultRecords);
         }
         ctx.writeAndFlush(toByteBuf(new ProduceResponse(partitionRes), header));
     }
@@ -422,10 +413,5 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList());
-    }
-
-    @Override
-    public void close() throws IOException {
-        channel.flush();
     }
 }

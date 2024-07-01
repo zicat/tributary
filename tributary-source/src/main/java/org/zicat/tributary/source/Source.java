@@ -21,7 +21,7 @@ package org.zicat.tributary.source;
 import java.io.Closeable;
 
 /** Source. */
-public interface Source extends Closeable {
+public interface Source extends Closeable, SourceChannel {
 
     /**
      * start the source to receive records.

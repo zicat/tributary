@@ -25,16 +25,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
-import org.zicat.tributary.source.RecordsChannel;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -45,8 +44,8 @@ import static org.zicat.tributary.source.utils.SourceHeaders.sourceHeaders;
 /** HttpMessageDecoder. */
 public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequest> {
 
+    private static final String ENCODE = StandardCharsets.UTF_8.name();
     private static final byte[] EMPTY = new byte[0];
-    private static final Logger LOG = LoggerFactory.getLogger(HttpMessageDecoder.class);
     private static final ObjectMapper MAPPER =
             new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     private static final TypeReference<List<Record>> BODY_TYPE =
@@ -71,21 +70,19 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
 
     public static final String RESPONSE_BAD_JSON_PARSE_FAIL = "json body parse to records fail";
 
-    private final RecordsChannel channel;
     private final AbstractNettySource source;
     private final int partition;
     private final String path;
 
     public HttpMessageDecoder(AbstractNettySource source, int partition, String path) {
         this.source = source;
-        this.channel = source.getChannel();
         this.partition = partition;
         this.path = path;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg)
-            throws URISyntaxException {
+            throws URISyntaxException, IOException {
 
         final ByteBuf byteBuf = msg.content();
         if (!HttpMethod.POST.equals(msg.method())) {
@@ -120,12 +117,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             badRequestResponse(ctx, RESPONSE_BAD_JSON_PARSE_FAIL);
             return;
         }
-        try {
-            channel.append(partition, new DefaultRecords(topic, recordsHeader, records));
-        } catch (Throwable e) {
-            LOG.error("append data error", e);
-            IOUtils.closeQuietly(source);
-        }
+        source.append(partition, new DefaultRecords(topic, recordsHeader, records));
         okResponse(ctx);
     }
 
@@ -252,7 +244,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
         private final Map<String, String> params;
         private final String path;
 
-        public PathParams(String u) throws URISyntaxException {
+        public PathParams(String u) throws URISyntaxException, UnsupportedEncodingException {
             final URI uri = new URI(u);
             this.path = uri.getPath();
             this.params = params(uri);
@@ -264,18 +256,19 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
          * @param uri uri
          * @return params
          */
-        private static Map<String, String> params(URI uri) {
+        private static Map<String, String> params(URI uri) throws UnsupportedEncodingException {
             final Map<String, String> params = new HashMap<>();
             if (uri.getQuery() == null) {
                 return params;
             }
             final String query = uri.getQuery();
-            for (String param : query.split("&")) {
-                String[] pair = param.split("=");
-                if (pair.length > 1) {
-                    params.put(pair[0], pair[1]);
-                } else {
-                    params.put(pair[0], "");
+            if (query != null) {
+                final String[] pairs = query.split("&");
+                for (String pair : pairs) {
+                    final int idx = pair.indexOf("=");
+                    final String key = URLDecoder.decode(pair.substring(0, idx), ENCODE);
+                    final String value = URLDecoder.decode(pair.substring(idx + 1), ENCODE);
+                    params.put(key, value);
                 }
             }
             return params;
