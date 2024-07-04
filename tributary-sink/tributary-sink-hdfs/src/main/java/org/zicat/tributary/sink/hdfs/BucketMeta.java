@@ -19,9 +19,10 @@
 package org.zicat.tributary.sink.hdfs;
 
 import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.sink.function.Context;
 
 /** BucketMeta. */
-public class BucketMeta<P> {
+public class BucketMeta {
 
     public static final String IN_USE_SUFFIX = ".tmp";
 
@@ -29,15 +30,15 @@ public class BucketMeta<P> {
     protected final String fileName;
     protected final long rollSize;
     protected final int maxRetries;
-    protected final P payload;
+    protected final Context context;
 
     public BucketMeta(
-            String bucketPath, String fileName, long rollSize, int maxRetries, P payload) {
+            Context context, String bucketPath, String fileName, long rollSize, int maxRetries) {
+        this.context = context;
         this.bucketPath = bucketPath;
         this.fileName = fileName;
         this.rollSize = rollSize;
         this.maxRetries = maxRetries;
-        this.payload = payload;
     }
 
     /**
@@ -116,15 +117,6 @@ public class BucketMeta<P> {
      */
     public final int maxRetries() {
         return maxRetries;
-    }
-
-    /**
-     * get payload.
-     *
-     * @return payload
-     */
-    public final P payload() {
-        return payload;
     }
 
     /** call runner. */

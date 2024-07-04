@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
 import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
@@ -58,88 +57,11 @@ public class AbstractHDFSFunctionTest {
     }
 
     @Test
-    public void testPayload() throws Exception {
-        final String bucket = "event";
-        final AtomicInteger counter = new AtomicInteger();
-        final AbstractHDFSFunction<AtomicInteger> function =
-                new AbstractHDFSFunction<AtomicInteger>() {
-                    @Override
-                    public void process(GroupOffset groupOffset, Iterator<Records> iterator)
-                            throws IOException {
-                        while (iterator.hasNext()) {
-                            appendData(bucket, iterator.next());
-                        }
-                        commit(groupOffset, null);
-                    }
-
-                    @Override
-                    protected String prefixFileNameInBucket() {
-                        return "aa";
-                    }
-
-                    @Override
-                    protected BucketWriter<AtomicInteger> initializeBucketWriter(
-                            String bucketPath, String realName) {
-
-                        return new BucketWriter<AtomicInteger>(
-                                bucketPath,
-                                realName,
-                                hdfsWriterFactory,
-                                privilegedExecutor,
-                                rollSize,
-                                maxRetry,
-                                counter) {
-                            @Override
-                            public void append(Records records) throws IOException {
-                                super.append(records);
-                                payload.addAndGet(records.count());
-                            }
-                        };
-                    }
-                };
-        final ContextBuilder contextBuilder =
-                ContextBuilder.newBuilder()
-                        .partitionId(0)
-                        .topic("t1")
-                        .startGroupOffset(new GroupOffset(0, 0, "g1"));
-
-        contextBuilder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
-        contextBuilder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
-        final Context context = contextBuilder.build();
-        function.open(context);
-        List<String> testData = Arrays.asList("1", "2", "3");
-        function.process(
-                new GroupOffset(1, 1, "g1"),
-                Collections.singletonList(createStringRecords("t1", testData)).iterator());
-        Thread.sleep(1100);
-        function.process(
-                new GroupOffset(1, 1, "g1"),
-                Collections.singletonList(createStringRecords("t1", testData)).iterator());
-        final List<AtomicInteger> payloads = function.closeAllBuckets();
-        function.close();
-        Assert.assertEquals(2 * testData.size(), counter.get());
-        Assert.assertEquals(1, payloads.size());
-        Assert.assertEquals(testData.size() * 2, payloads.get(0).get());
-    }
-
-    @Test
     public void testBucketClosed() throws Exception {
         final String bucket = "counter";
-        final MockHDFSWriter mockWriter = new MockHDFSWriter();
-        final HDFSWriterFactory factory =
-                new HDFSWriterFactory() {
-                    @Override
-                    public String fileExtension() {
-                        return "snappy";
-                    }
-
-                    @Override
-                    public HDFSWriter create() {
-                        return mockWriter;
-                    }
-                };
-        final AbstractHDFSFunction<Void> function =
-                new AbstractHDFSFunction<Void>() {
+        final MockHDFSWriter mockWriter = new MockHDFSWriter("snappy");
+        final AbstractHDFSFunction function =
+                new AbstractHDFSFunction() {
                     @Override
                     public void process(GroupOffset groupOffset, Iterator<Records> iterator)
                             throws Exception {
@@ -156,16 +78,26 @@ public class AbstractHDFSFunctionTest {
                     }
 
                     @Override
-                    protected BucketWriter<Void> initializeBucketWriter(
+                    protected BucketWriter initializeBucketWriter(
                             String bucketPath, String realName) {
-                        return new BucketWriter<>(
+                        return new BucketWriter(
+                                null,
                                 bucketPath,
                                 realName,
-                                factory,
+                                new HDFSWriterFactory() {
+                                    @Override
+                                    public HDFSWriter create(Context context) {
+                                        return mockWriter;
+                                    }
+
+                                    @Override
+                                    public String identity() {
+                                        return "mock";
+                                    }
+                                },
                                 privilegedExecutor,
                                 rollSize,
-                                maxRetry,
-                                null);
+                                maxRetry);
                     }
                 };
         final ContextBuilder contextBuilder =
@@ -192,9 +124,9 @@ public class AbstractHDFSFunctionTest {
     public void testAppend() throws Exception {
 
         final String bucket = "counter";
-        final MockHDFSWriter mockWriter = new MockHDFSWriter();
-        final AbstractHDFSFunction<Void> function =
-                new AbstractHDFSFunction<Void>() {
+        final MockHDFSWriter mockWriter = new MockHDFSWriter("snappy");
+        final AbstractHDFSFunction function =
+                new AbstractHDFSFunction() {
                     @Override
                     public void process(GroupOffset groupOffset, Iterator<Records> iterator)
                             throws IOException {
@@ -210,26 +142,26 @@ public class AbstractHDFSFunctionTest {
                     }
 
                     @Override
-                    protected BucketWriter<Void> initializeBucketWriter(
+                    protected BucketWriter initializeBucketWriter(
                             String bucketPath, String realName) {
-                        return new BucketWriter<>(
+                        return new BucketWriter(
+                                null,
                                 bucketPath,
                                 realName,
                                 new HDFSWriterFactory() {
                                     @Override
-                                    public String fileExtension() {
-                                        return "snappy";
+                                    public HDFSWriter create(Context context) {
+                                        return mockWriter;
                                     }
 
                                     @Override
-                                    public HDFSWriter create() {
-                                        return mockWriter;
+                                    public String identity() {
+                                        return "mock";
                                     }
                                 },
                                 privilegedExecutor,
                                 rollSize,
-                                maxRetry,
-                                null);
+                                maxRetry);
                     }
                 };
         final ContextBuilder contextBuilder =

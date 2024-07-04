@@ -42,8 +42,11 @@ public class MockHDFSWriter implements HDFSWriter {
     private final int numberOfRetriesRequired;
     public volatile AtomicInteger currentCloseAttempts = new AtomicInteger(0);
 
-    public MockHDFSWriter() {
+    private final String fileExtension;
+
+    public MockHDFSWriter(String fileExtension) {
         this.numberOfRetriesRequired = 0;
+        this.fileExtension = fileExtension;
     }
 
     public int getFilesOpened() {
@@ -83,7 +86,10 @@ public class MockHDFSWriter implements HDFSWriter {
         return size;
     }
 
-    public void sync() {}
+    @Override
+    public String fileExtension() {
+        return fileExtension;
+    }
 
     public void close() throws IOException {
         filesClosed++;

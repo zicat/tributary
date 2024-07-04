@@ -107,7 +107,9 @@ public class ParquetHDFSWriter implements HDFSWriter {
     }
 
     @Override
-    public void sync() {}
+    public String fileExtension() {
+        return compressionCodecName.getExtension() + "." + "parquet";
+    }
 
     @Override
     public void close() throws IOException {

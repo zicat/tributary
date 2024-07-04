@@ -32,7 +32,7 @@ import org.zicat.tributary.sink.function.Trigger;
 import java.util.Iterator;
 
 /** DefaultHDFSFunction. */
-public class DefaultHDFSFunction extends AbstractHDFSFunction<Void> implements Trigger {
+public class DefaultHDFSFunction extends AbstractHDFSFunction implements Trigger {
 
     public static final ConfigOption<Integer> OPTION_IDLE_MILLIS =
             ConfigOptions.key("idle.trigger.millis")

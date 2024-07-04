@@ -46,9 +46,9 @@ public interface HDFSWriter extends Closeable {
     int append(Records records) throws Exception;
 
     /**
-     * sync stream.
+     * file extension.
      *
-     * @throws IOException IOException
+     * @return file extension
      */
-    void sync() throws IOException;
+    String fileExtension();
 }

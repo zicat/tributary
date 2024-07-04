@@ -51,6 +51,7 @@ import static org.zicat.tributary.common.records.RecordsUtils.HEAD_KEY_SENT_TS;
 import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
 import static org.zicat.tributary.sink.hdfs.DefaultHDFSFunction.*;
 import static org.zicat.tributary.sink.hdfs.ParquetHDFSWriter.*;
+import static org.zicat.tributary.sink.hdfs.ParquetHDFSWriterFactory.OPTION_OUTPUT_COMPRESSION_CODEC;
 
 /** DefaultHDFSFunctionTest. */
 public class DefaultHDFSFunctionTest {

@@ -31,6 +31,7 @@ import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
+import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.hdfs.BucketWriter;
 import org.zicat.tributary.sink.hdfs.HDFSWriter;
 import org.zicat.tributary.sink.hdfs.HDFSWriterFactory;
@@ -54,8 +55,8 @@ public class BucketWriterTest {
     @Test
     public void testSizeRoller() throws IOException {
         int maxBytes = 300;
-        final MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-        final BucketWriter<Void> bucketWriter =
+        final MockHDFSWriter hdfsWriter = new MockHDFSWriter(null);
+        final BucketWriter bucketWriter =
                 new BucketWriterBuilder(hdfsWriter).setRollSize(maxBytes).build();
 
         for (int i = 0; i < 1000; i++) {
@@ -75,9 +76,8 @@ public class BucketWriterTest {
     public void testFileSuffixNotGiven() throws IOException {
         // Need to override system time use for test, so we know what to expect
 
-        MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-        BucketWriter<Void> bucketWriter =
-                new BucketWriterBuilder(hdfsWriter).setCodeC("snappy").build();
+        MockHDFSWriter hdfsWriter = new MockHDFSWriter(".snappy.parquet");
+        BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter).setCodeC("snappy").build();
 
         bucketWriter.append(RecordsUtils.createStringRecords("t1", "foo"));
 
@@ -90,8 +90,8 @@ public class BucketWriterTest {
     public void testInUseSuffix() throws IOException {
         final String suffix = "WELCOME_TO_THE_HELLMOUNTH";
 
-        final MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-        final BucketWriter<Void> bucketWriter =
+        final MockHDFSWriter hdfsWriter = new MockHDFSWriter("");
+        final BucketWriter bucketWriter =
                 new BucketWriterBuilder(hdfsWriter).setInUseSuffix(suffix).build();
 
         bucketWriter.append(RecordsUtils.createStringRecords("t1", "foo"));
@@ -125,7 +125,7 @@ public class BucketWriterTest {
             final MockFileSystem mockFs = new MockFileSystem(fs, 2, true);
             final MockParquetHDFSWriter writer = new MockParquetHDFSWriter(mockFs, codec);
             final AtomicInteger renameCount = new AtomicInteger();
-            final BucketWriter<Void> bucketWriter =
+            final BucketWriter bucketWriter =
                     new BucketWriterBuilder(writer)
                             .setBucketPath(bucketPath)
                             .setFileName(fileName)
@@ -179,7 +179,7 @@ public class BucketWriterTest {
         final MockParquetHDFSWriter writer = new MockParquetHDFSWriter(mockFs, codec);
         final AtomicInteger renameCount = new AtomicInteger();
 
-        final BucketWriter<Void> bucketWriter =
+        final BucketWriter bucketWriter =
                 new BucketWriterBuilder(writer)
                         .setBucketPath(bucketPath)
                         .setFileName(fileName)
@@ -205,13 +205,13 @@ public class BucketWriterTest {
 
     @Test
     public void testRotateBucketOnIOException() throws IOException {
-        final MockHDFSWriter hdfsWriter = Mockito.spy(new MockHDFSWriter());
+        final MockHDFSWriter hdfsWriter = Mockito.spy(new MockHDFSWriter(""));
         final PrivilegedExecutor ugiProxy =
                 TributaryAuthenticationUtil.getAuthenticator(null, null).proxyAs("alice");
 
         // Cause a roll after every successful append().
         final int rollSize = 1;
-        final BucketWriter<Void> bucketWriter =
+        final BucketWriter bucketWriter =
                 new BucketWriterBuilder(hdfsWriter)
                         .setProxyUser(ugiProxy)
                         .setRollSize(rollSize)
@@ -312,24 +312,24 @@ public class BucketWriterTest {
             return this;
         }
 
-        public BucketWriter<Void> build() {
+        public BucketWriter build() {
             if (writer == null) {
-                writer = new MockHDFSWriter();
+                writer = new MockHDFSWriter("." + codeC);
             }
             final HDFSWriterFactory factory =
                     new HDFSWriterFactory() {
                         @Override
-                        public String fileExtension() {
-                            return "." + codeC + ".parquet";
+                        public HDFSWriter create(Context context) {
+                            return writer;
                         }
 
                         @Override
-                        public HDFSWriter create() {
-                            return writer;
+                        public String identity() {
+                            return "mock";
                         }
                     };
-            return new BucketWriter<Void>(
-                    bucketPath, fileName, factory, proxyUser, rollSize, maxRetries, null) {
+            return new BucketWriter(
+                    null, bucketPath, fileName, factory, proxyUser, rollSize, maxRetries) {
                 @Override
                 protected FileSystem getFileSystem(Path path, Configuration config)
                         throws IOException {

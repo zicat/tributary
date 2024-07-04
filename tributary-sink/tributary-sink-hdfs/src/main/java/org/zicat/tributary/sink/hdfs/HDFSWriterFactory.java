@@ -18,15 +18,17 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.zicat.tributary.common.SafeFactory;
+import org.zicat.tributary.common.SpiFactory;
+import org.zicat.tributary.sink.function.Context;
 
 /** HDFSWriterFactory. */
-public interface HDFSWriterFactory extends SafeFactory<HDFSWriter> {
+public interface HDFSWriterFactory extends SpiFactory {
 
     /**
-     * get the file extension.
+     * create hdfs writer with context.
      *
-     * @return file extension.
+     * @param context context
+     * @return HDFSWriter
      */
-    String fileExtension();
+    HDFSWriter create(Context context);
 }

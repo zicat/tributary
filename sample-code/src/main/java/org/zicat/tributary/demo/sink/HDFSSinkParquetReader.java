@@ -46,7 +46,7 @@ public class HDFSSinkParquetReader {
                                 Thread.currentThread()
                                         .getContextClassLoader()
                                         .getResource(
-                                                "7420ae3d_8f57_4105_9875_3ca0a495b003_c1_group_1_0.1.snappy.parquet"))
+                                                "6f74e039_ddfd_4137_b397_7486adc8d46a_c1_sink_hdfs_0.1.snappy.parquet"))
                         .toURI();
         final InputFile inputFile =
                 HadoopInputFile.fromPath(new org.apache.hadoop.fs.Path(uri), configuration);
@@ -58,7 +58,6 @@ public class HDFSSinkParquetReader {
             GenericRecord record;
             while ((record = reader.read()) != null) {
                 final String topic = record.get("topic").toString();
-                final int partition = (int) record.get("partition");
                 final ByteBuffer key = (ByteBuffer) record.get("key");
                 final ByteBuffer value = (ByteBuffer) record.get("value");
                 final Map<Utf8, ByteBuffer> headers = (Map<Utf8, ByteBuffer>) record.get("headers");
@@ -67,8 +66,6 @@ public class HDFSSinkParquetReader {
                 System.out.println(
                         "topic:"
                                 + topic
-                                + ", partition:"
-                                + partition
                                 + ", headers:["
                                 + sj
                                 + "], key:"

@@ -225,21 +225,23 @@ sink.group_1.bucket.date.timezone=GMT+8
 sink.group_1.max.retries=3
 sink.group_1.keytab=
 sink.group_1.principle=
-sink.group_1.output.compression.codec=snappy
+sink.group_1.writer.identity=parquet
+sink.group_1.writer.parquet.compression.codec=snappy
 sink.group_1.idle.trigger.millis=60000
 ```
 
-| key                      | default         | type         | describe                                                                                                                                                                                |
-|--------------------------|-----------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| sink.path                |                 | string       | the root path to sink                                                                                                                                                                   |
-| roll.size                | 268435456(256M) | long(byte)   | the max size of the file                                                                                                                                                                |
-| bucket.date.format       | yyyyMMdd_HH     | string       | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                     |   
-| bucket.date.timezone     | UTC             | string       | the timezone of bucket date format                                                                                                                                                      | 
-| max.retries              | 3               | int(number)  | the max retry times when operate hdfs fail                                                                                                                                              |
-| keytab                   |                 | string       | the keytab if hdfs use kerberos authenticator                                                                                                                                           |
-| principle                |                 | string       | the principle if hdfs use kerberos authenticator                                                                                                                                        |
-| output.compression.codec | snappy          | string       | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                         | 
-| idle.trigger.millis      | 60000           | long(millis) | the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java) |
+| key                              | default         | type         | describe                                                                                                                                                                                |
+|----------------------------------|-----------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sink.path                        |                 | string       | the root path to sink                                                                                                                                                                   |
+| roll.size                        | 268435456(256M) | long(byte)   | the max size of the file                                                                                                                                                                |
+| bucket.date.format               | yyyyMMdd_HH     | string       | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                     |   
+| bucket.date.timezone             | UTC             | string       | the timezone of bucket date format                                                                                                                                                      | 
+| max.retries                      | 3               | int(number)  | the max retry times when operate hdfs fail                                                                                                                                              |
+| keytab                           |                 | string       | the keytab if hdfs use kerberos authenticator                                                                                                                                           |
+| principle                        |                 | string       | the principle if hdfs use kerberos authenticator                                                                                                                                        |
+| writer.identity                  | parquet         | string       | the spi implement id of the interface [HDFSWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSWriterFactory.java)                     |
+| writer.parquet.compression.codec | snappy          | string       | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                         | 
+| idle.trigger.millis              | 60000           | long(millis) | the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java) |
 
 [GOTO HDFS Sink for more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
@@ -330,6 +332,8 @@ sink.group_1.bucket.date.format=yyyyMMdd_HH
 sink.group_1.max.retries=3
 sink.group_1.keytab=
 sink.group_1.principle=
+sink.group_1.writer.identity=parquet
+sink.group_1.writer.parquet.compression.codec=snappy
 sink.group_1.idle.trigger.millis=60000
 
 sink.group_2.partition.retain.max.bytes=9663676414

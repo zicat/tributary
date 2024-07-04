@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.Strings;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
@@ -30,12 +31,14 @@ import org.zicat.tributary.sink.function.Context;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
 
 /** AbstractHDFSFunction. */
-public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
+public abstract class AbstractHDFSFunction extends AbstractFunction {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHDFSFunction.class);
 
@@ -71,25 +74,25 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
                     .description("max retries times if operation fail")
                     .defaultValue(3);
 
-    public static final ConfigOption<String> OPTION_OUTPUT_COMPRESSION_CODEC =
-            ConfigOptions.key("output.compression.codec")
+    public static final ConfigOption<String> OPTION_WRITER_IDENTITY =
+            ConfigOptions.key("writer.identity")
                     .stringType()
-                    .description("set output compression codec, default snappy")
-                    .defaultValue("snappy");
+                    .description("set writer identity")
+                    .defaultValue("parquet");
 
     protected PrivilegedExecutor privilegedExecutor;
-    protected HDFSWriterFactory hdfsWriterFactory;
+    protected HDFSWriterFactory writerFactory;
     protected String basePath;
     protected long rollSize;
     protected Integer maxRetry;
-    protected Map<String, BucketWriter<P>> sfWriters = new HashMap<>();
+    protected Map<String, BucketWriter> sfWriters = new HashMap<>();
     protected String prefixFileName;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        this.hdfsWriterFactory =
-                new ParquetHDFSWriterFactory(context.get(OPTION_OUTPUT_COMPRESSION_CODEC));
+        final String writerId = context.get(OPTION_WRITER_IDENTITY);
+        this.writerFactory = SpiFactory.findFactory(writerId, HDFSWriterFactory.class);
         final String basePath = context.get(OPTION_SINK_PATH).trim();
         this.basePath = Strings.removeLastIfMatch(basePath, DIRECTORY_DELIMITER);
         this.privilegedExecutor =
@@ -107,7 +110,7 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
      * @throws IOException IOException
      */
     public void appendData(String bucket, Records records) throws IOException {
-        BucketWriter<P> bucketWriter = sfWriters.get(bucket);
+        BucketWriter bucketWriter = sfWriters.get(bucket);
         if (bucketWriter == null) {
             final String bucketPath = basePath + DIRECTORY_DELIMITER + bucket;
             bucketWriter = initializeBucketWriter(bucketPath, prefixFileName);
@@ -123,26 +126,22 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
      * @param bucket bucket.
      * @throws IOException IOException
      */
-    public P closeBucket(String bucket) throws Exception {
-        final BucketWriter<P> bucketWriter = sfWriters.remove(bucket);
+    public void closeBucket(String bucket) throws Exception {
+        final BucketWriter bucketWriter = sfWriters.remove(bucket);
         if (bucketWriter != null) {
             bucketWriter.close();
         }
-        return bucketWriter == null ? null : bucketWriter.payload();
     }
 
     /**
      * close all buckets.
      *
-     * @return list payload
      * @throws Exception Exception
      */
-    public List<P> closeAllBuckets() throws Exception {
-        final List<P> result = new ArrayList<>(sfWriters.size());
-        for (Map.Entry<String, BucketWriter<P>> entry : sfWriters.entrySet()) {
-            result.add(closeBucket(entry.getKey()));
+    public void closeAllBuckets() throws Exception {
+        for (Map.Entry<String, BucketWriter> entry : sfWriters.entrySet()) {
+            closeBucket(entry.getKey());
         }
-        return result;
     }
 
     /**
@@ -161,22 +160,22 @@ public abstract class AbstractHDFSFunction<P> extends AbstractFunction {
      * @param realName realName
      * @return BucketWriter
      */
-    protected BucketWriter<P> initializeBucketWriter(String bucketPath, String realName) {
-        return new BucketWriter<>(
+    protected BucketWriter initializeBucketWriter(String bucketPath, String realName) {
+        return new BucketWriter(
+                context,
                 bucketPath,
                 realName,
-                hdfsWriterFactory,
+                writerFactory,
                 privilegedExecutor,
                 rollSize,
-                maxRetry,
-                null);
+                maxRetry);
     }
 
     @Override
     public void close() {
-        for (Map.Entry<String, BucketWriter<P>> entry : sfWriters.entrySet()) {
+        for (Map.Entry<String, BucketWriter> entry : sfWriters.entrySet()) {
             final String bucketPath = entry.getKey();
-            final BucketWriter<P> writer = entry.getValue();
+            final BucketWriter writer = entry.getValue();
             LOG.info("Closing {}", bucketPath);
             try {
                 writer.close();

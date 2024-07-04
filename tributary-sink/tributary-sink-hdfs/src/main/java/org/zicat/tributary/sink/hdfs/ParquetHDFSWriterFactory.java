@@ -19,23 +19,27 @@
 package org.zicat.tributary.sink.hdfs;
 
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.sink.function.Context;
 
 /** ParquetHDFSWriterFactory. */
 public class ParquetHDFSWriterFactory implements HDFSWriterFactory {
 
-    private final CompressionCodecName compressionCodecName;
+    public static final ConfigOption<String> OPTION_OUTPUT_COMPRESSION_CODEC =
+            ConfigOptions.key("writer.parquet.compression.codec")
+                    .stringType()
+                    .description("set output compression codec, default snappy")
+                    .defaultValue("snappy");
 
-    public ParquetHDFSWriterFactory(String codec) {
-        this.compressionCodecName = CompressionCodecName.fromConf(codec);
+    @Override
+    public String identity() {
+        return "parquet";
     }
 
     @Override
-    public HDFSWriter create() {
-        return new ParquetHDFSWriter(compressionCodecName);
-    }
-
-    @Override
-    public String fileExtension() {
-        return compressionCodecName.getExtension() + "." + "parquet";
+    public HDFSWriter create(Context context) {
+        return new ParquetHDFSWriter(
+                CompressionCodecName.fromConf(context.get(OPTION_OUTPUT_COMPRESSION_CODEC)));
     }
 }

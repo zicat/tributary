@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
+import org.zicat.tributary.sink.function.Context;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -37,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.zicat.tributary.sink.utils.Exceptions.castAsIOException;
 
 /** This class does file rolling and handles file formats and serialization. */
-public class BucketWriter<P> extends BucketMeta<P> {
+public class BucketWriter extends BucketMeta {
 
     private static final Logger LOG = LoggerFactory.getLogger(BucketWriter.class);
 
@@ -54,16 +55,16 @@ public class BucketWriter<P> extends BucketMeta<P> {
     private boolean open = false;
 
     public BucketWriter(
+            Context context,
             String bucketPath,
             String fileName,
             HDFSWriterFactory factory,
             PrivilegedExecutor proxyUser,
             long rollSize,
-            int maxRetries,
-            P payload) {
-        super(bucketPath, fileName, rollSize, maxRetries, payload);
-        this.writer = factory.create();
-        this.fileSuffixName = factory.fileExtension();
+            int maxRetries) {
+        super(context, bucketPath, fileName, rollSize, maxRetries);
+        this.writer = factory.create(context);
+        this.fileSuffixName = writer.fileExtension();
         this.proxyUser = proxyUser;
         this.fileExtensionCounter = new AtomicLong(0L);
     }
@@ -230,15 +231,6 @@ public class BucketWriter<P> extends BucketMeta<P> {
             throw castAsIOException(e);
         }
         processSize += total.get();
-    }
-
-    /** CompressionOutputStream.finish FSDataOutputStream.flush hdfs hflush or hsync. */
-    public void flush() {
-        try {
-            callWithPrivileged(writer::sync);
-        } catch (IOException e) {
-            LOG.warn("flush file fail, path: " + tmpWritePath, e);
-        }
     }
 
     /** check if time to rotate the file. */
