@@ -26,16 +26,16 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.HadoopOutputFile;
-import org.zicat.tributary.sink.hdfs.ParquetHDFSWriter;
+import org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriter;
 
 import java.lang.reflect.Constructor;
 
-/** MockParquetHDFSWriter. */
-class MockParquetHDFSWriter extends ParquetHDFSWriter {
+/** MockParquetHDFSRecordsWriter. */
+public class MockParquetHDFSRecordsWriter extends ParquetHDFSRecordsWriter {
 
     private final FileSystem fs;
 
-    MockParquetHDFSWriter(FileSystem fs, String codec) {
+    public MockParquetHDFSRecordsWriter(FileSystem fs, String codec) {
         super(CompressionCodecName.fromConf(codec));
         this.fs = fs;
     }

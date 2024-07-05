@@ -20,13 +20,12 @@ package org.zicat.tributary.sink.hdfs;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.zicat.tributary.common.records.Records;
 
 import java.io.Closeable;
 import java.io.IOException;
 
-/** HDFSWriter. */
-public interface HDFSWriter extends Closeable {
+/** HDFSRecordsWriter. */
+public interface HDFSRecordsWriter extends RecordsWriter, Closeable {
 
     /**
      * open file with codec.
@@ -36,19 +35,4 @@ public interface HDFSWriter extends Closeable {
      * @throws IOException IOException
      */
     void open(FileSystem fileSystem, Path path) throws IOException;
-
-    /**
-     * append bs to file.
-     *
-     * @param records records
-     * @throws IOException IOException
-     */
-    int append(Records records) throws Exception;
-
-    /**
-     * file extension.
-     *
-     * @return file extension
-     */
-    String fileExtension();
 }

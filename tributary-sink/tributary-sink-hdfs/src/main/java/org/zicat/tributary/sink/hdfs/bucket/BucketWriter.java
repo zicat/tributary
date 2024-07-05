@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.hdfs;
+package org.zicat.tributary.sink.hdfs.bucket;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -25,9 +25,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
+import org.zicat.tributary.sink.hdfs.HDFSRecordsWriterFactory;
+import org.zicat.tributary.sink.hdfs.RecordsWriter;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -35,17 +39,20 @@ import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
+import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
 import static org.zicat.tributary.sink.utils.Exceptions.castAsIOException;
 
 /** This class does file rolling and handles file formats and serialization. */
-public class BucketWriter extends BucketMeta {
+public class BucketWriter extends BucketMeta implements RecordsWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger(BucketWriter.class);
 
-    private final HDFSWriter writer;
+    private final HDFSRecordsWriter writer;
     private final PrivilegedExecutor proxyUser;
     private final String fileSuffixName;
     private final AtomicLong fileExtensionCounter;
+    private final Configuration config = new Configuration();
 
     private long processSize;
     private FileSystem fileSystem;
@@ -54,37 +61,31 @@ public class BucketWriter extends BucketMeta {
     protected String targetPath;
     private boolean open = false;
 
-    public BucketWriter(
-            Context context,
-            String bucketPath,
-            String fileName,
-            HDFSWriterFactory factory,
-            PrivilegedExecutor proxyUser,
-            long rollSize,
-            int maxRetries) {
-        super(context, bucketPath, fileName, rollSize, maxRetries);
+    public BucketWriter(Context context, String bucketPath, String fileName) {
+        super(bucketPath, fileName, context.get(OPTION_ROLL_SIZE), context.get(OPTION_MAX_RETRIES));
+        final String writerId = context.get(OPTION_WRITER_IDENTITY);
+        final HDFSRecordsWriterFactory factory =
+                SpiFactory.findFactory(writerId, HDFSRecordsWriterFactory.class);
         this.writer = factory.create(context);
-        this.fileSuffixName = writer.fileExtension();
-        this.proxyUser = proxyUser;
+        this.fileSuffixName = factory.fileExtension(context);
+        this.proxyUser =
+                getAuthenticator(context.get(OPTION_PRINCIPLE), context.get(OPTION_KEYTAB));
         this.fileExtensionCounter = new AtomicLong(0L);
+        // set auto close as false, the close hook method will close file system cause SinkFunction
+        config.setBoolean(CommonConfigurationKeysPublic.FS_AUTOMATIC_CLOSE_KEY, false);
     }
 
     /**
      * @throws IOException IOException
      */
     public void open() throws IOException {
-
-        final Configuration config = new Configuration();
-        // set auto close as false, the close hook method will close file system cause SinkFunction
-        // append remaining to hdfs fail.
-        config.setBoolean(CommonConfigurationKeysPublic.FS_AUTOMATIC_CLOSE_KEY, false);
         synchronized (BucketWriter.class) {
             try {
                 callWithPrivileged(
                         () -> {
                             fullFileName = createNewFullFileName();
                             targetPath = bucketPath + "/" + fullFileName;
-                            tmpWritePath = createTmpWriterPath();
+                            tmpWritePath = targetPath + inUseSuffix();
                             LOG.info("Creating " + tmpWritePath);
                             final Path path = new Path(tmpWritePath);
                             fileSystem = getFileSystem(path, config);
@@ -96,15 +97,6 @@ public class BucketWriter extends BucketMeta {
         }
         processSize = 0;
         open = true;
-    }
-
-    /**
-     * create tmp writer path.
-     *
-     * @return string path
-     */
-    protected String createTmpWriterPath() {
-        return targetPath + inUseSuffix();
     }
 
     /**
@@ -206,13 +198,8 @@ public class BucketWriter extends BucketMeta {
         }
     }
 
-    /**
-     * append data.
-     *
-     * @param records records
-     * @throws IOException IOException
-     */
-    public void append(Records records) throws IOException {
+    @Override
+    public int append(Records records) throws IOException {
 
         if (!open) {
             open();
@@ -231,6 +218,7 @@ public class BucketWriter extends BucketMeta {
             throw castAsIOException(e);
         }
         processSize += total.get();
+        return total.get();
     }
 
     /** check if time to rotate the file. */

@@ -77,9 +77,9 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
     @Override
     public void run() {
 
+        final long idleTimeMillis = idleTimeMillis();
         while (true) {
             try {
-                final long idleTimeMillis = idleTimeMillis();
                 final RecordsResultSet result = poll(fetchOffset, idleTimeMillis);
                 if (closed.get() && result.isEmpty()) {
                     break;

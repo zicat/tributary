@@ -25,28 +25,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.sink.hdfs.HDFSWriter;
+import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** MockHDFSWriter. */
-public class MockHDFSWriter implements HDFSWriter {
+public class MockHDFSRecordsWriter implements HDFSRecordsWriter {
 
     private int filesOpened = 0;
     private int filesClosed = 0;
     private int bytesWritten = 0;
     private int eventsWritten = 0;
     private String filePath = null;
-    private static final Logger logger = LoggerFactory.getLogger(MockHDFSWriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(MockHDFSRecordsWriter.class);
     private final int numberOfRetriesRequired;
     public volatile AtomicInteger currentCloseAttempts = new AtomicInteger(0);
 
-    private final String fileExtension;
-
-    public MockHDFSWriter(String fileExtension) {
+    public MockHDFSRecordsWriter() {
         this.numberOfRetriesRequired = 0;
-        this.fileExtension = fileExtension;
     }
 
     public int getFilesOpened() {
@@ -84,11 +81,6 @@ public class MockHDFSWriter implements HDFSWriter {
         }
         bytesWritten += size;
         return size;
-    }
-
-    @Override
-    public String fileExtension() {
-        return fileExtension;
     }
 
     public void close() throws IOException {

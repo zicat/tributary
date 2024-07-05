@@ -16,30 +16,36 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.hdfs;
+package org.zicat.tributary.sink.hdfs.test;
 
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
+import org.zicat.tributary.sink.hdfs.HDFSRecordsWriterFactory;
 
-/** ParquetHDFSWriterFactory. */
-public class ParquetHDFSWriterFactory implements HDFSWriterFactory {
+import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriterFactory.OPTION_OUTPUT_COMPRESSION_CODEC;
 
-    public static final ConfigOption<String> OPTION_OUTPUT_COMPRESSION_CODEC =
-            ConfigOptions.key("writer.parquet.compression.codec")
-                    .stringType()
-                    .description("set output compression codec, default snappy")
-                    .defaultValue("snappy");
+/** MockHDFSWriterFactory. */
+public class MockHDFSRecordsWriterFactory implements HDFSRecordsWriterFactory {
+
+    public static final ConfigOption<Object> OPTION_WRITER =
+            ConfigOptions.key("writer.instance").objectType().noDefaultValue();
+    public static final String ID = "mock_hdfs_writer";
 
     @Override
     public String identity() {
-        return "parquet";
+        return ID;
     }
 
     @Override
-    public HDFSWriter create(Context context) {
-        return new ParquetHDFSWriter(
-                CompressionCodecName.fromConf(context.get(OPTION_OUTPUT_COMPRESSION_CODEC)));
+    public HDFSRecordsWriter create(Context context) {
+        return (HDFSRecordsWriter) context.get(OPTION_WRITER);
+    }
+
+    @Override
+    public String fileExtension(Context context) {
+        final String codec = context.get(OPTION_OUTPUT_COMPRESSION_CODEC);
+        return codec == null ? ".mock" : "." + codec + ".mock";
     }
 }

@@ -21,11 +21,11 @@ package org.zicat.tributary.sink.hdfs;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
-/** DefaultHDFSFunctionFactory. */
-public class DefaultHDFSFunctionFactory implements FunctionFactory {
+/** HDFSFunctionFactory. */
+public class HDFSFunctionFactory implements FunctionFactory {
     @Override
     public Function create() {
-        return new DefaultHDFSFunction();
+        return new HDFSFunction();
     }
 
     @Override

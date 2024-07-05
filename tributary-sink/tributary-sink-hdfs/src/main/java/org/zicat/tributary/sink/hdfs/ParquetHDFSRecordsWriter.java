@@ -38,8 +38,8 @@ import java.util.Map;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 
-/** ParquetHDFSWriter. */
-public class ParquetHDFSWriter implements HDFSWriter {
+/** ParquetHDFSRecordsWriter. */
+public class ParquetHDFSRecordsWriter implements HDFSRecordsWriter {
 
     public static final String FIELD_TOPIC = "topic";
     public static final String FIELD_HEADERS = "headers";
@@ -70,11 +70,11 @@ public class ParquetHDFSWriter implements HDFSWriter {
                     .noDefault()
                     .endRecord();
 
-    protected ParquetWriter<GenericRecord> writer;
+    protected transient ParquetWriter<GenericRecord> writer;
 
     protected final CompressionCodecName compressionCodecName;
 
-    public ParquetHDFSWriter(CompressionCodecName compressionCodecName) {
+    public ParquetHDFSRecordsWriter(CompressionCodecName compressionCodecName) {
         this.compressionCodecName = compressionCodecName;
     }
 
@@ -107,12 +107,8 @@ public class ParquetHDFSWriter implements HDFSWriter {
     }
 
     @Override
-    public String fileExtension() {
-        return compressionCodecName.getExtension() + "." + "parquet";
-    }
-
-    @Override
     public void close() throws IOException {
         IOUtils.closeQuietly(writer);
+        writer = null;
     }
 }

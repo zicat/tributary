@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.hdfs;
+package org.zicat.tributary.sink.hdfs.bucket;
 
 import org.zicat.tributary.common.Threads;
-import org.zicat.tributary.sink.function.Context;
 
 /** BucketMeta. */
 public class BucketMeta {
@@ -30,11 +29,8 @@ public class BucketMeta {
     protected final String fileName;
     protected final long rollSize;
     protected final int maxRetries;
-    protected final Context context;
 
-    public BucketMeta(
-            Context context, String bucketPath, String fileName, long rollSize, int maxRetries) {
-        this.context = context;
+    public BucketMeta(String bucketPath, String fileName, long rollSize, int maxRetries) {
         this.bucketPath = bucketPath;
         this.fileName = fileName;
         this.rollSize = rollSize;
@@ -56,7 +52,7 @@ public class BucketMeta {
      * @return millis
      */
     protected long sleepOnFail() {
-        return 10L;
+        return 200L;
     }
 
     /**
@@ -79,44 +75,8 @@ public class BucketMeta {
             } finally {
                 retryCount++;
             }
-        } while (retryCount < maxRetries());
+        } while (retryCount < maxRetries);
         return exception;
-    }
-
-    /**
-     * get bucket path.
-     *
-     * @return string bucket path
-     */
-    public final String bucketPath() {
-        return bucketPath;
-    }
-
-    /**
-     * get file name.
-     *
-     * @return file name
-     */
-    public final String fileName() {
-        return fileName;
-    }
-
-    /**
-     * get roll size.
-     *
-     * @return roll size
-     */
-    public final long rollSize() {
-        return rollSize;
-    }
-
-    /**
-     * get max retries.
-     *
-     * @return long max retry
-     */
-    public final int maxRetries() {
-        return maxRetries;
     }
 
     /** call runner. */

@@ -18,17 +18,18 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.common.records.Records;
 
-/** HDFSWriterFactory. */
-public interface HDFSWriterFactory extends SpiFactory {
+import java.io.IOException;
+
+/** RecordsWriter. */
+public interface RecordsWriter {
 
     /**
-     * create hdfs writer with context.
+     * append records to writer.
      *
-     * @param context context
-     * @return HDFSWriter
+     * @param records records
+     * @throws IOException IOException
      */
-    HDFSWriter create(Context context);
+    int append(Records records) throws Exception;
 }

@@ -16,46 +16,41 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.hdfs.test;
+package org.zicat.tributary.sink.hdfs.test.bucket;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
-import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
-import org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil;
-import org.zicat.tributary.sink.function.Context;
-import org.zicat.tributary.sink.hdfs.BucketWriter;
-import org.zicat.tributary.sink.hdfs.HDFSWriter;
-import org.zicat.tributary.sink.hdfs.HDFSWriterFactory;
+import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
+import org.zicat.tributary.sink.hdfs.bucket.BucketWriter;
+import org.zicat.tributary.sink.hdfs.test.MockFileSystem;
+import org.zicat.tributary.sink.hdfs.test.MockHDFSRecordsWriter;
+import org.zicat.tributary.sink.hdfs.test.MockHDFSRecordsWriterFactory;
+import org.zicat.tributary.sink.hdfs.test.MockParquetHDFSRecordsWriter;
 
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
+import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriterFactory.OPTION_OUTPUT_COMPRESSION_CODEC;
 
 /** BucketWriterTest. */
 public class BucketWriterTest {
     private static final Logger logger = LoggerFactory.getLogger(BucketWriterTest.class);
 
-    private static PrivilegedExecutor proxy;
-
-    @BeforeClass
-    public static void setup() {
-        proxy = TributaryAuthenticationUtil.getAuthenticator(null, null).proxyAs(null);
-    }
-
     @Test
     public void testSizeRoller() throws IOException {
         int maxBytes = 300;
-        final MockHDFSWriter hdfsWriter = new MockHDFSWriter(null);
+        final MockHDFSRecordsWriter hdfsWriter = new MockHDFSRecordsWriter();
         final BucketWriter bucketWriter =
                 new BucketWriterBuilder(hdfsWriter).setRollSize(maxBytes).build();
 
@@ -76,21 +71,19 @@ public class BucketWriterTest {
     public void testFileSuffixNotGiven() throws IOException {
         // Need to override system time use for test, so we know what to expect
 
-        MockHDFSWriter hdfsWriter = new MockHDFSWriter(".snappy.parquet");
+        MockHDFSRecordsWriter hdfsWriter = new MockHDFSRecordsWriter();
         BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter).setCodeC("snappy").build();
 
         bucketWriter.append(RecordsUtils.createStringRecords("t1", "foo"));
 
-        Assert.assertTrue(
-                "Incorrect suffix",
-                hdfsWriter.getOpenedFilePath().endsWith("1.snappy.parquet.tmp"));
+        Assert.assertTrue(hdfsWriter.getOpenedFilePath().endsWith("1.snappy.mock.tmp"));
     }
 
     @Test
     public void testInUseSuffix() throws IOException {
         final String suffix = "WELCOME_TO_THE_HELLMOUNTH";
 
-        final MockHDFSWriter hdfsWriter = new MockHDFSWriter("");
+        final MockHDFSRecordsWriter hdfsWriter = new MockHDFSRecordsWriter();
         final BucketWriter bucketWriter =
                 new BucketWriterBuilder(hdfsWriter).setInUseSuffix(suffix).build();
 
@@ -123,7 +116,8 @@ public class BucketWriterTest {
             fs.mkdirs(dirPath);
             final String codec = "snappy";
             final MockFileSystem mockFs = new MockFileSystem(fs, 2, true);
-            final MockParquetHDFSWriter writer = new MockParquetHDFSWriter(mockFs, codec);
+            final MockParquetHDFSRecordsWriter writer =
+                    new MockParquetHDFSRecordsWriter(mockFs, codec);
             final AtomicInteger renameCount = new AtomicInteger();
             final BucketWriter bucketWriter =
                     new BucketWriterBuilder(writer)
@@ -176,7 +170,7 @@ public class BucketWriterTest {
         fs.delete(dirPath, true);
         fs.mkdirs(dirPath);
         final MockFileSystem mockFs = new MockFileSystem(fs, numberOfRetriesRequired, true);
-        final MockParquetHDFSWriter writer = new MockParquetHDFSWriter(mockFs, codec);
+        final MockParquetHDFSRecordsWriter writer = new MockParquetHDFSRecordsWriter(mockFs, codec);
         final AtomicInteger renameCount = new AtomicInteger();
 
         final BucketWriter bucketWriter =
@@ -205,17 +199,11 @@ public class BucketWriterTest {
 
     @Test
     public void testRotateBucketOnIOException() throws IOException {
-        final MockHDFSWriter hdfsWriter = Mockito.spy(new MockHDFSWriter(""));
-        final PrivilegedExecutor ugiProxy =
-                TributaryAuthenticationUtil.getAuthenticator(null, null).proxyAs("alice");
-
+        final MockHDFSRecordsWriter hdfsWriter = Mockito.spy(new MockHDFSRecordsWriter());
         // Cause a roll after every successful append().
         final int rollSize = 1;
         final BucketWriter bucketWriter =
-                new BucketWriterBuilder(hdfsWriter)
-                        .setProxyUser(ugiProxy)
-                        .setRollSize(rollSize)
-                        .build();
+                new BucketWriterBuilder(hdfsWriter).setRollSize(rollSize).build();
 
         Records records = RecordsUtils.createStringRecords("t1", "foo");
         // Write one event successfully.
@@ -244,8 +232,7 @@ public class BucketWriterTest {
         private String fileName = "file";
         private long rollSize = 0;
         private String codeC = "snappy";
-        private HDFSWriter writer;
-        private PrivilegedExecutor proxyUser = BucketWriterTest.proxy;
+        private HDFSRecordsWriter writer;
         private FileSystem fileSystem;
 
         private int maxRetries = 3;
@@ -257,7 +244,7 @@ public class BucketWriterTest {
             return this;
         }
 
-        public BucketWriterBuilder(HDFSWriter writer) {
+        public BucketWriterBuilder(HDFSRecordsWriter writer) {
             this.writer = writer;
         }
 
@@ -291,18 +278,7 @@ public class BucketWriterTest {
             return this;
         }
 
-        @SuppressWarnings("unused")
-        public BucketWriterBuilder setProxyUser(PrivilegedExecutor proxyUser) {
-            this.proxyUser = proxyUser;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public BucketWriterBuilder setCallTimeoutPool(ExecutorService callTimeoutPool) {
-            return this;
-        }
-
-        public BucketWriterBuilder setWriter(HDFSWriter writer) {
+        public BucketWriterBuilder setWriter(HDFSRecordsWriter writer) {
             this.writer = writer;
             return this;
         }
@@ -314,22 +290,17 @@ public class BucketWriterTest {
 
         public BucketWriter build() {
             if (writer == null) {
-                writer = new MockHDFSWriter("." + codeC);
+                writer = new MockHDFSRecordsWriter();
             }
-            final HDFSWriterFactory factory =
-                    new HDFSWriterFactory() {
-                        @Override
-                        public HDFSWriter create(Context context) {
-                            return writer;
-                        }
+            ContextBuilder builder = new ContextBuilder();
+            builder.addCustomProperty(OPTION_ROLL_SIZE.key(), rollSize);
+            builder.addCustomProperty(OPTION_MAX_RETRIES.key(), maxRetries);
+            builder.addCustomProperty(
+                    OPTION_WRITER_IDENTITY.key(), MockHDFSRecordsWriterFactory.ID);
+            builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER.key(), writer);
+            builder.addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC.key(), codeC);
 
-                        @Override
-                        public String identity() {
-                            return "mock";
-                        }
-                    };
-            return new BucketWriter(
-                    null, bucketPath, fileName, factory, proxyUser, rollSize, maxRetries) {
+            return new BucketWriter(builder.build(), bucketPath, fileName) {
                 @Override
                 protected FileSystem getFileSystem(Path path, Configuration config)
                         throws IOException {

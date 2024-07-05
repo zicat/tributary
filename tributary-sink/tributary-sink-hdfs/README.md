@@ -59,7 +59,7 @@ the related HDFS configuration files such as hdfs-site.xml and core-site.xml to 
 1. How to read those parquet files?
 
    The parquet schema is defined
-   in [ParquetHDFSWriter.SCHEMA](src/main/java/org/zicat/tributary/sink/hdfs/ParquetHDFSWriter.java), [Read Demo](../../sample-code/src/main/java/org/zicat/tributary/demo/sink/HDFSSinkParquetReader.java)
+   in [ParquetHDFSRecordsWriter.SCHEMA](src/main/java/org/zicat/tributary/sink/hdfs/ParquetHDFSRecordsWriter.java), [Read Demo](../../sample-code/src/main/java/org/zicat/tributary/demo/sink/HDFSSinkParquetReader.java)
 
    ```text
    topic:s1, headers:[_rec_ts:1720083621380, _sent_ts:1720083622983], key:, value:sdfasdf1232sdafasdfasdfadsf
@@ -68,7 +68,7 @@ the related HDFS configuration files such as hdfs-site.xml and core-site.xml to 
 
 2. How to add fields parsed from key and value to parquet schema
 
-   [org.zicat.tributary.sink.hdfs.HDFSWriterFactory](src/main/java/org/zicat/tributary/sink/hdfs/HDFSWriterFactory.java)
+   [org.zicat.tributary.sink.hdfs.HDFSRecordsWriterFactory](src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java)
    is provided to create a custom hdfs writer. User can implement the interface with a new identity
    and register it through SPI. Adjust new hdfs writer by
    `sink.group_1.writer.identity=new-identity`
