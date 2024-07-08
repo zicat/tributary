@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
+import io.prometheus.client.Counter;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -30,27 +31,38 @@ import org.junit.Test;
 import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.*;
+import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
-import org.zicat.tributary.sink.kafka.DefaultKafkaFunction;
-import org.zicat.tributary.sink.kafka.DefaultKafkaFunctionFactory;
+import org.zicat.tributary.sink.kafka.KafkaFunction;
+import org.zicat.tributary.sink.kafka.KafkaFunctionFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
 
-/** DefaultKafkaFunctionTest. */
-public class DefaultKafkaFunctionTest {
+/** KafkaFunctionTest. */
+public class KafkaFunctionTest {
 
+    private static final String topic = "kt1";
+    private static final String groupId = "g2";
+    private Record record1;
+    private Record record2;
+    private Map<String, byte[]> recordsHeader;
     private MockProducer<byte[], byte[]> mockProducer;
 
     @Before
     public void beforeTest() {
         mockProducer =
                 new MockProducer<>(true, new ByteArraySerializer(), new ByteArraySerializer());
+        final Map<String, byte[]> recordHeader1 = new HashMap<>();
+        recordHeader1.put("rhk1", "rhv1".getBytes());
+        record1 = new DefaultRecord(recordHeader1, "rk1".getBytes(), "rv1".getBytes());
+        final Map<String, byte[]> recordHeader2 = new HashMap<>();
+        recordHeader2.put("rhk2", "rhv2".getBytes());
+        record2 = new DefaultRecord(recordHeader2, "rk2".getBytes(), "rv2".getBytes());
+        recordsHeader = new HashMap<>();
+        recordsHeader.put("rshk1", "rshv1".getBytes());
     }
 
     @After
@@ -60,21 +72,10 @@ public class DefaultKafkaFunctionTest {
 
     @Test
     public void test() throws Exception {
-        final String topic = "kt1";
-        final String groupId = "g2";
-        final Map<String, byte[]> recordHeader1 = new HashMap<>();
-        recordHeader1.put("rhk1", "rhv1".getBytes());
-        final Record record1 = new DefaultRecord(recordHeader1, "rk1".getBytes(), "rv1".getBytes());
-        final Map<String, byte[]> recordHeader2 = new HashMap<>();
-        recordHeader2.put("rhk2", "rhv2".getBytes());
-        Record record2 = new DefaultRecord(recordHeader2, "rk2".getBytes(), "rv2".getBytes());
-
-        final Map<String, byte[]> recordsHeader = new HashMap<>();
-        recordHeader1.put("rshk1", "rshv1".getBytes());
-        final Records records =
-                new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2));
-
-        try (DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction()) {
+        final List<Records> recordsList =
+                Collections.singletonList(
+                        new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2)));
+        try (MockKafkaFunction function = new MockKafkaFunction()) {
             final ContextBuilder builder =
                     new ContextBuilder()
                             .id("id2")
@@ -82,57 +83,57 @@ public class DefaultKafkaFunctionTest {
                             .startGroupOffset(new GroupOffset(0, 0, groupId))
                             .topic(topic);
             builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
-            kafkaFunction.open(builder.build());
+            function.open(builder.build());
 
             final GroupOffset groupOffset = new GroupOffset(2, 0, groupId);
-            kafkaFunction.process(groupOffset, Collections.singletonList(records).iterator());
+            function.process(groupOffset, recordsList.iterator());
 
-            assertData(topic, record1, mockProducer.history().get(0));
-            assertData(topic, record2, mockProducer.history().get(1));
-            Assert.assertEquals(groupOffset, kafkaFunction.committableOffset());
+            assertData(record1, mockProducer.history().get(0), recordsHeader);
+            assertData(record2, mockProducer.history().get(1), recordsHeader);
+            Assert.assertEquals(groupOffset, function.committableOffset());
 
-            kafkaFunction.process(
-                    groupOffset.skipNextSegmentHead(),
-                    Collections.singletonList(records).iterator());
-            assertData(topic, record1, mockProducer.history().get(0));
-            assertData(topic, record2, mockProducer.history().get(1));
-            Assert.assertEquals(
-                    groupOffset.skipNextSegmentHead(), kafkaFunction.committableOffset());
+            function.process(groupOffset.skipNextSegmentHead(), recordsList.iterator());
+            assertData(record1, mockProducer.history().get(0), recordsHeader);
+            assertData(record2, mockProducer.history().get(1), recordsHeader);
+            Assert.assertEquals(groupOffset.skipNextSegmentHead(), function.committableOffset());
 
             for (ProducerRecord<byte[], byte[]> r : mockProducer.history()) {
                 Assert.assertEquals(topic, r.topic());
             }
+
+            Assert.assertEquals(function.getCount().get(), 4, 0.1);
         }
+    }
 
-        mockProducer.clear();
-
-        final String topic2 = "kt2";
-        final Records records2 =
-                new DefaultRecords(topic2, recordsHeader, Arrays.asList(record1, record2));
-        try (DefaultKafkaFunction kafkaFunction = new MockDefaultKafkaFunction()) {
+    @Test
+    public void testDynamicTopic() throws Exception {
+        final List<Records> recordsList =
+                Collections.singletonList(
+                        new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2)));
+        try (KafkaFunction function = new MockKafkaFunction()) {
             final ContextBuilder builder =
                     new ContextBuilder()
-                            .id("id2")
+                            .id("id")
                             .partitionId(0)
                             .startGroupOffset(new GroupOffset(0, 0, groupId))
-                            .topic(topic2);
+                            .topic(topic);
             builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
-            builder.addCustomProperty(
-                    DefaultKafkaFunctionFactory.OPTION_TOPIC.key(), "aa_${topic}");
-            kafkaFunction.open(builder.build());
+            builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC.key(), "aa_${topic}");
+            function.open(builder.build());
             final GroupOffset groupOffset = new GroupOffset(2, 0, groupId);
-            kafkaFunction.process(groupOffset, Collections.singletonList(records2).iterator());
-            assertData(topic2, record1, mockProducer.history().get(0));
-            assertData(topic2, record2, mockProducer.history().get(1));
-
+            function.process(groupOffset, recordsList.iterator());
+            assertData(record1, mockProducer.history().get(0), recordsHeader);
+            assertData(record2, mockProducer.history().get(1), recordsHeader);
             for (ProducerRecord<byte[], byte[]> r : mockProducer.history()) {
-                Assert.assertEquals("aa_" + topic2, r.topic());
+                Assert.assertEquals("aa_" + topic, r.topic());
             }
         }
     }
 
     private static void assertData(
-            String originTopic, Record record, ProducerRecord<byte[], byte[]> kafkaRecord) {
+            Record record,
+            ProducerRecord<byte[], byte[]> kafkaRecord,
+            Map<String, byte[]> recordsHeader) {
         Assert.assertArrayEquals(record.key(), kafkaRecord.key());
         Assert.assertArrayEquals(record.value(), kafkaRecord.value());
         final Map<String, byte[]> kafkaHeaders = new HashMap<>();
@@ -140,24 +141,36 @@ public class DefaultKafkaFunctionTest {
             kafkaHeaders.put(header.key(), header.value());
         }
         Assert.assertEquals(
-                originTopic,
+                topic,
                 new String(
-                        kafkaHeaders.get(DefaultKafkaFunction.HEAD_KEY_ORIGIN_TOPIC),
+                        kafkaHeaders.get(KafkaFunction.HEAD_KEY_ORIGIN_TOPIC),
                         StandardCharsets.UTF_8));
         Assert.assertTrue(kafkaHeaders.containsKey(RecordsUtils.HEAD_KEY_SENT_TS));
 
         for (String key : record.headers().keySet()) {
             Assert.assertArrayEquals(record.headers().get(key), kafkaHeaders.get(key));
         }
-        Assert.assertEquals(record.headers().size() + 2, kafkaHeaders.size());
+
+        for (String key : recordsHeader.keySet()) {
+            Assert.assertArrayEquals(recordsHeader.get(key), kafkaHeaders.get(key));
+        }
+
+        Assert.assertEquals(record.headers().size() + 3, kafkaHeaders.size());
     }
 
-    /** MockDefaultKafkaFunction. */
-    private class MockDefaultKafkaFunction extends DefaultKafkaFunction {
+    /** MockKafkaFunction. */
+    private class MockKafkaFunction extends KafkaFunction {
 
         @Override
-        protected Producer<byte[], byte[]> getOrCreateProducer() {
+        protected Producer<byte[], byte[]> createProducer(Context context) {
             return mockProducer;
+        }
+
+        @Override
+        public void close() {}
+
+        public Counter.Child getCount() {
+            return sinkCounterChild;
         }
     }
 }

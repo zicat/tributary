@@ -18,29 +18,31 @@
 
 package org.zicat.tributary.sink.kafka;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.FunctionFactory;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
-/** DefaultKafkaFunctionFactory. */
-public class DefaultKafkaFunctionFactory implements FunctionFactory {
+/** TributaryKafkaCallback. */
+public class TributaryKafkaCallback implements Callback {
 
-    public static final ConfigOption<String> OPTION_TOPIC =
-            ConfigOptions.key("topic")
-                    .stringType()
-                    .description("the kafka topic to send data")
-                    .defaultValue(null);
-
-    public static final String IDENTITY = "kafka";
+    private volatile Exception lastException;
 
     @Override
-    public Function create() {
-        return new DefaultKafkaFunction();
+    public void onCompletion(RecordMetadata metadata, Exception exception) {
+        if (exception != null) {
+            this.lastException = exception;
+        }
     }
 
-    @Override
-    public String identity() {
-        return IDENTITY;
+    /**
+     * throw last exception.
+     *
+     * @throws Exception exception
+     */
+    public void checkState() throws Exception {
+        final Exception tmp = lastException;
+        if (tmp != null) {
+            lastException = null;
+            throw tmp;
+        }
     }
 }

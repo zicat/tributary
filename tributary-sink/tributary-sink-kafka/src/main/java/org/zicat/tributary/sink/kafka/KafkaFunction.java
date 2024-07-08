@@ -18,37 +18,56 @@
 
 package org.zicat.tributary.sink.kafka;
 
-import org.apache.kafka.clients.producer.Callback;
+import io.prometheus.client.Counter;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 
+import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
+import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-import static org.zicat.tributary.sink.kafka.DefaultKafkaFunctionFactory.OPTION_TOPIC;
+import static org.zicat.tributary.sink.kafka.KafkaFunctionFactory.OPTION_TOPIC;
 
-/** DefaultKafkaFunction. */
-public class DefaultKafkaFunction extends AbstractKafkaFunction {
+/** KafkaFunction. */
+public class KafkaFunction extends AbstractFunction {
 
     public static final String HEAD_KEY_ORIGIN_TOPIC = "_origin_topic";
     public static final String TOPIC_TEMPLATE = "${topic}";
 
-    protected transient DefaultCallback callback;
+    private static final Counter SINK_KAFKA_COUNTER =
+            Counter.build()
+                    .name("sink_kafka_counter")
+                    .help("sink kafka counter")
+                    .labelNames("host", "id")
+                    .register();
+
+    public static final String KAFKA_KEY_PREFIX = "kafka.";
+
+    protected transient Producer<byte[], byte[]> producer;
+    protected transient Counter.Child sinkCounterChild;
+    protected transient TributaryKafkaCallback callback;
     protected transient String defaultTopic;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        this.defaultTopic = context.get(OPTION_TOPIC);
-        this.callback = new DefaultCallback();
+        sinkCounterChild = labelHostId(SINK_KAFKA_COUNTER);
+        producer = createProducer(context);
+        defaultTopic = context.get(OPTION_TOPIC);
+        callback = new TributaryKafkaCallback();
     }
 
     @Override
@@ -56,11 +75,15 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
         callback.checkState();
         int totalCount = 0;
         while (iterator.hasNext()) {
-            final Records records = iterator.next();
-            totalCount += sendKafka(records);
+            totalCount += sendKafka(iterator.next());
         }
         flush(groupOffset);
-        incSinkKafkaCounter(totalCount);
+        sinkCounterChild.inc(totalCount);
+    }
+
+    @Override
+    public void close() {
+        IOUtils.closeQuietly(producer);
     }
 
     /**
@@ -70,21 +93,15 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
      * @return boolean send.
      */
     protected int sendKafka(Records records) throws Exception {
-
         final String originTopic = records.topic();
         final String targetTopic = targetTopic(originTopic);
         final Map<String, byte[]> extraHeaders = new HashMap<>(defaultSinkExtraHeaders());
         extraHeaders.put(HEAD_KEY_ORIGIN_TOPIC, originTopic.getBytes(StandardCharsets.UTF_8));
-        final List<ProducerRecord<byte[], byte[]>> producerRecords =
-                new ArrayList<>(records.count());
         foreachRecord(
                 records,
-                (key, value, allHeaders) ->
-                        producerRecords.add(
-                                createProducerRecord(targetTopic, key, value, allHeaders)),
+                (key, value, allHeaders) -> sendRecord(targetTopic, key, value, allHeaders),
                 extraHeaders);
-        sendKafka(producerRecords, callback);
-        return producerRecords.size();
+        return records.count();
     }
 
     /**
@@ -100,46 +117,55 @@ public class DefaultKafkaFunction extends AbstractKafkaFunction {
     }
 
     /**
+     * create kafka producer.
+     *
+     * @param context context
+     * @return producer
+     */
+    protected Producer<byte[], byte[]> createProducer(Context context) {
+        final Properties properties = context.filterPropertyByPrefix(KAFKA_KEY_PREFIX);
+        properties.put(KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+        properties.put(VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+        return new KafkaProducer<>(properties);
+    }
+
+    /**
      * create producer record.
      *
-     * @param targetTopic targetTopic
+     * @param topic topic
+     * @param key key
+     * @param value value
+     * @param headers headers
+     */
+    private void sendRecord(String topic, byte[] key, byte[] value, Map<String, byte[]> headers) {
+        final Collection<Header> kafkaHeaders = new ArrayList<>(headers.size());
+        for (Entry<String, byte[]> entry : headers.entrySet()) {
+            kafkaHeaders.add(new RecordHeader(entry.getKey(), entry.getValue()));
+        }
+        producer.send(createProducerRecord(topic, key, value, kafkaHeaders), callback);
+    }
+
+    /**
+     * try flush file offset.
+     *
+     * @param groupOffset groupOffset
+     */
+    private void flush(GroupOffset groupOffset) {
+        producer.flush();
+        commit(groupOffset, null);
+    }
+
+    /**
+     * create producer record.
+     *
+     * @param topic topic
      * @param key key
      * @param value value
      * @param headers headers
      * @return ProducerRecord
      */
-    private ProducerRecord<byte[], byte[]> createProducerRecord(
-            String targetTopic, byte[] key, byte[] value, Map<String, byte[]> headers) {
-        final Collection<Header> kafkaHeaders = new ArrayList<>(headers.size());
-        for (Entry<String, byte[]> entry : headers.entrySet()) {
-            kafkaHeaders.add(new RecordHeader(entry.getKey(), entry.getValue()));
-        }
-        return new ProducerRecord<>(targetTopic, null, null, key, value, kafkaHeaders);
-    }
-
-    /** DefaultCallback. */
-    public static class DefaultCallback implements Callback {
-
-        private volatile Exception lastException;
-
-        @Override
-        public void onCompletion(RecordMetadata metadata, Exception exception) {
-            if (exception != null) {
-                this.lastException = exception;
-            }
-        }
-
-        /**
-         * throw last exception.
-         *
-         * @throws Exception exception
-         */
-        public void checkState() throws Exception {
-            final Exception tmp = lastException;
-            if (tmp != null) {
-                lastException = null;
-                throw tmp;
-            }
-        }
+    private static ProducerRecord<byte[], byte[]> createProducerRecord(
+            String topic, byte[] key, byte[] value, Collection<Header> headers) {
+        return new ProducerRecord<>(topic, null, null, key, value, headers);
     }
 }

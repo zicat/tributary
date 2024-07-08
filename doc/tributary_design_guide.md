@@ -194,7 +194,7 @@ as [PrintFunction](../tributary-sink/tributary-sink-base/src/main/java/org/zicat
 ,
 [HDFSFunction](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSFunctionFactory.java)
 ,
-[DefaultKafkaFunction](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/DefaultKafkaFunctionFactory.java)
+[KafkaFunction](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/KafkaFunctionFactory.java)
 .
 
 #### Trigger
