@@ -18,18 +18,19 @@
 
 package org.zicat.tributary.demo;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.core.env.AbstractEnvironment;
+import org.zicat.tributary.server.Starter;
+import org.zicat.tributary.server.config.PropertiesLoader;
+
+import java.io.IOException;
 
 /** CommonDemoApplication. */
-@SpringBootApplication
 public class CommonDemoApplication {
 
     private static final String ACTIVE_PROFILE = "common-demo";
 
-    public static void main(String[] args) {
-        System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
-        SpringApplication.run(CommonDemoApplication.class, args);
+    public static void main(String[] args) throws InterruptedException, IOException {
+        try (Starter starter = new Starter(new PropertiesLoader(ACTIVE_PROFILE).load())) {
+            starter.start();
+        }
     }
 }

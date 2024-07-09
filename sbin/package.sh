@@ -11,22 +11,25 @@ release_dir_libs="${release_dir}""/libs"
 release_dir_config="${release_dir}""/config"
 release_dir_bin="${release_dir}""/bin"
 
+export MVN_CMD=${MVN_CMD:-mvn}
+
 # compile project
 compile() {
-  mvn clean install -DskipTests
+  ${MVN_CMD} clean install -DskipTests
 }
 
 # output dependency jars
 # shellcheck disable=SC2034
 # shellcheck disable=SC2012
 prepare_lib() {
-  mvn -f spring-boot-starter-tributary dependency:copy-dependencies -DoutputDirectory="${release_dir_libs}"
-  ls spring-boot-starter-tributary/target/spring-boot-starter-tributary-*.jar | awk '{print $1}' | grep -v "tests.jar" | xargs -I {} cp {} "${release_dir}"
+  ${MVN_CMD} -f tributary-server dependency:copy-dependencies -DoutputDirectory="${release_dir_libs}"
+  ls tributary-server/target/tributary-server-*.jar | awk '{print $1}'|grep -v "sources.jar" | grep -v "tests.jar" | xargs -I {} cp {} "${release_dir}"
 }
 
 prepare_config() {
 cat << EOF > "${release_dir_config}""/application.properties"
 server.port=8765
+server.host=127.0.0.1
 source.s1.channel=c1
 source.s1.implement=netty
 source.s1.netty.port=8200

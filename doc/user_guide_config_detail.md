@@ -6,13 +6,12 @@ Tributary Configuration consists of four parts, including server, source, channe
 
 ```properties
 server.port=8765
-server.metrics.ip.pattern=.*
+server.host=127.0.0.1
 ```
 
-The Tributary service provides metrics indicators in the form of http restful api through
-SpringBoot, and more server.* details can be obtained through the SpringBoot document.
+The Tributary service provides metrics indicators in the form of http restful api.
 
-The parameter "server.metrics.ip.pattern" is a regular expression that is used to filter the
+The parameter "server.host" is a regular expression that is used to filter the
 required hosts when there are multiple network cards in the machine, and assign the value to the
 host dimension in the metrics.
 
@@ -20,20 +19,21 @@ Get tributary metrics as follows, ensure that the port matches the server.port c
 
 ```shell
 $ curl -s http://localhost:8765/metrics|grep -v '#'
-sink_print_counter{host="10.103.1.130",id="c1_group_1_0",} 1.0
-channel_block_cache_query_hit_count{topic="c1",host="10.103.1.130",} 1.0
-channel_buffer_usage{topic="c1",host="10.103.1.130",} 0.0
-channel_write_bytes{topic="c1",host="10.103.1.130",} 95.0
-channel_active_segment{topic="c1",host="10.103.1.130",} 1.0
-channel_read_bytes{topic="c1",host="10.103.1.130",} 95.0
-channel_block_cache_query_total_count{topic="c1",host="10.103.1.130",} 1.0
-sink_lag{host="10.103.1.130",id="c1_group_1",} 0.0
+sink_print_counter{host="127.0.0.1",id="c1_group_1_0",} 1.0
+channel_block_cache_query_hit_count{topic="c1",host="127.0.0.1",} 1.0
+channel_buffer_usage{topic="c1",host="127.0.0.1",} 0.0
+channel_write_bytes{topic="c1",host="127.0.0.1",} 95.0
+channel_active_segment{topic="c1",host="127.0.0.1",} 1.0
+channel_read_bytes{topic="c1",host="127.0.0.1",} 95.0
+channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
+sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
 ```
 
-| Key                       | default | valid value | describe                                                                   |
-|---------------------------|---------|-------------|----------------------------------------------------------------------------|
-| server.port               |         | int(number) | the port to bind, range 1000-65535                                         |
-| server.metrics.ip.pattern | .*      | string      | the pattern to filter expected host as the metrics value of host dimension |
+| Key                 | default  | valid value | describe                                                                                                      |
+|---------------------|----------|-------------|---------------------------------------------------------------------------------------------------------------|
+| server.port         |          | int(number) | the port to bind, range 1000-65535                                                                            |
+| server.host         | .*       | string      | the pattern to filter expected host as the metrics value of host dimension, select first if found multi hosts |
+| server.metrics.path | /metrics | string      | the metrics http path                                                                                         |
 
 ## Source
 
@@ -275,7 +275,7 @@ Note:
 
 ```
 server.port=8765
-server.metrics.ip.pattern=.*
+server.host=.*
 
 source.s1.channel=c1
 source.s1.implement=netty

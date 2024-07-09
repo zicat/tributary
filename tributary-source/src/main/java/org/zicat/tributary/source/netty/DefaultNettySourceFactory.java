@@ -64,7 +64,6 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
         final String decode = config.get(OPTION_NETTY_DECODER);
         final PipelineInitializationFactory initializationFactory =
                 SpiFactory.findFactory(decode, PipelineInitializationFactory.class);
-        LOG.info("netty decode register success, identity = {}", decode);
         return new DefaultNettySource(
                 sourceId, config, host, port, eventThreads, channel, idleSecond) {
             @Override

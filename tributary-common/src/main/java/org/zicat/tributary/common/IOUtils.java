@@ -280,7 +280,7 @@ public class IOUtils {
                 if (closeable != null) {
                     closeable.close();
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 LOG.debug("close error", e);
             }
         }

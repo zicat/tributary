@@ -14,9 +14,8 @@
     <dependencies>
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>spring-boot-starter-tributary</artifactId>
+            <artifactId>tributary-server</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-
 </project>

@@ -29,47 +29,48 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 /** KafkaClient. */
 public class KafkaClient {
 
-    public static void main(String[] args) throws InterruptedException {
-        final Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093");
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, MyPartitioner.class.getName());
+    private static Map<String, Object> configs() {
+        final Map<String, Object> configs = new HashMap<>();
+        configs.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093");
+        configs.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        configs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        configs.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, MyPartitioner.class.getName());
 
-        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "false"); // not support transaction
-
-        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
-        props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
-        props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
-        props.put(
+        configs.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+        configs.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+        configs.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
+        configs.put(
                 SaslConfigs.SASL_JAAS_CONFIG,
                 "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"16Ew658jjzvmxDqk\";");
+        return configs;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
         // 创建KafkaProducer
-        KafkaProducer<String, String> producer = new KafkaProducer<>(props);
-        String topic = "test-topic";
-        for (int i = 0; i < 10000; i++) {
-            String key = "key" + i;
-            String value = "{\"value\":\"hello kafka" + i + "\"}";
-            List<Header> headers = new ArrayList<>();
-            headers.add(
-                    new RecordHeader(
-                            "header-" + i, ("header-value-" + i).getBytes(StandardCharsets.UTF_8)));
-
-            ProducerRecord<String, String> record =
-                    new ProducerRecord<>(topic, null, key, value, headers);
-            producer.send(record);
-            producer.flush();
-            System.out.println("Send message value: " + value);
-            Thread.sleep(2000);
+        try (KafkaProducer<String, String> producer = new KafkaProducer<>(configs())) {
+            String topic = "test-topic";
+            for (int i = 0; i < 10000; i++) {
+                String key = "key" + i;
+                String value = "{\"value\":\"hello kafka" + i + "\"}";
+                List<Header> headers = new ArrayList<>();
+                headers.add(
+                        new RecordHeader(
+                                "header-" + i,
+                                ("header-value-" + i).getBytes(StandardCharsets.UTF_8)));
+                ProducerRecord<String, String> record =
+                        new ProducerRecord<>(topic, null, key, value, headers);
+                producer.send(record);
+                producer.flush();
+                System.out.println("Send message value: " + value);
+                Thread.sleep(2000);
+            }
         }
-        // 发送消息
-
-        producer.close();
     }
 }

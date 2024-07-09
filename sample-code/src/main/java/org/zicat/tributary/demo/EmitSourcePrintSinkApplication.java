@@ -18,18 +18,19 @@
 
 package org.zicat.tributary.demo;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.core.env.AbstractEnvironment;
+import org.zicat.tributary.server.Starter;
+import org.zicat.tributary.server.config.PropertiesLoader;
+
+import java.io.IOException;
 
 /** EmitSourceDemoApplication. */
-@SpringBootApplication
 public class EmitSourcePrintSinkApplication {
 
     private static final String ACTIVE_PROFILE = "emit-source-print-sink";
 
-    public static void main(String[] args) {
-        System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
-        SpringApplication.run(EmitSourcePrintSinkApplication.class, args);
+    public static void main(String[] args) throws IOException, InterruptedException {
+        try (Starter starter = new Starter(new PropertiesLoader(ACTIVE_PROFILE).load())) {
+            starter.start();
+        }
     }
 }

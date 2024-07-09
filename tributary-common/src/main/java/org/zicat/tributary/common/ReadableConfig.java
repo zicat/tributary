@@ -47,7 +47,7 @@ public interface ReadableConfig {
      * @param values values
      * @return Readable Config
      */
-    static ReadableConfig create(Map<String, String> values) {
+    static ReadableConfig create(Map<String, Object> values) {
         final DefaultReadableConfig config = new DefaultReadableConfig();
         if (values != null) {
             config.putAll(values);

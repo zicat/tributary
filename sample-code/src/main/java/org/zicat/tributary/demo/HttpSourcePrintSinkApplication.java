@@ -18,24 +18,25 @@
 
 package org.zicat.tributary.demo;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.core.env.AbstractEnvironment;
+import org.zicat.tributary.server.Starter;
+import org.zicat.tributary.server.config.PropertiesLoader;
+
+import java.io.IOException;
 
 /** HttpSourcePrintSinkApplication. */
-@SpringBootApplication
 public class HttpSourcePrintSinkApplication {
 
     private static final String ACTIVE_PROFILE = "http-source-print-sink";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, InterruptedException {
         /*
             curl -X POST http://localhost:8200/tributary/send?topic=my_topic    \
                 -H "Content-Type: application/json; charset=UTF-8"              \
                 -H "my_records_header: hv1"                                     \
                 -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i
         */
-        System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, ACTIVE_PROFILE);
-        SpringApplication.run(HttpSourcePrintSinkApplication.class, args);
+        try (Starter starter = new Starter(new PropertiesLoader(ACTIVE_PROFILE).load())) {
+            starter.start();
+        }
     }
 }

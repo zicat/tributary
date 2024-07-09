@@ -24,12 +24,49 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /** HostUtils. */
 public class HostUtils {
 
     private static final String ALL_IP_FILTER_PATTERN = ".*";
+    private static final String HOST_SPLIT = ",";
+
+    /**
+     * read host address.
+     *
+     * @param host host.
+     * @return list
+     */
+    public static List<String> realHostAddress(String host) {
+        return realInetAddress(host).stream()
+                .map(InetAddress::getHostAddress)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * parse host.
+     *
+     * @param host host
+     * @return list.
+     */
+    public static List<InetAddress> realInetAddress(String host) {
+        final List<InetAddress> hostName = new ArrayList<>();
+        if (host == null || host.isEmpty()) {
+            return hostName;
+        }
+        final String[] hosts = host.split(HOST_SPLIT);
+        for (String h : hosts) {
+            if (h != null && !h.trim().isEmpty()) {
+                final InetAddress address = getInetAddress(h);
+                hostName.add(address);
+            }
+        }
+        return hostName;
+    }
 
     /**
      * get localhost string ip by pattern filter.

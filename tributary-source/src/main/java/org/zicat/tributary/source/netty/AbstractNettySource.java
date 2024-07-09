@@ -29,26 +29,25 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.*;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.Source;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zicat.tributary.source.utils.HostUtils.getInetAddress;
+import static org.zicat.tributary.source.utils.HostUtils.realHostAddress;
 
 /** AbstractNettySource. */
 public abstract class AbstractNettySource implements Source {
 
+    private static final Map<GaugeKey, GaugeFamily> empty = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(AbstractNettySource.class);
-    private static final String HOST_SPLIT = ",";
 
     protected final String host;
     protected int port;
@@ -77,27 +76,16 @@ public abstract class AbstractNettySource implements Source {
         this.port = port;
         this.eventThreads = eventThreads;
         this.channel = channel;
-        this.hostNames = realHostName(host);
-        this.bossGroup = createBossGroup();
-        this.workGroup = createWorkGroup();
+        this.hostNames = realHostAddress(host);
+        this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
+        this.workGroup = createWorkGroup(eventThreads);
         this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
     }
 
     @Override
     public void start() throws InterruptedException {
-        initOptions();
         initHandlers();
         channelList = createChannelList();
-    }
-
-    /** init server options. */
-    protected void initOptions() {
-        serverBootstrap
-                .option(ChannelOption.SO_BACKLOG, 256)
-                .option(ChannelOption.SO_RCVBUF, 1024 * 1024)
-                .childOption(ChannelOption.SO_RCVBUF, 10 * 1024 * 1024)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     }
 
     /**
@@ -134,8 +122,7 @@ public abstract class AbstractNettySource implements Source {
         port = ((InetSocketAddress) serverChannel.localAddress()).getPort();
 
         if (syncFuture.isSuccess()) {
-            final String realHost = host == null ? "*" : host;
-            LOG.info(">>> TcpServer started on ip {}, port {} ", realHost, port);
+            LOG.info("TcpServer started on {}:{}", prettyHost(host), port);
         } else {
             final String message = "TcpServer started fail on port " + port;
             throw new TributaryRuntimeException(message, syncFuture.cause());
@@ -161,41 +148,27 @@ public abstract class AbstractNettySource implements Source {
     }
 
     /**
-     * parse host.
-     *
-     * @param host host
-     * @return list.
-     */
-    private static List<String> realHostName(String host) {
-        final List<String> hostName = new ArrayList<>();
-        if (host == null || host.isEmpty()) {
-            return hostName;
-        }
-        final String[] hosts = host.split(HOST_SPLIT);
-        for (String h : hosts) {
-            if (h != null && !h.trim().isEmpty()) {
-                final InetAddress address = getInetAddress(h);
-                hostName.add(address.getHostAddress());
-            }
-        }
-        return hostName;
-    }
-
-    /**
      * create server bootstrap.
      *
      * @param bossGroup bossGroup
      * @param workGroup workGroup
      * @return ServerBootstrap
      */
-    protected ServerBootstrap createServerBootstrap(
+    public static ServerBootstrap createServerBootstrap(
             EventLoopGroup bossGroup, EventLoopGroup workGroup) {
         final ServerBootstrap serverBootstrap = new ServerBootstrap();
         final Class<? extends ServerChannel> channelClass =
                 SystemUtils.IS_OS_LINUX
                         ? EpollServerSocketChannel.class
                         : NioServerSocketChannel.class;
-        serverBootstrap.group(bossGroup, workGroup).channel(channelClass);
+        serverBootstrap
+                .group(bossGroup, workGroup)
+                .channel(channelClass)
+                .option(ChannelOption.SO_BACKLOG, 256)
+                .option(ChannelOption.SO_RCVBUF, 1024 * 1024)
+                .childOption(ChannelOption.SO_RCVBUF, 10 * 1024 * 1024)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
         return serverBootstrap;
     }
 
@@ -204,7 +177,7 @@ public abstract class AbstractNettySource implements Source {
      *
      * @return EventLoopGroup
      */
-    private EventLoopGroup createWorkGroup() {
+    public static EventLoopGroup createWorkGroup(int eventThreads) {
         return SystemUtils.IS_OS_LINUX
                 ? new EpollEventLoopGroup(eventThreads)
                 : new NioEventLoopGroup(eventThreads);
@@ -215,8 +188,10 @@ public abstract class AbstractNettySource implements Source {
      *
      * @return EventLoopGroup
      */
-    protected EventLoopGroup createBossGroup() {
-        return SystemUtils.IS_OS_LINUX ? new EpollEventLoopGroup(1) : new NioEventLoopGroup(1);
+    public static EventLoopGroup createBossGroup(int nThreads) {
+        return SystemUtils.IS_OS_LINUX
+                ? new EpollEventLoopGroup(nThreads)
+                : new NioEventLoopGroup(nThreads);
     }
 
     @Override
@@ -250,7 +225,6 @@ public abstract class AbstractNettySource implements Source {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        LOG.error("stop listen {}:{}", host, port);
         if (channelList != null) {
             channelList.forEach(
                     f -> {
@@ -260,6 +234,7 @@ public abstract class AbstractNettySource implements Source {
                             LOG.info("wait close channel sync fail", e);
                         }
                     });
+            LOG.info("close netty source listen {}:{}", prettyHost(host), port);
         }
         if (workGroup != null) {
             workGroup.shutdownGracefully();
@@ -268,6 +243,10 @@ public abstract class AbstractNettySource implements Source {
             bossGroup.shutdownGracefully();
         }
         channel.flush();
+    }
+
+    private String prettyHost(String host) {
+        return host == null || host.isEmpty() ? "*" : host;
     }
 
     /**
@@ -306,8 +285,22 @@ public abstract class AbstractNettySource implements Source {
         return hostNames;
     }
 
+    /**
+     * get event threads.
+     *
+     * @return threads
+     */
+    public int getEventThreads() {
+        return eventThreads;
+    }
+
     @Override
     public String sourceId() {
         return sourceId;
+    }
+
+    @Override
+    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
+        return empty;
     }
 }

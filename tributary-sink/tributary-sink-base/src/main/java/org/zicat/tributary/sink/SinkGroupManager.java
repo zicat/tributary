@@ -21,6 +21,8 @@ package org.zicat.tributary.sink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.GaugeFamily;
+import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
@@ -45,6 +47,7 @@ import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.parseMax
  */
 public class SinkGroupManager implements Closeable {
 
+    public static final GaugeKey KEY_SINK_LAG = new GaugeKey("sink_lag", "sink lag");
     private static final Logger LOG = LoggerFactory.getLogger(SinkGroupManager.class);
 
     private final String groupId;
@@ -75,22 +78,11 @@ public class SinkGroupManager implements Closeable {
         handlers.forEach(AbstractPartitionHandler::open);
         handlers.forEach(Thread::start);
         supportMaxRetainSize();
-        logSinkGroupManagerInfo();
-    }
-
-    /** log sink group manager info. */
-    private void logSinkGroupManagerInfo() {
-        LOG.info(
-                "create sink group manager success, groupId={}, topic={}, config={}",
-                groupId,
-                topic(),
-                sinkGroupConfig);
     }
 
     /** support max retain size. */
     private void supportMaxRetainSize() {
-        final Long maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
-        if (maxRetainSize != null) {
+        if (maxRetainSize() != null) {
             final long periodMill = sinkGroupConfig.get(OPTION_RETAIN_SIZE_CHECK_PERIOD_MILLI);
             service = Executors.newSingleThreadScheduledExecutor();
             service.scheduleWithFixedDelay(
@@ -107,6 +99,12 @@ public class SinkGroupManager implements Closeable {
                     periodMill,
                     TimeUnit.MILLISECONDS);
         }
+    }
+
+    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
+        final Map<GaugeKey, GaugeFamily> families = new HashMap<>();
+        KEY_SINK_LAG.value(lag()).register(families);
+        return families;
     }
 
     /**
@@ -140,6 +138,7 @@ public class SinkGroupManager implements Closeable {
         } finally {
             handlers.forEach(IOUtils::closeQuietly);
         }
+        LOG.info("stop sink topic = {}, group = {}", channel.topic(), groupId);
     }
 
     public String id() {
@@ -153,5 +152,14 @@ public class SinkGroupManager implements Closeable {
      */
     public final String topic() {
         return channel.topic();
+    }
+
+    /**
+     * get max retain size.
+     *
+     * @return max retain size
+     */
+    public final Long maxRetainSize() {
+        return parseMaxRetainSize(sinkGroupConfig);
     }
 }

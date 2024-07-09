@@ -37,7 +37,7 @@ start() {
     CLASSPATH=${CLASSPATH}:${f}
   done
   export CLASSPATH
-  nohup java -Xms1G -Xmx1G org.zicat.tributary.service.TributaryServiceApplication > /dev/null 2>&1 &
+  nohup java -Xms1G -Xmx1G org.zicat.tributary.server.Starter > /dev/null 2>&1 &
 }
 
 restart() {

@@ -25,15 +25,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import org.zicat.tributary.common.PathParams;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.source.netty.AbstractNettySource;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -90,8 +88,8 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
         final PathParams pathParams = new PathParams(msg.uri());
-        if (!pathMatch(pathParams.path)) {
-            notFoundResponse(ctx, pathParams.path);
+        if (!pathMatch(pathParams.path())) {
+            notFoundResponse(ctx, pathParams.path());
             return;
         }
         final Map<String, String> httpHeaders = httpHeaders(msg);
@@ -100,7 +98,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             badRequestResponse(ctx, RESPONSE_BAD_CONTENT_TYPE);
             return;
         }
-        final String topic = pathParams.params.get(HTTP_QUERY_KEY_TOPIC);
+        final String topic = pathParams.params().get(HTTP_QUERY_KEY_TOPIC);
         if (topic == null || topic.trim().isEmpty()) {
             badRequestResponse(ctx, RESPONSE_BAD_TOPIC_NOT_IN_PARAMS);
             return;
@@ -191,11 +189,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
         byteBuf.writeBytes(content);
         final FullHttpResponse response =
                 new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, byteBuf);
-        response.headers()
-                .add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8)
-                .add(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
-                .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        ctx.writeAndFlush(response);
+        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
     }
 
     /**
@@ -211,11 +205,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
         final FullHttpResponse response =
                 new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST, byteBuf);
-        response.headers()
-                .add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8)
-                .add(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
-                .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        ctx.writeAndFlush(response);
+        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
     }
 
     /**
@@ -224,54 +214,26 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param ctx ctx
      * @param path path
      */
-    private static void notFoundResponse(ChannelHandlerContext ctx, String path) {
+    public static void notFoundResponse(ChannelHandlerContext ctx, String path) {
         final byte[] content = (path + " not found").getBytes(StandardCharsets.UTF_8);
         final ByteBuf byteBuf = ctx.alloc().buffer(content.length);
         byteBuf.writeBytes(content);
         final FullHttpResponse response =
                 new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND, byteBuf);
-        response.headers()
-                .add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8)
-                .add(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
-                .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        ctx.writeAndFlush(response);
+        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
     }
 
-    /** PathParams. */
-    private static class PathParams {
-
-        private final Map<String, String> params;
-        private final String path;
-
-        public PathParams(String u) throws URISyntaxException, UnsupportedEncodingException {
-            final URI uri = new URI(u);
-            this.path = uri.getPath();
-            this.params = params(uri);
-        }
-
-        /**
-         * parse uri for params.
-         *
-         * @param uri uri
-         * @return params
-         */
-        private static Map<String, String> params(URI uri) throws UnsupportedEncodingException {
-            final Map<String, String> params = new HashMap<>();
-            if (uri.getQuery() == null) {
-                return params;
-            }
-            final String query = uri.getQuery();
-            if (query != null) {
-                final String[] pairs = query.split("&");
-                for (String pair : pairs) {
-                    final int idx = pair.indexOf("=");
-                    final String key = URLDecoder.decode(pair.substring(0, idx), ENCODE);
-                    final String value = URLDecoder.decode(pair.substring(idx + 1), ENCODE);
-                    params.put(key, value);
-                }
-            }
-            return params;
-        }
+    /**
+     * add text plain utf8 headers.
+     *
+     * @param response response
+     * @return response
+     */
+    public static FullHttpResponse addTextPlainUtf8Headers(FullHttpResponse response) {
+        response.headers().add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8);
+        response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+        response.headers().add(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
+        return response;
     }
 }

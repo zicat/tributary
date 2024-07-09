@@ -18,7 +18,11 @@
 
 package org.zicat.tributary.source;
 
+import org.zicat.tributary.common.GaugeFamily;
+import org.zicat.tributary.common.GaugeKey;
+
 import java.io.Closeable;
+import java.util.Map;
 
 /** Source. */
 public interface Source extends Closeable, SourceChannel {
@@ -29,6 +33,13 @@ public interface Source extends Closeable, SourceChannel {
      * @throws Exception Exception
      */
     void start() throws Exception;
+
+    /**
+     * get channel metrics.
+     *
+     * @return map metrics
+     */
+    Map<GaugeKey, GaugeFamily> gaugeFamily();
 
     /**
      * get id.

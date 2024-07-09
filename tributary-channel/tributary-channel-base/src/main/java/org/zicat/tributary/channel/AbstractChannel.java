@@ -293,6 +293,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             groupManagerFactory.destroy(groupManager);
             cache.forEach((k, v) -> IOUtils.closeQuietly(v));
             cache.clear();
+            LOG.info("close channel topic = {}", topic);
         }
     }
 

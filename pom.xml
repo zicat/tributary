@@ -13,7 +13,7 @@
         <module>tributary-channel</module>
         <module>tributary-sink</module>
         <module>tributary-source</module>
-        <module>spring-boot-starter-tributary</module>
+        <module>tributary-server</module>
         <module>sample-code</module>
     </modules>
     <properties>
@@ -21,6 +21,7 @@
         <hbase-version>2.2.5</hbase-version>
         <kafka-version>2.5.0</kafka-version>
         <prometheus-version>0.5.0</prometheus-version>
+        <netty-version>4.1.65.Final</netty-version>
     </properties>
     <scm>
         <url>https://github.com/zicat/tributary</url>
