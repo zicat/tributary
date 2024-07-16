@@ -33,7 +33,7 @@ import org.zicat.tributary.sink.hdfs.bucket.ProcessTimeBucketGenerator;
 import java.io.IOException;
 import java.util.Iterator;
 
-import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.OPTION_IDLE_MILLIS;
+import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.OPTION_IDLE_TRIGGER;
 
 /** HDFSFunction. */
 public class HDFSFunction extends AbstractFunction implements Trigger {
@@ -106,7 +106,7 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
 
     @Override
     public long idleTimeMillis() {
-        return context.get(OPTION_IDLE_MILLIS);
+        return context.get(OPTION_IDLE_TRIGGER).toMillis();
     }
 
     @Override

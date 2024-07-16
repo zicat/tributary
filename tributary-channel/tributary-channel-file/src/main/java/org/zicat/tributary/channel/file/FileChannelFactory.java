@@ -18,10 +18,6 @@
 
 package org.zicat.tributary.channel.file;
 
-import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
-import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD_SECOND;
-
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.CompressionType;
@@ -33,6 +29,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
+import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
 
 /** FileChannelFactory. */
 public class FileChannelFactory implements ChannelFactory {
@@ -52,12 +52,11 @@ public class FileChannelFactory implements ChannelFactory {
         final List<String> dirs = Arrays.asList(partitionPath.split(SPLIT_STR));
 
         final Set<String> groupSet = groupSet(config);
-        final int blockSize = config.get(OPTION_BLOCK_SIZE);
-        final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
-        final int flushPeriodMills = config.get(OPTION_FLUSH_PERIOD_MILLS);
-        final CompressionType compression =
-                CompressionType.getByName(config.get(OPTION_COMPRESSION));
-        final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD_SECOND);
+        final int blockSize = (int) config.get(OPTION_BLOCK_SIZE).getBytes();
+        final long segmentSize = config.get(OPTION_SEGMENT_SIZE).getBytes();
+        final long flushPeriodMills = config.get(OPTION_FLUSH_PERIOD).toMillis();
+        final CompressionType compression = config.get(OPTION_COMPRESSION);
+        final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD).getSeconds();
         final int blockCacheCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
         final FileChannelBuilder builder =
                 FileChannelBuilder.newBuilder()

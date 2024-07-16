@@ -28,11 +28,13 @@ import org.zicat.tributary.source.netty.pipeline.LengthPipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /** DefaultNettySource. */
 public class DefaultNettySource extends AbstractNettySource {
 
-    protected final int idleSecond;
+    protected final long idle;
     protected final PipelineInitialization pipelineInitialization;
 
     public DefaultNettySource(
@@ -42,10 +44,10 @@ public class DefaultNettySource extends AbstractNettySource {
             int port,
             int eventThreads,
             Channel channel,
-            int idleSecond)
+            Duration idleDuration)
             throws Exception {
         super(sourceId, config, host, port, eventThreads, channel);
-        this.idleSecond = idleSecond;
+        this.idle = idleDuration.toMillis();
         this.pipelineInitialization = createPipelineInitialization();
     }
 
@@ -74,7 +76,7 @@ public class DefaultNettySource extends AbstractNettySource {
      * @return ChannelHandler
      */
     public ChannelHandler idleStateHandler() {
-        return new IdleStateHandler(idleSecond, idleSecond, idleSecond);
+        return new IdleStateHandler(idle, idle, idle, TimeUnit.MILLISECONDS);
     }
 
     @Override

@@ -25,12 +25,14 @@ import org.zicat.tributary.channel.GroupOffset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
 import static org.zicat.tributary.common.Threads.sleepQuietly;
@@ -52,17 +54,17 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPartitionHandler.class);
 
-    public static final ConfigOption<Long> OPTION_MAX_RETAIN_SIZE =
+    public static final ConfigOption<MemorySize> OPTION_MAX_RETAIN_SIZE =
             ConfigOptions.key("partition.retain.max.bytes")
-                    .longType()
+                    .memoryType()
                     .description("delete oldest segment if one partition lag over this param")
                     .defaultValue(null);
 
-    public static final ConfigOption<Integer> OPTION_RETAIN_SIZE_CHECK_PERIOD_MILLI =
-            ConfigOptions.key("partition.group.commit.period.mill")
-                    .integerType()
+    public static final ConfigOption<Duration> OPTION_RETAIN_SIZE_CHECK_PERIOD =
+            ConfigOptions.key("partition.group.commit.period")
+                    .durationType()
                     .description("partition group commit period millisecond, default 30s")
-                    .defaultValue(30 * 1000);
+                    .defaultValue(Duration.ofSeconds(30));
 
     protected final Long maxRetainSize;
     private GroupOffset fetchOffset;
@@ -189,7 +191,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      * @return value
      */
     public static Long parseMaxRetainSize(SinkGroupConfig sinkGroupConfig) {
-        return sinkGroupConfig.get(OPTION_MAX_RETAIN_SIZE);
+        final MemorySize memorySize = sinkGroupConfig.get(OPTION_MAX_RETAIN_SIZE);
+        return memorySize == null ? null : memorySize.getBytes();
     }
 
     @Override

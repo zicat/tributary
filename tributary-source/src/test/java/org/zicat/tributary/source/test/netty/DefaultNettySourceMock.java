@@ -23,9 +23,11 @@ import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.netty.DefaultNettySource;
 
+import java.time.Duration;
+
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
 import static org.zicat.tributary.source.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS;
-import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE_SECOND;
+import static org.zicat.tributary.source.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE;
 
 /** DefaultNettySourceMock. */
 public class DefaultNettySourceMock extends DefaultNettySource {
@@ -36,9 +38,9 @@ public class DefaultNettySourceMock extends DefaultNettySource {
             int port,
             int eventThreads,
             Channel channel,
-            int idleSecond)
+            Duration idle)
             throws Exception {
-        super(sourceId, config, host, port, eventThreads, channel, idleSecond);
+        super(sourceId, config, host, port, eventThreads, channel, idle);
     }
 
     public DefaultNettySourceMock(int port, Channel channel) throws Exception {
@@ -49,7 +51,7 @@ public class DefaultNettySourceMock extends DefaultNettySource {
                 port,
                 OPTION_NETTY_THREADS.defaultValue(),
                 channel,
-                OPTION_NETTY_IDLE_SECOND.defaultValue());
+                OPTION_NETTY_IDLE.defaultValue());
     }
 
     public DefaultNettySourceMock(ReadableConfig config, Channel channel) throws Exception {
@@ -65,7 +67,7 @@ public class DefaultNettySourceMock extends DefaultNettySource {
                 port,
                 OPTION_NETTY_THREADS.defaultValue(),
                 channel,
-                OPTION_NETTY_IDLE_SECOND.defaultValue());
+                OPTION_NETTY_IDLE.defaultValue());
     }
 
     public DefaultNettySourceMock(Channel channel) throws Exception {

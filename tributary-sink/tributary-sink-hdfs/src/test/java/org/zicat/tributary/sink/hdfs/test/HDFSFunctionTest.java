@@ -110,7 +110,7 @@ public class HDFSFunctionTest {
                             .startGroupOffset(new GroupOffset(0, 0, "g1"))
                             .topic(topic);
             builder.addCustomProperty(OPTION_SINK_PATH.key(), DIR.getCanonicalFile().getPath())
-                    .addCustomProperty(OPTION_IDLE_MILLIS.key(), 10000)
+                    .addCustomProperty(OPTION_IDLE_TRIGGER.key(), 10000)
                     .addCustomProperty(OPTION_BUCKET_DATE_FORMAT.key(), timeFormat)
                     .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE.key(), timeZoneId)
                     .addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC.key(), "snappy")

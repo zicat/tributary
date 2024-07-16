@@ -71,10 +71,10 @@ public class SinkComponentTest {
                     (g21.topic().equals("c1") && g22.topic().equals("c2"))
                             || (g21.topic().equals("c2") && g22.topic().equals("c1")));
 
-            Assert.assertEquals(9663676414L, g1.maxRetainSize().longValue());
-            Assert.assertEquals(9663676415L, g21.maxRetainSize().longValue());
-            Assert.assertEquals(9663676415L, g22.maxRetainSize().longValue());
-            Assert.assertEquals(9663676416L, g3.maxRetainSize().longValue());
+            Assert.assertEquals(107374182400L, g1.maxRetainSize().longValue());
+            Assert.assertEquals(107374182400L, g21.maxRetainSize().longValue());
+            Assert.assertEquals(107374182400L, g22.maxRetainSize().longValue());
+            Assert.assertEquals(107374182400L, g3.maxRetainSize().longValue());
 
             Assert.assertEquals(metricsHost, g1.getFunctions().get(0).get(0).metricsHost());
         }

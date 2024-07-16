@@ -12,7 +12,7 @@ channel.c1.type=memory
 channel.c1.groups=group_1
 sink.group_1.function.id=hdfs
 sink.group_1.sink.path=/tmp/test/cache
-sink.group_1.roll.size=10240000
+sink.group_1.roll.size=10mb
 sink.group_1.bucket.date.format=yyyyMMdd_HH_mm
 sink.group_1.bucket.date.timezone=UTC
 sink.group_1.max.retries=3
@@ -20,7 +20,7 @@ sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
 sink.group_1.writer.parquet.compression.codec=snappy
-sink.group_1.idle.trigger.millis=30000
+sink.group_1.idle.trigger=30sec
 ```
 
 [Let's start the tributary service](../../doc/user_guide.md) using the above configuration and
@@ -42,7 +42,7 @@ Due to the configuration setting of sink.group_1.bucket.date.format to create a 
 minute, a data file will be generated in the subdirectory where sink.group_1.sink.path is located
 after a one-minute wait.
 
-At the same time, due to the configuration of sink.group_1.idle.trigger.millis as 30 seconds, if the
+At the same time, due to the configuration of sink.group_1.idle.trigger as 30sec, if the
 input data channel is idle for 30 seconds, a data file will also be generated in the subdirectory
 where sink.group_1.sink.path is located.
 

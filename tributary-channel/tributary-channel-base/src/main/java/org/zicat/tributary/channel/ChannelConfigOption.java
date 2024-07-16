@@ -20,27 +20,33 @@ package org.zicat.tributary.channel;
 
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.MemorySize;
+
+import java.time.Duration;
+import java.util.List;
+
+import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
 
 /** ChannelConfigOption. */
 public class ChannelConfigOption {
 
-    public static final ConfigOption<Integer> OPTION_BLOCK_SIZE =
+    public static final ConfigOption<MemorySize> OPTION_BLOCK_SIZE =
             ConfigOptions.key("block.size")
-                    .integerType()
+                    .memoryType()
                     .description("block size")
-                    .defaultValue(32 * 1024);
+                    .defaultValue(new MemorySize(32 * 1024));
 
-    public static final ConfigOption<Long> OPTION_SEGMENT_SIZE =
+    public static final ConfigOption<MemorySize> OPTION_SEGMENT_SIZE =
             ConfigOptions.key("segment.size")
-                    .longType()
+                    .memoryType()
                     .description("segment size")
-                    .defaultValue(4L * 1024L * 1024L * 1024L);
+                    .defaultValue(new MemorySize(4L * 1024L * 1024L * 1024L));
 
-    public static final ConfigOption<String> OPTION_COMPRESSION =
+    public static final ConfigOption<CompressionType> OPTION_COMPRESSION =
             ConfigOptions.key("compression")
-                    .stringType()
+                    .enumType(CompressionType.class)
                     .description("compression type [none,snappy,zstd]")
-                    .defaultValue("none");
+                    .defaultValue(CompressionType.NONE);
 
     public static final ConfigOption<Integer> OPTION_PARTITION_COUNT =
             ConfigOptions.key("partitions")
@@ -48,17 +54,17 @@ public class ChannelConfigOption {
                     .description("partition count")
                     .defaultValue(1);
 
-    public static final ConfigOption<String> OPTION_GROUPS =
+    public static final ConfigOption<List<String>> OPTION_GROUPS =
             ConfigOptions.key("groups")
-                    .stringType()
+                    .listType(COMMA_SPLIT_HANDLER)
                     .description("set groups, split by ','")
                     .noDefaultValue();
 
-    public static final ConfigOption<Integer> OPTION_FLUSH_PERIOD_MILLS =
-            ConfigOptions.key("flush.period.mills")
-                    .integerType()
-                    .description("async flush page cache to disk period millis, default 500")
-                    .defaultValue(500);
+    public static final ConfigOption<Duration> OPTION_FLUSH_PERIOD =
+            ConfigOptions.key("flush.period")
+                    .durationType()
+                    .description("async flush page cache to disk period millis, default 500ms")
+                    .defaultValue(Duration.ofMillis(500));
 
     public static final ConfigOption<Integer> OPTION_BLOCK_CACHE_PER_PARTITION_SIZE =
             ConfigOptions.key("block.cache.per.partition.size")

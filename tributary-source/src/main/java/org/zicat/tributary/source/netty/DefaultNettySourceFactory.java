@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.source.netty;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -28,16 +26,16 @@ import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.netty.pipeline.PipelineInitializationFactory;
 
+import java.time.Duration;
+
 /** DefaultNettySourceFactory. */
 public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultNettySourceFactory.class);
-
-    public static final ConfigOption<Integer> OPTION_NETTY_IDLE_SECOND =
-            ConfigOptions.key("netty.idle.second")
-                    .integerType()
+    public static final ConfigOption<Duration> OPTION_NETTY_IDLE =
+            ConfigOptions.key("netty.idle")
+                    .durationType()
                     .description("max wait to close when channel idle over this param")
-                    .defaultValue(120);
+                    .defaultValue(Duration.ofSeconds(120));
 
     public static final ConfigOption<String> OPTION_NETTY_DECODER =
             ConfigOptions.key("netty.decoder")
@@ -60,12 +58,11 @@ public class DefaultNettySourceFactory extends AbstractNettySourceFactory {
             Channel channel,
             ReadableConfig config)
             throws Exception {
-        final int idleSecond = config.get(OPTION_NETTY_IDLE_SECOND);
+        final Duration idle = config.get(OPTION_NETTY_IDLE);
         final String decode = config.get(OPTION_NETTY_DECODER);
         final PipelineInitializationFactory initializationFactory =
                 SpiFactory.findFactory(decode, PipelineInitializationFactory.class);
-        return new DefaultNettySource(
-                sourceId, config, host, port, eventThreads, channel, idleSecond) {
+        return new DefaultNettySource(sourceId, config, host, port, eventThreads, channel, idle) {
             @Override
             protected PipelineInitialization createPipelineInitialization() throws Exception {
                 return initializationFactory.createPipelineInitialization(this);

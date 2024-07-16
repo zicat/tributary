@@ -20,8 +20,11 @@ package org.zicat.tributary.sink.hdfs;
 
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.SystemClock;
+
+import java.time.Duration;
 
 /** HDFSSinkOptions. */
 public class HDFSSinkOptions {
@@ -44,11 +47,11 @@ public class HDFSSinkOptions {
                     .description("kerberos principle")
                     .defaultValue(null);
 
-    public static final ConfigOption<Long> OPTION_ROLL_SIZE =
+    public static final ConfigOption<MemorySize> OPTION_ROLL_SIZE =
             ConfigOptions.key("roll.size")
-                    .longType()
+                    .memoryType()
                     .description("roll new file if file size over this param")
-                    .defaultValue(1024 * 1024 * 256L);
+                    .defaultValue(new MemorySize(1024 * 1024 * 256L));
 
     public static final ConfigOption<Integer> OPTION_MAX_RETRIES =
             ConfigOptions.key("max.retries")
@@ -62,11 +65,11 @@ public class HDFSSinkOptions {
                     .description("set writer identity")
                     .defaultValue("parquet");
 
-    public static final ConfigOption<Integer> OPTION_IDLE_MILLIS =
-            ConfigOptions.key("idle.trigger.millis")
-                    .integerType()
+    public static final ConfigOption<Duration> OPTION_IDLE_TRIGGER =
+            ConfigOptions.key("idle.trigger")
+                    .durationType()
                     .description("idle trigger, default 30s")
-                    .defaultValue(30 * 1000);
+                    .defaultValue(Duration.ofSeconds(30));
 
     public static final ConfigOption<String> OPTION_BUCKET_DATE_FORMAT =
             ConfigOptions.key("bucket.date.format")

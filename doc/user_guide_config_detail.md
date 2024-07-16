@@ -66,17 +66,17 @@ follows :
 source.s1.netty.host=10\\.103\\.1\\..*,localhost
 source.s1.netty.port=8200
 source.s1.netty.threads=10
-source.s1.netty.idle.second=60
+source.s1.netty.idle=60sec
 source.s1.netty.decoder=lineDecoder
 ```
 
-| key               | default       | type                                                     | describe                                                                                                                                                                                                                         |
-|-------------------|---------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host        | null          | string                                                   | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
-| netty.port        |               | int(number)                                              | the port to bind, range 1000-65535                                                                                                                                                                                               |
-| netty.threads     | 10            | int(number)                                              | the count of netty event loop threads                                                                                                                                                                                            |
-| netty.idle.second | 120           | int(second)                                              | the second to close the idle socket                                                                                                                                                                                              |
-| netty.decoder     | lengthDecoder | enum[lengthDecoder,lineDecoder,kafkaDecoder,httpDecoder] | the parser of network streaming                                                                                                                                                                                                  |
+| key           | default       | type                                                     | describe                                                                                                                                                                                                                         |
+|---------------|---------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.host    | null          | string                                                   | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
+| netty.port    |               | int(number)                                              | the port to bind, range 1000-65535                                                                                                                                                                                               |
+| netty.threads | 10            | int(number)                                              | the count of netty event loop threads                                                                                                                                                                                            |
+| netty.idle    | 120sec        | duration                                                 | the idle time to close the socket                                                                                                                                                                                                |
+| netty.decoder | lengthDecoder | enum[lengthDecoder,lineDecoder,kafkaDecoder,httpDecoder] | the parser of network streaming                                                                                                                                                                                                  |
 
 Note：
 
@@ -98,18 +98,18 @@ Note：
    by [kafka-producer-protocol](https://kafka.apache.org/protocol#The_Messages_Produce). It supports
    more configuration as follows:
 
-| key                                                   | default     | type        | describe                                                                                                                                                                                                        |
-|-------------------------------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.decoder.kafka.cluster.id                        | ${sourceId} | string      | the kafka cluster to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata)                                                                                   |
-| netty.decoder.kafka.zookeeper.connect                 |             | string      | the zookeeper host path to register the tributary instance for instance discovery, like: localhost:2181,localhost:2182/tributary_source_kafka                                                                   |
-| netty.decoder.kafka.zookeeper.connection.timeout.ms   | 15000       | int(ms)     | the zookeeper client connection timeout                                                                                                                                                                         |
-| netty.decoder.kafka.zookeeper.session.timeout.ms      | 60000       | int(ms)     | the zookeeper client session timeout                                                                                                                                                                            |
-| netty.decoder.kafka.zookeeper.retry.times             | 3           | int(number) | the zookeeper client retry times when call zookeeper server exception                                                                                                                                           |
-| netty.decoder.kafka.zookeeper.fail.base.sleep.time.ms | 1000        | int(ms)     | the zookeeper client sleep time before next retry                                                                                                                                                               |
-| netty.decoder.kafka.meta.ttl.ms                       | 10000       | long(ms)    | the zookeeper nodes cache ttl                                                                                                                                                                                   |
-| netty.decoder.kafka.topic.partitions                  | 60          | int(number) | the topic partitions to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata), recommend to set as multiples of tributary instances count for load balancing |
-| netty.decoder.kafka.sasl.plain                        | false       | bool        | the security switch whether open sasl plain                                                                                                                                                                     |
-| netty.decoder.kafka.sasl.plain.usernames              | null        | string      | the plain users configuration, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                                              |
+| key                                                | default     | type        | describe                                                                                                                                                                                                        |
+|----------------------------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.decoder.kafka.cluster.id                     | ${sourceId} | string      | the kafka cluster to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata)                                                                                   |
+| netty.decoder.kafka.zookeeper.connect              |             | string      | the zookeeper host path to register the tributary instance for instance discovery, like: localhost:2181,localhost:2182/tributary_source_kafka                                                                   |
+| netty.decoder.kafka.zookeeper.connection.timeout   | 15sec       | duration    | the zookeeper client connection timeout                                                                                                                                                                         |
+| netty.decoder.kafka.zookeeper.session.timeout      | 60sec       | duration    | the zookeeper client session timeout                                                                                                                                                                            |
+| netty.decoder.kafka.zookeeper.retry.times          | 3           | int(number) | the zookeeper client retry times when call zookeeper server exception                                                                                                                                           |
+| netty.decoder.kafka.zookeeper.fail.base.sleep.time | 1sec        | duration    | the zookeeper client sleep time before next retry                                                                                                                                                               |
+| netty.decoder.kafka.meta.ttl                       | 10sec       | duration    | the zookeeper nodes cache ttl                                                                                                                                                                                   |
+| netty.decoder.kafka.topic.partitions               | 60          | int(number) | the topic partitions to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata), recommend to set as multiples of tributary instances count for load balancing |
+| netty.decoder.kafka.sasl.plain                     | false       | bool        | the security switch whether open sasl plain                                                                                                                                                                     |
+| netty.decoder.kafka.sasl.plain.usernames           | null        | string      | the plain users configuration, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                                              |
 
 5. The httpDecoder parses streaming records by http protocol. It supports more configuration as
    follows:
@@ -133,18 +133,18 @@ channel.c1.type=file
 channel.c1.groups=group_1,group_2
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.compression=snappy
-channel.c1.block.size=262144
-channel.c1.segment.size=4294967296
-channel.c1.flush.period.mills=1000
+channel.c1.block.size=32kb
+channel.c1.segment.size=4gb
+channel.c1.flush.period=1sec
 channel.c1.block.cache.per.partition.size=1024
-channel.c1.groups.persist.period.second=40
+channel.c1.groups.persist.period=40s
 channel.c2.type=memory
 channel.c2.groups=group_2
 channel.c2.partitions=2
 channel.c2.compression=snappy
-channel.c2.block.size=262144
-channel.c2.segment.size=4294967296
-channel.c2.flush.period.mills=1000
+channel.c2.block.size=32kb
+channel.c2.segment.size=4gb
+channel.c2.flush.period=1sec
 channel.c2.block.cache.per.partition.size=1024
 ```
 
@@ -157,31 +157,32 @@ channel.c2.block.cache.per.partition.size=1024
 
 ### File Config
 
-| key                            | default        | type                   | describe                                                                                                                                                                                       |
-|--------------------------------|----------------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block.size                     | 32768(32K)     | long(byte)             | the block size to store records in memory                                                                                                                                                      |
-| compression                    | none           | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
-| segment.size                   | 4294967296(4G) | long(byte)             | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
-| partitions                     |                | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                        |
-| flush.period.mills             | 500            | long(ms)               | the period time to async flush page cache to disk                                                                                                                                              |
-| groups.persist.period.second   | 30             | long(second)           | the period time to async persist the committed group offset to disk                                                                                                                            |     
-| block.cache.per.partition.size | 1024           | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
+| key                            | default | type                   | describe                                                                                                                                                                                       |
+|--------------------------------|---------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                      |
+| compression                    | none    | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
+| segment.size                   | 4gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
+| partitions                     |         | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                        |
+| flush.period                   | 500ms   | duration               | the period time to async flush page cache to disk                                                                                                                                              |
+| groups.persist.period          | 30s     | duration               | the period time to async persist the committed group offset to disk                                                                                                                            |     
+| block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
 
 ### Memory Config
 
-| key                            | default        | type                   | describe                                                                                                                                                                                       |
-|--------------------------------|----------------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block.size                     | 32768(32K)     | long(byte)             | the block size to store records in memory                                                                                                                                                      |
-| compression                    | none           | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
-| segment.size                   | 4294967296(4G) | long(byte)             | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
-| partitions                     | 1              | int(number)            | the number of partitions                                                                                                                                                                       |
-| block.cache.per.partition.size | 1024           | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
+| key                            | default | type                   | describe                                                                                                                                                                                       |
+|--------------------------------|---------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                      |
+| compression                    | none    | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
+| segment.size                   | 4gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
+| partitions                     | 1       | int(number)            | the number of partitions                                                                                                                                                                       |
+| block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
 
 Note:
 
-1. Please configure a reasonable block.size like 32K in the file channel. A value that is too small
+1. Please configure a reasonable block.size like 32kb in the file channel. A value that is too small
    may increase the iops of the disk.
-2. Please configure a reasonable segment.size like 4G in the file channel. A value that is too small
+2. Please configure a reasonable segment.size like 4gb in the file channel. A value that is too
+   small
    will cause frequent creation and deletion of files, while a value that is too large will affect
    the duration of expired data retention.
 3. When defining multiple file channels, please make sure to set different partition directories.
@@ -194,21 +195,21 @@ Note:
 Tributary supports defining multiple sinks in the application.properties
 
 ```properties
-sink.group_1.partition.retain.max.bytes=9663676414
+sink.group_1.partition.retain.max.bytes=100gb
 sink.group_1.function.id=hdfs
-sink.group_2.partition.retain.max.bytes=9663676414
+sink.group_2.partition.retain.max.bytes=100gb
 sink.group_2.partition.concurrent=3
 sink.group_2.function.id=kafka
 ``` 
 
 ### Common Config
 
-| key                                | default | type                   | describe                                                                                                                                         |
-|------------------------------------|---------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| partition.retain.max.bytes         |         | long(byte)             | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful |
-| partition.group.commit.period.mill | 30000   | long(mill)             | the period to commit consume group id                                                                                                            |
-| partition.concurrent               | 1       | int(number)            | the threads to consume one partition data from channel                                                                                           |  
-| function.id                        |         | enum[print,kafka,hdfs] | the function identity that configure how to consume records                                                                                      |
+| key                           | default | type                   | describe                                                                                                                                         |
+|-------------------------------|---------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| partition.retain.max.bytes    |         | bytes                  | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful |
+| partition.group.commit.period | 30sec   | duration               | the period to commit consume group id                                                                                                            |
+| partition.concurrent          | 1       | int(number)            | the threads to consume one partition data from channel                                                                                           |  
+| function.id                   |         | enum[print,kafka,hdfs] | the function identity that configure how to consume records                                                                                      |
 
 Note:
 
@@ -219,7 +220,7 @@ Note:
 
 ```properties
 sink.group_1.sink.path=/tmp/test/cache
-sink.group_1.roll.size=10240000
+sink.group_1.roll.size=10mb
 sink.group_1.bucket.date.format=yyyyMMdd_HH
 sink.group_1.bucket.date.timezone=GMT+8
 sink.group_1.max.retries=3
@@ -227,21 +228,21 @@ sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
 sink.group_1.writer.parquet.compression.codec=snappy
-sink.group_1.idle.trigger.millis=60000
+sink.group_1.idle.trigger=60sec
 ```
 
-| key                              | default         | type         | describe                                                                                                                                                                                |
-|----------------------------------|-----------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| sink.path                        |                 | string       | the root path to sink                                                                                                                                                                   |
-| roll.size                        | 268435456(256M) | long(byte)   | the max size of the file                                                                                                                                                                |
-| bucket.date.format               | yyyyMMdd_HH     | string       | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                     |   
-| bucket.date.timezone             | UTC             | string       | the timezone of bucket date format                                                                                                                                                      | 
-| max.retries                      | 3               | int(number)  | the max retry times when operate hdfs fail                                                                                                                                              |
-| keytab                           |                 | string       | the keytab if hdfs use kerberos authenticator                                                                                                                                           |
-| principle                        |                 | string       | the principle if hdfs use kerberos authenticator                                                                                                                                        |
-| writer.identity                  | parquet         | string       | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java)       |
-| writer.parquet.compression.codec | snappy          | string       | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                         | 
-| idle.trigger.millis              | 60000           | long(millis) | the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java) |
+| key                              | default     | type        | describe                                                                                                                                                                                |
+|----------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sink.path                        |             | string      | the root path to sink                                                                                                                                                                   |
+| roll.size                        | 256mb       | bytes       | the max size of the file                                                                                                                                                                |
+| bucket.date.format               | yyyyMMdd_HH | string      | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                     |   
+| bucket.date.timezone             | UTC         | string      | the timezone of bucket date format                                                                                                                                                      | 
+| max.retries                      | 3           | int(number) | the max retry times when operate hdfs fail                                                                                                                                              |
+| keytab                           |             | string      | the keytab if hdfs use kerberos authenticator                                                                                                                                           |
+| principle                        |             | string      | the principle if hdfs use kerberos authenticator                                                                                                                                        |
+| writer.identity                  | parquet     | string      | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java)       |
+| writer.parquet.compression.codec | snappy      | string      | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                         | 
+| idle.trigger                     | 30sec       | duration    | the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java) |
 
 [GOTO HDFS Sink for more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
@@ -256,7 +257,7 @@ sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
 ```
 
-| key   | default | type   | descr ibe                |
+| key   | default | type   | describe                 |
 |-------|---------|--------|--------------------------|
 | topic |         | string | the n ame of kafka topic |
 
@@ -281,29 +282,29 @@ source.s1.channel=c1
 source.s1.implement=netty
 source.s1.netty.port=8200
 source.s1.netty.threads=10
-source.s1.netty.idle.second=60
+source.s1.netty.idle=60sec
 
 source.s2.channel=c1
 source.s2.implement=netty
 source.s2.netty.port=8300
 source.s2.netty.threads=5
-source.s2.netty.idle.second=120
+source.s2.netty.idle=120sec
 source.s2.netty.decoder=lineDecoder
 
 source.s3.channel=c2
 source.s3.implement=netty
 source.s3.netty.host=localhost
 source.s3.netty.port=9093
-source.s3.netty.idle.second=60
+source.s3.netty.idle=60sec
 source.s3.netty.threads=10
 source.s3.netty.decoder=kafkaDecoder
-source.s3.netty.decoder.kafka.meta.ttl.ms=10000
+source.s3.netty.decoder.kafka.meta.ttl=10sec
 source.s3.netty.decoder.kafka.topic.partitions=60
 source.s3.netty.decoder.kafka.zookeeper.connect=localhost:2181/tributary_source_kafka
 source.s3.netty.decoder.kafka.zookeeper.retry.times=3
-source.s3.netty.decoder.kafka.zookeeper.fail.base.sleep.time.ms=1000
-source.s3.netty.decoder.kafka.zookeeper.connection.timeout.ms=15000
-source.s3.netty.decoder.kafka.zookeeper.session.timeout.ms=60000
+source.s3.netty.decoder.kafka.zookeeper.fail.base.sleep.time=1sec
+source.s3.netty.decoder.kafka.zookeeper.connection.timeout=15sec
+source.s3.netty.decoder.kafka.zookeeper.session.timeout=60sec
 source.s3.netty.decoder.kafka.sasl.plain=true
 source.s3.netty.decoder.kafka.sasl.plain.usernames=user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc
 
@@ -311,33 +312,33 @@ channel.c1.type=file
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
 channel.c1.groups=group_1,group_2
 channel.c1.compression=snappy
-channel.c1.block.size=262144
-channel.c1.segment.size=4294967296
-channel.c1.flush.period.mills=1000
+channel.c1.block.size=32kb
+channel.c1.segment.size=4gb
+channel.c1.flush.period=1sec
 
 channel.c2.type=memory
 channel.c2.partitions=2
 channel.c2.groups=group_2
 channel.c2.compression=snappy
-channel.c2.block.size=262144
-channel.c2.segment.size=4294967296
-channel.c2.flush.period.mills=1000
+channel.c2.block.size=32kb
+channel.c2.segment.size=4gb
+channel.c2.flush.period=1sec
 
-sink.group_1.partition.retain.max.bytes=9663676414
-sink.group_1.partition.group.commit.period.mill=30000
+sink.group_1.partition.retain.max.bytes=100gb
+sink.group_1.partition.group.commit.period=30sec
 sink.group_1.function.id=hdfs
 sink.group_1.sink.path=/tmp/test/cache
-sink.group_1.roll.size=10240000
+sink.group_1.roll.size=10mb
 sink.group_1.bucket.date.format=yyyyMMdd_HH
 sink.group_1.max.retries=3
 sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
 sink.group_1.writer.parquet.compression.codec=snappy
-sink.group_1.idle.trigger.millis=60000
+sink.group_1.idle.trigger=60sec
 
-sink.group_2.partition.retain.max.bytes=9663676414
-sink.group_2.partition.group.commit.period.mill=30000
+sink.group_2.partition.retain.max.bytes=100gb
+sink.group_2.partition.group.commit.period=30sec
 sink.group_2.partition.concurrent=3
 sink.group_2.function.id=kafka
 sink.group_2.kafka.bootstrap.servers=127.0.0.1:9092

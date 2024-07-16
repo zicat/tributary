@@ -21,9 +21,8 @@ package org.zicat.tributary.channel;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
 
@@ -54,9 +53,7 @@ public interface ChannelFactory extends SpiFactory {
      * @return group set
      */
     default Set<String> groupSet(ReadableConfig config) {
-        return Arrays.stream(config.get(OPTION_GROUPS).split(","))
-                .map(String::trim)
-                .collect(Collectors.toSet());
+        return new HashSet<>(config.get(OPTION_GROUPS));
     }
 
     @Override

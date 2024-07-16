@@ -18,10 +18,6 @@
 
 package org.zicat.tributary.channel.file;
 
-import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_BLOCK_CACHE_PER_PARTITION_SIZE;
-import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD_SECOND;
-import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
-
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.DefaultChannel;
@@ -33,11 +29,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_BLOCK_CACHE_PER_PARTITION_SIZE;
+import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
+import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
+
 /** FileChannelBuilder. */
 public class FileChannelBuilder {
 
     private List<File> dirs;
-    private long groupPersistPeriodSecond = OPTION_GROUP_PERSIST_PERIOD_SECOND.defaultValue();
+    private long groupPersistPeriodSecond = OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds();
     protected String topic;
     protected Long segmentSize;
     protected Integer blockSize;

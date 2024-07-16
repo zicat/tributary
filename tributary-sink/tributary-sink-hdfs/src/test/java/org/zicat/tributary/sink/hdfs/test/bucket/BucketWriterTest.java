@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -293,7 +294,7 @@ public class BucketWriterTest {
                 writer = new MockHDFSRecordsWriter();
             }
             ContextBuilder builder = new ContextBuilder();
-            builder.addCustomProperty(OPTION_ROLL_SIZE.key(), rollSize);
+            builder.addCustomProperty(OPTION_ROLL_SIZE.key(), new MemorySize(rollSize));
             builder.addCustomProperty(OPTION_MAX_RETRIES.key(), maxRetries);
             builder.addCustomProperty(
                     OPTION_WRITER_IDENTITY.key(), MockHDFSRecordsWriterFactory.ID);

@@ -41,6 +41,7 @@ import org.zicat.tributary.source.netty.handler.kafka.PlainServerCallbackHandler
 
 import javax.security.sasl.SaslServer;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -56,25 +57,27 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
             ConfigOptions.key("netty.decoder.kafka.zookeeper.connect")
                     .stringType()
                     .noDefaultValue();
-    public static final ConfigOption<Integer> OPTION_CONNECTION_TIMEOUT_MS =
-            ConfigOptions.key("netty.decoder.kafka.zookeeper.connection.timeout.ms")
-                    .integerType()
-                    .defaultValue(15000);
-    public static final ConfigOption<Integer> OPTION_SESSION_TIMEOUT_MS =
-            ConfigOptions.key("netty.decoder.kafka.zookeeper.session.timeout.ms")
-                    .integerType()
-                    .defaultValue(60000);
+    public static final ConfigOption<Duration> OPTION_CONNECTION_TIMEOUT =
+            ConfigOptions.key("netty.decoder.kafka.zookeeper.connection.timeout")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(15));
+    public static final ConfigOption<Duration> OPTION_SESSION_TIMEOUT =
+            ConfigOptions.key("netty.decoder.kafka.zookeeper.session.timeout")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(60));
     public static final ConfigOption<Integer> OPTION_RETRY_TIMES =
             ConfigOptions.key("netty.decoder.kafka.zookeeper.retry.times")
                     .integerType()
                     .defaultValue(3);
-    public static final ConfigOption<Integer> OPTION_FAIL_BASE_SLEEP_TIME_MS =
-            ConfigOptions.key("netty.decoder.kafka.zookeeper.fail.base.sleep.time.ms")
-                    .integerType()
-                    .defaultValue(1000);
+    public static final ConfigOption<Duration> OPTION_FAIL_BASE_SLEEP_TIME =
+            ConfigOptions.key("netty.decoder.kafka.zookeeper.fail.base.sleep.time")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(1));
 
-    public static final ConfigOption<Long> OPTION_META_CACHE_TTL_MS =
-            ConfigOptions.key("netty.decoder.kafka.meta.ttl.ms").longType().defaultValue(10000L);
+    public static final ConfigOption<Duration> OPTION_META_CACHE_TTL =
+            ConfigOptions.key("netty.decoder.kafka.meta.ttl")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(10));
 
     public static final ConfigOption<Integer> OPTION_TOPIC_PARTITION_COUNT =
             ConfigOptions.key("netty.decoder.kafka.topic.partitions")
@@ -125,15 +128,15 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
         final String zk = config.get(OPTION_ZOOKEEPER_CONNECT);
         final String zkHostPort = zk.substring(0, zk.indexOf("/"));
         final String path = zk.substring(zk.indexOf("/"));
-        final int connectionTimeout = config.get(OPTION_CONNECTION_TIMEOUT_MS);
-        final int sessionTimeout = config.get(OPTION_SESSION_TIMEOUT_MS);
+        final int connectionTimeout = (int) config.get(OPTION_CONNECTION_TIMEOUT).toMillis();
+        final int sessionTimeout = (int) config.get(OPTION_SESSION_TIMEOUT).toMillis();
         final int retryTimes = config.get(OPTION_RETRY_TIMES);
-        final int baseSleepTimeMs =
+        final long baseSleepTimeMs =
                 Math.max(
-                        config.get(OPTION_FAIL_BASE_SLEEP_TIME_MS),
-                        OPTION_FAIL_BASE_SLEEP_TIME_MS.defaultValue());
+                        config.get(OPTION_FAIL_BASE_SLEEP_TIME).toMillis(),
+                        OPTION_FAIL_BASE_SLEEP_TIME.defaultValue().toMillis());
         final int partitions = config.get(OPTION_TOPIC_PARTITION_COUNT);
-        final long metaTTL = config.get(OPTION_META_CACHE_TTL_MS);
+        final long metaTTL = config.get(OPTION_META_CACHE_TTL).toMillis();
         final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
         final HostPort hostPort = new HostPort(hostName, port);
@@ -147,7 +150,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
                             zkHostPort,
                             sessionTimeout,
                             connectionTimeout,
-                            new ExponentialBackoffRetry(baseSleepTimeMs, retryTimes));
+                            new ExponentialBackoffRetry((int) baseSleepTimeMs, retryTimes));
             client.start();
             final JsonInstanceSerializer<HostPort> serializer =
                     new JsonInstanceSerializer<>(HostPort.class);

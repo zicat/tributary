@@ -46,8 +46,8 @@ public class MemoryChannelTest {
     public void testBaseCorrect() throws Exception {
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put(OPTION_PARTITION_COUNT, 4);
-        config.put(OPTION_GROUPS, "g1,g2,g3");
-        config.put(OPTION_COMPRESSION, "zstd");
+        config.put(OPTION_GROUPS, Arrays.asList("g1", "g2", "g3"));
+        config.put(OPTION_COMPRESSION, CompressionType.ZSTD);
         final ChannelFactory factory = new MemoryChannelFactory();
         try (Channel channel = factory.createChannel("t1", config)) {
             testChannelCorrect(channel);

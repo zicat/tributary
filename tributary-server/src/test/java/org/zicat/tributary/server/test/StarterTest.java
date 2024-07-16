@@ -57,7 +57,7 @@ public class StarterTest {
         config.put("source.s1.netty.decoder", "lineDecoder");
         config.put("channel.c1.type", "memory");
         config.put("channel.c1.groups", "group_1");
-        config.put("channel.c1.flush.period.mills", "100");
+        config.put("channel.c1.flush.period", "100ms");
         config.put("sink.group_1.function.id", "collection_mock");
         config.put("sink.group_1.collection", collection);
 

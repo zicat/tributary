@@ -27,6 +27,7 @@ import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.records.Records;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -37,11 +38,11 @@ public class PrintFunction extends AbstractFunction implements Trigger {
 
     protected static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
 
-    public static final ConfigOption<Long> CONFIG_TRIGGER_MILLIS =
-            ConfigOptions.key("trigger.millis")
-                    .longType()
-                    .description("set trigger millis, default -1")
-                    .defaultValue(-1L);
+    public static final ConfigOption<Duration> OPTION_IDLE_TRIGGER =
+            ConfigOptions.key("idle.trigger")
+                    .durationType()
+                    .description("idle trigger, default 30s")
+                    .defaultValue(Duration.ofSeconds(30));
 
     private static final Counter SINK_PRINT_COUNTER =
             Counter.build()
@@ -56,7 +57,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        this.triggerMillis = context.get(CONFIG_TRIGGER_MILLIS);
+        this.triggerMillis = context.get(OPTION_IDLE_TRIGGER).toMillis();
         this.sinkCountChild = labelHostId(SINK_PRINT_COUNTER);
     }
 

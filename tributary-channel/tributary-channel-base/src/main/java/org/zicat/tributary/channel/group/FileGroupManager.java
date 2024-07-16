@@ -26,6 +26,7 @@ import org.zicat.tributary.common.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,11 +45,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class FileGroupManager extends MemoryGroupManager {
 
-    public static final ConfigOption<Long> OPTION_GROUP_PERSIST_PERIOD_SECOND =
-            ConfigOptions.key("groups.persist.period.second")
-                    .longType()
-                    .description("how long to persist group offset to storage, default 30")
-                    .defaultValue(30L);
+    public static final ConfigOption<Duration> OPTION_GROUP_PERSIST_PERIOD =
+            ConfigOptions.key("groups.persist.period")
+                    .durationType()
+                    .description("how long to persist group offset to storage, default 30s")
+                    .defaultValue(Duration.ofSeconds(30));
 
     private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
 
@@ -61,7 +62,7 @@ public class FileGroupManager extends MemoryGroupManager {
     protected ScheduledExecutorService schedule;
 
     public FileGroupManager(File groupIndexFile, Set<String> groupIds) {
-        this(groupIndexFile, groupIds, OPTION_GROUP_PERSIST_PERIOD_SECOND.defaultValue());
+        this(groupIndexFile, groupIds, OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds());
     }
 
     public FileGroupManager(File groupIndexFile, Set<String> groupIds, long periodSecond) {

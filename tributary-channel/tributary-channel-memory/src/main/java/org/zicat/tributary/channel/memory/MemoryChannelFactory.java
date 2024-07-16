@@ -18,16 +18,16 @@
 
 package org.zicat.tributary.channel.memory;
 
-import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
-
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
@@ -57,10 +57,9 @@ public class MemoryChannelFactory implements ChannelFactory {
                     @Override
                     public AbstractChannel<?>[] create() {
                         final int partitionCounts = config.get(OPTION_PARTITION_COUNT);
-                        final int blockSize = config.get(OPTION_BLOCK_SIZE);
-                        final long segmentSize = config.get(OPTION_SEGMENT_SIZE);
-                        final CompressionType compression =
-                                CompressionType.getByName(config.get(OPTION_COMPRESSION));
+                        final int blockSize = (int) config.get(OPTION_BLOCK_SIZE).getBytes();
+                        final long segmentSize = config.get(OPTION_SEGMENT_SIZE).getBytes();
+                        final CompressionType compression = config.get(OPTION_COMPRESSION);
                         final int blockCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
                         return createChannels(
                                 topic,
@@ -72,7 +71,7 @@ public class MemoryChannelFactory implements ChannelFactory {
                                 blockCount);
                     }
                 },
-                config.get(OPTION_FLUSH_PERIOD_MILLS));
+                config.get(OPTION_FLUSH_PERIOD).toMillis());
     }
 
     /**

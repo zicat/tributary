@@ -62,7 +62,11 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
     private boolean open = false;
 
     public BucketWriter(Context context, String bucketPath, String fileName) {
-        super(bucketPath, fileName, context.get(OPTION_ROLL_SIZE), context.get(OPTION_MAX_RETRIES));
+        super(
+                bucketPath,
+                fileName,
+                context.get(OPTION_ROLL_SIZE).getBytes(),
+                context.get(OPTION_MAX_RETRIES));
         final String writerId = context.get(OPTION_WRITER_IDENTITY);
         final HDFSRecordsWriterFactory factory =
                 SpiFactory.findFactory(writerId, HDFSRecordsWriterFactory.class);
