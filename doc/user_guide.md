@@ -38,10 +38,10 @@ section for creating a tributary application.
 
 ### Download package
 
-Before start the tributary service, please install java8 first.
+Before start the tributary service, please install java8 first and download latest tributary.zip
+in [tributary release page](https://github.com/zicat/tributary/releases).
 
 ```shell
-$ wget https://github.com/zicat/tributary/releases/download/v1.3.0/tributary.zip
 $ unzip tributary.zip
 $ cd tributary  
 ``` 
