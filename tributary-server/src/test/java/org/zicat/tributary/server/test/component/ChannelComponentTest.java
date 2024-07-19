@@ -21,7 +21,7 @@ package org.zicat.tributary.server.test.component;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
 import org.zicat.tributary.common.ReadableConfig;
@@ -43,7 +43,7 @@ public class ChannelComponentTest {
 
         final Properties properties = new PropertiesLoader(profile).load();
         final ReadableConfig config = PropertiesConfigBuilder.channelConfig(properties);
-        final GroupOffset offset = new GroupOffset(0, 0, "group_1");
+        final Offset offset = Offset.ZERO;
         try (ChannelComponent channelComponent = new ChannelComponentFactory(config, "").create()) {
             Assert.assertEquals(2, channelComponent.size());
             final Channel channel1 = channelComponent.get("c1");

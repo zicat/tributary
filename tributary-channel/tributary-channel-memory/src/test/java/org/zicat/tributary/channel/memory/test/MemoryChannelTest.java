@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
@@ -34,7 +34,7 @@ import java.util.*;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultOffset;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.readChannel;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
@@ -58,8 +58,8 @@ public class MemoryChannelTest {
     public void test() throws IOException, InterruptedException {
 
         final String groupId = "g1";
-        final Set<GroupOffset> groupOffsets = new HashSet<>();
-        groupOffsets.add(defaultGroupOffset(groupId));
+        final Map<String, Offset> groupOffsets = new HashMap<>();
+        groupOffsets.put(groupId, defaultOffset());
         try (MemoryChannel channel =
                 createMemoryChannel(
                         "t1",
@@ -68,7 +68,7 @@ public class MemoryChannelTest {
                         102400L,
                         CompressionType.NONE,
                         1)) {
-            final GroupOffset groupOffset = channel.committedGroupOffset(groupId);
+            final Offset offset = channel.committedOffset(groupId);
             final Random random = new Random(1023312);
             final List<byte[]> result = new ArrayList<>();
             for (int i = 0; i < 200000; i++) {
@@ -82,12 +82,12 @@ public class MemoryChannelTest {
             }
             channel.flush();
             Assert.assertTrue(channel.activeSegment() > 1);
-            final DataOffset dataOffset = readChannel(channel, 0, groupOffset, result.size());
+            final DataOffset dataOffset = readChannel(channel, 0, offset, result.size());
             Assert.assertEquals(result.size(), dataOffset.data.size());
             for (int i = 0; i < result.size(); i++) {
                 Assert.assertArrayEquals(result.get(i), dataOffset.data.get(i));
             }
-            channel.commit(dataOffset.groupOffset);
+            channel.commit(groupId, dataOffset.offset);
             Assert.assertEquals(1, channel.activeSegment());
         }
     }

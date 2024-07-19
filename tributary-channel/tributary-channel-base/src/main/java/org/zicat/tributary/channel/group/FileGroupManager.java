@@ -18,9 +18,11 @@
 
 package org.zicat.tributary.channel.group;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.*;
 
 import java.io.*;
@@ -28,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +48,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class FileGroupManager extends MemoryGroupManager {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final TypeReference<Map<String, Offset>> TYPE =
+            new TypeReference<Map<String, Offset>>() {};
     public static final ConfigOption<Duration> OPTION_GROUP_PERSIST_PERIOD =
             ConfigOptions.key("groups.persist.period")
                     .durationType()
@@ -87,13 +93,9 @@ public class FileGroupManager extends MemoryGroupManager {
         try (final OutputStream os = Files.newOutputStream(tmpFile.toPath());
                 final Writer writer = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                 final BufferedWriter buffer = new BufferedWriter(writer)) {
-            foreachGroup(
-                    (index, group, groupOffset) -> {
-                        if (index != 0) {
-                            buffer.newLine();
-                        }
-                        buffer.write(groupOffset.toJson());
-                    });
+            final Map<String, Offset> persistOffsets = new HashMap<>();
+            foreachGroup(persistOffsets::put);
+            buffer.write(MAPPER.writeValueAsString(persistOffsets));
             buffer.flush();
         } catch (Throwable e) {
             LOG.error("flush groups to tmp file error, file {}", tmpFile.getPath(), e);
@@ -163,15 +165,14 @@ public class FileGroupManager extends MemoryGroupManager {
      * @param groupIds groupIds groupIds
      * @return group offset
      */
-    private static Set<GroupOffset> getGroupOffsets(File groupIndexFile, Set<String> groupIds) {
-
+    private static Map<String, Offset> getGroupOffsets(File groupIndexFile, Set<String> groupIds) {
         final int cacheExpectedSize = groupIds.size();
         final List<String> allGroups = new ArrayList<>(groupIds);
-        final Set<GroupOffset> existsGroups = parseExistsGroups(groupIndexFile, allGroups);
-        final Set<GroupOffset> result = new HashSet<>(existsGroups);
+        final Map<String, Offset> existsGroups = parseExistsGroups(groupIndexFile, allGroups);
+        final Map<String, Offset> result = new HashMap<>(existsGroups);
         // AllGroups only contains new groups after call method parseExistsGroups.
         // Add new group with default offset to result ensure all groupIds has one offset.
-        allGroups.forEach(groupId -> result.add(defaultGroupOffset(groupId)));
+        allGroups.forEach(groupId -> result.put(groupId, defaultOffset()));
         if (result.size() != cacheExpectedSize) {
             throw new TributaryRuntimeException(
                     "cache size must equal groupIds size, expected size = "
@@ -204,11 +205,10 @@ public class FileGroupManager extends MemoryGroupManager {
      * @param allGroups allGroups, allGroups will remove those groups that exits.
      * @return group offsets map
      */
-    private static Set<GroupOffset> parseExistsGroups(
+    private static Map<String, Offset> parseExistsGroups(
             final File groupIndexFile, List<String> allGroups) {
 
-        final Set<GroupOffset> existsGroups = new HashSet<>();
-
+        final Map<String, Offset> existsGroups = new HashMap<>();
         /*
          * Method {@link FileGroupManager#swapIndexFileQuietly} may cause delete groupIndexFile
          * success but rename tmp file to groupIndexFile fail, Using max valid tmp file if exists
@@ -219,19 +219,18 @@ public class FileGroupManager extends MemoryGroupManager {
         }
         final File realGroupIndexFile = maxTmpFile != null ? maxTmpFile : groupIndexFile;
         try (final InputStream is = Files.newInputStream(realGroupIndexFile.toPath());
-                final Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
-                final BufferedReader buffer = new BufferedReader(reader)) {
-            String line;
-            while ((line = buffer.readLine()) != null) {
-                final GroupOffset offset = GroupOffset.fromJson(line);
-                if (allGroups.remove(offset.groupId())) {
-                    existsGroups.add(offset);
+                final Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+            final Map<String, Offset> groupOffsets = MAPPER.readValue(reader, TYPE);
+            for (Entry<String, Offset> entry : groupOffsets.entrySet()) {
+                final String groupId = entry.getKey();
+                if (allGroups.remove(groupId)) {
+                    existsGroups.put(groupId, entry.getValue());
                 }
             }
+            return existsGroups;
         } catch (Exception e) {
             throw new TributaryRuntimeException("load group index file error", e);
         }
-        return existsGroups;
     }
 
     /**

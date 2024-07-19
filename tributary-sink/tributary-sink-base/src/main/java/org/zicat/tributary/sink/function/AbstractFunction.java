@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.function;
 
 import io.prometheus.client.SimpleCollector;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.utils.HostUtils;
@@ -35,18 +35,18 @@ public abstract class AbstractFunction implements Function {
                     .defaultValue(HostUtils.getLocalHostString(".*"));
 
     protected Context context;
-    private GroupOffset committableOffset;
+    private Offset committableOffset;
     private String metricsHost;
 
     @Override
     public void open(Context context) throws Exception {
         this.context = context;
-        this.committableOffset = context.startGroupOffset();
+        this.committableOffset = context.startOffset();
         this.metricsHost = context.get(OPTION_METRICS_HOST);
     }
 
     @Override
-    public final GroupOffset committableOffset() {
+    public final Offset committableOffset() {
         return committableOffset;
     }
 
@@ -72,15 +72,12 @@ public abstract class AbstractFunction implements Function {
      * execute callback and persist offset.
      *
      * @param newCommittableOffset newCommittableOffset
-     * @param callback callback
      */
-    public final void commit(GroupOffset newCommittableOffset, OnFlushCallback callback) {
+    public void commit(Offset newCommittableOffset) {
         if (newCommittableOffset == null) {
             return;
         }
-        if (callback == null || callback.run()) {
-            this.committableOffset = newCommittableOffset;
-        }
+        this.committableOffset = newCommittableOffset;
     }
 
     /**
@@ -92,12 +89,5 @@ public abstract class AbstractFunction implements Function {
      */
     protected <CHILD> CHILD labelHostId(SimpleCollector<CHILD> collector) {
         return collector.labels(metricsHost(), context.id());
-    }
-
-    /** OnFlushCallback. */
-    public interface OnFlushCallback {
-
-        /** run callback function before commit offset. */
-        boolean run();
     }
 }

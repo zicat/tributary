@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.sink.CustomConfigBuilder;
 
 /** ContextBuilder. */
@@ -26,8 +26,9 @@ public class ContextBuilder extends CustomConfigBuilder {
 
     private String id;
     private String topic;
+    private String groupId;
     private int partitionId;
-    private GroupOffset startGroupOffset;
+    private Offset startOffset;
 
     /**
      * set id.
@@ -65,11 +66,16 @@ public class ContextBuilder extends CustomConfigBuilder {
     /**
      * set start file offset.
      *
-     * @param startGroupOffset startGroupOffset
+     * @param startOffset startOffset
      * @return this
      */
-    public ContextBuilder startGroupOffset(GroupOffset startGroupOffset) {
-        this.startGroupOffset = startGroupOffset;
+    public ContextBuilder startOffset(Offset startOffset) {
+        this.startOffset = startOffset;
+        return this;
+    }
+
+    public ContextBuilder groupId(String groupId) {
+        this.groupId = groupId;
         return this;
     }
 
@@ -79,7 +85,19 @@ public class ContextBuilder extends CustomConfigBuilder {
      * @return Context
      */
     public Context build() {
-        return new Context(id, customConfig, topic, partitionId, startGroupOffset);
+        if (groupId == null) {
+            throw new IllegalArgumentException("groupId must not be null");
+        }
+        if (id == null) {
+            throw new IllegalArgumentException("id must not be null");
+        }
+        if (topic == null) {
+            throw new IllegalArgumentException("topic must not be null");
+        }
+        if (startOffset == null) {
+            throw new IllegalArgumentException("startOffset must not be null");
+        }
+        return new Context(id, customConfig, topic, partitionId, groupId, startOffset);
     }
 
     /**

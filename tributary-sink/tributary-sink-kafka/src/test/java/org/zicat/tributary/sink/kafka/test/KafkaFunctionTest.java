@@ -28,7 +28,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.*;
 import org.zicat.tributary.sink.function.Context;
@@ -80,12 +80,13 @@ public class KafkaFunctionTest {
                     new ContextBuilder()
                             .id("id2")
                             .partitionId(0)
-                            .startGroupOffset(new GroupOffset(0, 0, groupId))
+                            .groupId(groupId)
+                            .startOffset(new Offset(0, 0))
                             .topic(topic);
             builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
             function.open(builder.build());
 
-            final GroupOffset groupOffset = new GroupOffset(2, 0, groupId);
+            final Offset groupOffset = new Offset(2, 0);
             function.process(groupOffset, recordsList.iterator());
 
             assertData(record1, mockProducer.history().get(0), recordsHeader);
@@ -115,12 +116,13 @@ public class KafkaFunctionTest {
                     new ContextBuilder()
                             .id("id")
                             .partitionId(0)
-                            .startGroupOffset(new GroupOffset(0, 0, groupId))
+                            .groupId(groupId)
+                            .startOffset(new Offset(0, 0))
                             .topic(topic);
             builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
             builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC.key(), "aa_${topic}");
             function.open(builder.build());
-            final GroupOffset groupOffset = new GroupOffset(2, 0, groupId);
+            final Offset groupOffset = new Offset(2, 0);
             function.process(groupOffset, recordsList.iterator());
             assertData(record1, mockProducer.history().get(0), recordsHeader);
             assertData(record2, mockProducer.history().get(1), recordsHeader);

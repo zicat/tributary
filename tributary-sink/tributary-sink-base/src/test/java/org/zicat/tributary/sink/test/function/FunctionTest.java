@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.*;
 
@@ -41,38 +41,47 @@ public class FunctionTest {
                     public void close() {}
 
                     @Override
-                    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {}
+                    public void process(Offset offset, Iterator<Records> iterator) {}
                 }) {
-            final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
+            final Offset offset = new Offset(1, 0);
             final ContextBuilder builder =
-                    ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
+                    ContextBuilder.newBuilder()
+                            .id("1")
+                            .topic("t1")
+                            .groupId("g1")
+                            .startOffset(offset)
+                            .partitionId(1);
             final Context context = builder.build();
             function.open(context);
-            Assert.assertEquals(function.committableOffset(), groupOffset);
+            Assert.assertEquals(function.committableOffset(), offset);
             Assert.assertEquals(context.groupId(), function.context().groupId());
             Assert.assertEquals(context.partitionId(), function.context().partitionId());
-            Assert.assertNull(context.topic(), function.context().topic());
+            Assert.assertEquals(context.topic(), function.context().topic());
             Assert.assertEquals(context, function.context());
 
-            final GroupOffset newGroupOffset = groupOffset.skipNextSegmentHead();
-            function.commit(newGroupOffset, null);
-            Assert.assertEquals(function.committableOffset(), newGroupOffset);
+            final Offset newOffset = offset.skipNextSegmentHead();
+            function.commit(newOffset);
+            Assert.assertEquals(function.committableOffset(), newOffset);
         }
     }
 
     @Test
     public void testDummyFunction() throws Exception {
-
         try (final Function function = new DummyFunction()) {
-            final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
+            final Offset offset = new Offset(1, 0);
             final ContextBuilder builder =
-                    ContextBuilder.newBuilder().startGroupOffset(groupOffset).partitionId(1);
+                    ContextBuilder.newBuilder()
+                            .id("1")
+                            .groupId("g1")
+                            .topic("t1")
+                            .startOffset(offset)
+                            .partitionId(1);
             final Context context = builder.build();
             function.open(context);
 
-            final GroupOffset newGroupOffset = groupOffset.skip2TargetHead(2);
+            final Offset newGroupOffset = offset.skip2TargetHead(2);
             function.process(
-                    groupOffset.skip2TargetHead(2),
+                    offset.skip2TargetHead(2),
                     Collections.singletonList(createStringRecords("t1", "data")).iterator());
             Assert.assertEquals(function.committableOffset(), newGroupOffset);
         }

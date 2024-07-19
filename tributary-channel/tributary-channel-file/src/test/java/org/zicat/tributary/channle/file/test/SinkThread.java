@@ -21,7 +21,7 @@ package org.zicat.tributary.channle.file.test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
@@ -38,13 +38,14 @@ public class SinkThread extends Thread {
     private final int partitionId;
     private final AtomicLong readSize;
     private final long totalSize;
-    private final GroupOffset startOffset;
+    private final Offset startOffset;
+    private final String groupId;
     private final int sleep;
 
     public SinkThread(
             Channel channel,
             int partitionId,
-            String groupName,
+            String groupId,
             AtomicLong readSize,
             long totalSize,
             int sleep) {
@@ -52,7 +53,8 @@ public class SinkThread extends Thread {
         this.partitionId = partitionId;
         this.readSize = readSize;
         this.totalSize = totalSize;
-        this.startOffset = channel.committedGroupOffset(groupName, partitionId);
+        this.groupId = groupId;
+        this.startOffset = channel.committedOffset(groupId, partitionId);
         this.sleep = sleep;
     }
 
@@ -61,7 +63,7 @@ public class SinkThread extends Thread {
     public void run() {
 
         try {
-            GroupOffset groupOffset = startOffset;
+            Offset offset = startOffset;
             RecordsResultSet result = null;
             long readLength = 0;
             long start = System.currentTimeMillis();
@@ -70,15 +72,15 @@ public class SinkThread extends Thread {
             boolean firstThread = false;
             boolean middleThread = false;
             while (readSize.get() < totalSize || (result != null && result.hasNext())) {
-                result = channel.poll(partitionId, groupOffset, 10, TimeUnit.MILLISECONDS);
+                result = channel.poll(partitionId, offset, 10, TimeUnit.MILLISECONDS);
                 while (result.hasNext()) {
                     readLength += result.next().length;
                     readSize.incrementAndGet();
                     if (preFileId == null) {
-                        preFileId = result.nexGroupOffset().segmentId();
-                    } else if (preFileId != result.nexGroupOffset().segmentId()) {
-                        channel.commit(partitionId, groupOffset);
-                        preFileId = result.nexGroupOffset().segmentId();
+                        preFileId = result.nexOffset().segmentId();
+                    } else if (preFileId != result.nexOffset().segmentId()) {
+                        channel.commit(partitionId, groupId, offset);
+                        preFileId = result.nexOffset().segmentId();
                     }
                 }
                 long spend = System.currentTimeMillis() - start;
@@ -87,13 +89,13 @@ public class SinkThread extends Thread {
                             "read spend:"
                                     + df.format(readLength / 1024.0 / 1024.0 / (spend / 1000.0))
                                     + "(mb/s), file id:"
-                                    + result.nexGroupOffset().segmentId()
+                                    + result.nexOffset().segmentId()
                                     + ", lag:"
-                                    + channel.lag(partitionId, result.nexGroupOffset()));
+                                    + channel.lag(partitionId, result.nexOffset()));
                     readLength = 0;
                     start = System.currentTimeMillis();
                 }
-                groupOffset = result.nexGroupOffset();
+                offset = result.nexOffset();
                 if (sleep > 0) {
                     if (!firstThread) {
                         firstThread = true;
@@ -105,7 +107,7 @@ public class SinkThread extends Thread {
                     }
                 }
             }
-            channel.commit(partitionId, groupOffset);
+            channel.commit(partitionId, groupId, offset);
         } catch (Exception e) {
             throw new TributaryRuntimeException(e);
         }

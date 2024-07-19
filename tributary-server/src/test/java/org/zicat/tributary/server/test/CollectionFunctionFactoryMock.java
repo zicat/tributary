@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.server.test;
 
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.records.DefaultRecord;
@@ -53,8 +53,7 @@ public class CollectionFunctionFactoryMock implements FunctionFactory {
             }
 
             @Override
-            public void process(GroupOffset groupOffset, Iterator<Records> iterator)
-                    throws Exception {
+            public void process(Offset offset, Iterator<Records> iterator) throws Exception {
                 while (iterator.hasNext()) {
                     final Records records = iterator.next();
                     foreachRecord(
@@ -62,7 +61,7 @@ public class CollectionFunctionFactoryMock implements FunctionFactory {
                             (key, value, allHeaders) ->
                                     collection.add(new DefaultRecord(allHeaders, key, value)));
                 }
-                commit(groupOffset, null);
+                commit(offset);
             }
 
             @Override

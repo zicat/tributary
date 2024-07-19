@@ -115,12 +115,12 @@ public class SegmentTest {
         Assert.assertTrue(segment.append(data, 0, data.length));
         Assert.assertFalse(segment.append(data, 0, data.length));
         segment.flush();
-        Assert.assertEquals(120, segment.lag(new Offset(0L, 0L)));
+        Assert.assertEquals(120, segment.lag(Offset.ZERO));
         Assert.assertEquals(50, segment.lag(new Offset(2L, 70L)));
         Assert.assertEquals(0, segment.lag(new Offset(3L, 70L)));
 
-        BlockGroupOffset newRecordOffset =
-                BlockGroupOffset.cast(new GroupOffset(segment.segmentId(), 0L, "g1"));
+        BlockReaderOffset newRecordOffset =
+                BlockReaderOffset.cast(new Offset(segment.segmentId(), 0L));
 
         int count = 0;
         while (true) {
@@ -134,7 +134,7 @@ public class SegmentTest {
                 System.out.println(count);
                 Assert.assertArrayEquals(data, recordsResultSet.next());
             }
-            newRecordOffset = BlockGroupOffset.cast(recordsResultSet.nexGroupOffset());
+            newRecordOffset = BlockReaderOffset.cast(recordsResultSet.nexOffset());
         }
         Assert.assertEquals(12, count);
     }

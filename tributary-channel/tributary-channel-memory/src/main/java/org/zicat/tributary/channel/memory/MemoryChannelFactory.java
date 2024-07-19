@@ -22,12 +22,13 @@ import org.zicat.tributary.channel.*;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultGroupOffset;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultOffset;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
@@ -96,9 +97,9 @@ public class MemoryChannelFactory implements ChannelFactory {
             int blockCount) {
 
         final MemoryChannel[] channels = new MemoryChannel[partitionCount];
-        final Set<GroupOffset> groupOffsets = new HashSet<>();
+        final Map<String, Offset> groupOffsets = new HashMap<>();
         for (String group : groups) {
-            groupOffsets.add(defaultGroupOffset(group));
+            groupOffsets.put(group, defaultOffset());
         }
         final AbstractChannel.MemoryGroupManagerFactory factory =
                 createMemoryGroupManagerFactory(groupOffsets);

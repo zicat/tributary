@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channel;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
@@ -25,8 +26,14 @@ import java.util.Objects;
 /** Offset. */
 public class Offset implements Comparable<Offset> {
 
+    public static final Offset ZERO = new Offset(0, 0);
+
     @JsonProperty protected final long segmentId;
     @JsonProperty protected final long offset;
+
+    private Offset() {
+        this(0, 0L);
+    }
 
     public Offset(long segmentId, long offset) {
         this.segmentId = segmentId;
@@ -38,6 +45,7 @@ public class Offset implements Comparable<Offset> {
      *
      * @return long segment id
      */
+    @JsonIgnore
     public long segmentId() {
         return segmentId;
     }
@@ -47,6 +55,7 @@ public class Offset implements Comparable<Offset> {
      *
      * @return long offset
      */
+    @JsonIgnore
     public long offset() {
         return offset;
     }
@@ -67,6 +76,7 @@ public class Offset implements Comparable<Offset> {
      * @param offset2 offset2
      * @return min
      */
+    @JsonIgnore
     public static <T extends Offset> T min(T offset1, T offset2) {
         if (offset1 == null || offset2 == null) {
             return null;
@@ -81,6 +91,7 @@ public class Offset implements Comparable<Offset> {
      * @param offset2 offset2
      * @return min
      */
+    @JsonIgnore
     public static <T extends Offset> T max(T offset1, T offset2) {
         if (offset1 == null) {
             return offset2;
@@ -106,5 +117,38 @@ public class Offset implements Comparable<Offset> {
     @Override
     public int hashCode() {
         return Objects.hash(segmentId, offset);
+    }
+
+    @JsonIgnore
+    public Offset skip2TargetOffset(long newOffset) {
+        return skip2Target(segmentId, newOffset);
+    }
+
+    @JsonIgnore
+    public Offset skipNextSegmentHead() {
+        return skip2TargetHead(segmentId() + 1);
+    }
+
+    @JsonIgnore
+    public Offset skip2TargetHead(long segmentId) {
+        return skip2Target(segmentId, 0);
+    }
+
+    @JsonIgnore
+    public Offset skip2Target(Offset offset) {
+        return skip2Target(offset.segmentId(), offset.offset());
+    }
+
+    @JsonIgnore
+    public Offset skip2Target(long segmentId, long offset) {
+        if (segmentId == this.segmentId && offset == this.offset) {
+            return this;
+        }
+        return new Offset(segmentId, offset);
+    }
+
+    @JsonIgnore
+    public Offset skipOffset(long offset) {
+        return skip2Target(segmentId, offset);
     }
 }

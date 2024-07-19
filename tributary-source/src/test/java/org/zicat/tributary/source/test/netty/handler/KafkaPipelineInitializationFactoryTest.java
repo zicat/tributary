@@ -32,7 +32,7 @@ import org.apache.kafka.common.record.SimpleRecord;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.ReadableConfig;
@@ -71,7 +71,7 @@ public class KafkaPipelineInitializationFactoryTest {
     private static final String AUTH_PASS = "16Ew658jjzvmxDqk";
     private static final TopicPartition tp = new TopicPartition("t1", 0);
     private static final String groupId = "g1";
-    private static final GroupOffset START_OFFSET = new GroupOffset(0L, 0L, groupId);
+    private static final Offset START_OFFSET = Offset.ZERO;
 
     @Test
     public void test() throws Exception {

@@ -29,7 +29,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
@@ -107,7 +107,8 @@ public class HDFSFunctionTest {
                     new ContextBuilder()
                             .id("id1")
                             .partitionId(0)
-                            .startGroupOffset(new GroupOffset(0, 0, "g1"))
+                            .groupId("g1")
+                            .startOffset(Offset.ZERO)
                             .topic(topic);
             builder.addCustomProperty(OPTION_SINK_PATH.key(), DIR.getCanonicalFile().getPath())
                     .addCustomProperty(OPTION_IDLE_TRIGGER.key(), 10000)
@@ -119,7 +120,7 @@ public class HDFSFunctionTest {
 
             function.open(builder.build());
 
-            final GroupOffset groupOffset = new GroupOffset(1, 0, "g1");
+            final Offset groupOffset = new Offset(1, 0);
             function.process(groupOffset, Collections.singletonList(records).iterator());
             String currentBucketPath = currentBucketPath(generator);
 
@@ -176,7 +177,7 @@ public class HDFSFunctionTest {
                         record2.value(), toBytes((ByteBuffer) record.get(FIELD_VALUE)));
             }
 
-            final GroupOffset groupOffset2 = new GroupOffset(2, 0, "g1");
+            final Offset groupOffset2 = new Offset(2, 0);
             function.process(
                     groupOffset2,
                     Collections.singletonList(createStringRecords(topic, "aa", "bb")).iterator());

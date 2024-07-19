@@ -23,7 +23,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.netty.DefaultNettySource;
@@ -70,8 +70,8 @@ public class LengthPipelineInitializationFactoryTest {
             } finally {
                 byteBuf.release();
             }
-            final GroupOffset groupOffset = new GroupOffset(0L, 0L, groupId);
-            final List<byte[]> data = readChannel(channel, 0, groupOffset, 2).data;
+            final Offset offset = Offset.ZERO;
+            final List<byte[]> data = readChannel(channel, 0, offset, 2).data;
 
             Assert.assertEquals(
                     "lynn", new String(Records.parse(data.get(0)).iterator().next().value()));

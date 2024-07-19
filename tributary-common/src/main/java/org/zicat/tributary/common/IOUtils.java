@@ -93,13 +93,14 @@ public class IOUtils {
      * decompression none.
      *
      * @param byteBuffer byteBuffer
-     * @param reusedByteBuffer reusedByteBuffer
-     * @return ByteBuffer
+     * @param targetBuffer targetBuffer
+     * @return if decompression result buffer is smaller than targetBuffer, return targetBuffer else
+     *     return new buffer
      */
-    public static ByteBuffer decompressionNone(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
-        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, byteBuffer.remaining());
-        reusedByteBuffer.put(byteBuffer).flip();
-        return reusedByteBuffer;
+    public static ByteBuffer decompressionNone(ByteBuffer byteBuffer, ByteBuffer targetBuffer) {
+        targetBuffer = IOUtils.reAllocate(targetBuffer, byteBuffer.remaining());
+        targetBuffer.put(byteBuffer).flip();
+        return targetBuffer;
     }
 
     /**
@@ -141,15 +142,16 @@ public class IOUtils {
      * decompression zstd. only support DirectByteBuffer
      *
      * @param byteBuffer byteBuffer
-     * @param reusedByteBuffer reusedByteBuffer
-     * @return ByteBuffer
+     * @param targetBuffer targetBuffer
+     * @return if decompression result buffer is smaller than targetBuffer, return targetBuffer else
+     *     return new buffer
      */
-    public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
+    public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer, ByteBuffer targetBuffer) {
         final int size = (int) Zstd.decompressedSize(byteBuffer);
-        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, size * 2, size);
-        Zstd.decompress(reusedByteBuffer, byteBuffer);
-        reusedByteBuffer.flip();
-        return reusedByteBuffer;
+        targetBuffer = IOUtils.reAllocate(targetBuffer, size * 2, size);
+        Zstd.decompress(targetBuffer, byteBuffer);
+        targetBuffer.flip();
+        return targetBuffer;
     }
 
     /**
@@ -198,16 +200,17 @@ public class IOUtils {
      * decompression snappy. only support DirectByteBuffer
      *
      * @param byteBuffer byteBuffer
-     * @param reusedByteBuffer reusedByteBuffer
-     * @return byteBuffer
+     * @param targetBuffer targetBuffer
+     * @return if decompression result buffer is smaller than targetBuffer, return targetBuffer else
+     *     return new buffer
      * @throws IOException IOException
      */
-    public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer)
+    public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer, ByteBuffer targetBuffer)
             throws IOException {
         final int uncompressedLength = Snappy.uncompressedLength(byteBuffer);
-        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, uncompressedLength);
-        Snappy.uncompress(byteBuffer, reusedByteBuffer);
-        return reusedByteBuffer;
+        targetBuffer = IOUtils.reAllocate(targetBuffer, uncompressedLength);
+        Snappy.uncompress(byteBuffer, targetBuffer);
+        return targetBuffer;
     }
 
     /**

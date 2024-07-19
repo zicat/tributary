@@ -18,32 +18,34 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.channel.ChannelBlockCache.CacheBlock;
 import org.zicat.tributary.common.CircularOrderedQueue;
 
 /** ChannelBlockCache. */
-public class ChannelBlockCache extends CircularOrderedQueue<ChannelBlockCache.Block> {
+public class ChannelBlockCache extends CircularOrderedQueue<CacheBlock> {
 
-    private static final Compare<Block, Offset> HANDLER =
-            (block, recordOffset) -> block.compare(recordOffset.segmentId(), recordOffset.offset);
+    private static final Compare<CacheBlock, Offset> HANDLER =
+            (cacheBlock, recordOffset) ->
+                    cacheBlock.compare(recordOffset.segmentId(), recordOffset.offset);
 
     public ChannelBlockCache(int blockCount) {
-        super(new Block[blockCount]);
+        super(new CacheBlock[blockCount]);
     }
 
     /**
      * find.
      *
-     * @param recordOffset recordOffset
-     * @return BufferRecordsOffset
+     * @param blockReaderOffset blockOffset
+     * @return BlockOffset
      */
-    public BlockGroupOffset find(BlockGroupOffset recordOffset) {
-        final Block block = super.find(recordOffset, HANDLER);
-        if (block == null) {
+    public BlockReaderOffset find(BlockReaderOffset blockReaderOffset) {
+        final CacheBlock cacheBlock = super.find(blockReaderOffset, HANDLER);
+        if (cacheBlock == null) {
             return null;
         }
-        final BlockReader oldReader = recordOffset.blockReader;
-        final BlockReader newReader = oldReader.cacheBlockReader(block.data, block.lengthInFile());
-        return recordOffset.newOffsetReader(block.nextOffset, newReader);
+        final BlockReader newReader =
+                blockReaderOffset.blockReader.wrap(cacheBlock.data, cacheBlock.lengthInFile());
+        return blockReaderOffset.newOffsetReader(cacheBlock.nextOffset, newReader);
     }
 
     /**
@@ -55,17 +57,17 @@ public class ChannelBlockCache extends CircularOrderedQueue<ChannelBlockCache.Bl
      * @param data data
      */
     public void put(long segmentId, long currentOffset, long nextOffset, byte[] data) {
-        super.put(new Block(segmentId, currentOffset, nextOffset, data));
+        super.put(new CacheBlock(segmentId, currentOffset, nextOffset, data));
     }
 
     /** Block. */
-    public static class Block implements Comparable<Block> {
+    public static class CacheBlock implements Comparable<CacheBlock> {
         private final long segmentId;
         private final long currentOffset;
         private final long nextOffset;
         private final byte[] data;
 
-        public Block(long segmentId, long currentOffset, long nextOffset, byte[] data) {
+        public CacheBlock(long segmentId, long currentOffset, long nextOffset, byte[] data) {
             this.segmentId = segmentId;
             this.currentOffset = currentOffset;
             this.nextOffset = nextOffset;
@@ -92,7 +94,7 @@ public class ChannelBlockCache extends CircularOrderedQueue<ChannelBlockCache.Bl
         }
 
         @Override
-        public int compareTo(Block o) {
+        public int compareTo(CacheBlock o) {
             return (int) compare(o.segmentId, o.currentOffset);
         }
     }

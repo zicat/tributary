@@ -25,9 +25,9 @@ import java.util.concurrent.TimeUnit;
  * RecordsResultSet.
  *
  * <p>RecordsResultSet is a interface to read block data and get the next block data by invoke
- * function {@link RecordsResultSet#nexGroupOffset()}
+ * function {@link RecordsResultSet#nexOffset()}
  *
- * <p>When invoke {@link Channel#poll(int, GroupOffset, long, TimeUnit)} no data, Method {@link
+ * <p>When invoke {@link Channel#poll(int, Offset, long, TimeUnit)} no data, Method {@link
  * RecordsResultSet#isEmpty()} return true.
  *
  * <p>Method {@link RecordsResultSet#readBytes()} can get the total size of this block,
@@ -39,7 +39,7 @@ public interface RecordsResultSet extends Iterator<byte[]> {
      *
      * @return GroupOffset
      */
-    GroupOffset nexGroupOffset();
+    Offset nexOffset();
 
     /**
      * read bytes size of the block. if block compression, return compression size

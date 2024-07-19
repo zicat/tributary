@@ -25,7 +25,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -71,19 +71,14 @@ public class KafkaFunction extends AbstractFunction {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<Records> iterator) throws Exception {
+    public void process(Offset offset, Iterator<Records> iterator) throws Exception {
         callback.checkState();
         int totalCount = 0;
         while (iterator.hasNext()) {
             totalCount += sendKafka(iterator.next());
         }
-        flush(groupOffset);
+        flush(offset);
         sinkCounterChild.inc(totalCount);
-    }
-
-    @Override
-    public void close() {
-        IOUtils.closeQuietly(producer);
     }
 
     /**
@@ -148,11 +143,11 @@ public class KafkaFunction extends AbstractFunction {
     /**
      * try flush file offset.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      */
-    private void flush(GroupOffset groupOffset) {
+    private void flush(Offset offset) {
         producer.flush();
-        commit(groupOffset, null);
+        commit(offset);
     }
 
     /**
@@ -167,5 +162,10 @@ public class KafkaFunction extends AbstractFunction {
     private static ProducerRecord<byte[], byte[]> createProducerRecord(
             String topic, byte[] key, byte[] value, Collection<Header> headers) {
         return new ProducerRecord<>(topic, null, null, key, value, headers);
+    }
+
+    @Override
+    public void close() {
+        IOUtils.closeQuietly(producer);
     }
 }

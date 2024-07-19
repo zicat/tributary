@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * Channel.
  *
  * <p>Channel support to append record to channel, poll or take records, flush data and commit
- * consumer {@link GroupOffset}
+ * consumer {@link Offset}
  *
  * <p>All methods in Channel are @ThreadSafe.
  */
@@ -95,21 +95,21 @@ public interface Channel extends Closeable, ChannelMetric, GroupManager {
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit)
+    RecordsResultSet poll(int partition, Offset groupOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException;
 
     /**
      * take records. waiting if necessary * until an element becomes available.
      *
      * @param partition the partition to read
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    default RecordsResultSet take(int partition, GroupOffset groupOffset)
+    default RecordsResultSet take(int partition, Offset offset)
             throws IOException, InterruptedException {
-        return poll(partition, groupOffset, 0, TimeUnit.MILLISECONDS);
+        return poll(partition, offset, 0, TimeUnit.MILLISECONDS);
     }
 
     /** flush block data and page cache data to disk. */
@@ -121,16 +121,16 @@ public interface Channel extends Closeable, ChannelMetric, GroupManager {
      * @param groupId groupId
      * @return GroupOffset
      */
-    GroupOffset committedGroupOffset(String groupId, int partition);
+    Offset committedOffset(String groupId, int partition);
 
     /**
      * estimate the lag between group offset and write position in one partition.
      *
      * @param partition partition
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return long lag return 0 if group offset over latest offset
      */
-    long lag(int partition, GroupOffset groupOffset);
+    long lag(int partition, Offset offset);
 
     /**
      * get topic.

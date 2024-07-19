@@ -90,6 +90,7 @@ public class ConfigOptions {
     }
 
     /** StringSplitHandler. */
+    @SuppressWarnings("unchecked")
     public static class StringSplitHandler implements SplitHandler<String> {
 
         private final String delimiter;
@@ -100,6 +101,9 @@ public class ConfigOptions {
 
         @Override
         public List<String> split(Object value) {
+            if (value instanceof List) {
+                return (List<String>) value;
+            }
             return Arrays.stream(value.toString().split(delimiter))
                     .map(String::trim)
                     .filter(v -> !v.isEmpty())

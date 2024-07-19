@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.function;
 import io.prometheus.client.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.records.Records;
@@ -62,7 +62,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<Records> iterator) throws Exception {
+    public void process(Offset offset, Iterator<Records> iterator) throws Exception {
         while (iterator.hasNext()) {
             final Records records = iterator.next();
             foreachRecord(
@@ -94,7 +94,7 @@ public class PrintFunction extends AbstractFunction implements Trigger {
                     });
             sinkCountChild.inc(records.count());
         }
-        commit(groupOffset, null);
+        commit(offset);
     }
 
     @Override

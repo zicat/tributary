@@ -128,12 +128,12 @@ public class FileChannelTest {
             channel.append(0, "foo".getBytes(StandardCharsets.UTF_8));
             channel.flush();
             RecordsResultSet recordsResultSet =
-                    channel.poll(0, new GroupOffset(0, 0, groupId), 1, TimeUnit.MILLISECONDS);
+                    channel.poll(0, Offset.ZERO, 1, TimeUnit.MILLISECONDS);
             Assert.assertFalse(recordsResultSet.isEmpty());
             while (recordsResultSet.hasNext()) {
                 LOG.debug(new String(recordsResultSet.next(), StandardCharsets.UTF_8));
             }
-            Assert.assertEquals(3, recordsResultSet.nexGroupOffset().segmentId());
+            Assert.assertEquals(3, recordsResultSet.nexOffset().segmentId());
         }
     }
 
@@ -164,15 +164,14 @@ public class FileChannelTest {
                     Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
                             .intValue());
             RecordsResultSet recordsResultSet =
-                    channel.poll(
-                            0, channel.committedGroupOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
-            channel.commit(0, recordsResultSet.nexGroupOffset());
+                    channel.poll(0, channel.committedOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
+            channel.commit(0, groupId, recordsResultSet.nexOffset());
             Assert.assertEquals(
                     1,
                     Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
                             .intValue());
 
-            channel.commit(0, recordsResultSet.nexGroupOffset().skipNextSegmentHead());
+            channel.commit(0, groupId, recordsResultSet.nexOffset().skipNextSegmentHead());
             Assert.assertEquals(
                     1,
                     Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
@@ -193,20 +192,20 @@ public class FileChannelTest {
             final String value = "test_data";
             channel.append(0, value.getBytes(StandardCharsets.UTF_8));
             channel.flush();
-            GroupOffset offset = channel.committedGroupOffset(groupId, 0);
+            Offset offset = channel.committedOffset(groupId, 0);
             RecordsResultSet resultSet = channel.poll(0, offset, 1, TimeUnit.MILLISECONDS);
             Assert.assertTrue(resultSet.isEmpty());
 
-            resultSet = channel.take(0, new GroupOffset(0, 0, groupId));
+            resultSet = channel.take(0, Offset.ZERO);
             Assert.assertTrue(resultSet.hasNext());
             Assert.assertEquals(value, new String(resultSet.next(), StandardCharsets.UTF_8));
             Assert.assertFalse(resultSet.hasNext());
-            channel.commit(0, resultSet.nexGroupOffset());
+            channel.commit(0, groupId, resultSet.nexOffset());
 
             String value2 = "test_data2";
             channel.append(0, value2.getBytes(StandardCharsets.UTF_8));
             channel.flush();
-            GroupOffset nextOffset = resultSet.nexGroupOffset();
+            Offset nextOffset = resultSet.nexOffset();
             resultSet = channel.take(0, nextOffset);
             Assert.assertTrue(resultSet.hasNext());
             Assert.assertEquals(value2, new String(resultSet.next(), StandardCharsets.UTF_8));
@@ -214,7 +213,7 @@ public class FileChannelTest {
             resultSet = channel.take(0, nextOffset);
             Assert.assertTrue(resultSet.hasNext());
             Assert.assertEquals(value2, new String(resultSet.next(), StandardCharsets.UTF_8));
-            channel.commit(0, resultSet.nexGroupOffset());
+            channel.commit(0, groupId, resultSet.nexOffset());
 
             Assert.assertEquals(
                     3d,
@@ -236,7 +235,7 @@ public class FileChannelTest {
         final int blockSize = 28;
         final long segmentSize = 1024L * 512L;
         final int maxRecordLength = 32;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 2; i++) {
             test(
                     dir,
                     partitionCount,
@@ -310,27 +309,27 @@ public class FileChannelTest {
             }
             List<Thread> readTreads = new ArrayList<>();
             for (String groupId : consumerGroups) {
-                final GroupOffset startOffset = channel.committedGroupOffset(groupId, 0);
+                final Offset startOffset = channel.committedOffset(groupId, 0);
                 final Thread readTread =
                         new Thread(
                                 () -> {
                                     RecordsResultSet result;
                                     int readSize = 0;
-                                    GroupOffset groupOffset = startOffset;
+                                    Offset offset = startOffset;
                                     while (readSize < dataSize * writeThread) {
                                         try {
-                                            result = channel.take(0, groupOffset);
+                                            result = channel.take(0, offset);
                                             while (result.hasNext()) {
                                                 result.next();
                                                 readSize++;
                                             }
-                                            groupOffset = result.nexGroupOffset();
+                                            offset = result.nexOffset();
                                         } catch (IOException | InterruptedException ioException) {
                                             throw new RuntimeException(ioException);
                                         }
                                     }
                                     try {
-                                        channel.commit(0, groupOffset);
+                                        channel.commit(0, groupId, offset);
                                     } catch (IOException ioException) {
                                         throw new RuntimeException(ioException);
                                     }

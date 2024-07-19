@@ -18,16 +18,13 @@
 
 package org.zicat.tributary.channle.file.test;
 
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.channel.BlockGroupOffset;
+import org.zicat.tributary.channel.BlockReaderOffset;
 import org.zicat.tributary.channel.BlockWriter;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.file.FileSegment;
 import org.zicat.tributary.common.IOUtils;
@@ -39,6 +36,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static org.zicat.tributary.common.IOUtils.deleteDir;
+import static org.zicat.tributary.common.IOUtils.makeDir;
 
 /** SegmentTest. */
 public class SegmentTest {
@@ -91,16 +91,13 @@ public class SegmentTest {
                                 result.add(createStringByLength(6));
                                 result.add(createStringByLength(20));
 
-                                BlockGroupOffset groupOffset =
-                                        BlockGroupOffset.cast(new GroupOffset(fileId, 0, "g1"));
+                                BlockReaderOffset offset =
+                                        BlockReaderOffset.cast(new Offset(fileId, 0));
                                 while (!result.isEmpty()) {
                                     RecordsResultSet resultSet;
                                     try {
                                         resultSet =
-                                                segment.readBlock(
-                                                                groupOffset,
-                                                                1,
-                                                                TimeUnit.MILLISECONDS)
+                                                segment.readBlock(offset, 1, TimeUnit.MILLISECONDS)
                                                         .toResultSet();
                                         Assert.assertTrue(resultSet.hasNext());
                                         while (resultSet.hasNext()) {
@@ -110,8 +107,7 @@ public class SegmentTest {
                                                             new String(
                                                                     bs, StandardCharsets.UTF_8)));
                                         }
-                                        groupOffset =
-                                                BlockGroupOffset.cast(resultSet.nexGroupOffset());
+                                        offset = BlockReaderOffset.cast(resultSet.nexOffset());
                                     } catch (Exception e) {
                                         throw new RuntimeException(e);
                                     }
@@ -146,7 +142,7 @@ public class SegmentTest {
         result.add(createStringByLength(20));
         int i = 0;
 
-        final BlockGroupOffset bufferGroupOffset = BlockGroupOffset.cast(fileId, "g1");
+        final BlockReaderOffset bufferGroupOffset = BlockReaderOffset.cast(fileId);
 
         RecordsResultSet resultSet =
                 segment.readBlock(bufferGroupOffset, 1, TimeUnit.MILLISECONDS).toResultSet();
@@ -159,7 +155,7 @@ public class SegmentTest {
 
         resultSet =
                 segment.readBlock(
-                                BlockGroupOffset.cast(resultSet.nexGroupOffset()),
+                                BlockReaderOffset.cast(resultSet.nexOffset()),
                                 1,
                                 TimeUnit.MILLISECONDS)
                         .toResultSet();
@@ -172,7 +168,7 @@ public class SegmentTest {
 
         resultSet =
                 segment.readBlock(
-                                BlockGroupOffset.cast(resultSet.nexGroupOffset()),
+                                BlockReaderOffset.cast(resultSet.nexOffset()),
                                 1,
                                 TimeUnit.MILLISECONDS)
                         .toResultSet();

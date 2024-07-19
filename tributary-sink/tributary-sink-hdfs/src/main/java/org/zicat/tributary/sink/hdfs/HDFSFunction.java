@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.hdfs;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -53,7 +53,7 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
 
     protected transient Gauge.Child openFilesGaugeChild;
     protected transient Counter.Child sinkCounterChild;
-    protected transient GroupOffset lastGroupOffset;
+    protected transient Offset lastOffset;
     protected transient RecordsWriterManager recordsWriterManager;
     protected transient BucketGenerator bucketGenerator;
     protected transient RefreshHandler refreshHandler;
@@ -70,7 +70,7 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
         refreshHandler =
                 () -> {
                     recordsWriterManager.closeAllBuckets();
-                    commit(lastGroupOffset, null);
+                    commit(lastOffset);
                 };
     }
 
@@ -85,7 +85,7 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<Records> iterator) throws Exception {
+    public void process(Offset offset, Iterator<Records> iterator) throws Exception {
 
         refresh(false);
         int totalCount = 0;
@@ -94,7 +94,7 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
             final String bucket = bucketGenerator.getBucket(records);
             totalCount += recordsWriterManager.getOrCreateRecordsWriter(bucket).append(records);
         }
-        lastGroupOffset = groupOffset;
+        lastOffset = offset;
         sinkCounterChild.inc(totalCount);
         openFilesGaugeChild.set(recordsWriterManager.bucketsCount());
     }

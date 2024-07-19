@@ -25,7 +25,7 @@ import com.lmax.disruptor.dsl.ProducerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.Threads;
@@ -144,7 +144,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) throws Exception {
+    public void process(Offset offset, Iterator<byte[]> iterator) throws Exception {
         checkProcessError();
         disruptor.publishEvent(
                 (block, sequence) -> {
@@ -155,7 +155,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
                      */
                     final Iterator<byte[]> copy = copy(iterator);
                     block.setIterator(copy);
-                    block.setOffset(groupOffset);
+                    block.setOffset(offset);
                 });
     }
 
@@ -198,11 +198,11 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     }
 
     @Override
-    public GroupOffset committableOffset() {
+    public Offset committableOffset() {
 
-        GroupOffset min = handlers[0].function.committableOffset();
+        Offset min = handlers[0].function.committableOffset();
         for (int i = 1; i < handlers.length; i++) {
-            min = GroupOffset.min(min, handlers[i].function.committableOffset());
+            min = Offset.min(min, handlers[i].function.committableOffset());
         }
         return min;
     }
@@ -300,7 +300,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     public static class Block {
 
         private Iterator<byte[]> iterator;
-        private GroupOffset offset;
+        private Offset offset;
 
         public Iterator<byte[]> getIterator() {
             return iterator;
@@ -310,11 +310,11 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
             this.iterator = iterator;
         }
 
-        public GroupOffset getOffset() {
+        public Offset getOffset() {
             return offset;
         }
 
-        public void setOffset(GroupOffset offset) {
+        public void setOffset(Offset offset) {
             this.offset = offset;
         }
     }

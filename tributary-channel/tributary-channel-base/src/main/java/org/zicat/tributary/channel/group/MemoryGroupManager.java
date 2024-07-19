@@ -19,11 +19,12 @@
 package org.zicat.tributary.channel.group;
 
 import org.zicat.tributary.channel.AbstractChannel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,27 +36,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MemoryGroupManager implements SingleGroupManager {
 
-    private final Map<String, GroupOffset> cache = new ConcurrentHashMap<>();
+    private static final Offset DEFAULT_OFFSET = new Offset(-1, -1);
+
+    private final Map<String, Offset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private GroupOffset minGroupOffset;
 
-    public MemoryGroupManager(Set<GroupOffset> groupOffsets) {
-        for (GroupOffset groupOffset : groupOffsets) {
-            this.cache.put(groupOffset.groupId(), groupOffset);
-            this.groups.add(groupOffset.groupId());
+    public MemoryGroupManager(Map<String, Offset> groupOffsets) {
+        for (Map.Entry<String, Offset> entry : groupOffsets.entrySet()) {
+            this.cache.put(entry.getKey(), entry.getValue());
+            this.groups.add(entry.getKey());
         }
-        minGroupOffset = minGroupOffset(cache);
+        minGroupOffset = minOffset(cache);
     }
 
     /**
      * create default group offset.
      *
-     * @param groupId groupId
      * @return GroupOffset
      */
-    public static GroupOffset defaultGroupOffset(String groupId) {
-        return new GroupOffset(-1, -1, groupId);
+    public static Offset defaultOffset() {
+        return DEFAULT_OFFSET;
     }
 
     /**
@@ -63,29 +65,26 @@ public class MemoryGroupManager implements SingleGroupManager {
      *
      * @param action callback function
      */
-    protected void foreachGroup(Consumer<String, GroupOffset> action) throws IOException {
+    protected void foreachGroup(Consumer<String, Offset> action) throws IOException {
         isOpen();
-        int i = 0;
-        for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
-            action.accept(i, entry.getKey(), entry.getValue());
-            i++;
+        for (Map.Entry<String, Offset> entry : cache.entrySet()) {
+            action.accept(entry.getKey(), entry.getValue());
         }
     }
 
     @Override
-    public synchronized void commit(GroupOffset groupOffset) {
+    public synchronized void commit(String groupId, Offset offset) {
 
         isOpen();
-        final GroupOffset cachedGroupOffset = cache.get(groupOffset.groupId());
-        if (cachedGroupOffset == null) {
-            throw new IllegalStateException(
-                    "group id " + groupOffset.groupId() + " not found in cache");
+        final Offset cachedOffset = cache.get(groupId);
+        if (cachedOffset == null) {
+            throw new IllegalStateException("group id " + groupId + " not found in cache");
         }
-        if (cachedGroupOffset.compareTo(groupOffset) >= 0) {
+        if (cachedOffset.compareTo(offset) >= 0) {
             return;
         }
-        cache.put(groupOffset.groupId(), groupOffset);
-        minGroupOffset = minGroupOffset(cache);
+        cache.put(groupId, offset);
+        minGroupOffset = minOffset(cache);
     }
 
     @Override
@@ -94,7 +93,7 @@ public class MemoryGroupManager implements SingleGroupManager {
     }
 
     @Override
-    public GroupOffset committedGroupOffset(String groupId) {
+    public Offset committedOffset(String groupId) {
         isOpen();
         return cache.get(groupId);
     }
@@ -105,11 +104,13 @@ public class MemoryGroupManager implements SingleGroupManager {
      * @param cache cache
      * @return GroupOffset
      */
-    private static GroupOffset minGroupOffset(Map<String, GroupOffset> cache) {
+    private static GroupOffset minOffset(Map<String, Offset> cache) {
         GroupOffset min = null;
-        for (Map.Entry<String, GroupOffset> entry : cache.entrySet()) {
-            final GroupOffset groupOffset = entry.getValue();
-            min = min == null ? groupOffset : GroupOffset.min(min, groupOffset);
+        for (Map.Entry<String, Offset> entry : cache.entrySet()) {
+            final Offset offset = entry.getValue();
+            if (min == null || min.compareTo(offset) > 0) {
+                min = new GroupOffset(entry.getKey(), entry.getValue());
+            }
         }
         return min;
     }
@@ -152,7 +153,7 @@ public class MemoryGroupManager implements SingleGroupManager {
          * @param u u
          * @throws IOException IOException
          */
-        void accept(int index, T t, U u) throws IOException;
+        void accept(T t, U u) throws IOException;
     }
 
     /**
@@ -162,7 +163,46 @@ public class MemoryGroupManager implements SingleGroupManager {
      * @return MemoryOnePartitionGroupManager
      */
     public static AbstractChannel.MemoryGroupManagerFactory createMemoryGroupManagerFactory(
-            Set<GroupOffset> groupOffsets) {
+            Map<String, Offset> groupOffsets) {
         return () -> new MemoryGroupManager(groupOffsets);
+    }
+
+    /** GroupOffset. */
+    public static class GroupOffset extends Offset {
+
+        private final String groupId;
+
+        public GroupOffset(String groupId, long segmentId, long offset) {
+            super(segmentId, offset);
+            this.groupId = groupId;
+        }
+
+        public GroupOffset(String groupId, Offset offset) {
+            this(groupId, offset.segmentId(), offset.offset());
+        }
+
+        public String groupId() {
+            return groupId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof GroupOffset)) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            GroupOffset that = (GroupOffset) o;
+            return Objects.equals(groupId, that.groupId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), groupId);
+        }
     }
 }

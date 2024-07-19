@@ -20,10 +20,8 @@ package org.zicat.tributary.channel;
 
 import org.zicat.tributary.common.IOUtils;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static org.zicat.tributary.common.VIntUtil.putVInt;
 import static org.zicat.tributary.common.VIntUtil.vIntEncodeLength;
 
 /**
@@ -76,69 +74,6 @@ public final class BlockWriter extends Block {
      */
     public static BlockWriter wrap(byte[] data) {
         return wrap(data, 0, data.length);
-    }
-
-    /**
-     * append data to block set.
-     *
-     * @param data data
-     * @param offset offset
-     * @param length length
-     * @return boolean put success
-     */
-    public boolean put(byte[] data, int offset, int length) {
-        return put(ByteBuffer.wrap(data, offset, length));
-    }
-
-    /**
-     * append data to block set.
-     *
-     * @param data data
-     * @return boolean put success
-     */
-    public boolean put(byte[] data) {
-        return put(ByteBuffer.wrap(data));
-    }
-
-    /**
-     * append data. to block set.
-     *
-     * @param byteBuffer byteBuffer
-     * @return boolean put success
-     */
-    public boolean put(ByteBuffer byteBuffer) {
-        if (remaining() < vIntEncodeLength(byteBuffer.remaining())) {
-            return false;
-        }
-        putVInt(resultBuf, byteBuffer.remaining());
-        resultBuf.put(byteBuffer);
-        return true;
-    }
-
-    /**
-     * clear block writer.
-     *
-     * @param blockFlushHandler blockFlushHandler
-     */
-    public void clear(BlockFlushHandler blockFlushHandler) throws IOException {
-        if (isEmpty()) {
-            return;
-        }
-        resultBuf.flip();
-        blockFlushHandler.callback(this);
-        resultBuf.clear();
-    }
-
-    /** ClearHandler. */
-    public interface BlockFlushHandler {
-
-        /**
-         * callback.
-         *
-         * @param block block
-         * @throws IOException IOException
-         */
-        void callback(Block block) throws IOException;
     }
 
     /**

@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -137,11 +137,11 @@ public class AbstractPartitionHandlerTest {
                         public void open() {}
 
                         @Override
-                        public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {}
+                        public void process(Offset offset, Iterator<byte[]> iterator) {}
 
                         @Override
-                        public GroupOffset committableOffset() {
-                            return new GroupOffset(0, 0, groupId);
+                        public Offset committableOffset() {
+                            return Offset.ZERO;
                         }
                     };
             try {
@@ -208,7 +208,7 @@ public class AbstractPartitionHandlerTest {
                         public void open() {}
 
                         @Override
-                        public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
+                        public void process(Offset offset, Iterator<byte[]> iterator) {
                             while (iterator.hasNext()) {
                                 Assert.assertTrue(
                                         consumerData.remove(
@@ -218,15 +218,15 @@ public class AbstractPartitionHandlerTest {
                         }
 
                         @Override
-                        public GroupOffset committableOffset() {
-                            return new GroupOffset(0, 0, groupId);
+                        public Offset committableOffset() {
+                            return Offset.ZERO;
                         }
 
                         @Override
                         public void updateCommitOffsetWaterMark() {
-                            final GroupOffset groupOffset = commitOffsetWaterMark();
+                            final Offset groupOffset = commitOffsetWaterMark();
                             super.updateCommitOffsetWaterMark();
-                            final GroupOffset groupOffset2 = commitOffsetWaterMark();
+                            final Offset groupOffset2 = commitOffsetWaterMark();
                             skip.set(groupOffset != groupOffset2 || skip.get());
                         }
 
@@ -289,13 +289,13 @@ public class AbstractPartitionHandlerTest {
                         @Override
                         public void idleTrigger() {}
 
-                        private GroupOffset groupOffset;
+                        private Offset offset;
 
                         @Override
                         public void open() {}
 
                         @Override
-                        public void process(GroupOffset groupOffset, Iterator<byte[]> iterator) {
+                        public void process(Offset offset, Iterator<byte[]> iterator) {
                             int id = counter.incrementAndGet();
                             Assert.assertTrue(lag() > 0);
                             if (id == 1) {
@@ -305,7 +305,7 @@ public class AbstractPartitionHandlerTest {
                                 consumerData.remove(
                                         new String(iterator.next(), StandardCharsets.UTF_8));
                             }
-                            this.groupOffset = groupOffset;
+                            this.offset = offset;
                             if (id == 3) {
                                 throw new RuntimeException("second");
                             }
@@ -315,8 +315,8 @@ public class AbstractPartitionHandlerTest {
                         }
 
                         @Override
-                        public GroupOffset committableOffset() {
-                            return groupOffset;
+                        public Offset committableOffset() {
+                            return offset;
                         }
                     }) {
 

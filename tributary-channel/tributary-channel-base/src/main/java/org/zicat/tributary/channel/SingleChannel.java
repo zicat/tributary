@@ -33,17 +33,17 @@ public interface SingleChannel extends Channel, SingleGroupManager {
     }
 
     @Override
-    default long lag(int partition, GroupOffset groupOffset) {
-        return lag(groupOffset);
+    default long lag(int partition, Offset offset) {
+        return lag(offset);
     }
 
     /**
      * estimate the lag between group offset and write position without partition.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return long lag return 0 if group offset over
      */
-    long lag(GroupOffset groupOffset);
+    long lag(Offset offset);
 
     @Override
     default void append(int partition, byte[] record, int offset, int length) throws IOException {
@@ -84,22 +84,22 @@ public interface SingleChannel extends Channel, SingleGroupManager {
     void append(ByteBuffer byteBuffer) throws IOException;
 
     @Override
-    default RecordsResultSet poll(int partition, GroupOffset groupOffset, long time, TimeUnit unit)
+    default RecordsResultSet poll(int partition, Offset offset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
-        return poll(groupOffset, time, unit);
+        return poll(offset, time, unit);
     }
 
     /**
      * poll records without partition.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @param time time
      * @param unit unit
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    RecordsResultSet poll(GroupOffset groupOffset, long time, TimeUnit unit)
+    RecordsResultSet poll(Offset offset, long time, TimeUnit unit)
             throws IOException, InterruptedException;
 
     /**
@@ -109,10 +109,10 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      * @param groupId groupId
      * @return GroupOffset
      */
-    GroupOffset committedGroupOffset(String groupId);
+    Offset committedOffset(String groupId);
 
     @Override
-    default GroupOffset committedGroupOffset(String groupId, int partition) {
-        return committedGroupOffset(groupId);
+    default Offset committedOffset(String groupId, int partition) {
+        return committedOffset(groupId);
     }
 }

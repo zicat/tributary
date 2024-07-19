@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.channel.test.BlockReaderOffsetTest.BlockReaderOffsetMock;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.IOException;
@@ -69,8 +70,7 @@ public class BlockWriterTest {
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
-                            new BlockGroupOffsetTest.BlockGroupOffsetMock(reusedBuffer, "g1")
-                                    .toResultSet();
+                            new BlockReaderOffsetMock(reusedBuffer).toResultSet();
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData, rs.next());
                     Assert.assertFalse(rs.hasNext());
@@ -103,8 +103,7 @@ public class BlockWriterTest {
                     }
                     reusedBuffer.flip();
                     final RecordsResultSet rs =
-                            new BlockGroupOffsetTest.BlockGroupOffsetMock(reusedBuffer, "g1")
-                                    .toResultSet();
+                            new BlockReaderOffsetMock(reusedBuffer).toResultSet();
                     Assert.assertTrue(rs.hasNext());
                     Assert.assertArrayEquals(testData.get(0), rs.next());
                     Assert.assertTrue(rs.hasNext());

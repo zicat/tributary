@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.test.function;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.records.Record;
@@ -37,7 +37,7 @@ public class AssertCountFunction extends AbstractFunction {
     private static final Logger LOG = LoggerFactory.getLogger(AssertCountFunction.class);
 
     private long count;
-    private long offset = 0;
+    private long currentCount = 0;
 
     public static final ConfigOption<Long> OPTION_ASSERT_COUNT =
             ConfigOptions.key("count").longType().defaultValue(-1L);
@@ -49,17 +49,17 @@ public class AssertCountFunction extends AbstractFunction {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {
+    public void process(Offset offset, Iterator<Records> iterator) {
         while (iterator.hasNext()) {
             for (Record ignore : iterator.next()) {
-                offset++;
+                currentCount++;
             }
         }
     }
 
     @Override
     public void close() {
-        LOG.info("assert count, expect {}, real {}", count, offset);
-        Assert.assertEquals(count, offset);
+        LOG.info("assert count, expect {}, real {}", count, currentCount);
+        Assert.assertEquals(count, currentCount);
     }
 }

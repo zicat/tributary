@@ -113,8 +113,7 @@ public class BlockRecordsResultSetWriterTest {
         fileChannel.force(false);
 
         // test buffer reader
-        BlockGroupOffset bufferRecordsResultSet =
-                BlockGroupOffset.cast(new GroupOffset(0, 0, "g1"));
+        BlockReaderOffset bufferRecordsResultSet = BlockReaderOffset.cast(Offset.ZERO);
         long offset = FileSegmentUtil.legalFileOffset(bufferRecordsResultSet.offset());
         Assert.assertTrue(offset >= 2);
         Assert.assertFalse(offset >= 10);
@@ -134,14 +133,14 @@ public class BlockRecordsResultSetWriterTest {
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
-        bufferRecordsResultSet = BlockGroupOffset.cast(resultSet.nexGroupOffset());
-        Assert.assertSame(bufferRecordsResultSet, resultSet.nexGroupOffset());
+        bufferRecordsResultSet = BlockReaderOffset.cast(resultSet.nexOffset());
+        Assert.assertSame(bufferRecordsResultSet, resultSet.nexOffset());
         resultSet = fileSegment.read(bufferRecordsResultSet, fileChannel.position()).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
-        bufferRecordsResultSet = BlockGroupOffset.cast(resultSet.nexGroupOffset());
+        bufferRecordsResultSet = BlockReaderOffset.cast(resultSet.nexOffset());
         resultSet = fileSegment.read(bufferRecordsResultSet, fileChannel.position()).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("foo", new String(resultSet.next(), StandardCharsets.UTF_8));
@@ -157,16 +156,15 @@ public class BlockRecordsResultSetWriterTest {
         writer4.clear(handler);
         fileChannel.force(false);
 
-        GroupOffset newOffset =
+        Offset newOffset =
                 resultSet
-                        .nexGroupOffset()
+                        .nexOffset()
                         .skip2Target(
-                                resultSet.nexGroupOffset().segmentId(),
-                                resultSet.nexGroupOffset().offset() + 1,
-                                resultSet.nexGroupOffset().groupId());
+                                resultSet.nexOffset().segmentId(),
+                                resultSet.nexOffset().offset() + 1);
         resultSet =
                 fileSegment
-                        .read(BlockGroupOffset.cast(newOffset), fileChannel.position())
+                        .read(BlockReaderOffset.cast(newOffset), fileChannel.position())
                         .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
@@ -181,9 +179,7 @@ public class BlockRecordsResultSetWriterTest {
 
         resultSet =
                 fileSegment
-                        .read(
-                                BlockGroupOffset.cast(resultSet.nexGroupOffset()),
-                                fileChannel.position())
+                        .read(BlockReaderOffset.cast(resultSet.nexOffset()), fileChannel.position())
                         .toResultSet();
         Assert.assertFalse(resultSet.hasNext());
 
@@ -194,16 +190,14 @@ public class BlockRecordsResultSetWriterTest {
 
         resultSet =
                 fileSegment
-                        .read(
-                                BlockGroupOffset.cast(resultSet.nexGroupOffset()),
-                                fileChannel.position())
+                        .read(BlockReaderOffset.cast(resultSet.nexOffset()), fileChannel.position())
                         .toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertEquals("lynn", new String(resultSet.next(), StandardCharsets.UTF_8));
         Assert.assertFalse(resultSet.hasNext());
 
         Assert.assertEquals(fileChannel.position(), fileChannel.size());
-        Assert.assertEquals(resultSet.nexGroupOffset().offset(), fileChannel.position());
+        Assert.assertEquals(resultSet.nexOffset().offset(), fileChannel.position());
     }
 
     /** MockFileSegment. */

@@ -18,64 +18,56 @@
 
 package org.zicat.tributary.channel;
 
-import static org.zicat.tributary.common.VIntUtil.readVInt;
+import org.zicat.tributary.common.IOUtils;
 
 import java.nio.ByteBuffer;
 
 /** BlockReader. */
 public class BlockReader extends Block {
 
-    private ByteBuffer cacheBuf;
     private long readBytes;
 
-    public BlockReader(
-            ByteBuffer resultBuf, ByteBuffer reusedBuf, ByteBuffer cacheBuf, long readBytes) {
-        super(resultBuf, reusedBuf);
-        this.cacheBuf = cacheBuf;
-        this.readBytes = readBytes;
-    }
-
     public BlockReader(ByteBuffer resultBuf, ByteBuffer reusedBuf, long readBytes) {
-        this(resultBuf, reusedBuf, null, readBytes);
+        super(resultBuf, reusedBuf);
+        this.readBytes = readBytes;
     }
 
     /**
      * create block reader by cache.
      *
-     * @param cache cache
+     * @param data data
      * @param readBytes readBytes
      * @return BlockReader
      */
-    public BlockReader cacheBlockReader(byte[] cache, long readBytes) {
-        ByteBuffer cacheBuf = ByteBuffer.wrap(cache);
-        return new BlockReader(resultBuf, reusedBuf, cacheBuf, readBytes);
-    }
-
-    public long readBytes() {
-        return readBytes;
+    public BlockReader wrap(byte[] data, long readBytes) {
+        final ByteBuffer byteBuffer = IOUtils.reAllocate(this.resultBuf, data.length);
+        byteBuffer.put(data).flip();
+        return new BlockReader(byteBuffer, reusedBuf, readBytes);
     }
 
     /**
-     * read next value.
+     * get read bytes. note: if data is compression in storage, this value is smaller than real data
+     * size of method {@link Block#readNext()}
      *
-     * @return byte[]
+     * @return size
      */
-    public byte[] readNext() {
-        final ByteBuffer resultBuf = cacheBuf != null ? cacheBuf : resultBuf();
-        if (resultBuf == null || !resultBuf.hasRemaining()) {
-            return null;
-        }
-        final int length = readVInt(resultBuf);
-        final byte[] bs = new byte[length];
-        resultBuf.get(bs);
-        return bs;
+    public long readBytes() {
+        return readBytes;
     }
 
     @Override
     public BlockReader reset() {
         super.reset();
         readBytes = 0;
-        cacheBuf = null;
         return this;
+    }
+
+    /**
+     * empty block reader.
+     *
+     * @return block reader
+     */
+    public static BlockReader emptyBlockReader() {
+        return new BlockReader(null, null, 0);
     }
 }

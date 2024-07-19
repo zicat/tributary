@@ -18,7 +18,10 @@
 
 package org.zicat.tributary.channel;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import static org.zicat.tributary.common.VIntUtil.*;
 
 /** Block. */
 public class Block {
@@ -95,5 +98,83 @@ public class Block {
      */
     public final boolean isEmpty() {
         return position() == 0;
+    }
+
+    /**
+     * read next value.
+     *
+     * @return byte[]
+     */
+    public byte[] readNext() {
+        if (resultBuf == null || !resultBuf.hasRemaining()) {
+            return null;
+        }
+        final int length = readVInt(resultBuf);
+        final byte[] bs = new byte[length];
+        resultBuf.get(bs);
+        return bs;
+    }
+
+    /**
+     * append data to block set.
+     *
+     * @param data data
+     * @param offset offset
+     * @param length length
+     * @return boolean put success
+     */
+    public boolean put(byte[] data, int offset, int length) {
+        return put(ByteBuffer.wrap(data, offset, length));
+    }
+
+    /**
+     * append data to block set.
+     *
+     * @param data data
+     * @return boolean put success
+     */
+    public boolean put(byte[] data) {
+        return put(ByteBuffer.wrap(data));
+    }
+
+    /**
+     * append data. to block set.
+     *
+     * @param byteBuffer byteBuffer
+     * @return boolean put success
+     */
+    public boolean put(ByteBuffer byteBuffer) {
+        if (remaining() < vIntEncodeLength(byteBuffer.remaining())) {
+            return false;
+        }
+        putVInt(resultBuf, byteBuffer.remaining());
+        resultBuf.put(byteBuffer);
+        return true;
+    }
+
+    /**
+     * clear block writer.
+     *
+     * @param blockFlushHandler blockFlushHandler
+     */
+    public void clear(BlockFlushHandler blockFlushHandler) throws IOException {
+        if (isEmpty()) {
+            return;
+        }
+        resultBuf.flip();
+        blockFlushHandler.callback(this);
+        resultBuf.clear();
+    }
+
+    /** ClearHandler. */
+    public interface BlockFlushHandler {
+
+        /**
+         * callback.
+         *
+         * @param block block
+         * @throws IOException IOException
+         */
+        void callback(Block block) throws IOException;
     }
 }

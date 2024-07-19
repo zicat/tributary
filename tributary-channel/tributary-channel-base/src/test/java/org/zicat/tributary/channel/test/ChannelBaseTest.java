@@ -21,7 +21,7 @@ package org.zicat.tributary.channel.test;
 import org.junit.Assert;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.ReadableConfig;
 
@@ -39,11 +39,11 @@ public class ChannelBaseTest {
     /** DataOffset. */
     public static class DataOffset {
         public List<byte[]> data;
-        public GroupOffset groupOffset;
+        public Offset offset;
 
-        public DataOffset(List<byte[]> data, GroupOffset groupOffset) {
+        public DataOffset(List<byte[]> data, Offset offset) {
             this.data = data;
-            this.groupOffset = groupOffset;
+            this.offset = offset;
         }
     }
 
@@ -52,30 +52,29 @@ public class ChannelBaseTest {
      *
      * @param channel channel
      * @param partition partition
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @param size size
      * @return list byte[]
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    public static DataOffset readChannel(
-            Channel channel, int partition, GroupOffset groupOffset, int size)
+    public static DataOffset readChannel(Channel channel, int partition, Offset offset, int size)
             throws IOException, InterruptedException {
         final List<byte[]> result = new ArrayList<>();
-        GroupOffset offset = groupOffset;
+        Offset currentOffset = new Offset(offset.segmentId(), offset.offset());
         while (result.size() < size) {
             final RecordsResultSet recordsResultSet =
-                    channel.poll(partition, offset, 10, TimeUnit.MILLISECONDS);
+                    channel.poll(partition, currentOffset, 10, TimeUnit.MILLISECONDS);
             if (!recordsResultSet.hasNext()) {
                 throw new RuntimeException("no full, expect " + size + ", real " + result.size());
             }
             while (recordsResultSet.hasNext()) {
                 result.add(recordsResultSet.next());
                 if (result.size() >= size) {
-                    return new DataOffset(result, recordsResultSet.nexGroupOffset());
+                    return new DataOffset(result, recordsResultSet.nexOffset());
                 }
             }
-            offset = recordsResultSet.nexGroupOffset();
+            currentOffset = recordsResultSet.nexOffset();
         }
         throw new RuntimeException("no full, expect " + size + ", real 0");
     }
@@ -91,15 +90,15 @@ public class ChannelBaseTest {
     public static void testChannelStorage(
             ChannelFactory factory, String topic, ReadableConfig config) throws Exception {
 
-        final Map<String, Map<Integer, GroupOffset>> startOffset = new HashMap<>();
+        final Map<String, Map<Integer, Offset>> startOffset = new HashMap<>();
 
         // consumer not commit
         try (Channel channel = factory.createChannel(topic, config)) {
             for (String group : channel.groups()) {
                 for (int i = 0; i < channel.partition(); i++) {
-                    final GroupOffset groupOffset = channel.committedGroupOffset(group, i);
-                    startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, groupOffset);
-                    channel.commit(i, groupOffset);
+                    final Offset offset = channel.committedOffset(group, i);
+                    startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, offset);
+                    channel.commit(i, group, offset);
                 }
             }
             for (int i = 0; i < channel.partition(); i++) {
@@ -123,9 +122,9 @@ public class ChannelBaseTest {
         try (Channel channel = factory.createChannel(topic, config)) {
             for (String group : channel.groups()) {
                 for (int i = 0; i < channel.partition(); i++) {
-                    final GroupOffset groupOffset = channel.committedGroupOffset(group, i);
-                    startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, groupOffset);
-                    channel.commit(i, groupOffset);
+                    final Offset offset = channel.committedOffset(group, i);
+                    startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, offset);
+                    channel.commit(i, group, offset);
                 }
             }
             for (String group : channel.groups()) {
@@ -137,7 +136,7 @@ public class ChannelBaseTest {
                                 "partition-" + i + "-value-" + j,
                                 new String(result.data.get(j), StandardCharsets.UTF_8));
                     }
-                    channel.commit(i, result.groupOffset);
+                    channel.commit(i, group, result.offset);
                 }
             }
         }
@@ -146,16 +145,16 @@ public class ChannelBaseTest {
         try (Channel channel = factory.createChannel(topic, config)) {
             for (String group : channel.groups()) {
                 for (int i = 0; i < channel.partition(); i++) {
-                    final GroupOffset groupOffset = channel.committedGroupOffset(group, i);
-                    startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, groupOffset);
-                    channel.commit(i, groupOffset);
+                    final Offset offset = channel.committedOffset(group, i);
+                    startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, offset);
+                    channel.commit(i, group, offset);
                 }
             }
             for (String group : channel.groups()) {
                 for (int i = 0; i < channel.partition(); i++) {
+                    final Offset offset = startOffset.get(group).get(i);
                     RecordsResultSet recordsResultSet =
-                            channel.poll(
-                                    i, startOffset.get(group).get(i), 1000, TimeUnit.MILLISECONDS);
+                            channel.poll(i, offset, 1000, TimeUnit.MILLISECONDS);
                     Assert.assertFalse(recordsResultSet.hasNext());
                 }
             }
@@ -172,12 +171,12 @@ public class ChannelBaseTest {
     public static void testChannelCorrect(Channel channel)
             throws IOException, InterruptedException {
 
-        final Map<String, Map<Integer, GroupOffset>> startOffset = new HashMap<>();
+        final Map<String, Map<Integer, Offset>> startOffset = new HashMap<>();
         for (String group : channel.groups()) {
             for (int i = 0; i < channel.partition(); i++) {
-                final GroupOffset groupOffset = channel.committedGroupOffset(group, i);
-                startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, groupOffset);
-                channel.commit(i, groupOffset);
+                final Offset offset = channel.committedOffset(group, i);
+                startOffset.computeIfAbsent(group, g -> new HashMap<>()).put(i, offset);
+                channel.commit(i, group, offset);
             }
         }
         for (int i = 0; i < channel.partition(); i++) {
@@ -186,11 +185,12 @@ public class ChannelBaseTest {
             channel.flush();
         }
 
-        final Map<String, Map<Integer, GroupOffset>> nextOffset = new HashMap<>();
+        final Map<String, Map<Integer, Offset>> nextOffset = new HashMap<>();
         for (String group : channel.groups()) {
             for (int i = 0; i < channel.partition(); i++) {
+                final Offset offset = startOffset.get(group).get(i);
                 RecordsResultSet recordsResultSet =
-                        channel.poll(i, startOffset.get(group).get(i), 1000, TimeUnit.MILLISECONDS);
+                        channel.poll(i, offset, 1000, TimeUnit.MILLISECONDS);
                 Assert.assertTrue(recordsResultSet.hasNext());
                 Assert.assertEquals(
                         "partition-" + i + "-value-0",
@@ -199,17 +199,14 @@ public class ChannelBaseTest {
                 if (!recordsResultSet.hasNext()) {
                     recordsResultSet =
                             channel.poll(
-                                    i,
-                                    recordsResultSet.nexGroupOffset(),
-                                    1000,
-                                    TimeUnit.MILLISECONDS);
+                                    i, recordsResultSet.nexOffset(), 1000, TimeUnit.MILLISECONDS);
                 }
                 Assert.assertEquals(
                         "partition-" + i + "-value-1",
                         new String(recordsResultSet.next(), StandardCharsets.UTF_8));
                 nextOffset
                         .computeIfAbsent(group, g -> new HashMap<>())
-                        .put(i, recordsResultSet.nexGroupOffset());
+                        .put(i, recordsResultSet.nexOffset());
             }
         }
 
@@ -236,8 +233,10 @@ public class ChannelBaseTest {
         // test rollback
         for (String group : channel.groups()) {
             for (int i = 0; i < channel.partition(); i++) {
+
+                final Offset offset = startOffset.get(group).get(i);
                 RecordsResultSet recordsResultSet =
-                        channel.poll(i, startOffset.get(group).get(i), 1000, TimeUnit.MILLISECONDS);
+                        channel.poll(i, offset, 1000, TimeUnit.MILLISECONDS);
                 Assert.assertTrue(recordsResultSet.hasNext());
                 Assert.assertEquals(
                         "partition-" + i + "-value-0",
@@ -245,17 +244,14 @@ public class ChannelBaseTest {
                 if (!recordsResultSet.hasNext()) {
                     recordsResultSet =
                             channel.poll(
-                                    i,
-                                    recordsResultSet.nexGroupOffset(),
-                                    1000,
-                                    TimeUnit.MILLISECONDS);
+                                    i, recordsResultSet.nexOffset(), 1000, TimeUnit.MILLISECONDS);
                 }
                 Assert.assertEquals(
                         "partition-" + i + "-value-1",
                         new String(recordsResultSet.next(), StandardCharsets.UTF_8));
                 nextOffset
                         .computeIfAbsent(group, g -> new HashMap<>())
-                        .put(i, recordsResultSet.nexGroupOffset());
+                        .put(i, recordsResultSet.nexOffset());
             }
         }
 
@@ -263,10 +259,10 @@ public class ChannelBaseTest {
         for (String group : channel.groups()) {
             for (int i = 0; i < channel.partition(); i++) {
                 Assert.assertEquals(
-                        startOffset.get(group).get(i), channel.committedGroupOffset(group, i));
-                channel.commit(i, nextOffset.get(group).get(i));
+                        startOffset.get(group).get(i), channel.committedOffset(group, i));
+                channel.commit(i, group, nextOffset.get(group).get(i));
                 Assert.assertEquals(
-                        nextOffset.get(group).get(i), channel.committedGroupOffset(group, i));
+                        nextOffset.get(group).get(i), channel.committedOffset(group, i));
             }
         }
     }

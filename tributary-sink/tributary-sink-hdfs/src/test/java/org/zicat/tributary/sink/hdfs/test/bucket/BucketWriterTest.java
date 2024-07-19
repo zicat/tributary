@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
@@ -300,6 +301,7 @@ public class BucketWriterTest {
                     OPTION_WRITER_IDENTITY.key(), MockHDFSRecordsWriterFactory.ID);
             builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER.key(), writer);
             builder.addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC.key(), codeC);
+            builder.id("1").groupId("g1").topic("t1").startOffset(Offset.ZERO);
 
             return new BucketWriter(builder.build(), bucketPath, fileName) {
                 @Override

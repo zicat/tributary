@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -67,7 +67,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                     .defaultValue(Duration.ofSeconds(30));
 
     protected final Long maxRetainSize;
-    private GroupOffset fetchOffset;
+    private Offset fetchOffset;
 
     public AbstractPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
@@ -88,7 +88,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                 }
                 processRecords(result, idleTimeMillis);
                 updateCommitOffsetWaterMark();
-                fetchOffset = nextFetchOffset(result.nexGroupOffset());
+                fetchOffset = nextFetchOffset(result.nexOffset());
             } catch (InterruptedException interruptedException) {
                 if (closed.get()) {
                     return;
@@ -112,7 +112,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      * @param nextOffset nextOffset
      * @return GroupOffset
      */
-    private GroupOffset nextFetchOffset(GroupOffset nextOffset) {
+    private Offset nextFetchOffset(Offset nextOffset) {
         if (nextOffset == null || nextOffset.compareTo(commitOffsetWaterMark()) < 0) {
             return fetchOffset.skip2Target(commitOffsetWaterMark());
         } else {
@@ -129,7 +129,7 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      */
     private void processRecords(RecordsResultSet result, long idleTimeMillis) throws Throwable {
         if (!result.isEmpty()) {
-            process(result.nexGroupOffset(), result);
+            process(result.nexOffset(), result);
         } else if (idleTimeMillis > 0) {
             idleTrigger();
         }
@@ -137,28 +137,28 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     /** update commit offset watermark. */
     public void updateCommitOffsetWaterMark() {
-        final GroupOffset oldWaterMark = commitOffsetWaterMark();
-        final GroupOffset newWaterMark = GroupOffset.max(committableOffset(), oldWaterMark);
-        final GroupOffset skipWaterMark = skipGroupOffsetByMaxRetainSize(newWaterMark);
+        final Offset oldWaterMark = commitOffsetWaterMark();
+        final Offset newWaterMark = Offset.max(committableOffset(), oldWaterMark);
+        final Offset skipWaterMark = skipGroupOffsetByMaxRetainSize(newWaterMark);
         if (skipWaterMark.compareTo(oldWaterMark) > 0) {
             commit(skipWaterMark);
         }
     }
 
     /** skip commit offset watermark by max retain size. */
-    protected GroupOffset skipGroupOffsetByMaxRetainSize(GroupOffset offset) {
+    protected Offset skipGroupOffsetByMaxRetainSize(Offset offset) {
 
         if (maxRetainSize == null) {
             return offset;
         }
 
-        GroupOffset newOffset = offset;
-        GroupOffset preOffset = offset;
+        Offset newOffset = offset;
+        Offset preOffset = offset;
         while (true) {
             final long lag = lag(newOffset);
             if (lag > maxRetainSize) {
                 preOffset = newOffset;
-                newOffset = newOffset.skipNextSegmentHead();
+                newOffset = new Offset(newOffset.segmentId() + 1, 0L);
                 continue;
             }
             if (lag <= 0) {

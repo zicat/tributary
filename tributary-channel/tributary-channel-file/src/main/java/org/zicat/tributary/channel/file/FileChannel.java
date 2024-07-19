@@ -33,7 +33,7 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
 
 /**
- * FileChannel implements {@link Channel} to Storage records and {@link GroupOffset} in local file
+ * FileChannel implements {@link Channel} to Storage records and {@link Offset} in local file
  * system.
  *
  * <p>All public methods in FileChannel are @ThreadSafe.

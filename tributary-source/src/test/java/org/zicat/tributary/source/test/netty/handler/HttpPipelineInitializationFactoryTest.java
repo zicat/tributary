@@ -25,7 +25,7 @@ import io.netty.handler.codec.http.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
@@ -124,8 +124,8 @@ public class HttpPipelineInitializationFactoryTest {
         }
         channel.flush();
 
-        final GroupOffset groupOffset = new GroupOffset(0L, 0L, groupId);
-        final List<byte[]> data = readChannel(channel, 0, groupOffset, 2).data;
+        final Offset offset = Offset.ZERO;
+        final List<byte[]> data = readChannel(channel, 0, offset, 2).data;
 
         final Records records1 = Records.parse(data.get(0));
         Assert.assertEquals(topic, records1.topic());

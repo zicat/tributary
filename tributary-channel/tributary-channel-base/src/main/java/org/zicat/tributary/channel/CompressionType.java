@@ -107,14 +107,14 @@ public enum CompressionType {
      * @param byteBuffer byteBuffer
      * @return byteBuffer
      */
-    public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer)
+    public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer targetBuffer)
             throws IOException {
         if (this == ZSTD) {
-            return decompressionZSTD(byteBuffer, reusedByteBuffer);
+            return decompressionZSTD(byteBuffer, targetBuffer);
         } else if (this == NONE) {
-            return decompressionNone(byteBuffer, reusedByteBuffer);
+            return decompressionNone(byteBuffer, targetBuffer);
         } else if (this == SNAPPY) {
-            return decompressionSnappy(byteBuffer, reusedByteBuffer);
+            return decompressionSnappy(byteBuffer, targetBuffer);
         } else {
             throw new IllegalArgumentException("compression type not found, id " + id());
         }

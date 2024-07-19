@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.records.Records;
@@ -46,11 +46,11 @@ public class CollectionFunction extends AbstractFunction {
     }
 
     @Override
-    public void process(GroupOffset groupOffset, Iterator<Records> iterator) {
+    public void process(Offset offset, Iterator<Records> iterator) {
         while (iterator.hasNext()) {
             history.add(iterator.next());
         }
-        commit(groupOffset, null);
+        commit(offset);
     }
 
     @Override

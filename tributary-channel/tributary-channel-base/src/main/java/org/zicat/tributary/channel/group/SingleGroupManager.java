@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.channel.group;
 
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 
 import java.io.IOException;
 
@@ -31,23 +31,24 @@ public interface SingleGroupManager extends GroupManager {
      * @param groupId groupId
      * @return GroupOffset
      */
-    GroupOffset committedGroupOffset(String groupId);
+    Offset committedOffset(String groupId);
 
     @Override
-    default GroupOffset committedGroupOffset(String groupId, int partition) {
-        return committedGroupOffset(groupId);
+    default Offset committedOffset(String groupId, int partition) {
+        return committedOffset(groupId);
     }
 
     /**
      * commit group offset without partition.
      *
-     * @param groupOffset groupOffset
+     * @param groupId groupId
+     * @param offset offset
      * @throws IOException IOException
      */
-    void commit(GroupOffset groupOffset) throws IOException;
+    void commit(String groupId, Offset offset) throws IOException;
 
     @Override
-    default void commit(int partition, GroupOffset groupOffset) throws IOException {
-        commit(groupOffset);
+    default void commit(int partition, String groupId, Offset offset) throws IOException {
+        commit(groupId, offset);
     }
 }

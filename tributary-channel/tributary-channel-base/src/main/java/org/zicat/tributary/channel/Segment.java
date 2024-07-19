@@ -183,20 +183,21 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * <p>if read position is over {@link Segment#position} and not readonly, block wait for writing
      * thread wake up.
      *
-     * @param blockGroupOffset offset in SegmentStorage
+     * @param blockReaderOffset offset in SegmentStorage
      * @param time block time
      * @param unit time unit
      * @return return null if eof or timeout, else return data
      * @throws IOException IOException when read storage
      * @throws InterruptedException InterruptedException
      */
-    public BlockGroupOffset readBlock(BlockGroupOffset blockGroupOffset, long time, TimeUnit unit)
+    public BlockReaderOffset readBlock(
+            BlockReaderOffset blockReaderOffset, long time, TimeUnit unit)
             throws IOException, InterruptedException {
 
         final long readablePosition = position();
-        final long offset = legalOffset(blockGroupOffset.offset());
+        final long offset = legalOffset(blockReaderOffset.offset());
         if (offset < readablePosition) {
-            return read(blockGroupOffset, readablePosition);
+            return read(blockReaderOffset, readablePosition);
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -205,41 +206,41 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
                 if (time == 0) {
                     readable.await();
                 } else if (!readable.await(time, unit)) {
-                    return blockGroupOffset.reset();
+                    return blockReaderOffset.reset();
                 }
             } else if (offset >= position()) {
-                return blockGroupOffset.reset();
+                return blockReaderOffset.reset();
             }
         } finally {
             lock.unlock();
         }
-        return read(blockGroupOffset, position());
+        return read(blockReaderOffset, position());
     }
 
     /**
      * read from block offset.
      *
-     * @param blockGroupOffset blockGroupOffset
+     * @param blockReaderOffset blockGroupOffset
      * @param limitOffset limitOffset
      * @throws IOException IOException
      */
-    public BlockGroupOffset read(BlockGroupOffset blockGroupOffset, long limitOffset)
+    public BlockReaderOffset read(BlockReaderOffset blockReaderOffset, long limitOffset)
             throws IOException {
 
-        blockGroupOffset = blockGroupOffset.skipOffset(legalOffset(blockGroupOffset.offset()));
-        long offset = blockGroupOffset.offset();
+        blockReaderOffset = blockReaderOffset.skipOffset(legalOffset(blockReaderOffset.offset()));
+        long offset = blockReaderOffset.offset();
 
         if (offset >= limitOffset) {
-            blockGroupOffset.reset();
-            return blockGroupOffset;
+            blockReaderOffset.reset();
+            return blockReaderOffset;
         }
 
-        final BlockGroupOffset inCache;
-        if (bCache != null && (inCache = bCache.find(blockGroupOffset)) != null) {
+        final BlockReaderOffset inCache;
+        if (bCache != null && (inCache = bCache.find(blockReaderOffset)) != null) {
             return inCache;
         }
 
-        final Block block = blockGroupOffset.block();
+        final Block block = blockReaderOffset.blockReader();
         final ByteBuffer headBuf = reAllocate(block.reusedBuf(), BLOCK_HEAD_SIZE);
 
         readFull(headBuf, offset);
@@ -248,19 +249,19 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
         if (offset >= limitOffset) {
             LOG.warn("read block head over limit, " + OFFSET_MESSAGE, offset, limitOffset);
-            return skip2TargetOffset(blockGroupOffset, limitOffset, headBuf);
+            return skip2TargetOffset(blockReaderOffset, limitOffset, headBuf);
         }
 
         final int dataLength = headBuf.getInt();
         if (dataLength <= 0) {
             LOG.warn("data length is less than 0, real value {}", dataLength);
-            return skip2TargetOffset(blockGroupOffset, limitOffset, headBuf);
+            return skip2TargetOffset(blockReaderOffset, limitOffset, headBuf);
         }
 
         final long finalOffset = dataLength + offset;
         if (finalOffset > limitOffset) {
             LOG.warn("read block body over limit, " + OFFSET_MESSAGE, finalOffset, limitOffset);
-            return skip2TargetOffset(blockGroupOffset, limitOffset, headBuf);
+            return skip2TargetOffset(blockReaderOffset, limitOffset, headBuf);
         }
 
         final ByteBuffer reusedBuf = reAllocate(block.reusedBuf(), dataLength << 1, dataLength);
@@ -268,18 +269,18 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         reusedBuf.flip();
         final ByteBuffer resultBuf = compression.decompression(reusedBuf, block.resultBuf());
         final long readBytes = dataLength + BLOCK_HEAD_SIZE;
-        final BlockReader bufferReader = new BlockReader(resultBuf, reusedBuf, readBytes);
-        return blockGroupOffset.newOffsetReader(finalOffset, bufferReader);
+        final BlockReader blockReader = new BlockReader(resultBuf, reusedBuf, readBytes);
+        return blockReaderOffset.newOffsetReader(finalOffset, blockReader);
     }
 
     /**
-     * check groupOffset whether in this segment.
+     * check offset whether in this segment.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return boolean match
      */
-    public final boolean match(Offset groupOffset) {
-        return groupOffset != null && this.segmentId() == groupOffset.segmentId();
+    public final boolean match(Offset offset) {
+        return offset != null && this.segmentId() == offset.segmentId();
     }
 
     /**
@@ -385,17 +386,14 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * if group offset segment is null or more than current segment than return 0, if group offset
      * segment equals return position - offset else return position.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return long lag
      */
-    public final long lag(Offset groupOffset) {
-        if (groupOffset == null
-                || groupOffset.segmentId() < 0
-                || groupOffset.segmentId() > this.segmentId()) {
+    public final long lag(Offset offset) {
+        if (offset == null || offset.segmentId() < 0 || offset.segmentId() > this.segmentId()) {
             return 0L;
         }
-        final long offset = legalOffset(groupOffset.offset());
-        return match(groupOffset) ? Math.max(0, position() - offset) : position();
+        return match(offset) ? Math.max(0, position() - legalOffset(offset.offset())) : position();
     }
 
     /**
@@ -447,14 +445,14 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     /**
      * skip to target offset with empty block.
      *
-     * @param blockGroupOffset blockGroupOffset
+     * @param blockReaderOffset blockGroupOffset
      * @param newOffset newOffset
      * @param reusedBuf reusedBuf
      * @return BlockGroupOffset
      */
-    private static BlockGroupOffset skip2TargetOffset(
-            BlockGroupOffset blockGroupOffset, long newOffset, ByteBuffer reusedBuf) {
-        blockGroupOffset.block().reset().reusedBuf(reusedBuf);
-        return blockGroupOffset.skip2TargetOffset(newOffset);
+    private static BlockReaderOffset skip2TargetOffset(
+            BlockReaderOffset blockReaderOffset, long newOffset, ByteBuffer reusedBuf) {
+        blockReaderOffset.blockReader().reset().reusedBuf(reusedBuf);
+        return blockReaderOffset.skip2TargetOffset(newOffset);
     }
 }

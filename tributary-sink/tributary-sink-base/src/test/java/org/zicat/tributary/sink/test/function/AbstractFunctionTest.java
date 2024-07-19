@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
@@ -35,22 +35,12 @@ public class AbstractFunctionTest {
     @Test
     public void testFlush() throws Exception {
 
-        final GroupOffset startGroupOffset = new GroupOffset(0, 0, "g1");
-        try (final MockFunction function = createFunction()) {
-            final AtomicInteger callback = new AtomicInteger();
-            function.commit(
-                    startGroupOffset.skipNextSegmentHead(),
-                    () -> {
-                        callback.incrementAndGet();
-                        return true;
-                    });
+        final Offset startOffset = new Offset(0, 0);
+        final AtomicInteger callback = new AtomicInteger();
+        try (final MockFunction function = createFunction(callback)) {
+            function.commit(startOffset.skipNextSegmentHead());
             Assert.assertEquals(1, callback.get());
-            function.commit(
-                    startGroupOffset.skipNextSegmentHead(),
-                    () -> {
-                        callback.incrementAndGet();
-                        return true;
-                    });
+            function.commit(startOffset.skipNextSegmentHead());
             Assert.assertEquals(2, callback.get());
         }
     }
@@ -60,11 +50,15 @@ public class AbstractFunctionTest {
      *
      * @return MockFunction
      */
-    private MockFunction createFunction() throws Exception {
-        final MockFunction function = new MockFunction();
-        final GroupOffset startGroupOffset = new GroupOffset(0, 0, "g1");
+    private MockFunction createFunction(AtomicInteger callback) throws Exception {
+        final MockFunction function = new MockFunction(callback);
         final ContextBuilder builder =
-                ContextBuilder.newBuilder().startGroupOffset(startGroupOffset).partitionId(1);
+                ContextBuilder.newBuilder()
+                        .id("1")
+                        .groupId("g1")
+                        .topic("t1")
+                        .startOffset(Offset.ZERO)
+                        .partitionId(1);
         final Context context = builder.build();
         function.open(context);
         return function;
@@ -73,8 +67,20 @@ public class AbstractFunctionTest {
     /** MockFunction. */
     private static class MockFunction extends AbstractFunction {
 
+        public final AtomicInteger callback;
+
+        public MockFunction(AtomicInteger callback) {
+            this.callback = callback;
+        }
+
         @Override
-        public void process(GroupOffset groupOffset, Iterator<Records> iterator) {}
+        public void process(Offset offset, Iterator<Records> iterator) {}
+
+        @Override
+        public void commit(Offset newCommittableOffset) {
+            callback.incrementAndGet();
+            super.commit(newCommittableOffset);
+        }
 
         @Override
         public void close() {}

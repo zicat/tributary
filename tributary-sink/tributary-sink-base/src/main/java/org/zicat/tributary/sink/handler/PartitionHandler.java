@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.channel.GroupOffset;
+import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -47,9 +47,9 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     protected final Integer partitionId;
     protected final FunctionFactory functionFactory;
     protected final SinkGroupConfig sinkGroupConfig;
-    protected final GroupOffset startOffset;
+    protected final Offset startOffset;
     protected final AtomicBoolean closed;
-    private GroupOffset commitOffsetWaterMark;
+    private Offset commitOffsetWaterMark;
 
     public PartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
@@ -59,7 +59,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         this.sinkGroupConfig = sinkGroupConfig;
         this.functionFactory =
                 findFactory(sinkGroupConfig.functionIdentity(), FunctionFactory.class);
-        this.startOffset = channel.committedGroupOffset(groupId, partitionId);
+        this.startOffset = channel.committedOffset(groupId, partitionId);
         this.commitOffsetWaterMark = startOffset;
         this.closed = new AtomicBoolean(false);
         setName(threadName());
@@ -82,7 +82,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      *
      * @return GroupOffset
      */
-    public abstract GroupOffset committableOffset();
+    public abstract Offset committableOffset();
 
     /**
      * create thread name.
@@ -96,24 +96,23 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     /**
      * process.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @param iterator iterator
      */
-    public abstract void process(GroupOffset groupOffset, Iterator<byte[]> iterator)
-            throws Exception;
+    public abstract void process(Offset offset, Iterator<byte[]> iterator) throws Exception;
 
     /**
      * commit file offset.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      */
-    protected void commit(GroupOffset groupOffset) {
-        if (groupOffset == null) {
+    protected void commit(Offset offset) {
+        if (offset == null) {
             return;
         }
         try {
-            channel.commit(partitionId, groupOffset);
-            commitOffsetWaterMark = channel.committedGroupOffset(groupId, partitionId);
+            channel.commit(partitionId, groupId, offset);
+            commitOffsetWaterMark = channel.committedOffset(groupId, partitionId);
         } catch (Throwable e) {
             LOG.warn("commit fail", e);
         }
@@ -128,7 +127,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    protected RecordsResultSet poll(GroupOffset groupOffset, long idleTimeMillis)
+    protected RecordsResultSet poll(Offset groupOffset, long idleTimeMillis)
             throws IOException, InterruptedException {
         final long waitTime = idleTimeMillis <= 0 ? DEFAULT_WAIT_TIME_MILLIS : idleTimeMillis;
         return channel.poll(partitionId, groupOffset, waitTime, TimeUnit.MILLISECONDS);
@@ -161,7 +160,8 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
                     ContextBuilder.newBuilder()
                             .id(id == null ? getSinHandlerId() : id)
                             .partitionId(partitionId)
-                            .startGroupOffset(startOffset)
+                            .startOffset(startOffset)
+                            .groupId(groupId)
                             .topic(channel.topic());
             builder.addAll(sinkGroupConfig);
             function.open(builder.build());
@@ -183,11 +183,11 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
     /**
      * get lag by group offset.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return long lag
      */
-    public long lag(GroupOffset groupOffset) {
-        return channel.lag(partitionId, groupOffset);
+    public long lag(Offset offset) {
+        return channel.lag(partitionId, offset);
     }
 
     /**
@@ -195,7 +195,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      *
      * @return GroupOffset
      */
-    public GroupOffset commitOffsetWaterMark() {
+    public Offset commitOffsetWaterMark() {
         return commitOffsetWaterMark;
     }
 }
