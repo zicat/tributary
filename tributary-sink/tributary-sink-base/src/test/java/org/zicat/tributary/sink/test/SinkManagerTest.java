@@ -72,7 +72,7 @@ public class SinkManagerTest {
                     SinkGroupConfigBuilder.newBuilder()
                             .handlerIdentity("direct")
                             .functionIdentity("assertCount");
-            builder.addCustomProperty(OPTION_ASSERT_COUNT.key(), dataSize);
+            builder.addCustomProperty(OPTION_ASSERT_COUNT, dataSize);
             final SinkGroupConfig sinkGroupConfig = builder.build();
             // waiting source threads finish and flush
             final List<SinkGroupManager> groupManagers = new ArrayList<>();

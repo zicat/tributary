@@ -42,7 +42,6 @@ import static org.zicat.tributary.source.utils.SourceHeaders.sourceHeaders;
 /** HttpMessageDecoder. */
 public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-    private static final String ENCODE = StandardCharsets.UTF_8.name();
     private static final byte[] EMPTY = new byte[0];
     private static final ObjectMapper MAPPER =
             new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -63,18 +62,19 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
 
     public static final String RESPONSE_BAD_METHOD = "only support post request";
     private static final String HTTP_QUERY_KEY_TOPIC = "topic";
+    private static final String HTTP_QUERY_KEY_PARTITION = "partition";
     public static final String RESPONSE_BAD_TOPIC_NOT_IN_PARAMS =
             HTTP_QUERY_KEY_TOPIC + " not found in params";
 
     public static final String RESPONSE_BAD_JSON_PARSE_FAIL = "json body parse to records fail";
 
     private final AbstractNettySource source;
-    private final int partition;
     private final String path;
+    private final int defaultPartition;
 
-    public HttpMessageDecoder(AbstractNettySource source, int partition, String path) {
+    public HttpMessageDecoder(AbstractNettySource source, int defaultPartition, String path) {
         this.source = source;
-        this.partition = partition;
+        this.defaultPartition = defaultPartition;
         this.path = path;
     }
 
@@ -115,7 +115,13 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             badRequestResponse(ctx, RESPONSE_BAD_JSON_PARSE_FAIL);
             return;
         }
-        source.append(partition, new DefaultRecords(topic, recordsHeader, records));
+
+        final String dataPartition = pathParams.params().get(HTTP_QUERY_KEY_PARTITION);
+        final int realPartition =
+                dataPartition == null
+                        ? defaultPartition
+                        : Integer.parseInt(dataPartition) % source.partition();
+        source.append(realPartition, new DefaultRecords(topic, recordsHeader, records));
         okResponse(ctx);
     }
 

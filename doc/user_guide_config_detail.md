@@ -78,25 +78,31 @@ source.s1.netty.decoder=lineDecoder
 | netty.idle    | 120sec        | duration                                                 | the idle time to close the socket                                                                                                                                                                                                |
 | netty.decoder | lengthDecoder | enum[lengthDecoder,lineDecoder,kafkaDecoder,httpDecoder] | the parser of network streaming                                                                                                                                                                                                  |
 
-Note：
+### Netty Decoder
 
-1. Different netty sources must use different value of netty.port.
+The `netty.decoder` configuration is used to parse the streaming records received by the Netty. The
+supported decoders are as follows:
 
-2. The lineDecoder parses streaming records line by line, making it more suitable for scenarios
-   where telnet is used for demonstrations.
+#### lineDecoder
 
-3. The lengthDecoder parses streaming records by length-value like below, making it more suitable
-   for most scenarios.
+The lineDecoder parses streaming records line by line, making it more suitable for scenarios
+where telnet is used for demonstrations.
 
-   ![image](picture/line_decoder.png)
+#### lengthDecoder
 
-   Tributary provide the lengthDecoder java
-   client [LengthDecoderClient](../sample-code/src/main/java/org/zicat/tributary/demo/client/LengthDecoderClient.java)
-   for reference.
+The lengthDecoder parses streaming records by length-value like below, making it more suitable
+for most scenarios.
+![image](picture/line_decoder.png)
 
-4. The kafkaDecoder parses streaming records
-   by [kafka-producer-protocol](https://kafka.apache.org/protocol#The_Messages_Produce). It supports
-   more configuration as follows:
+Tributary provide the lengthDecoder java
+client [LengthDecoderClient](../sample-code/src/main/java/org/zicat/tributary/demo/client/LengthDecoderClient.java)
+for reference.
+
+#### [kafkaDecoder](#kafkaDecoder)
+
+The kafkaDecoder parses streaming records
+by [kafka-producer-protocol](https://kafka.apache.org/protocol#The_Messages_Produce). It supports
+more configuration as follows:
 
 | key                                                | default     | type        | describe                                                                                                                                                                                                        |
 |----------------------------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -111,13 +117,26 @@ Note：
 | netty.decoder.kafka.sasl.plain                     | false       | bool        | the security switch whether open sasl plain                                                                                                                                                                     |
 | netty.decoder.kafka.sasl.plain.usernames           | null        | string      | the plain users configuration, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                                              |
 
-5. The httpDecoder parses streaming records by http protocol. It supports more configuration as
-   follows:
+#### [httpDecoder](#httpDecoder)
+
+The httpDecoder parses streaming records by http protocol. It supports more configuration as
+follows:
 
 | key                                   | default | type   | describe                                                                                                                   |
 |---------------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------------|
 | netty.decoder.http.path               | null    | string | the http path to match, if null means match any path. If the http path not matched, will return http 400 code(bad request) |
 | netty.decoder.http.content.length.max | 16mb    | int    | the limited content length, the http body over this will refused                                                           |
+
+The http request demo as follows, before send request please start tributary
+with [http source config](../sample-code/src/main/resources/application-http-source-print-sink.properties)
+first:
+
+```shell
+$ curl -X POST http://localhost:8200?topic=my_topic&partition=10 \
+     -H "Content-Type: application/json; charset=UTF-8" \
+     -H "my_records_header: hv1" \
+     -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i
+```
 
 ## Channel
 
@@ -200,23 +219,25 @@ sink.group_1.function.id=hdfs
 sink.group_2.partition.retain.max.bytes=100gb
 sink.group_2.partition.concurrent=3
 sink.group_2.function.id=kafka
+sink.group_3.partition.retain.max.bytes=100gb
+sink.group_3.function.id=hbase
 ``` 
 
 ### Common Config
 
-| key                           | default | type                   | describe                                                                                                                                         |
-|-------------------------------|---------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| partition.retain.max.bytes    |         | bytes                  | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful |
-| partition.group.commit.period | 30sec   | duration               | the period to commit consume group id                                                                                                            |
-| partition.concurrent          | 1       | int(number)            | the threads to consume one partition data from channel                                                                                           |  
-| function.id                   |         | enum[print,kafka,hdfs] | the function identity that configure how to consume records                                                                                      |
+| key                           | default | type                         | describe                                                                                                                                         |
+|-------------------------------|---------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| partition.retain.max.bytes    |         | bytes                        | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful |
+| partition.group.commit.period | 30sec   | duration                     | the period to commit consume group id                                                                                                            |
+| partition.concurrent          | 1       | int(number)                  | the threads to consume one partition data from channel                                                                                           |  
+| function.id                   |         | enum[print,kafka,hdfs,hbase] | the function identity that configure how to consume records                                                                                      |
 
 Note:
 
 1. User can customize functions by
    implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
 
-### Sink HDFS Detail
+### Sink HDFS
 
 ```properties
 sink.group_1.sink.path=/tmp/test/cache
@@ -244,9 +265,9 @@ sink.group_1.idle.trigger=60sec
 | writer.parquet.compression.codec | snappy      | string      | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                         | 
 | idle.trigger                     | 30sec       | duration    | the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java) |
 
-[GOTO HDFS Sink for more details](../tributary-sink/tributary-sink-hdfs/README.md)
+[more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
-### Sink Kafka Detail
+### Sink Kafka
 
 ```properties
 sink.group_2.topic=test_topic
@@ -271,6 +292,38 @@ Note:
 
 2. The topic support param of ${topic} like dispatcher_proxy_sink_${topic} to sink data to specify
    topic setting by source site.
+
+### Sink HBase
+
+```properties
+sink.group_3.hbase-site-xml.path=/tmp/hbase-site.xml
+sink.group_3.table.name=table_test
+sink.group_3.table.family.name=info
+sink.group_3.table.column.value.name=value
+sink.group_3.table.column.topic.name=topic
+sink.group_3.table.column.head.name.prefix=head_
+```
+
+| key                           | default | type   | describe                                                                                                                                    |
+|-------------------------------|---------|--------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| hbase-site-xml.path           | null    | string | the hbase-site.xml path, supports file path or classpath, null means load files named `hbase-default.xml` and `hbase-site.xml` in classpath |
+| table.name                    |         | string | the hbase table to write                                                                                                                    |
+| table.family.name             | info    | string | the hbase table column family                                                                                                               |
+| table.column.value.name       | value   | string | the hbase table column name for storing value                                                                                               |
+| table.column.topic.name       | topic   | string | the hbase table column name for storing topic                                                                                               |
+| table.column.head.name.prefix | head_   | string | the hbase table column name prefix for storing headers, the real column name is {table.column.head.name.prefix}+{head.key}                  |
+
+Note:
+
+1. HbaseSink
+   request [Record](../tributary-common/src/main/java/org/zicat/tributary/common/records/Record.java)
+   to has key.
+
+   The record without key will be filtered. User can watch how many records are
+   filtered by metrics key `sink_hbase_discard_counter`.
+
+2. The key-supported sources
+   include [kafkaDecoder](#kafkadecoder) and [httpDecoder](#httpDecoder).
 
 ## The complete demo config
 
@@ -347,4 +400,11 @@ sink.group_2.kafka.buffer.memory=134217728
 sink.group_2.kafka.linger.ms=1000
 sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
+
+sink.group_3.hbase-site-xml.path=/tmp/hbase-site.xml
+sink.group_3.table.name=table_test
+sink.group_3.table.family.name=info
+sink.group_3.table.column.value.name=value
+sink.group_3.table.column.topic.name=topic
+sink.group_3.table.column.head.name.prefix=head_
 ```       

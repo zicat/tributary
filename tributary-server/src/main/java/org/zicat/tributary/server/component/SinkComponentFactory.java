@@ -107,7 +107,7 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
         final String keyPrefix = groupId + ".";
         final ReadableConfig groupConfig = sinkConfig.filterAndRemovePrefixKey(keyPrefix);
         groupConfig.forEach(configBuilder::addCustomProperty);
-        configBuilder.addCustomProperty(OPTION_METRICS_HOST.key(), metricsHost);
+        configBuilder.addCustomProperty(OPTION_METRICS_HOST, metricsHost);
         return configBuilder;
     }
 

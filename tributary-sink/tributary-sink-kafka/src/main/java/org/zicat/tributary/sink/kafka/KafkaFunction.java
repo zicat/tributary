@@ -72,12 +72,11 @@ public class KafkaFunction extends AbstractFunction {
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
-        callback.checkState();
         int totalCount = 0;
         while (iterator.hasNext()) {
             totalCount += sendKafka(iterator.next());
         }
-        flush(offset);
+        flushAndCommit(offset);
         sinkCounterChild.inc(totalCount);
     }
 
@@ -141,12 +140,13 @@ public class KafkaFunction extends AbstractFunction {
     }
 
     /**
-     * try flush file offset.
+     * flush and commit offset.
      *
      * @param offset offset
      */
-    private void flush(Offset offset) {
+    protected void flushAndCommit(Offset offset) throws Exception {
         producer.flush();
+        callback.checkState();
         commit(offset);
     }
 

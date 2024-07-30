@@ -295,12 +295,11 @@ public class BucketWriterTest {
                 writer = new MockHDFSRecordsWriter();
             }
             ContextBuilder builder = new ContextBuilder();
-            builder.addCustomProperty(OPTION_ROLL_SIZE.key(), new MemorySize(rollSize));
-            builder.addCustomProperty(OPTION_MAX_RETRIES.key(), maxRetries);
-            builder.addCustomProperty(
-                    OPTION_WRITER_IDENTITY.key(), MockHDFSRecordsWriterFactory.ID);
-            builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER.key(), writer);
-            builder.addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC.key(), codeC);
+            builder.addCustomProperty(OPTION_ROLL_SIZE, new MemorySize(rollSize));
+            builder.addCustomProperty(OPTION_MAX_RETRIES, maxRetries);
+            builder.addCustomProperty(OPTION_WRITER_IDENTITY, MockHDFSRecordsWriterFactory.ID);
+            builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER, writer);
+            builder.addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC, codeC);
             builder.id("1").groupId("g1").topic("t1").startOffset(Offset.ZERO);
 
             return new BucketWriter(builder.build(), bucketPath, fileName) {

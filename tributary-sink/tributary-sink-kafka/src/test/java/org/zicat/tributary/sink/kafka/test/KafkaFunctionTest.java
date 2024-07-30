@@ -83,7 +83,7 @@ public class KafkaFunctionTest {
                             .groupId(groupId)
                             .startOffset(new Offset(0, 0))
                             .topic(topic);
-            builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
+            builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
             function.open(builder.build());
 
             final Offset groupOffset = new Offset(2, 0);
@@ -119,8 +119,8 @@ public class KafkaFunctionTest {
                             .groupId(groupId)
                             .startOffset(new Offset(0, 0))
                             .topic(topic);
-            builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
-            builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC.key(), "aa_${topic}");
+            builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
+            builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC, "aa_${topic}");
             function.open(builder.build());
             final Offset groupOffset = new Offset(2, 0);
             function.process(groupOffset, recordsList.iterator());

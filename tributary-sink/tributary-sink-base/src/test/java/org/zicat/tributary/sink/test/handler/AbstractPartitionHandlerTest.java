@@ -107,7 +107,7 @@ public class AbstractPartitionHandlerTest {
                 SinkGroupConfigBuilder.newBuilder()
                         .functionIdentity(AssertFunctionFactory.IDENTITY);
         // configuration maxRetainSize = 80 to skip segment
-        builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE.key(), 80L);
+        builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE, 80L);
         final SinkGroupConfig sinkGroupConfig = builder.build();
 
         AbstractPartitionHandler handler;
@@ -177,7 +177,7 @@ public class AbstractPartitionHandlerTest {
                     SinkGroupConfigBuilder.newBuilder()
                             .functionIdentity(AssertFunctionFactory.IDENTITY);
             // configuration maxRetainSize = 80 to skip segment
-            builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE.key(), 80L);
+            builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE, 80L);
 
             final SinkGroupConfig sinkGroupConfig = builder.build();
 

@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink;
 
+import org.zicat.tributary.common.ConfigOption;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,6 +38,20 @@ public class CustomConfigBuilder {
     public final CustomConfigBuilder addCustomProperty(String key, Object value) {
         customConfig.put(key, value);
         return this;
+    }
+
+    /**
+     * add custom properties.
+     *
+     * @param option option
+     * @param value value
+     * @return this
+     * @param <T> T
+     */
+    public final <T> CustomConfigBuilder addCustomProperty(ConfigOption<T> option, Object value) {
+        return addCustomProperty(
+                option.key(),
+                option.hasDefaultValue() && value == null ? option.defaultValue() : value);
     }
 
     /**

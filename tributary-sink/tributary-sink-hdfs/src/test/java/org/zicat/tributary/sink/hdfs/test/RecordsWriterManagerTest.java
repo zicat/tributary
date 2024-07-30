@@ -56,9 +56,9 @@ public class RecordsWriterManagerTest {
         final String bucket2 = "bucket_2";
         final MockHDFSRecordsWriter mockWriter = new MockHDFSRecordsWriter();
         final ContextBuilder builder = new ContextBuilder();
-        builder.addCustomProperty(OPTION_SINK_PATH.key(), bucketPath);
-        builder.addCustomProperty(OPTION_WRITER_IDENTITY.key(), MockHDFSRecordsWriterFactory.ID);
-        builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER.key(), mockWriter);
+        builder.addCustomProperty(OPTION_SINK_PATH, bucketPath);
+        builder.addCustomProperty(OPTION_WRITER_IDENTITY, MockHDFSRecordsWriterFactory.ID);
+        builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER, mockWriter);
         builder.topic("t1").groupId("g1").startOffset(Offset.ZERO).id("1");
         try (final RecordsWriterManager recordsWriterManager = new DefaultRecordsWriterManager()) {
             recordsWriterManager.open(builder.build());

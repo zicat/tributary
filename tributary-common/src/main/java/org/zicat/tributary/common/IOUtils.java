@@ -415,4 +415,14 @@ public class IOUtils {
         }
         byteBuffer.flip();
     }
+
+    /**
+     * get classpath resource.
+     *
+     * @param resource resource
+     * @return InputStream
+     */
+    public static InputStream getClasspathResource(String resource) {
+        return Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
+    }
 }

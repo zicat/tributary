@@ -30,7 +30,7 @@ public class HttpSourcePrintSinkApplication {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         /*
-            curl -X POST http://localhost:8200/tributary/send?topic=my_topic    \
+            curl -X POST http://localhost:8200?topic=my_topic    \
                 -H "Content-Type: application/json; charset=UTF-8"              \
                 -H "my_records_header: hv1"                                     \
                 -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i

@@ -149,9 +149,13 @@ requirements and simplifying integration with [channels](../tributary-channel).
 ### Sink Models
 
 Channel supports configuring multiple partitions, and the partitions are independent of each other.
-Based on this background, the sink model includes two types: direct and multi-threads.
+Based on this background, the sink model includes two types: single-thread and multi-threads.
 
-#### Direct Model
+User can choose models by config `partition.concurrent` in application.properties.
+If `partition.concurrent` is 1, the sink will use single-thread model, otherwise, the sink will
+use multi-threads model.
+
+#### Single Thread Model
 
 In direct mode, partition and threads are bound one-to-one, making it suitable for scenarios where
 the consumption rate of a single thread is greater than the writing rate.
@@ -195,6 +199,8 @@ as [PrintFunction](../tributary-sink/tributary-sink-base/src/main/java/org/zicat
 [HDFSFunction](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSFunctionFactory.java)
 ,
 [KafkaFunction](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/KafkaFunctionFactory.java)
+,
+[HBaseFunction](../tributary-sink/tributary-sink-hbase/src/main/java/org/zicat/tributary/sink/hbase/HBaseFunctionFactory.java)
 .
 
 #### Trigger

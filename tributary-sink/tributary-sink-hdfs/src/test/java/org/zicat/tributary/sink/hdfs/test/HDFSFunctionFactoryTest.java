@@ -16,23 +16,27 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.hdfs;
+package org.zicat.tributary.sink.hdfs.test;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
+import org.zicat.tributary.sink.hdfs.HDFSFunction;
+import org.zicat.tributary.sink.hdfs.HDFSFunctionFactory;
 
-/** HDFSFunctionFactory. */
-public class HDFSFunctionFactory implements FunctionFactory {
+import java.io.IOException;
 
-    public static final String IDENTITY = "hdfs";
+/** HDFSFunctionFactoryTest. */
+public class HDFSFunctionFactoryTest {
 
-    @Override
-    public Function create() {
-        return new HDFSFunction();
-    }
-
-    @Override
-    public String identity() {
-        return IDENTITY;
+    @Test
+    public void test() throws IOException {
+        try (Function f =
+                SpiFactory.findFactory(HDFSFunctionFactory.IDENTITY, FunctionFactory.class)
+                        .create()) {
+            Assert.assertEquals(HDFSFunction.class, f.getClass());
+        }
     }
 }

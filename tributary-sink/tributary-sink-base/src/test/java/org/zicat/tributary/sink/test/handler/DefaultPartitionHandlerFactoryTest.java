@@ -43,14 +43,14 @@ public class DefaultPartitionHandlerFactoryTest {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
                             .functionIdentity(PrintFunctionFactory.IDENTITY);
-            builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS.key(), 1);
+            builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, 1);
             try (AbstractPartitionHandler handler =
                     factory.createHandler(groupId, channel, 0, builder.build())) {
                 handler.open();
                 Assert.assertEquals(DirectPartitionHandler.class, handler.getClass());
             }
 
-            builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS.key(), 2);
+            builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, 2);
             try (AbstractPartitionHandler handler =
                     factory.createHandler(groupId, channel, 0, builder.build())) {
                 handler.open();

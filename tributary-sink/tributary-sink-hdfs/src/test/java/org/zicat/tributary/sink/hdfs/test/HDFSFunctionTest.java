@@ -110,13 +110,13 @@ public class HDFSFunctionTest {
                             .groupId("g1")
                             .startOffset(Offset.ZERO)
                             .topic(topic);
-            builder.addCustomProperty(OPTION_SINK_PATH.key(), DIR.getCanonicalFile().getPath())
-                    .addCustomProperty(OPTION_IDLE_TRIGGER.key(), 10000)
-                    .addCustomProperty(OPTION_BUCKET_DATE_FORMAT.key(), timeFormat)
-                    .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE.key(), timeZoneId)
-                    .addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC.key(), "snappy")
-                    .addCustomProperty(OPTION_CLOCK.key(), mockClock);
-            builder.addCustomProperty(OPTION_METRICS_HOST.key(), "localhost");
+            builder.addCustomProperty(OPTION_SINK_PATH, DIR.getCanonicalFile().getPath())
+                    .addCustomProperty(OPTION_IDLE_TRIGGER, 10000)
+                    .addCustomProperty(OPTION_BUCKET_DATE_FORMAT, timeFormat)
+                    .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE, timeZoneId)
+                    .addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC, "snappy")
+                    .addCustomProperty(OPTION_CLOCK, mockClock);
+            builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
 
             function.open(builder.build());
 

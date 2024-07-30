@@ -1,0 +1,10 @@
+<configuration>
+    <property>
+        <name>aaa</name>
+        <value>10</value>
+    </property>
+    <property>
+        <name>hbase.client.request.controller.impl</name>
+        <value>cc.bb</value>
+    </property>
+</configuration>

@@ -41,7 +41,7 @@ public class MultiThreadPartitionHandlerTest {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         int threads = 0;
-        builder.addCustomProperty(OPTION_THREADS.key(), threads);
+        builder.addCustomProperty(OPTION_THREADS, threads);
         try (Channel channel = MemoryChannelTestUtils.createChannel(topic, groupId)) {
             try (MultiThreadPartitionHandler handler =
                     new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
@@ -53,7 +53,7 @@ public class MultiThreadPartitionHandlerTest {
                 }
             }
             threads = 10;
-            builder.addCustomProperty(OPTION_THREADS.key(), threads);
+            builder.addCustomProperty(OPTION_THREADS, threads);
             try (MultiThreadPartitionHandler handler2 =
                     new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
                 handler2.open();
@@ -70,7 +70,7 @@ public class MultiThreadPartitionHandlerTest {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         final int threads = 4;
-        builder.addCustomProperty(OPTION_THREADS.key(), threads);
+        builder.addCustomProperty(OPTION_THREADS, threads);
         try (Channel channel = MemoryChannelTestUtils.createChannel(topic, groupId);
                 MultiThreadPartitionHandler handler =
                         new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
