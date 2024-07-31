@@ -172,7 +172,7 @@ public class FileGroupManager extends MemoryGroupManager {
         final Map<String, Offset> result = new HashMap<>(existsGroups);
         // AllGroups only contains new groups after call method parseExistsGroups.
         // Add new group with default offset to result ensure all groupIds has one offset.
-        allGroups.forEach(groupId -> result.put(groupId, defaultOffset()));
+        allGroups.forEach(groupId -> result.put(groupId, GroupManager.uninitializedOffset()));
         if (result.size() != cacheExpectedSize) {
             throw new TributaryRuntimeException(
                     "cache size must equal groupIds size, expected size = "

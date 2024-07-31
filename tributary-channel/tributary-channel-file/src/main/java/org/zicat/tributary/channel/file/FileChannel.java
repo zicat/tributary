@@ -21,6 +21,7 @@ package org.zicat.tributary.channel.file;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
+import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.File;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
@@ -58,6 +60,8 @@ public class FileChannel extends AbstractChannel<FileSegment> {
     private final CompressionType compressionType;
     private final BlockWriter blockWriter;
     private final long flushPageCacheSize;
+    private final boolean appendSyncWait;
+    private final long appendSyncWaitTimeoutMs;
 
     protected FileChannel(
             String topic,
@@ -66,13 +70,17 @@ public class FileChannel extends AbstractChannel<FileSegment> {
             Long segmentSize,
             CompressionType compressionType,
             File dir,
-            int blockCacheCount) {
+            int blockCacheCount,
+            boolean appendSyncWait,
+            long appendSyncWaitTimeoutMs) {
         super(topic, blockCacheCount, factory);
         this.blockWriter = new BlockWriter(blockSize);
         this.flushPageCacheSize = blockSize * 10L;
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;
         this.dir = dir;
+        this.appendSyncWait = appendSyncWait;
+        this.appendSyncWaitTimeoutMs = appendSyncWaitTimeoutMs;
         createLastSegment();
     }
 
@@ -96,12 +104,21 @@ public class FileChannel extends AbstractChannel<FileSegment> {
     }
 
     @Override
-    protected boolean append2Segment(Segment segment, ByteBuffer byteBuffer) throws IOException {
-        final boolean appendSuccess = super.append2Segment(segment, byteBuffer);
-        if (appendSuccess && segment.cacheUsed() >= flushPageCacheSize) {
+    public void append(ByteBuffer byteBuffer) throws IOException, InterruptedException {
+        final AppendResult appendResult = innerAppend(byteBuffer);
+        if (appendSyncWait) {
+            appendResult.await2Storage(appendSyncWaitTimeoutMs, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @Override
+    protected AppendResult append2Segment(Segment segment, ByteBuffer byteBuffer)
+            throws IOException {
+        final AppendResult result = super.append2Segment(segment, byteBuffer);
+        if (result.appended() && segment.cacheUsed() >= flushPageCacheSize) {
             segment.flush(false);
         }
-        return appendSuccess;
+        return result;
     }
 
     /** load segments. */
@@ -132,6 +149,6 @@ public class FileChannel extends AbstractChannel<FileSegment> {
             }
         }
         initLastSegment(createSegment(maxSegment.segmentId() + 1));
-        cleanUp();
+        cleanUpExpiredSegments();
     }
 }

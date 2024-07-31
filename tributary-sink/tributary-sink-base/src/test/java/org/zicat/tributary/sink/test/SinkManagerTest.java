@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.zicat.tributary.sink.SinkGroupManager.KEY_SINK_LAG;
 import static org.zicat.tributary.sink.test.function.AssertCountFunction.OPTION_ASSERT_COUNT;
 
 /** SinkManager test. */
@@ -96,7 +97,10 @@ public class SinkManagerTest {
             sourceThread.forEach(Threads::joinQuietly);
             channel.flush();
             groupManagers.forEach(IOUtils::closeQuietly);
-            groupManagers.forEach(manager -> Assert.assertEquals(0, manager.lag()));
+            groupManagers.forEach(
+                    manager ->
+                            Assert.assertEquals(
+                                    0, manager.gaugeFamily().get(KEY_SINK_LAG).getValue(), 0.001));
         }
     }
 }

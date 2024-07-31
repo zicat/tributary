@@ -18,9 +18,6 @@
 
 package org.zicat.tributary.channel.file;
 
-import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
-import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.BlockWriter;
@@ -36,6 +33,9 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
 
 /** FileSegment storage data to file. */
 public class FileSegment extends Segment {
@@ -77,8 +77,8 @@ public class FileSegment extends Segment {
 
     @Override
     public void recycle() {
+        super.recycle();
         if (recycled.compareAndSet(false, true)) {
-            IOUtils.closeQuietly(this);
             final boolean deleted = file.delete();
             if (deleted) {
                 LOG.info("expired file " + file.getPath() + " deleted success");

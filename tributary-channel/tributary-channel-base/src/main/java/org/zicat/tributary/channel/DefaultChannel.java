@@ -35,7 +35,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     protected final AbstractChannelArrayFactory<C> factory;
     protected final C[] channels;
     protected final AtomicBoolean closed = new AtomicBoolean(false);
-    private Thread flushSegmentThread;
+    private final Thread flushSegmentThread;
 
     public DefaultChannel(AbstractChannelArrayFactory<C> factory, long flushPeriodMills)
             throws IOException {
@@ -43,11 +43,12 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
         if (channels == null || channels.length == 0) {
             throw new IllegalArgumentException("channels is null or empty");
         }
+        if (flushPeriodMills <= 0) {
+            throw new IllegalArgumentException("flush period is less than 0");
+        }
         this.factory = factory;
         this.channels = channels;
-        if (flushPeriodMills > 0) {
-            flushSegmentThread = startFlushSegmentThread(channels, closed, flushPeriodMills);
-        }
+        this.flushSegmentThread = startFlushSegmentThread(channels, closed, flushPeriodMills);
     }
 
     /**
@@ -107,7 +108,8 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public void append(int partition, ByteBuffer byteBuffer) throws IOException {
+    public void append(int partition, ByteBuffer byteBuffer)
+            throws IOException, InterruptedException {
         getPartitionChannel(partition).append(byteBuffer);
     }
 

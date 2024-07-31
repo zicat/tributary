@@ -102,7 +102,7 @@ public class AbstractPartitionHandlerTest {
     }
 
     @Test
-    public void testIllegalCommittableOffset() throws IOException {
+    public void testIllegalCommittableOffset() throws IOException, InterruptedException {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder()
                         .functionIdentity(AssertFunctionFactory.IDENTITY);
@@ -166,7 +166,7 @@ public class AbstractPartitionHandlerTest {
     }
 
     @Test
-    public void testMaxRetainPerPartition() throws IOException {
+    public void testMaxRetainPerPartition() throws IOException, InterruptedException {
 
         final AtomicBoolean skip = new AtomicBoolean(false);
         AbstractPartitionHandler handler;

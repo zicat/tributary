@@ -149,25 +149,26 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      */
     protected final AbstractFunction createFunction(String id) {
         final Function function = functionFactory.create();
+        if (!(function instanceof AbstractFunction)) {
+            throw new IllegalStateException(
+                    function.getClass().getName()
+                            + " must extends "
+                            + AbstractFunction.class.getName());
+        }
+        final AbstractFunction abstractFunction = (AbstractFunction) function;
+        final ContextBuilder builder =
+                ContextBuilder.newBuilder()
+                        .id(id == null ? getSinHandlerId() : id)
+                        .partitionId(partitionId)
+                        .startOffset(startOffset)
+                        .groupId(groupId)
+                        .topic(channel.topic());
+        builder.addAll(sinkGroupConfig);
         try {
-            if (!(function instanceof AbstractFunction)) {
-                throw new IllegalStateException(
-                        function.getClass().getName()
-                                + " must extends "
-                                + AbstractFunction.class.getName());
-            }
-            final ContextBuilder builder =
-                    ContextBuilder.newBuilder()
-                            .id(id == null ? getSinHandlerId() : id)
-                            .partitionId(partitionId)
-                            .startOffset(startOffset)
-                            .groupId(groupId)
-                            .topic(channel.topic());
-            builder.addAll(sinkGroupConfig);
-            function.open(builder.build());
-            return (AbstractFunction) function;
+            abstractFunction.open(builder.build());
+            return abstractFunction;
         } catch (Exception e) {
-            IOUtils.closeQuietly(function);
+            IOUtils.closeQuietly(abstractFunction);
             throw new IllegalStateException("open function fail", e);
         }
     }

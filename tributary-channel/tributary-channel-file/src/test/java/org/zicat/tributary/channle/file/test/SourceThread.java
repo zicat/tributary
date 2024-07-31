@@ -91,8 +91,8 @@ public class SourceThread extends Thread {
                     writeLength = 0;
                     start = System.currentTimeMillis();
                 }
-            } catch (IOException ioException) {
-                throw new TributaryRuntimeException(ioException);
+            } catch (IOException | InterruptedException e) {
+                throw new TributaryRuntimeException(e);
             }
         }
     }

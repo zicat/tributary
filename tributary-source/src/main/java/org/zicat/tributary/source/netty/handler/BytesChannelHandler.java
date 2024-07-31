@@ -42,7 +42,8 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) throws IOException {
+    protected void channelRead0(ChannelHandlerContext ctx, byte[] packet)
+            throws IOException, InterruptedException {
         final long receivedTs = System.currentTimeMillis();
         final Records records =
                 createBytesRecords(

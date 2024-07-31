@@ -27,6 +27,8 @@ import java.util.Set;
 /** GroupManager. @ThreadSafe */
 public interface GroupManager extends Closeable {
 
+    Offset UNINITIALIZED_OFFSET = new Offset(-1, -1);
+
     /**
      * get all group consume this topic.
      *
@@ -52,4 +54,13 @@ public interface GroupManager extends Closeable {
      * @throws IOException IOException
      */
     void commit(int partition, String groupId, Offset offset) throws IOException;
+
+    /**
+     * create default group offset.
+     *
+     * @return GroupOffset
+     */
+    static Offset uninitializedOffset() {
+        return UNINITIALIZED_OFFSET;
+    }
 }

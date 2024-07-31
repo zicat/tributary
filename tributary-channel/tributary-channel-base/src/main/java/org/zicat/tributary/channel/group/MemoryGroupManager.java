@@ -36,8 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MemoryGroupManager implements SingleGroupManager {
 
-    private static final Offset DEFAULT_OFFSET = new Offset(-1, -1);
-
     private final Map<String, Offset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -49,15 +47,6 @@ public class MemoryGroupManager implements SingleGroupManager {
             this.groups.add(entry.getKey());
         }
         minGroupOffset = minOffset(cache);
-    }
-
-    /**
-     * create default group offset.
-     *
-     * @return GroupOffset
-     */
-    public static Offset defaultOffset() {
-        return DEFAULT_OFFSET;
     }
 
     /**

@@ -29,39 +29,33 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.*;
-import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.Source;
+import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.source.AbstractSource;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zicat.tributary.source.utils.HostUtils.realHostAddress;
 
 /** AbstractNettySource. */
-public abstract class AbstractNettySource implements Source {
+public abstract class AbstractNettySource extends AbstractSource {
 
-    private static final Map<GaugeKey, GaugeFamily> empty = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(AbstractNettySource.class);
 
     protected final String host;
     protected int port;
     protected final int eventThreads;
-    protected final org.zicat.tributary.channel.Channel channel;
     protected final EventLoopGroup bossGroup;
     protected final EventLoopGroup workGroup;
     protected final ServerBootstrap serverBootstrap;
     protected List<Channel> channelList;
-    protected final ReadableConfig config;
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final List<String> hostNames;
-    protected final String sourceId;
 
     public AbstractNettySource(
             String sourceId,
@@ -70,12 +64,10 @@ public abstract class AbstractNettySource implements Source {
             int port,
             int eventThreads,
             org.zicat.tributary.channel.Channel channel) {
-        this.sourceId = sourceId;
-        this.config = config;
+        super(sourceId, config, channel);
         this.host = host;
         this.port = port;
         this.eventThreads = eventThreads;
-        this.channel = channel;
         this.hostNames = realHostAddress(host);
         this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
         this.workGroup = createWorkGroup(eventThreads);
@@ -195,32 +187,6 @@ public abstract class AbstractNettySource implements Source {
     }
 
     @Override
-    public void append(int partition, Records records) throws IOException {
-        try {
-            channel.append(partition, records.toByteBuffer());
-        } catch (IOException e) {
-            LOG.error("append data error, close source", e);
-            IOUtils.closeQuietly(this);
-            throw new IOException(e);
-        }
-    }
-
-    @Override
-    public void flush() throws IOException {
-        channel.flush();
-    }
-
-    @Override
-    public String topic() {
-        return channel.topic();
-    }
-
-    @Override
-    public int partition() {
-        return channel.partition();
-    }
-
-    @Override
     public void close() throws IOException {
         if (!closed.compareAndSet(false, true)) {
             return;
@@ -242,7 +208,7 @@ public abstract class AbstractNettySource implements Source {
         if (bossGroup != null) {
             bossGroup.shutdownGracefully();
         }
-        channel.flush();
+        super.close();
     }
 
     private String prettyHost(String host) {
@@ -268,15 +234,6 @@ public abstract class AbstractNettySource implements Source {
     }
 
     /**
-     * get config.
-     *
-     * @return config
-     */
-    public ReadableConfig getConfig() {
-        return config;
-    }
-
-    /**
      * get host names.
      *
      * @return host name.
@@ -292,15 +249,5 @@ public abstract class AbstractNettySource implements Source {
      */
     public int getEventThreads() {
         return eventThreads;
-    }
-
-    @Override
-    public String sourceId() {
-        return sourceId;
-    }
-
-    @Override
-    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
-        return empty;
     }
 }

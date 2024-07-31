@@ -103,17 +103,10 @@ public class SinkGroupManager implements Closeable {
 
     public Map<GaugeKey, GaugeFamily> gaugeFamily() {
         final Map<GaugeKey, GaugeFamily> families = new HashMap<>();
-        KEY_SINK_LAG.value(lag()).register(families);
+        KEY_SINK_LAG
+                .value(handlers.stream().mapToLong(AbstractPartitionHandler::lag).sum())
+                .register(families);
         return families;
-    }
-
-    /**
-     * get total consumer lag.
-     *
-     * @return lag
-     */
-    public long lag() {
-        return handlers.stream().mapToLong(AbstractPartitionHandler::lag).sum();
     }
 
     /**

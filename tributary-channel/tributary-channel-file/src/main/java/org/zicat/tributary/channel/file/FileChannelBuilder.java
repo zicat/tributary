@@ -44,6 +44,9 @@ public class FileChannelBuilder {
     protected CompressionType compressionType;
     protected Set<String> consumerGroups;
     protected long flushPeriodMills = 1000;
+
+    protected boolean appendSyncWait = false;
+    protected long appendSyncWaitTimeoutMs = 0;
     protected int blockCacheCount = OPTION_BLOCK_CACHE_PER_PARTITION_SIZE.defaultValue();
 
     /**
@@ -142,6 +145,28 @@ public class FileChannelBuilder {
     }
 
     /**
+     * set append sync wait.
+     *
+     * @param appendSyncWait appendSyncWait
+     * @return this
+     */
+    public FileChannelBuilder appendSyncWait(boolean appendSyncWait) {
+        this.appendSyncWait = appendSyncWait;
+        return this;
+    }
+
+    /**
+     * set append sync wait timeout ms.
+     *
+     * @param appendSyncWaitTimeoutMs appendSyncWaitTimeoutMs
+     * @return this
+     */
+    public FileChannelBuilder appendSyncWaitTimeoutMs(long appendSyncWaitTimeoutMs) {
+        this.appendSyncWaitTimeoutMs = appendSyncWaitTimeoutMs;
+        return this;
+    }
+
+    /**
      * build to channel.
      *
      * @return PartitionFileChannel
@@ -217,7 +242,9 @@ public class FileChannelBuilder {
                 segmentSize,
                 compressionType,
                 dir,
-                blockCacheCount);
+                blockCacheCount,
+                appendSyncWait,
+                appendSyncWaitTimeoutMs);
     }
 
     /**

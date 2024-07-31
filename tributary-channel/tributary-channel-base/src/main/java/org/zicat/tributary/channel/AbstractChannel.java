@@ -20,6 +20,7 @@ package org.zicat.tributary.channel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.channel.group.MemoryGroupManager;
 import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
@@ -37,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultOffset;
+import static org.zicat.tributary.channel.group.GroupManager.uninitializedOffset;
 
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
@@ -110,27 +111,41 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @throws IOException IOException
      */
     @Override
-    public void append(ByteBuffer byteBuffer) throws IOException {
+    public void append(ByteBuffer byteBuffer) throws IOException, InterruptedException {
+        innerAppend(byteBuffer);
+    }
 
+    /**
+     * append byte buffer.
+     *
+     * @param byteBuffer byteBuffer
+     * @return AppendResult
+     * @throws IOException IOException
+     */
+    protected AppendResult innerAppend(ByteBuffer byteBuffer) throws IOException {
         final S segment = this.latestSegment;
-        if (append2Segment(segment, byteBuffer)) {
-            return;
+        final AppendResult result = append2Segment(segment, byteBuffer);
+        if (result.appended()) {
+            return result;
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
             segment.readonly();
             final S retrySegment = this.latestSegment;
-            if (!retrySegment.append(byteBuffer)) {
-                retrySegment.readonly();
-                final long newSegmentId = retrySegment.segmentId() + 1L;
-                final S newSegment = createSegment(newSegmentId);
-                append2Segment(newSegment, byteBuffer);
-                writeBytes.addAndGet(latestSegment.position());
-                addSegment(newSegment);
-                this.latestSegment = newSegment;
-                newSegmentCondition.signalAll();
+            final AppendResult result2 = retrySegment.append(byteBuffer);
+            if (result2.appended()) {
+                return result2;
             }
+            retrySegment.readonly();
+            final long newSegmentId = retrySegment.segmentId() + 1L;
+            final S newSegment = createSegment(newSegmentId);
+            final AppendResult result3 = append2Segment(newSegment, byteBuffer);
+            writeBytes.addAndGet(latestSegment.position());
+            addSegment(newSegment);
+            this.latestSegment = newSegment;
+            newSegmentCondition.signalAll();
+            return result3;
         } finally {
             lock.unlock();
         }
@@ -143,7 +158,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @return boolean append
      * @throws IOException IOException
      */
-    protected boolean append2Segment(Segment segment, ByteBuffer byteBuffer) throws IOException {
+    protected AppendResult append2Segment(Segment segment, ByteBuffer byteBuffer)
+            throws IOException {
         return segment.append(byteBuffer);
     }
 
@@ -200,7 +216,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public Offset committedOffset(String groupId) {
         final Offset offset = groupManager.committedOffset(groupId);
-        return defaultOffset().equals(offset)
+        return uninitializedOffset().equals(offset)
                 ? new Offset(latestSegment.segmentId(), latestSegment.position())
                 : offset;
     }
@@ -212,7 +228,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             return;
         }
         groupManager.commit(groupId, offset);
-        cleanUp();
+        cleanUpExpiredSegments();
     }
 
     /**
@@ -304,8 +320,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     /** clean up old segment. */
-    @SuppressWarnings("resource")
-    protected void cleanUp() {
+    protected void cleanUpExpiredSegments() {
         final long minSegmentId = groupManager.getMinGroupOffset().segmentId();
         final List<S> expiredSegments = new ArrayList<>();
         for (Map.Entry<Long, S> entry : cache.entrySet()) {
@@ -316,8 +331,9 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             }
         }
         for (S segment : expiredSegments) {
-            cache.remove(segment.segmentId());
-            segment.recycle();
+            final S segmentInCache = cache.remove(segment.segmentId());
+            IOUtils.closeQuietly(segmentInCache);
+            segmentInCache.recycle();
         }
     }
 

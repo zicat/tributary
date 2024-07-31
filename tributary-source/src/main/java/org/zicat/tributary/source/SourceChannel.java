@@ -27,16 +27,16 @@ import java.io.IOException;
 public interface SourceChannel {
 
     /**
-     * append records to channel.
+     * append records to channel block.
      *
-     * <p>append operator only make sure put record to memory block or page cache.
+     * <p>append operator only make sure put record to memory block.
      *
      * <p>invoke {@link Channel#flush()} will flush logs from memory block and page cache to disk.
      *
      * @param partition partition
      * @throws IOException IOException
      */
-    void append(int partition, Records records) throws IOException;
+    void append(int partition, Records records) throws IOException, InterruptedException;
 
     /** flush block data and page cache data to disk. */
     void flush() throws IOException;

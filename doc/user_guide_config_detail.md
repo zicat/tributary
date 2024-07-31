@@ -51,7 +51,14 @@ source.s2.implement=netty
 Above are defined two sources named s1 and s2, in which s1 is bound to channel c1 and s2 is bound to
 channel c2, and their implementations are both Netty.
 
-The source must config the implement to receive data and parse to channel for sinks to consume.
+The source must config the implement to receive data, convert
+as [Records](../tributary-common/src/main/java/org/zicat/tributary/common/records/Records.java) and
+append to channel for sinks to consume.
+
+| key       | default | type   | describe                                                                                                      |
+|-----------|---------|--------|---------------------------------------------------------------------------------------------------------------|
+| channel   |         | string | the channel to append records                                                                                 |   
+| implement | netty   | string | the [SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java) identity |
 
 Tributary provide the
 [SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java)
@@ -70,18 +77,18 @@ source.s1.netty.idle=60sec
 source.s1.netty.decoder=lineDecoder
 ```
 
-| key           | default       | type                                                     | describe                                                                                                                                                                                                                         |
-|---------------|---------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host    | null          | string                                                   | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
-| netty.port    |               | int(number)                                              | the port to bind, range 1000-65535                                                                                                                                                                                               |
-| netty.threads | 10            | int(number)                                              | the count of netty event loop threads                                                                                                                                                                                            |
-| netty.idle    | 120sec        | duration                                                 | the idle time to close the socket                                                                                                                                                                                                |
-| netty.decoder | lengthDecoder | enum[lengthDecoder,lineDecoder,kafkaDecoder,httpDecoder] | the parser of network streaming                                                                                                                                                                                                  |
+| key           | default       | type        | describe                                                                                                                                                                                                                         |
+|---------------|---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.host    | null          | string      | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
+| netty.port    |               | int(number) | the port to bind, range 1000-65535                                                                                                                                                                                               |
+| netty.threads | 10            | int(number) | the count of netty event loop threads                                                                                                                                                                                            |
+| netty.idle    | 120sec        | duration    | the idle time to close the socket                                                                                                                                                                                                |
+| netty.decoder | lengthDecoder | enum        | the parser of network streaming                                                                                                                                                                                                  |
 
 ### Netty Decoder
 
-The `netty.decoder` configuration is used to parse the streaming records received by the Netty. The
-supported decoders are as follows:
+The `netty.decoder` configuration is used to parse the streaming records received by the Netty,
+Supported decoders are as follows:
 
 #### lineDecoder
 
@@ -176,15 +183,17 @@ channel.c2.block.cache.per.partition.size=1024
 
 ### File Config
 
-| key                            | default | type                   | describe                                                                                                                                                                                       |
-|--------------------------------|---------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                      |
-| compression                    | none    | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
-| segment.size                   | 4gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
-| partitions                     |         | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                        |
-| flush.period                   | 500ms   | duration               | the period time to async flush page cache to disk                                                                                                                                              |
-| groups.persist.period          | 30s     | duration               | the period time to async persist the committed group offset to disk                                                                                                                            |     
-| block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
+| key                            | default      | type                   | describe                                                                                                                                                                                       |
+|--------------------------------|--------------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block.size                     | 32kb         | bytes                  | the block size to store records in memory                                                                                                                                                      |
+| compression                    | none         | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
+| segment.size                   | 4gb          | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
+| partitions                     |              | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                        |
+| flush.period                   | 500ms        | duration               | the period time to async flush page cache to disk                                                                                                                                              |
+| groups.persist.period          | 30s          | duration               | the period time to async persist the committed group offset to disk                                                                                                                            |     
+| block.cache.per.partition.size | 1024         | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
+| append.sync.await              | false        | bool                   | the switch whether wait the append function put data to page cache successfully, default false means return directly only the append function  put data to block successfully                  |
+| append.sync.await.timeout      | flush.period | duration               | the timeout if append sync await is open, the default equal flush.period                                                                                                                       |
 
 ### Memory Config
 

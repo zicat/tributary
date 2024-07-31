@@ -22,6 +22,8 @@ import org.zicat.tributary.channel.ChannelConfigOption;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 
+import java.time.Duration;
+
 /** FileChannelConfigOption. */
 public class FileChannelConfigOption extends ChannelConfigOption {
 
@@ -30,4 +32,16 @@ public class FileChannelConfigOption extends ChannelConfigOption {
                     .stringType()
                     .description("partition paths, must allow read and write, split by ','")
                     .noDefaultValue();
+
+    public static final ConfigOption<Boolean> OPTION_APPEND_SYNC_AWAIT =
+            ConfigOptions.key("append.sync.await")
+                    .booleanType()
+                    .description("append sync await")
+                    .defaultValue(false);
+
+    public static final ConfigOption<Duration> OPTION_APPEND_SYNC_AWAIT_TIMEOUT =
+            ConfigOptions.key("append.sync.await.timeout")
+                    .durationType()
+                    .description("append sync await timeout")
+                    .defaultValue(null);
 }

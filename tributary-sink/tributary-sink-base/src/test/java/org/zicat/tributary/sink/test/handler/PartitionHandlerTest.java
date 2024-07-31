@@ -32,12 +32,12 @@ import java.util.Random;
 public class PartitionHandlerTest {
 
     @Test
-    public void testSimpleSinkHandler() throws IOException {
+    public void testSimpleSinkHandler() throws IOException, InterruptedException {
         SinkHandlerTestBase.test(createTestData(100), DirectPartitionHandlerFactory.IDENTITY);
     }
 
     @Test
-    public void testDisruptorSinkHandler() throws IOException {
+    public void testDisruptorSinkHandler() throws IOException, InterruptedException {
         SinkHandlerTestBase.test(createTestData(300), MultiThreadPartitionHandlerFactory.IDENTITY);
     }
 

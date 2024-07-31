@@ -80,7 +80,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg)
-            throws URISyntaxException, IOException {
+            throws URISyntaxException, IOException, InterruptedException {
 
         final ByteBuf byteBuf = msg.content();
         if (!HttpMethod.POST.equals(msg.method())) {

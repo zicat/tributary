@@ -45,7 +45,8 @@ public class SinkHandlerTestBase {
      * @param handlerIdentity handlerIdentity
      * @throws IOException IOException
      */
-    public static void test(List<String> testData, String handlerIdentity) throws IOException {
+    public static void test(List<String> testData, String handlerIdentity)
+            throws IOException, InterruptedException {
 
         final List<String> copyData = new ArrayList<>(testData);
         final int partitionCount = 2;

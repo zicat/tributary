@@ -46,7 +46,7 @@ public interface Channel extends Closeable, ChannelMetric, GroupManager {
      * @param byteBuffer byteBuffer
      * @throws IOException IOException
      */
-    void append(int partition, ByteBuffer byteBuffer) throws IOException;
+    void append(int partition, ByteBuffer byteBuffer) throws IOException, InterruptedException;
 
     /**
      * append record to channel.
@@ -61,7 +61,8 @@ public interface Channel extends Closeable, ChannelMetric, GroupManager {
      * @param length length the record length to append
      * @throws IOException IOException
      */
-    default void append(int partition, byte[] record, int offset, int length) throws IOException {
+    default void append(int partition, byte[] record, int offset, int length)
+            throws IOException, InterruptedException {
         if (record != null) {
             append(partition, ByteBuffer.wrap(record, offset, length));
         }
@@ -78,7 +79,7 @@ public interface Channel extends Closeable, ChannelMetric, GroupManager {
      * @param record record
      * @throws IOException IOException
      */
-    default void append(int partition, byte[] record) throws IOException {
+    default void append(int partition, byte[] record) throws IOException, InterruptedException {
         if (record != null) {
             append(partition, ByteBuffer.wrap(record));
         }

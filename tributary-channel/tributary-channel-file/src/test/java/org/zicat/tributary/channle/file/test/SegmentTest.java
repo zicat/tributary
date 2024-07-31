@@ -52,16 +52,18 @@ public class SegmentTest {
         final FileSegment.Builder builder = new FileSegment.Builder();
         final FileSegment segment =
                 builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
-        Assert.assertTrue(segment.append("".getBytes(), 0, 0));
+        Assert.assertTrue(segment.append("".getBytes(), 0, 0).appended());
 
         testAppend(6, segment);
         testAppend(20, segment);
         testAppend(12, segment);
         testAppend(50, segment);
         Assert.assertFalse(
-                segment.append(createStringByLength(50).getBytes(StandardCharsets.UTF_8), 0, 50));
+                segment.append(createStringByLength(50).getBytes(StandardCharsets.UTF_8), 0, 50)
+                        .appended());
         Assert.assertFalse(
-                segment.append(createStringByLength(5).getBytes(StandardCharsets.UTF_8), 0, 5));
+                segment.append(createStringByLength(5).getBytes(StandardCharsets.UTF_8), 0, 5)
+                        .appended());
         IOUtils.closeQuietly(segment);
     }
 
@@ -77,7 +79,8 @@ public class SegmentTest {
                     new Thread(
                             () -> {
                                 try {
-                                    Assert.assertTrue(segment.append("".getBytes(), 0, 0));
+                                    Assert.assertTrue(
+                                            segment.append("".getBytes(), 0, 0).appended());
                                     testAppend(6, segment);
                                     testAppend(20, segment);
                                 } catch (IOException ioException) {
@@ -130,12 +133,13 @@ public class SegmentTest {
         final int fileId = 1;
         final FileSegment segment =
                 builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));
-        Assert.assertTrue(segment.append("".getBytes(), 0, 0));
+        Assert.assertTrue(segment.append("".getBytes(), 0, 0).appended());
         testAppend(6, segment);
         testAppend(20, segment);
         segment.readonly();
         Assert.assertFalse(
-                segment.append(createStringByLength(6).getBytes(StandardCharsets.UTF_8), 0, 6));
+                segment.append(createStringByLength(6).getBytes(StandardCharsets.UTF_8), 0, 6)
+                        .appended());
 
         final List<String> result = new ArrayList<>();
         result.add(createStringByLength(6));
@@ -187,7 +191,10 @@ public class SegmentTest {
     private void testAppend(int length, FileSegment segment) throws IOException {
         Assert.assertTrue(
                 segment.append(
-                        createStringByLength(length).getBytes(StandardCharsets.UTF_8), 0, length));
+                                createStringByLength(length).getBytes(StandardCharsets.UTF_8),
+                                0,
+                                length)
+                        .appended());
     }
 
     /**

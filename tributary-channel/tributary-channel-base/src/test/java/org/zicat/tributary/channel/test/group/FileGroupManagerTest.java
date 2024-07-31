@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.defaultOffset;
+import static org.zicat.tributary.channel.group.GroupManager.uninitializedOffset;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
@@ -55,13 +55,13 @@ public class FileGroupManagerTest {
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds)) {
 
             GroupOffset minGroupOffset = manager.getMinGroupOffset();
-            Assert.assertEquals(defaultOffset().offset(), minGroupOffset.offset());
-            Assert.assertEquals(defaultOffset().segmentId(), minGroupOffset.segmentId());
+            Assert.assertEquals(uninitializedOffset().offset(), minGroupOffset.offset());
+            Assert.assertEquals(uninitializedOffset().segmentId(), minGroupOffset.segmentId());
             Assert.assertTrue(groupIds.contains(minGroupOffset.groupId()));
 
             for (String group : groupIds) {
                 Offset groupOffset = manager.committedOffset(group);
-                Assert.assertEquals(defaultOffset(), groupOffset);
+                Assert.assertEquals(uninitializedOffset(), groupOffset);
                 final Offset newOffset = new Offset(random.nextInt(10) + 1, random.nextInt(100));
                 manager.commit(group, newOffset);
                 Assert.assertEquals(newOffset, manager.committedOffset(group));
@@ -76,13 +76,13 @@ public class FileGroupManagerTest {
         try (FileGroupManager manager2 =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds2)) {
             GroupOffset minGroupOffset = manager2.getMinGroupOffset();
-            Assert.assertEquals(defaultOffset().offset(), minGroupOffset.offset());
-            Assert.assertEquals(defaultOffset().segmentId(), minGroupOffset.segmentId());
+            Assert.assertEquals(uninitializedOffset().offset(), minGroupOffset.offset());
+            Assert.assertEquals(uninitializedOffset().segmentId(), minGroupOffset.segmentId());
             Assert.assertTrue(groupIds2.contains(minGroupOffset.groupId()));
 
             for (String group : groupIds2) {
                 Offset offset = manager2.committedOffset(group);
-                Assert.assertEquals(cache.getOrDefault(group, defaultOffset()), offset);
+                Assert.assertEquals(cache.getOrDefault(group, uninitializedOffset()), offset);
                 if (cache.containsKey(group)) {
                     final Offset cacheOffset = cache.get(group);
                     final Offset nextSegmentHead = new Offset(cacheOffset.segmentId() + 1, 0L);
@@ -128,8 +128,8 @@ public class FileGroupManagerTest {
         try (FileGroupManager manager4 =
                 new FileGroupManager(new File(DIR, createFileName(topic + "_new")), groupIds)) {
             GroupOffset minGroupOffset = manager4.getMinGroupOffset();
-            Assert.assertEquals(defaultOffset().offset(), minGroupOffset.offset());
-            Assert.assertEquals(defaultOffset().segmentId(), minGroupOffset.segmentId());
+            Assert.assertEquals(uninitializedOffset().offset(), minGroupOffset.offset());
+            Assert.assertEquals(uninitializedOffset().segmentId(), minGroupOffset.segmentId());
             Assert.assertTrue(groupIds.contains(minGroupOffset.groupId()));
 
             for (String group : groupIds) {

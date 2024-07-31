@@ -46,12 +46,14 @@ public interface SingleChannel extends Channel, SingleGroupManager {
     long lag(Offset offset);
 
     @Override
-    default void append(int partition, byte[] record, int offset, int length) throws IOException {
+    default void append(int partition, byte[] record, int offset, int length)
+            throws IOException, InterruptedException {
         append(record, offset, length);
     }
 
     @Override
-    default void append(int partition, ByteBuffer byteBuffer) throws IOException {
+    default void append(int partition, ByteBuffer byteBuffer)
+            throws IOException, InterruptedException {
         append(byteBuffer);
     }
 
@@ -66,22 +68,24 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      * @param offset offset the record offset
      * @param length length the record length to append
      * @throws IOException IOException
+     * @throws InterruptedException InterruptedException
      */
-    default void append(byte[] record, int offset, int length) throws IOException {
+    default void append(byte[] record, int offset, int length)
+            throws IOException, InterruptedException {
         append(ByteBuffer.wrap(record, offset, length));
     }
 
     /**
      * append record to channel without partition.
      *
-     * <p>append operator only make sure put record to memory block or page cache.
+     * <p>append operator only make sure put record to memory block.
      *
      * <p>invoke {@link Channel#flush()} will flush logs from memory block and page cache to disk.
      *
      * @param byteBuffer byteBuffer
      * @throws IOException IOException
      */
-    void append(ByteBuffer byteBuffer) throws IOException;
+    void append(ByteBuffer byteBuffer) throws IOException, InterruptedException;
 
     @Override
     default RecordsResultSet poll(int partition, Offset offset, long time, TimeUnit unit)

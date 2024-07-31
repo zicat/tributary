@@ -133,7 +133,7 @@ public class MemoryChannelTestUtils {
                                 compressionType);
                     }
                 },
-                0);
+                500);
     }
 
     /**

@@ -261,7 +261,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
      */
     private void handleProduceRequest(
             ProduceRequest request, ChannelHandlerContext ctx, RequestHeader header)
-            throws IOException {
+            throws IOException, InterruptedException {
         final Map<TopicPartition, PartitionResponse> partitionRes = new HashMap<>();
         final Map<TopicPartition, MemoryRecords> allRecords = request.partitionRecordsOrFail();
         final List<Node> nodes = this.nodes;

@@ -22,7 +22,6 @@ import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.ChannelBlockCache;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.Segment;
-import org.zicat.tributary.common.IOUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -123,7 +122,7 @@ public class MemorySegment extends Segment {
 
     @Override
     public void recycle() {
-        IOUtils.closeQuietly(this);
+        super.recycle();
         chunkChain.clear();
     }
 }

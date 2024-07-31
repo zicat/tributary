@@ -25,7 +25,7 @@ public class BlockReaderOffset extends Offset {
 
     public BlockReaderOffset(long segmentId, long offset, BlockReader blockReader) {
         super(segmentId, offset);
-        this.blockReader = blockReader == null ? new BlockReader(null, null, 0) : blockReader;
+        this.blockReader = blockReader == null ? BlockReader.emptyBlockReader() : blockReader;
     }
 
     private BlockReaderOffset(long segmentId, long offset) {

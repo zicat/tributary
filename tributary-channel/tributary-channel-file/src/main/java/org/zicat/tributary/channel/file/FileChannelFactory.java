@@ -25,13 +25,14 @@ import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.*;
 import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
 
 /** FileChannelFactory. */
@@ -50,7 +51,6 @@ public class FileChannelFactory implements ChannelFactory {
 
         final String partitionPath = config.get(OPTION_PARTITION_PATHS);
         final List<String> dirs = Arrays.asList(partitionPath.split(SPLIT_STR));
-
         final Set<String> groupSet = groupSet(config);
         final int blockSize = (int) config.get(OPTION_BLOCK_SIZE).getBytes();
         final long segmentSize = config.get(OPTION_SEGMENT_SIZE).getBytes();
@@ -58,18 +58,26 @@ public class FileChannelFactory implements ChannelFactory {
         final CompressionType compression = config.get(OPTION_COMPRESSION);
         final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD).getSeconds();
         final int blockCacheCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
+        final boolean appendSyncWait = config.get(OPTION_APPEND_SYNC_AWAIT);
+        final Duration appendSyncWaitTimeoutDuration = config.get(OPTION_APPEND_SYNC_AWAIT_TIMEOUT);
+        final long appendSyncWaitTimeoutMs =
+                appendSyncWaitTimeoutDuration == null
+                        ? flushPeriodMills
+                        : appendSyncWaitTimeoutDuration.toMillis();
         final FileChannelBuilder builder =
                 FileChannelBuilder.newBuilder()
                         .dirs(createDir(dirs))
                         .flushPeriodMills(flushPeriodMills)
                         .groupPersistPeriodSecond(groupPersist)
                         .blockCacheCount(blockCacheCount);
-        builder.blockSize(blockSize)
+        return builder.blockSize(blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(compression)
                 .topic(topic)
-                .consumerGroups(groupSet);
-        return builder.build();
+                .consumerGroups(groupSet)
+                .appendSyncWait(appendSyncWait)
+                .appendSyncWaitTimeoutMs(appendSyncWaitTimeoutMs)
+                .build();
     }
 
     /**

@@ -109,11 +109,11 @@ public class SegmentTest {
         final byte[] data = new byte[] {(byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 2};
         for (int i = 0; i < 11; i++) {
             // (5 + 4) * 11 = 99, 5 is data size, 4 is data length
-            Assert.assertTrue(segment.append(data, 0, data.length));
+            Assert.assertTrue(segment.append(data, 0, data.length).appended());
         }
 
-        Assert.assertTrue(segment.append(data, 0, data.length));
-        Assert.assertFalse(segment.append(data, 0, data.length));
+        Assert.assertTrue(segment.append(data, 0, data.length).appended());
+        Assert.assertFalse(segment.append(data, 0, data.length).appended());
         segment.flush();
         Assert.assertEquals(120, segment.lag(Offset.ZERO));
         Assert.assertEquals(50, segment.lag(new Offset(2L, 70L)));

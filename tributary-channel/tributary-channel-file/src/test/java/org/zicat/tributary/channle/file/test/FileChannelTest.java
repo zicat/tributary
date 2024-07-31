@@ -166,6 +166,15 @@ public class FileChannelTest {
             RecordsResultSet recordsResultSet =
                     channel.poll(0, channel.committedOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
             channel.commit(0, groupId, recordsResultSet.nexOffset());
+            final File[] files =
+                    new File(dir + "0")
+                            .listFiles(
+                                    pathname ->
+                                            pathname.isFile()
+                                                    && pathname.getName().endsWith(".log"));
+            Assert.assertNotNull(files);
+            Assert.assertEquals(1, files.length);
+            Assert.assertEquals(topic + "_segment_1.log", files[0].getName());
             Assert.assertEquals(
                     1,
                     Double.valueOf(channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).getValue())
@@ -300,7 +309,7 @@ public class FileChannelTest {
                                     for (int j = 0; j < dataSize; j++) {
                                         try {
                                             channel.append(0, data);
-                                        } catch (IOException ioException) {
+                                        } catch (IOException | InterruptedException ioException) {
                                             throw new RuntimeException(ioException);
                                         }
                                     }
