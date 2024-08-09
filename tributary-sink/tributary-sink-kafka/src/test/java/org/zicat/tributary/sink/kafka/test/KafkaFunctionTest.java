@@ -172,7 +172,7 @@ public class KafkaFunctionTest {
         public void close() {}
 
         public Counter.Child getCount() {
-            return sinkCounterChild;
+            return sinkCounter;
         }
     }
 }

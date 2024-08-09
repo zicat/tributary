@@ -57,14 +57,14 @@ public class KafkaFunction extends AbstractFunction {
     public static final String KAFKA_KEY_PREFIX = "kafka.";
 
     protected transient Producer<byte[], byte[]> producer;
-    protected transient Counter.Child sinkCounterChild;
+    protected transient Counter.Child sinkCounter;
     protected transient TributaryKafkaCallback callback;
     protected transient String defaultTopic;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        sinkCounterChild = labelHostId(SINK_KAFKA_COUNTER);
+        sinkCounter = labelHostId(SINK_KAFKA_COUNTER);
         producer = createProducer(context);
         defaultTopic = context.get(OPTION_TOPIC);
         callback = new TributaryKafkaCallback();
@@ -77,7 +77,7 @@ public class KafkaFunction extends AbstractFunction {
             totalCount += sendKafka(iterator.next());
         }
         flushAndCommit(offset);
-        sinkCounterChild.inc(totalCount);
+        sinkCounter.inc(totalCount);
     }
 
     /**

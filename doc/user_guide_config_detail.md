@@ -179,7 +179,7 @@ channel.c2.block.cache.per.partition.size=1024
 | key    | default | type              | describe                                                       |
 |--------|---------|-------------------|----------------------------------------------------------------|
 | type   | file    | enum[file,memory] | the implement type of the channel, only support file or memory | 
-| groups |         | string            | the group list that consume this channel, split by`,`          | 
+| groups |         | string            | the group id list that consume this channel, split by`,`       | 
 
 ### File Config
 
@@ -220,31 +220,29 @@ Note:
 
 ## Sink
 
-Tributary supports defining multiple sinks in the application.properties
+Tributary supports defining multiple sinks in the application.properties, each sink config is
+started by `sink.{group_id}.*`. The {group_id} must be used in `channel.{channel_id}.groups=` .
 
 ```properties
-sink.group_1.partition.retain.max.bytes=100gb
 sink.group_1.function.id=hdfs
+sink.group_1.partition.retain.max.bytes=100gb
+sink.group_2.function.id=kafka
 sink.group_2.partition.retain.max.bytes=100gb
 sink.group_2.partition.concurrent=3
-sink.group_2.function.id=kafka
-sink.group_3.partition.retain.max.bytes=100gb
 sink.group_3.function.id=hbase
+sink.group_3.partition.retain.max.bytes=100gb
+sink.group_4.function.id=elasticsearch
+sink.group_4.partition.retain.max.bytes=100gb
 ``` 
 
 ### Common Config
 
-| key                           | default | type                         | describe                                                                                                                                         |
-|-------------------------------|---------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| partition.retain.max.bytes    |         | bytes                        | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful |
-| partition.group.commit.period | 30sec   | duration                     | the period to commit consume group id                                                                                                            |
-| partition.concurrent          | 1       | int(number)                  | the threads to consume one partition data from channel                                                                                           |  
-| function.id                   |         | enum[print,kafka,hdfs,hbase] | the function identity that configure how to consume records                                                                                      |
-
-Note:
-
-1. User can customize functions by
-   implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
+| key                           | default | type                                       | describe                                                                                                                                                                                                                               |
+|-------------------------------|---------|--------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| function.id                   |         | enum[print,kafka,hdfs,hbase,elasticsearch] | the function identity that configure how to consume records, user can customize functions by  implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java) |
+| partition.retain.max.bytes    |         | bytes                                      | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful                                                                                       |
+| partition.group.commit.period | 30sec   | duration                                   | the period to commit consume group id                                                                                                                                                                                                  |
+| partition.concurrent          | 1       | int(number)                                | the threads to consume one partition data from channel, multi threads will cause data disorder in one partition, be careful                                                                                                            |  
 
 ### Sink HDFS
 
@@ -254,6 +252,7 @@ sink.group_1.roll.size=10mb
 sink.group_1.bucket.date.format=yyyyMMdd_HH
 sink.group_1.bucket.date.timezone=GMT+8
 sink.group_1.max.retries=3
+sink.group_1.retry.interval=200ms
 sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
@@ -268,6 +267,7 @@ sink.group_1.idle.trigger=60sec
 | bucket.date.format               | yyyyMMdd_HH | string      | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                     |   
 | bucket.date.timezone             | UTC         | string      | the timezone of bucket date format                                                                                                                                                      | 
 | max.retries                      | 3           | int(number) | the max retry times when operate hdfs fail                                                                                                                                              |
+| retry.interval                   | 200ms       | duration    | the interval between 2 retries                                                                                                                                                          |
 | keytab                           |             | string      | the keytab if hdfs use kerberos authenticator                                                                                                                                           |
 | principle                        |             | string      | the principle if hdfs use kerberos authenticator                                                                                                                                        |
 | writer.identity                  | parquet     | string      | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java)       |
@@ -297,10 +297,10 @@ Tributary support all kafka producer params,
 Note:
 
 1. The value of keys `key.serializer` and `value.serializer` is always
-   `org.apache.kafka.common.serialization.ByteArraySerializer`. Setting value to other is ignored.
+   `org.apache.kafka.common.serialization.ByteArraySerializer`. Setting value to others is ignored.
 
-2. The topic support param of ${topic} like dispatcher_proxy_sink_${topic} to sink data to specify
-   topic setting by source site.
+2. The value of param `topic` support var `${topic}` like dispatcher_proxy_sink_${topic} to sink data to different topic
+   depend on the record's topic.
 
 ### Sink HBase
 
@@ -325,14 +325,61 @@ sink.group_3.table.column.head.name.prefix=head_
 Note:
 
 1. HbaseSink
-   request [Record](../tributary-common/src/main/java/org/zicat/tributary/common/records/Record.java)
-   to has key.
+   require [Record](../tributary-common/src/main/java/org/zicat/tributary/common/records/Record.java) has key.
 
    The record without key will be filtered. User can watch how many records are
    filtered by metrics key `sink_hbase_discard_counter`.
 
 2. The key-supported sources
    include [kafkaDecoder](#kafkadecoder) and [httpDecoder](#httpDecoder).
+
+### Sink ElasticSearch
+
+```properties
+sink.group_4.hosts=http://localhost:9200
+sink.group_4.path-prefix=
+sink.group_4.index=my_index
+sink.group_4.compression=true
+sink.group_4.username=
+sink.group_4.password=
+sink.group_4.request.timeout=30s
+sink.group_4.connection.timeout=10s
+sink.group_4.socket.timeout=20s
+sink.group_4.request.indexer.identity=default
+sink.group_4.async.bulk.queue.size=1024
+sink.group_4.async.bulk.queue.await.timeout=30s
+sink.group_4.idle.trigger=30s
+```
+
+| key                            | default | type     | describe                                                                                                                                                      |
+|--------------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| hosts                          |         | string   | the elasticsearch hosts, split by `;`                                                                                                                         |
+| path-prefix                    | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                       |
+| index                          |         | string   | the elasticsearch index to sink                                                                                                                               |
+| compression                    | true    | bool     | whether compress the index request, default true                                                                                                              |
+| username                       | null    | string   | the username of elasticsearch, default null                                                                                                                   |
+| password                       | null    | string   | the password of elasticsearch, default null                                                                                                                   |
+| request.timeout                | 30s     | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                              |
+| connection.timeout             | 10s     | duration | the timeout for establishing a connection, default 10s                                                                                                        |
+| socket.timeout                 | 20s     | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                           |
+| async.bulk.queue.size          | 1024    | int      | the size of the queue which contains async bulk insert listener callback instances                                                                            |
+| async.bulk.queue.await.timeout | 30s     | duration | throw exception if wait timeout to put instance to queue over this param                                                                                      |
+| idle.trigger                   | 30s     | duration | set idle trigger to call trigger callback function, for elasticsearch, sink instance will deal with top finished requests callback instances in the queue     |
+| request.indexer                | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java) |
+
+Note:
+
+1. For the default of request.indexer, the value of records must be a string object json. The records will be discarded
+   if not, user can watch how many records are filtered by metrics key `sink_elasticsearch_discard_counter`.
+
+2. For the default of request.indexer, the headers of the record will also be stored in the elasticsearch. The header
+   will be discarded if the key of header is contained in value json object keys.
+
+3. For the default of request.indexer, the topic value of the record will be stored in the elasticsearch by key
+   `_topic`.
+
+4. For the default of request.indexer, the key value of the record will be store in the elasticsearch by id if the key
+   exists.
 
 ## The complete demo config
 
@@ -372,7 +419,7 @@ source.s3.netty.decoder.kafka.sasl.plain.usernames=user1_16Ew658jjzvmxDqk,user2_
 
 channel.c1.type=file
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
-channel.c1.groups=group_1,group_2
+channel.c1.groups=group_1,group_2,group_3,group_4
 channel.c1.compression=snappy
 channel.c1.block.size=32kb
 channel.c1.segment.size=4gb
@@ -393,6 +440,7 @@ sink.group_1.sink.path=/tmp/test/cache
 sink.group_1.roll.size=10mb
 sink.group_1.bucket.date.format=yyyyMMdd_HH
 sink.group_1.max.retries=3
+sink.group_1.retry.interval=200ms
 sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
@@ -410,10 +458,29 @@ sink.group_2.kafka.linger.ms=1000
 sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
 
+sink.group_3.partition.retain.max.bytes=100gb
+sink.group_3.partition.group.commit.period=30sec
+sink.group_3.function.id=hbase
 sink.group_3.hbase-site-xml.path=/tmp/hbase-site.xml
 sink.group_3.table.name=table_test
 sink.group_3.table.family.name=info
 sink.group_3.table.column.value.name=value
 sink.group_3.table.column.topic.name=topic
 sink.group_3.table.column.head.name.prefix=head_
+
+sink.group_4.partition.retain.max.bytes=100gb
+sink.group_4.partition.group.commit.period=30sec
+sink.group_4.function.id=elasticsearch
+sink.group_4.hosts=http://localhost:9200
+sink.group_4.path-prefix=
+sink.group_4.index=my_index
+sink.group_4.compression=true
+sink.group_4.username=
+sink.group_4.password=
+sink.group_4.request.timeout=30s
+sink.group_4.connection.timeout=10s
+sink.group_4.socket.timeout=20s
+sink.group_4.request.indexer.identity=default
+sink.group_4.async.bulk.queue.size=1024
+sink.group_4.async.bulk.queue.await.timeout=30s
 ```       

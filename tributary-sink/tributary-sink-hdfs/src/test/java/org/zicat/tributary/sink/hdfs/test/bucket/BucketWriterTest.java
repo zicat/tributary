@@ -323,7 +323,7 @@ public class BucketWriterTest {
                 }
 
                 @Override
-                protected long sleepOnFail() {
+                protected long retryIntervalMs() {
                     return 0;
                 }
             };

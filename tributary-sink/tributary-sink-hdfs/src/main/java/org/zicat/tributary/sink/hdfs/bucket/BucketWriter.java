@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.Functions.Runnable;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
@@ -39,6 +40,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.zicat.tributary.common.Functions.runWithRetry;
 import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
 import static org.zicat.tributary.sink.utils.Exceptions.castAsIOException;
@@ -66,7 +68,8 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
                 bucketPath,
                 fileName,
                 context.get(OPTION_ROLL_SIZE).getBytes(),
-                context.get(OPTION_MAX_RETRIES));
+                context.get(OPTION_MAX_RETRIES),
+                context.get(OPTION_RETRY_INTERVAL).toMillis());
         final String writerId = context.get(OPTION_WRITER_IDENTITY);
         final HDFSRecordsWriterFactory factory =
                 SpiFactory.findFactory(writerId, HDFSRecordsWriterFactory.class);
@@ -126,9 +129,8 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
         }
         closeWriter();
         if (tmpWritePath != null && targetPath != null && fileSystem != null) {
-            final CallRunner renameBucket =
-                    () -> renameBucket(tmpWritePath, targetPath, fileSystem);
-            final Throwable exception = runWithRetry(renameBucket, sleepOnFail());
+            final Runnable renameBucket = () -> renameBucket(tmpWritePath, targetPath, fileSystem);
+            final Throwable exception = runWithRetry(renameBucket, maxRetries, retryIntervalMs());
             if (exception != null) {
                 throw castAsIOException(exception);
             }
@@ -186,15 +188,15 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
     /**
      * call with privileged.
      *
-     * @param callRunner callRunner
+     * @param runnable runnable
      * @throws IOException IOException
      */
-    private void callWithPrivileged(final CallRunner callRunner) throws IOException {
+    private void callWithPrivileged(final Runnable runnable) throws IOException {
         try {
             proxyUser.execute(
                     (PrivilegedExceptionAction<Object>)
                             () -> {
-                                callRunner.call();
+                                runnable.run();
                                 return null;
                             });
         } catch (Throwable e) {
@@ -217,7 +219,8 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
         final Throwable e =
                 runWithRetry(
                         () -> callWithPrivileged(() -> total.set(writer.append(records))),
-                        sleepOnFail());
+                        maxRetries,
+                        retryIntervalMs());
         if (e != null) {
             throw castAsIOException(e);
         }

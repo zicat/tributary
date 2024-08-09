@@ -59,6 +59,12 @@ public class HDFSSinkOptions {
                     .description("max retries times if operation fail")
                     .defaultValue(3);
 
+    public static final ConfigOption<Duration> OPTION_RETRY_INTERVAL =
+            ConfigOptions.key("retry.interval")
+                    .durationType()
+                    .description("retry interval")
+                    .defaultValue(Duration.ofMillis(200));
+
     public static final ConfigOption<String> OPTION_WRITER_IDENTITY =
             ConfigOptions.key("writer.identity")
                     .stringType()

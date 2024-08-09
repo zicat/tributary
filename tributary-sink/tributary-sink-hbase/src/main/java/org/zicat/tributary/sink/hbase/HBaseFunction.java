@@ -66,8 +66,8 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
                     .help("sink hbase discard counter")
                     .labelNames("host", "id")
                     .register();
-    protected transient Counter.Child sinkCounterChild;
-    protected transient Counter.Child sinkDiscardCounterChild;
+    protected transient Counter.Child sinkCounter;
+    protected transient Counter.Child sinkDiscardCounter;
     protected transient TableName tableName;
     protected transient byte[] family;
     protected transient byte[] valueColumn;
@@ -80,8 +80,8 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        sinkCounterChild = labelHostId(SINK_HBASE_COUNTER);
-        sinkDiscardCounterChild = labelHostId(SINK_HBASE_DISCARD_COUNTER);
+        sinkCounter = labelHostId(SINK_HBASE_COUNTER);
+        sinkDiscardCounter = labelHostId(SINK_HBASE_DISCARD_COUNTER);
         tableName = TableName.valueOf(context.get(OPTION_HBASE_TABLE_NAME));
         family = Bytes.toBytes(context.get(OPTION_HBASE_FAMILY));
         valueColumn = Bytes.toBytes(context.get(OPTION_HBASE_COLUMN_VALUE_NAME));
@@ -112,8 +112,8 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
                     defaultSinkExtraHeaders());
         }
         flushAndCommit(offset);
-        sinkCounterChild.inc(counter.get());
-        sinkDiscardCounterChild.inc(discardCounter.get());
+        sinkCounter.inc(counter.get());
+        sinkDiscardCounter.inc(discardCounter.get());
     }
 
     /**
