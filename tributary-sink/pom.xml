@@ -17,6 +17,7 @@
         <module>tributary-sink-kafka</module>
         <module>tributary-sink-hdfs</module>
         <module>tributary-sink-hbase</module>
+        <module>tributary-sink-elasticsearch</module>
     </modules>
 
 
