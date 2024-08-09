@@ -28,7 +28,6 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ConfigOptions.StringSplitHandler;
-import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
@@ -74,22 +73,6 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description("Username used to connect to Elasticsearch instance.")
                     .defaultValue(null);
 
-    public static final ConfigOption<Integer> OPTION_BULK_FLUSH_MAX_ACTIONS =
-            ConfigOptions.key("bulk-flush.max-actions")
-                    .integerType()
-                    .description("Maximum number of actions to buffer for each bulk request.")
-                    .defaultValue(1000);
-    public static final ConfigOption<MemorySize> OPTION_BULK_FLASH_MAX_SIZE =
-            ConfigOptions.key("bulk-flush.max-size")
-                    .memoryType()
-                    .description("Maximum size of buffered actions per bulk request")
-                    .defaultValue(MemorySize.parse("2mb"));
-    public static final ConfigOption<Duration> OPTION_BULK_FLUSH_INTERVAL =
-            ConfigOptions.key("bulk-flush.interval")
-                    .durationType()
-                    .description("Bulk flush interval")
-                    .defaultValue(Duration.ofSeconds(1L));
-
     public static final ConfigOption<Duration> CONNECTION_REQUEST_TIMEOUT =
             ConfigOptions.key("connection.request-timeout")
                     .durationType()
@@ -107,6 +90,15 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description(
                             "The socket timeout (SO_TIMEOUT) for waiting for data or, put differently,a maximum period inactivity between two consecutive data packets.")
                     .defaultValue(Duration.ofSeconds(20));
+
+    public static final ConfigOption<String> OPTION_HEAD_PREFIX =
+            ConfigOptions.key("head.name.prefix").stringType().defaultValue("head_");
+
+    public static final ConfigOption<String> OPTION_REQUEST_INDEXER_IDENTITY =
+            ConfigOptions.key("request.indexer.identity")
+                    .stringType()
+                    .description("The identity of request indexer to parse record.")
+                    .defaultValue("default");
 
     public static final String IDENTITY = "elasticsearch";
 

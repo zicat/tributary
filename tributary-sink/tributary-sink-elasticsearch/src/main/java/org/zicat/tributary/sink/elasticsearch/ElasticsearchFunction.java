@@ -19,6 +19,10 @@
 package org.zicat.tributary.sink.elasticsearch;
 
 import io.prometheus.client.Counter;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
@@ -27,41 +31,96 @@ import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.createRestClientBuilder;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
 
 /** ElasticsearchFunction. */
 @SuppressWarnings("deprecation")
 public class ElasticsearchFunction extends AbstractFunction {
 
-    private static final Counter SINK_KAFKA_COUNTER =
+    private static final Counter SINK_ELASTICSEARCH_COUNTER =
             Counter.build()
-                    .name("sink_kafka_counter")
-                    .help("sink kafka counter")
+                    .name("sink_elasticsearch_counter")
+                    .help("sink elasticsearch counter")
+                    .labelNames("host", "id")
+                    .register();
+
+    private static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
+            Counter.build()
+                    .name("sink_elasticsearch_discard_counter")
+                    .help("sink elasticsearch discard counter")
                     .labelNames("host", "id")
                     .register();
 
     protected transient RestHighLevelClient client;
     protected transient Counter.Child sinkCounterChild;
+    protected transient Counter.Child sinkDiscardCounterChild;
+    protected transient RequestIndexer requestIndexer;
+    protected transient String index;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
         client = new RestHighLevelClient(createRestClientBuilder(context));
-        sinkCounterChild = labelHostId(SINK_KAFKA_COUNTER);
+        index = context.get(OPTION_INDEX);
+        sinkCounterChild = labelHostId(SINK_ELASTICSEARCH_COUNTER);
+        sinkDiscardCounterChild = labelHostId(SINK_ELASTICSEARCH_DISCARD_COUNTER);
+        requestIndexer =
+                findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
+        requestIndexer.open(context);
     }
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
-        int totalCount = 0;
+        final AtomicInteger sendCount = new AtomicInteger();
+        final AtomicInteger discardCount = new AtomicInteger();
+        final BulkRequest bulkRequest = new BulkRequest();
         while (iterator.hasNext()) {
             final Records records = iterator.next();
-            foreachRecord(records, (key, value, allHeaders) -> {}, defaultSinkExtraHeaders());
-            totalCount += sendKafka(iterator.next());
+            foreachRecord(
+                    records,
+                    (key, value, allHeaders) -> {
+                        final boolean success =
+                                requestIndexer.add(
+                                        bulkRequest,
+                                        index,
+                                        records.topic(),
+                                        key,
+                                        value,
+                                        allHeaders);
+                        if (success) {
+                            sendCount.incrementAndGet();
+                        } else {
+                            discardCount.incrementAndGet();
+                        }
+                    },
+                    defaultSinkExtraHeaders());
         }
-        sinkCounterChild.inc(totalCount);
+        final BulkResponse response = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+        if (response.hasFailures()) {
+            for (BulkItemResponse itemResponse : response.getItems()) {
+                if (itemResponse.isFailed()) {
+                    final String index = itemResponse.getIndex();
+                    final String id = itemResponse.getId();
+                    final String failureMessage = itemResponse.getFailureMessage();
+                    throw new RuntimeException(
+                            String.format(
+                                    "Failed to index document with id %s in index %s: %s%n",
+                                    id, index, failureMessage));
+                }
+            }
+        }
+        commit(offset);
+        if (sendCount.get() > 0) {
+            sinkCounterChild.inc(sendCount.get());
+        }
+        if (discardCount.get() > 0) {
+            sinkDiscardCounterChild.inc(discardCount.get());
+        }
     }
 
     @Override
