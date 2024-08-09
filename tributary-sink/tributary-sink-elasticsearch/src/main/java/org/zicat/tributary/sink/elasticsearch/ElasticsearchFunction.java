@@ -30,13 +30,15 @@ import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_REQUEST_INDEXER_IDENTITY;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.createRestClientBuilder;
 
 /** ElasticsearchFunction. */
 @SuppressWarnings("deprecation")
@@ -59,39 +61,30 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected transient RestHighLevelClient client;
     protected transient Counter.Child sinkCounterChild;
     protected transient Counter.Child sinkDiscardCounterChild;
-    protected transient RequestIndexer requestIndexer;
-    protected transient String index;
+    protected transient RequestIndexer indexer;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
         client = new RestHighLevelClient(createRestClientBuilder(context));
-        index = context.get(OPTION_INDEX);
         sinkCounterChild = labelHostId(SINK_ELASTICSEARCH_COUNTER);
         sinkDiscardCounterChild = labelHostId(SINK_ELASTICSEARCH_DISCARD_COUNTER);
-        requestIndexer =
-                findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
-        requestIndexer.open(context);
+        indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
+        indexer.open(context);
     }
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
         final AtomicInteger sendCount = new AtomicInteger();
         final AtomicInteger discardCount = new AtomicInteger();
-        final BulkRequest bulkRequest = new BulkRequest();
+        final BulkRequest request = new BulkRequest();
         while (iterator.hasNext()) {
             final Records records = iterator.next();
+            final String topic = records.topic();
             foreachRecord(
                     records,
                     (key, value, allHeaders) -> {
-                        final boolean success =
-                                requestIndexer.add(
-                                        bulkRequest,
-                                        index,
-                                        records.topic(),
-                                        key,
-                                        value,
-                                        allHeaders);
+                        final boolean success = indexer.add(request, topic, key, value, allHeaders);
                         if (success) {
                             sendCount.incrementAndGet();
                         } else {
@@ -100,26 +93,37 @@ public class ElasticsearchFunction extends AbstractFunction {
                     },
                     defaultSinkExtraHeaders());
         }
-        final BulkResponse response = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-        if (response.hasFailures()) {
-            for (BulkItemResponse itemResponse : response.getItems()) {
-                if (itemResponse.isFailed()) {
-                    final String index = itemResponse.getIndex();
-                    final String id = itemResponse.getId();
-                    final String failureMessage = itemResponse.getFailureMessage();
-                    throw new RuntimeException(
-                            String.format(
-                                    "Failed to index document with id %s in index %s: %s%n",
-                                    id, index, failureMessage));
-                }
-            }
-        }
+        send(request);
         commit(offset);
-        if (sendCount.get() > 0) {
-            sinkCounterChild.inc(sendCount.get());
+        sinkCounterChild.inc(sendCount.get());
+        sinkDiscardCounterChild.inc(discardCount.get());
+    }
+
+    /**
+     * send bulk request.
+     *
+     * @param request request.
+     * @throws IOException IOException
+     */
+    protected void send(BulkRequest request) throws IOException {
+        if (request.numberOfActions() == 0) {
+            return;
         }
-        if (discardCount.get() > 0) {
-            sinkDiscardCounterChild.inc(discardCount.get());
+        final BulkResponse response = client.bulk(request, RequestOptions.DEFAULT);
+        if (!response.hasFailures()) {
+            return;
+        }
+        for (BulkItemResponse item : response.getItems()) {
+            if (!item.isFailed()) {
+                continue;
+            }
+            final String index = item.getIndex();
+            final String id = item.getId();
+            final String error = item.getFailureMessage();
+            throw new RuntimeException(
+                    String.format(
+                            "Failed to index document with id %s in index %s: %s",
+                            id, index, error));
         }
     }
 

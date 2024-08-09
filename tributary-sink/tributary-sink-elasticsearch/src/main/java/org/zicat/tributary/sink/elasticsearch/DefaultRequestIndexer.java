@@ -30,29 +30,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_HEAD_PREFIX;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_INDEX;
 
 /** DefaultRequestIndexer. */
 public class DefaultRequestIndexer implements RequestIndexer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private transient String headPrefix;
-
-    @Override
-    public String identity() {
-        return "default";
-    }
+    private transient String index;
 
     @Override
     public void open(ReadableConfig config) {
-        headPrefix = config.get(OPTION_HEAD_PREFIX);
+        index = config.get(OPTION_INDEX);
     }
 
     @Override
     public boolean add(
             BulkRequest bulkRequest,
-            String index,
             String topic,
             byte[] key,
             byte[] value,
@@ -69,11 +63,16 @@ public class DefaultRequestIndexer implements RequestIndexer {
         final ObjectNode objectNode = (ObjectNode) jsonNode;
         objectNode.put("_topic", topic);
         for (Entry<String, byte[]> entry : headers.entrySet()) {
-            objectNode.put(
-                    headPrefix + entry.getKey(),
-                    new String(entry.getValue(), StandardCharsets.UTF_8));
+            final String v = new String(entry.getValue(), StandardCharsets.UTF_8);
+            objectNode.put("_h_" + entry.getKey(), v);
         }
         indexRequest.source(objectNode.toString(), XContentType.JSON);
+        bulkRequest.add(indexRequest);
         return true;
+    }
+
+    @Override
+    public String identity() {
+        return "default";
     }
 }

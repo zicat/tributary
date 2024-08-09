@@ -91,9 +91,6 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                             "The socket timeout (SO_TIMEOUT) for waiting for data or, put differently,a maximum period inactivity between two consecutive data packets.")
                     .defaultValue(Duration.ofSeconds(20));
 
-    public static final ConfigOption<String> OPTION_HEAD_PREFIX =
-            ConfigOptions.key("head.name.prefix").stringType().defaultValue("head_");
-
     public static final ConfigOption<String> OPTION_REQUEST_INDEXER_IDENTITY =
             ConfigOptions.key("request.indexer.identity")
                     .stringType()

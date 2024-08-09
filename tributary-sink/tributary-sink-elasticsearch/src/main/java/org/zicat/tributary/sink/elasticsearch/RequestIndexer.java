@@ -45,7 +45,6 @@ public interface RequestIndexer extends SpiFactory {
      */
     boolean add(
             BulkRequest bulkRequest,
-            String index,
             String topic,
             byte[] key,
             byte[] value,
