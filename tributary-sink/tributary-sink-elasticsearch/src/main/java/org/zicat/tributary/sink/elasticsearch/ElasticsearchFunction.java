@@ -106,10 +106,10 @@ public class ElasticsearchFunction extends AbstractFunction {
      * @throws IOException IOException
      */
     protected void send(BulkRequest request) throws IOException {
+
         if (request.numberOfActions() == 0) {
             return;
         }
-
         /*
            bulkAsync may cause previous-error request callback later than next-success request.
            In this case, the success request will commit offset cause previous-error request data lost.
