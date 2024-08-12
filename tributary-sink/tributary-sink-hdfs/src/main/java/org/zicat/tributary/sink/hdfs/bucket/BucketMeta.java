@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.sink.hdfs.bucket;
 
-import org.zicat.tributary.common.Threads;
-
 /** BucketMeta. */
 public class BucketMeta {
 
@@ -53,34 +51,5 @@ public class BucketMeta {
      */
     protected long sleepOnFail() {
         return 200L;
-    }
-
-    /**
-     * running with retry.
-     *
-     * @param runner runner
-     */
-    protected Throwable runWithRetry(BucketWriter.CallRunner runner, long sleepOnFail) {
-        int retryCount = 0;
-        Throwable exception = null;
-        do {
-            try {
-                runner.call();
-                return null;
-            } catch (Throwable t) {
-                if (exception == null) {
-                    exception = t;
-                }
-                Threads.sleepQuietly(sleepOnFail);
-            } finally {
-                retryCount++;
-            }
-        } while (retryCount < maxRetries);
-        return exception;
-    }
-
-    /** call runner. */
-    public interface CallRunner {
-        void call() throws Exception;
     }
 }

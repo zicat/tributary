@@ -24,12 +24,53 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static org.zicat.tributary.common.Functions.loopCloseableFunction;
+import static org.zicat.tributary.common.Functions.runWithRetry;
 
 /** FunctionsTest. */
 public class FunctionsTest {
+
+    @Test
+    public void testRunWithRetry() {
+
+        // success
+        final AtomicInteger runTimes = new AtomicInteger();
+        final Throwable e = runWithRetry(runTimes::incrementAndGet, 2, 1);
+        Assert.assertNull(e);
+        Assert.assertEquals(1, runTimes.get());
+
+        // all fail
+        final AtomicInteger runTimes2 = new AtomicInteger();
+        final Throwable e2 =
+                runWithRetry(
+                        () -> {
+                            runTimes2.incrementAndGet();
+                            throw new RuntimeException("test");
+                        },
+                        2,
+                        1);
+        Assert.assertTrue(e2 != null && e2.getMessage() != null);
+        Assert.assertEquals("test", e2.getMessage());
+        Assert.assertEquals(3, runTimes2.get());
+
+        // half fail
+        final AtomicInteger runTimes3 = new AtomicInteger();
+        final Throwable e3 =
+                runWithRetry(
+                        () -> {
+                            if (runTimes3.incrementAndGet() == 2) {
+                                return;
+                            }
+                            throw new RuntimeException("test");
+                        },
+                        3,
+                        1);
+        Assert.assertNull(e3);
+        Assert.assertEquals(2, runTimes3.get());
+    }
 
     @Test
     public void testLoopCloseableFunction() throws InterruptedException {
