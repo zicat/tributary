@@ -109,6 +109,12 @@ public class ElasticsearchFunction extends AbstractFunction {
         if (request.numberOfActions() == 0) {
             return;
         }
+
+        /*
+           bulkAsync may cause previous-error request callback later than next-success request.
+           In this case, the success request will commit offset cause previous-error request data lost.
+           So use bulk sync api to avoid this issue.
+        */
         final BulkResponse response = client.bulk(request, RequestOptions.DEFAULT);
         if (!response.hasFailures()) {
             return;
