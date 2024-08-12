@@ -27,12 +27,19 @@ public class BucketMeta {
     protected final String fileName;
     protected final long rollSize;
     protected final int maxRetries;
+    protected final long retryIntervalMs;
 
-    public BucketMeta(String bucketPath, String fileName, long rollSize, int maxRetries) {
+    public BucketMeta(
+            String bucketPath,
+            String fileName,
+            long rollSize,
+            int maxRetries,
+            long retryIntervalMs) {
         this.bucketPath = bucketPath;
         this.fileName = fileName;
         this.rollSize = rollSize;
         this.maxRetries = maxRetries;
+        this.retryIntervalMs = retryIntervalMs;
     }
 
     /**
@@ -49,7 +56,7 @@ public class BucketMeta {
      *
      * @return millis
      */
-    protected long sleepOnFail() {
-        return 200L;
+    protected long retryIntervalMs() {
+        return retryIntervalMs;
     }
 }

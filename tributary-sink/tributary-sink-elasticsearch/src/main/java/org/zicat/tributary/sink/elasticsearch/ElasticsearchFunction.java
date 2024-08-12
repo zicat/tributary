@@ -34,11 +34,11 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.zicat.tributary.common.Functions.runWithRetryThrowException;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_REQUEST_INDEXER_IDENTITY;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.createRestClientBuilder;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
 
 /** ElasticsearchFunction. */
 @SuppressWarnings("deprecation")
@@ -62,10 +62,14 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected transient Counter.Child sinkCounterChild;
     protected transient Counter.Child sinkDiscardCounterChild;
     protected transient RequestIndexer indexer;
+    protected transient int maxRetries;
+    protected transient long retryIntervalMs;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
+        maxRetries = context.get(OPTION_MAX_RETRIES);
+        retryIntervalMs = context.get(OPTION_RETRY_INTERVAL).toMillis();
         client = new RestHighLevelClient(createRestClientBuilder(context));
         sinkCounterChild = labelHostId(SINK_ELASTICSEARCH_COUNTER);
         sinkDiscardCounterChild = labelHostId(SINK_ELASTICSEARCH_DISCARD_COUNTER);
@@ -93,8 +97,8 @@ public class ElasticsearchFunction extends AbstractFunction {
                     },
                     defaultSinkExtraHeaders());
         }
-        send(request);
-        commit(offset);
+        runWithRetryThrowException(
+                () -> sendAndCommit(request, offset), maxRetries, retryIntervalMs);
         sinkCounterChild.inc(sendCount.get());
         sinkDiscardCounterChild.inc(discardCount.get());
     }
@@ -103,11 +107,12 @@ public class ElasticsearchFunction extends AbstractFunction {
      * send bulk request.
      *
      * @param request request.
+     * @param offset offset
      * @throws IOException IOException
      */
-    protected void send(BulkRequest request) throws IOException {
-
+    protected void sendAndCommit(BulkRequest request, Offset offset) throws IOException {
         if (request.numberOfActions() == 0) {
+            commit(offset);
             return;
         }
         /*
@@ -117,6 +122,7 @@ public class ElasticsearchFunction extends AbstractFunction {
         */
         final BulkResponse response = client.bulk(request, RequestOptions.DEFAULT);
         if (!response.hasFailures()) {
+            commit(offset);
             return;
         }
         for (BulkItemResponse item : response.getItems()) {
@@ -126,11 +132,12 @@ public class ElasticsearchFunction extends AbstractFunction {
             final String index = item.getIndex();
             final String id = item.getId();
             final String error = item.getFailureMessage();
-            throw new RuntimeException(
+            throw new IllegalStateException(
                     String.format(
                             "Failed to index document with id %s in index %s: %s",
                             id, index, error));
         }
+        commit(offset);
     }
 
     @Override

@@ -44,19 +44,16 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .listType(new StringSplitHandler(";"))
                     .description("Elasticsearch hosts to connect to, split by ;.")
                     .noDefaultValue();
-
     public static final ConfigOption<String> OPTION_PATH_PREFIX =
             ConfigOptions.key("path-prefix")
                     .stringType()
                     .description("Path prefix for Elasticsearch.")
                     .defaultValue(null);
-
     public static final ConfigOption<Boolean> OPTION_COMPRESSION =
             ConfigOptions.key("compression")
                     .booleanType()
                     .description("whether compression")
                     .defaultValue(false);
-
     public static final ConfigOption<String> OPTION_INDEX =
             ConfigOptions.key("index")
                     .stringType()
@@ -72,7 +69,6 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .stringType()
                     .description("Username used to connect to Elasticsearch instance.")
                     .defaultValue(null);
-
     public static final ConfigOption<Duration> CONNECTION_REQUEST_TIMEOUT =
             ConfigOptions.key("connection.request-timeout")
                     .durationType()
@@ -90,13 +86,21 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description(
                             "The socket timeout (SO_TIMEOUT) for waiting for data or, put differently,a maximum period inactivity between two consecutive data packets.")
                     .defaultValue(Duration.ofSeconds(20));
-
     public static final ConfigOption<String> OPTION_REQUEST_INDEXER_IDENTITY =
             ConfigOptions.key("request.indexer.identity")
                     .stringType()
                     .description("The identity of request indexer to parse record.")
                     .defaultValue("default");
-
+    public static final ConfigOption<Integer> OPTION_MAX_RETRIES =
+            ConfigOptions.key("max.retries")
+                    .integerType()
+                    .description("max retries times if operation fail")
+                    .defaultValue(3);
+    public static final ConfigOption<Duration> OPTION_RETRY_INTERVAL =
+            ConfigOptions.key("retry.interval")
+                    .durationType()
+                    .description("retry interval")
+                    .defaultValue(Duration.ofMillis(200));
     public static final String IDENTITY = "elasticsearch";
 
     @Override
@@ -120,20 +124,24 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                 config.get(OPTION_HOSTS).stream()
                         .map(HttpHost::create)
                         .collect(Collectors.toList());
-        RestClientBuilder builder =
+        final RestClientBuilder builder =
                 RestClient.builder(hosts.toArray(new HttpHost[] {}))
                         .setCompressionEnabled(config.get(OPTION_COMPRESSION));
         final String pathPrefix = config.get(OPTION_PATH_PREFIX);
-        if (pathPrefix != null) {
-            builder.setPathPrefix(pathPrefix);
+        if (pathPrefix != null && !pathPrefix.trim().isEmpty()) {
+            builder.setPathPrefix(pathPrefix.trim());
         }
 
         final String username = config.get(OPTION_USERNAME);
         final String password = config.get(OPTION_PASSWORD);
-        if (username != null && password != null) {
+        if (username != null
+                && !username.trim().isEmpty()
+                && password != null
+                && !password.trim().isEmpty()) {
             final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(
-                    AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+                    AuthScope.ANY,
+                    new UsernamePasswordCredentials(username.trim(), password.trim()));
             builder.setHttpClientConfigCallback(
                     (httpClientBuilder) ->
                             httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
@@ -142,7 +150,6 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
         final long requestTimeoutMs = config.get(CONNECTION_REQUEST_TIMEOUT).toMillis();
         final long connectionTimeoutMs = config.get(CONNECTION_TIMEOUT).toMillis();
         final long socketTimeoutMs = config.get(SOCKET_TIMEOUT).toMillis();
-
         builder.setRequestConfigCallback(
                 (requestConfigBuilder) ->
                         requestConfigBuilder

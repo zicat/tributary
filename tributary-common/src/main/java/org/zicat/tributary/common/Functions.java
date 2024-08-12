@@ -56,6 +56,22 @@ public class Functions {
     }
 
     /**
+     * run with retry, throw exception if run fail.
+     *
+     * @param runnable runnable
+     * @param maxRetries maxRetries
+     * @param sleepOnFail sleepOnFail
+     * @throws Exception Exception
+     */
+    public static void runWithRetryThrowException(
+            Runnable runnable, int maxRetries, long sleepOnFail) throws Exception {
+        final Exception e = runWithRetry(runnable, maxRetries, sleepOnFail);
+        if (e != null) {
+            throw e;
+        }
+    }
+
+    /**
      * loopCloseableFunction.
      *
      * @param function function

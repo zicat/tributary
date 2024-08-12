@@ -68,7 +68,8 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
                 bucketPath,
                 fileName,
                 context.get(OPTION_ROLL_SIZE).getBytes(),
-                context.get(OPTION_MAX_RETRIES));
+                context.get(OPTION_MAX_RETRIES),
+                context.get(OPTION_RETRY_INTERVAL).toMillis());
         final String writerId = context.get(OPTION_WRITER_IDENTITY);
         final HDFSRecordsWriterFactory factory =
                 SpiFactory.findFactory(writerId, HDFSRecordsWriterFactory.class);
@@ -129,7 +130,7 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
         closeWriter();
         if (tmpWritePath != null && targetPath != null && fileSystem != null) {
             final Runnable renameBucket = () -> renameBucket(tmpWritePath, targetPath, fileSystem);
-            final Throwable exception = runWithRetry(renameBucket, maxRetries, sleepOnFail());
+            final Throwable exception = runWithRetry(renameBucket, maxRetries, retryIntervalMs());
             if (exception != null) {
                 throw castAsIOException(exception);
             }
@@ -219,7 +220,7 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
                 runWithRetry(
                         () -> callWithPrivileged(() -> total.set(writer.append(records))),
                         maxRetries,
-                        sleepOnFail());
+                        retryIntervalMs());
         if (e != null) {
             throw castAsIOException(e);
         }

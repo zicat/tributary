@@ -36,6 +36,7 @@ import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactor
 public class DefaultRequestIndexer implements RequestIndexer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String KEY_TOPIC = "_topic";
 
     private transient String index;
 
@@ -56,15 +57,23 @@ public class DefaultRequestIndexer implements RequestIndexer {
         if (key != null) {
             indexRequest.id(new String(key, StandardCharsets.UTF_8));
         }
-        final JsonNode jsonNode = MAPPER.readTree(new String(value, StandardCharsets.UTF_8));
-        if (!(jsonNode instanceof ObjectNode)) {
+
+        final JsonNode jsonNode;
+        try {
+            jsonNode = MAPPER.readTree(new String(value, StandardCharsets.UTF_8));
+            if (!(jsonNode instanceof ObjectNode)) {
+                return false;
+            }
+        } catch (Exception ignore) {
+            // illegal json value
             return false;
         }
+
         final ObjectNode objectNode = (ObjectNode) jsonNode;
-        objectNode.put("_topic", topic);
+        objectNode.put(KEY_TOPIC, topic);
         for (Entry<String, byte[]> entry : headers.entrySet()) {
             final String v = new String(entry.getValue(), StandardCharsets.UTF_8);
-            objectNode.put("_h_" + entry.getKey(), v);
+            objectNode.put(entry.getKey(), v);
         }
         indexRequest.source(objectNode.toString(), XContentType.JSON);
         bulkRequest.add(indexRequest);

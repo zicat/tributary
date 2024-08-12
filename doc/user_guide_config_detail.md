@@ -254,6 +254,7 @@ sink.group_1.roll.size=10mb
 sink.group_1.bucket.date.format=yyyyMMdd_HH
 sink.group_1.bucket.date.timezone=GMT+8
 sink.group_1.max.retries=3
+sink.group_1.retry.interval=200ms
 sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
@@ -268,6 +269,7 @@ sink.group_1.idle.trigger=60sec
 | bucket.date.format               | yyyyMMdd_HH | string      | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                     |   
 | bucket.date.timezone             | UTC         | string      | the timezone of bucket date format                                                                                                                                                      | 
 | max.retries                      | 3           | int(number) | the max retry times when operate hdfs fail                                                                                                                                              |
+| retry.interval                   | 200ms       | duration    | the interval between 2 retries                                                                                                                                                          |
 | keytab                           |             | string      | the keytab if hdfs use kerberos authenticator                                                                                                                                           |
 | principle                        |             | string      | the principle if hdfs use kerberos authenticator                                                                                                                                        |
 | writer.identity                  | parquet     | string      | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java)       |
@@ -393,6 +395,7 @@ sink.group_1.sink.path=/tmp/test/cache
 sink.group_1.roll.size=10mb
 sink.group_1.bucket.date.format=yyyyMMdd_HH
 sink.group_1.max.retries=3
+sink.group_1.retry.interval=200ms
 sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
