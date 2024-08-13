@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.elasticsearch;
 
 import io.prometheus.client.Counter;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -30,11 +31,12 @@ import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
-import java.io.IOException;
 import java.util.Iterator;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.zicat.tributary.common.Functions.runWithRetryThrowException;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
@@ -44,6 +46,7 @@ import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactor
 @SuppressWarnings("deprecation")
 public class ElasticsearchFunction extends AbstractFunction {
 
+    private static final Exception NO_EXCEPTION = new NoException();
     private static final Counter SINK_ELASTICSEARCH_COUNTER =
             Counter.build()
                     .name("sink_elasticsearch_counter")
@@ -62,16 +65,14 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected transient Counter.Child sinkCounterChild;
     protected transient Counter.Child sinkDiscardCounterChild;
     protected transient RequestIndexer indexer;
-    protected transient int maxRetries;
-    protected transient long retryIntervalMs;
+    protected transient BlockingQueue<DefaultActionListener> listenerQueue;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        maxRetries = context.get(OPTION_MAX_RETRIES);
-        retryIntervalMs = context.get(OPTION_RETRY_INTERVAL).toMillis();
         client = new RestHighLevelClient(createRestClientBuilder(context));
         sinkCounterChild = labelHostId(SINK_ELASTICSEARCH_COUNTER);
+        listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
         sinkDiscardCounterChild = labelHostId(SINK_ELASTICSEARCH_DISCARD_COUNTER);
         indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
         indexer.open(context);
@@ -79,6 +80,7 @@ public class ElasticsearchFunction extends AbstractFunction {
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
+        checkState();
         final AtomicInteger sendCount = new AtomicInteger();
         final AtomicInteger discardCount = new AtomicInteger();
         final BulkRequest request = new BulkRequest();
@@ -97,8 +99,7 @@ public class ElasticsearchFunction extends AbstractFunction {
                     },
                     defaultSinkExtraHeaders());
         }
-        runWithRetryThrowException(
-                () -> sendAndCommit(request, offset), maxRetries, retryIntervalMs);
+        sendAndCommit(request, offset);
         sinkCounterChild.inc(sendCount.get());
         sinkDiscardCounterChild.inc(discardCount.get());
     }
@@ -108,40 +109,117 @@ public class ElasticsearchFunction extends AbstractFunction {
      *
      * @param request request.
      * @param offset offset
-     * @throws IOException IOException
      */
-    protected void sendAndCommit(BulkRequest request, Offset offset) throws IOException {
+    protected void sendAndCommit(BulkRequest request, Offset offset) {
         if (request.numberOfActions() == 0) {
-            commit(offset);
             return;
         }
-        /*
-           bulkAsync may cause previous-error request callback later than next-success request.
-           In this case, the success request will commit offset cause previous-error request data lost.
-           So use bulk sync api to avoid this issue.
-        */
-        final BulkResponse response = client.bulk(request, RequestOptions.DEFAULT);
-        if (!response.hasFailures()) {
-            commit(offset);
-            return;
+        final DefaultActionListener listener = new DefaultActionListener(offset);
+        if (!listenerQueue.offer(listener)) {
+            listenerQueue.clear();
+            throw new IllegalStateException("listener queue is full");
         }
-        for (BulkItemResponse item : response.getItems()) {
-            if (!item.isFailed()) {
-                continue;
-            }
-            final String index = item.getIndex();
-            final String id = item.getId();
-            final String error = item.getFailureMessage();
-            throw new IllegalStateException(
-                    String.format(
-                            "Failed to index document with id %s in index %s: %s",
-                            id, index, error));
-        }
-        commit(offset);
+        client.bulkAsync(request, RequestOptions.DEFAULT, listener);
     }
 
     @Override
     public void close() {
         IOUtils.closeQuietly(client);
+    }
+
+    /**
+     * checkState.
+     *
+     * @throws Exception Exception
+     */
+    protected void checkState() throws Exception {
+        DefaultActionListener listener;
+        while ((listener = listenerQueue.peek()) != null) {
+            if (!listener.isDone()) {
+                break;
+            }
+            final Exception e = listener.exception();
+            if (e == null) {
+                listener.commit();
+                listenerQueue.poll();
+            } else {
+                listenerQueue.clear();
+                throw e;
+            }
+        }
+    }
+
+    /** DefaultActionListener. */
+    protected class DefaultActionListener implements ActionListener<BulkResponse> {
+
+        private final Offset offset;
+        protected final AtomicReference<Exception> state;
+
+        public DefaultActionListener(Offset offset) {
+            this.offset = offset;
+            this.state = new AtomicReference<>();
+        }
+
+        @Override
+        public void onResponse(BulkResponse response) {
+            if (!response.hasFailures()) {
+                state.set(NO_EXCEPTION);
+                return;
+            }
+            for (BulkItemResponse item : response.getItems()) {
+                if (!item.isFailed()) {
+                    continue;
+                }
+                final String index = item.getIndex();
+                final String id = item.getId();
+                final String error = item.getFailureMessage();
+                state.set(
+                        new IllegalStateException(
+                                String.format(
+                                        "Failed to index document with id %s in index %s: %s",
+                                        id, index, error)));
+                return;
+            }
+            state.set(NO_EXCEPTION);
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            state.set(e);
+        }
+
+        /** commit offset. */
+        public void commit() {
+            ElasticsearchFunction.super.commit(offset);
+        }
+
+        /**
+         * check is done.
+         *
+         * @return return true if done.
+         */
+        public boolean isDone() {
+            return state.get() != null;
+        }
+
+        /**
+         * get exception.
+         *
+         * @return exception.
+         */
+        public Exception exception() {
+            final Exception e = state.get();
+            if (e == null) {
+                throw new IllegalStateException("ActionListener is not done.");
+            }
+            return e == NO_EXCEPTION ? null : e;
+        }
+    }
+
+    /** NoException. */
+    private static class NoException extends Exception {
+        public NoException() {
+            super();
+        }
     }
 }

@@ -91,16 +91,12 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .stringType()
                     .description("The identity of request indexer to parse record.")
                     .defaultValue("default");
-    public static final ConfigOption<Integer> OPTION_MAX_RETRIES =
-            ConfigOptions.key("max.retries")
+    public static final ConfigOption<Integer> OPTION_ASYNC_BULK_QUEUE_SIZE =
+            ConfigOptions.key("async.bulk.queue.size")
                     .integerType()
-                    .description("max retries times if operation fail")
-                    .defaultValue(3);
-    public static final ConfigOption<Duration> OPTION_RETRY_INTERVAL =
-            ConfigOptions.key("retry.interval")
-                    .durationType()
-                    .description("retry interval")
-                    .defaultValue(Duration.ofMillis(200));
+                    .description(
+                            "bulk async queue size, if task over this value will throw exception")
+                    .defaultValue(1024);
     public static final String IDENTITY = "elasticsearch";
 
     @Override
