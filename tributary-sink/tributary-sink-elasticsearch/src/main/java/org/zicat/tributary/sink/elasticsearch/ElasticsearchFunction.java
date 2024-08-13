@@ -46,7 +46,7 @@ import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactor
 @SuppressWarnings("deprecation")
 public class ElasticsearchFunction extends AbstractFunction {
 
-    private static final Exception NO_EXCEPTION = new NoException();
+    private static final Exception NO_EXCEPTION = new Exception();
     private static final Counter SINK_ELASTICSEARCH_COUNTER =
             Counter.build()
                     .name("sink_elasticsearch_counter")
@@ -153,7 +153,7 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected class DefaultActionListener implements ActionListener<BulkResponse> {
 
         private final Offset offset;
-        protected final AtomicReference<Exception> state;
+        private final AtomicReference<Exception> state;
 
         public DefaultActionListener(Offset offset) {
             this.offset = offset;
@@ -175,9 +175,12 @@ public class ElasticsearchFunction extends AbstractFunction {
                 final String error = item.getFailureMessage();
                 state.set(
                         new IllegalStateException(
-                                String.format(
-                                        "Failed to index document with id %s in index %s: %s",
-                                        id, index, error)));
+                                "Failed to index document id: "
+                                        + id
+                                        + ", index: "
+                                        + index
+                                        + ", error: "
+                                        + error));
                 return;
             }
             state.set(NO_EXCEPTION);
@@ -213,13 +216,6 @@ public class ElasticsearchFunction extends AbstractFunction {
                 throw new IllegalStateException("ActionListener is not done.");
             }
             return e == NO_EXCEPTION ? null : e;
-        }
-    }
-
-    /** NoException. */
-    private static class NoException extends Exception {
-        public NoException() {
-            super();
         }
     }
 }
