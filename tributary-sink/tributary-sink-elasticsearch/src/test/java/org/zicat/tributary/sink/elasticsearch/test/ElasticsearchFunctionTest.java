@@ -80,6 +80,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         builder.addCustomProperty(OPTION_ASYNC_BULK_QUEUE_SIZE, 2);
         builder.addCustomProperty(OPTION_INDEX, topic);
         builder.addCustomProperty(QUEUE_FULL_AWAIT_TIMEOUT, Duration.ofSeconds(3));
+        final Context context = builder.build();
 
         final Map<String, byte[]> recordHeader1 = new HashMap<>();
         recordHeader1.put("rhk1", "rhv1".getBytes());
@@ -107,11 +108,10 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
 
         final List<Records> recordsList = Collections.singletonList(records);
 
-        ElasticsearchFunctionITCase function = null;
+        final ElasticsearchFunctionITCase function =
+                new ElasticsearchFunctionITCase(node().client());
+        function.open(context);
         try {
-            function = new ElasticsearchFunctionITCase(node().client());
-            final Context context = builder.build();
-            function.open(context);
             function.process(Offset.ZERO, recordsList.iterator());
             Assert.assertEquals(2, function.sinkCount());
             Assert.assertEquals(

@@ -160,6 +160,9 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
      * @throws Exception Exception
      */
     public void sync() throws Exception {
+        if (listenerQueue == null) {
+            return;
+        }
         while (!listenerQueue.isEmpty()) {
             awaitFirstListenerFinished();
         }
