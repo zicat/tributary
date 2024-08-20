@@ -69,13 +69,12 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .stringType()
                     .description("Username used to connect to Elasticsearch instance.")
                     .defaultValue(null);
-    public static final ConfigOption<Duration> CONNECTION_REQUEST_TIMEOUT =
-            ConfigOptions.key("connection.request-timeout")
+    public static final ConfigOption<Duration> REQUEST_TIMEOUT =
+            ConfigOptions.key("request.timeout")
                     .durationType()
                     .description(
                             "The timeout for requesting a connection from the connection manager.")
                     .defaultValue(Duration.ofSeconds(30));
-
     public static final ConfigOption<Duration> CONNECTION_TIMEOUT =
             ConfigOptions.key("connection.timeout")
                     .durationType()
@@ -103,7 +102,7 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .durationType()
                     .description(
                             "await timeout when queue is full, default value is connection.request-timeout")
-                    .defaultValue(null);
+                    .defaultValue(Duration.ofSeconds(30));
     public static final ConfigOption<Duration> OPTION_IDLE_TRIGGER =
             ConfigOptions.key("idle.trigger")
                     .durationType()
@@ -156,7 +155,7 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                             httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
         }
 
-        final long requestTimeoutMs = config.get(CONNECTION_REQUEST_TIMEOUT).toMillis();
+        final long requestTimeoutMs = config.get(REQUEST_TIMEOUT).toMillis();
         final long connectionTimeoutMs = config.get(CONNECTION_TIMEOUT).toMillis();
         final long socketTimeoutMs = config.get(SOCKET_TIMEOUT).toMillis();
         builder.setRequestConfigCallback(

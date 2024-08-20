@@ -65,10 +65,7 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
         client = createRestHighLevelClient(context);
         sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
         listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
-        awaitTimeout =
-                context.get(QUEUE_FULL_AWAIT_TIMEOUT) != null
-                        ? context.get(QUEUE_FULL_AWAIT_TIMEOUT).toMillis()
-                        : context.get(CONNECTION_REQUEST_TIMEOUT).toMillis();
+        awaitTimeout = context.get(QUEUE_FULL_AWAIT_TIMEOUT).toMillis();
         indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
         indexer.open(context);
     }
