@@ -66,7 +66,7 @@ public class ElasticsearchFunction extends AbstractFunction {
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        client = new RestHighLevelClient(createRestClientBuilder(context));
+        client = createRestHighLevelClient(context);
         sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
         listenerQueueSize = context.get(OPTION_ASYNC_BULK_QUEUE_SIZE);
         listenerQueue = new ArrayBlockingQueue<>(listenerQueueSize);
@@ -109,21 +109,49 @@ public class ElasticsearchFunction extends AbstractFunction {
         }
         final DefaultActionListener listener = new DefaultActionListener(offset);
         listenerQueue.add(listener);
+        bulkAsync(request, listener);
+    }
+
+    /**
+     * bulk async.
+     *
+     * @param request request
+     * @param listener listener
+     */
+    protected void bulkAsync(BulkRequest request, ActionListener<BulkResponse> listener) {
         client.bulkAsync(request, RequestOptions.DEFAULT, listener);
+    }
+
+    /**
+     * create RestHighLevelClient.
+     *
+     * @param context context
+     * @return RestHighLevelClient
+     */
+    protected RestHighLevelClient createRestHighLevelClient(Context context) {
+        return new RestHighLevelClient(createRestClientBuilder(context));
     }
 
     @Override
     public void close() {
-        IOUtils.closeQuietly(client);
+        try {
+            checkAndClearDoneListeners();
+            while (!listenerQueue.isEmpty()) {
+                awaitFirstListenerFinished();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            IOUtils.closeQuietly(client);
+        }
     }
 
     /**
-     * checkState.
+     * check and clear done listeners.
      *
      * @throws Exception Exception
      */
-    protected void checkState() throws Exception {
-
+    protected void checkAndClearDoneListeners() throws Exception {
         DefaultActionListener listener;
         // quick remove all finished listeners orderly in queue
         while ((listener = listenerQueue.peek()) != null) {
@@ -139,23 +167,41 @@ public class ElasticsearchFunction extends AbstractFunction {
                 throw e;
             }
         }
+    }
+
+    /**
+     * consumer first listener.
+     *
+     * @throws Exception Exception
+     */
+    protected void awaitFirstListenerFinished() throws Exception {
+        DefaultActionListener listener = listenerQueue.poll();
+        if (listener == null) {
+            return;
+        }
+        if (listener.awaitDone(awaitTimeout, TimeUnit.MILLISECONDS)) {
+            listenerQueue.clear();
+            throw new IllegalStateException("await listener timeout " + awaitTimeout + " ms");
+        }
+        final Exception e = listener.exception();
+        if (e == null) {
+            listener.commit();
+        } else {
+            listenerQueue.clear();
+            throw e;
+        }
+    }
+
+    /**
+     * checkState.
+     *
+     * @throws Exception Exception
+     */
+    protected void checkState() throws Exception {
+        checkAndClearDoneListeners();
         // if full check first listener state
         if (listenerQueue.size() > listenerQueueSize) {
-            listener = listenerQueue.poll();
-            if (listener == null) {
-                return;
-            }
-            if (listener.awaitDone(awaitTimeout, TimeUnit.MILLISECONDS)) {
-                listenerQueue.clear();
-                throw new IllegalStateException("await listener timeout " + awaitTimeout + " ms");
-            }
-            final Exception e = listener.exception();
-            if (e == null) {
-                listener.commit();
-            } else {
-                listenerQueue.clear();
-                throw e;
-            }
+            awaitFirstListenerFinished();
         }
     }
 
