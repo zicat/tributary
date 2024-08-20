@@ -362,7 +362,7 @@ sink.group_4.idle.trigger=30s
 | hosts                    |         | string   | the elasticsearch hosts, split by `;`                                                                                                                         |
 | path-prefix              | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                       |
 | index                    |         | string   | the elasticsearch index to sink                                                                                                                               |
-| compression              | true    | bool     | whether compression the `IndexRequest`, default true                                                                                                          |
+| compression              | true    | bool     | whether compress the index request, default true                                                                                                              |
 | username                 | null    | string   | the username of elasticsearch, default null                                                                                                                   |
 | password                 | null    | string   | the password of elasticsearch, default null                                                                                                                   |
 | request.timeout          | 30s     | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                              |
