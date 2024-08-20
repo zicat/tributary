@@ -21,28 +21,39 @@ package org.zicat.tributary.sink.elasticsearch;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.prometheus.client.Counter;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.xcontent.XContentType;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.sink.function.Context;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_INDEX;
+import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 
 /** DefaultRequestIndexer. */
 public class DefaultRequestIndexer implements RequestIndexer {
+
+    private static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
+            Counter.build()
+                    .name("sink_elasticsearch_discard_counter")
+                    .help("sink elasticsearch discard counter")
+                    .labelNames("host", "id")
+                    .register();
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String KEY_TOPIC = "_topic";
 
     private transient String index;
+    private transient Counter.Child sinkDiscardCounter;
 
     @Override
-    public void open(ReadableConfig config) {
-        index = config.get(OPTION_INDEX);
+    public void open(Context context) {
+        index = context.get(OPTION_INDEX);
+        sinkDiscardCounter = labelHostId(context, SINK_ELASTICSEARCH_DISCARD_COUNTER);
     }
 
     @Override
@@ -53,22 +64,38 @@ public class DefaultRequestIndexer implements RequestIndexer {
             byte[] value,
             Map<String, byte[]> headers)
             throws Exception {
-        final IndexRequest indexRequest = new IndexRequest(index);
-        if (key != null) {
-            indexRequest.id(new String(key, StandardCharsets.UTF_8));
+        final IndexRequest indexRequest = indexRequest(topic, key, value, headers);
+        if (indexRequest == null) {
+            return false;
         }
+        bulkRequest.add(indexRequest);
+        return true;
+    }
 
+    /**
+     * create index request.
+     *
+     * @param topic topic
+     * @param key key
+     * @param value value
+     * @param headers headers
+     * @return IndexRequest
+     */
+    protected IndexRequest indexRequest(
+            String topic, byte[] key, byte[] value, Map<String, byte[]> headers) {
+        final IndexRequest indexRequest = new IndexRequest(index);
+        indexRequest.id(id(topic, key, value, headers));
         final JsonNode jsonNode;
         try {
             jsonNode = MAPPER.readTree(new String(value, StandardCharsets.UTF_8));
             if (!(jsonNode instanceof ObjectNode)) {
-                return false;
+                sinkDiscardCounter.inc();
+                return null;
             }
         } catch (Exception ignore) {
-            // illegal json value
-            return false;
+            sinkDiscardCounter.inc();
+            return null;
         }
-
         final ObjectNode objectNode = (ObjectNode) jsonNode;
         objectNode.put(KEY_TOPIC, topic);
         for (Entry<String, byte[]> entry : headers.entrySet()) {
@@ -76,8 +103,23 @@ public class DefaultRequestIndexer implements RequestIndexer {
             objectNode.put(entry.getKey(), v);
         }
         indexRequest.source(objectNode.toString(), XContentType.JSON);
-        bulkRequest.add(indexRequest);
-        return true;
+        return indexRequest;
+    }
+
+    /**
+     * parse id.
+     *
+     * @param topic topic
+     * @param key key
+     * @param value value
+     * @param headers headers
+     * @return id
+     */
+    protected String id(String topic, byte[] key, byte[] value, Map<String, byte[]> headers) {
+        if (key == null) {
+            return null;
+        }
+        return new String(key, StandardCharsets.UTF_8);
     }
 
     @Override

@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.elasticsearch;
 
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
+import org.zicat.tributary.sink.function.Context;
 
 import java.util.Map;
 
@@ -30,9 +30,9 @@ public interface RequestIndexer extends SpiFactory {
     /**
      * open .
      *
-     * @param config config
+     * @param context context
      */
-    void open(ReadableConfig config);
+    void open(Context context);
 
     /**
      * Add a document to the request.
