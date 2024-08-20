@@ -359,7 +359,7 @@ sink.group_4.idle.trigger=30s
 
 | key                      | default | type     | describe                                                                                                                                                      |
 |--------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| host                     |         | string   | the elasticsearch host, split by `;`                                                                                                                          |
+| hosts                    |         | string   | the elasticsearch hosts, split by `;`                                                                                                                         |
 | path-prefix              | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                       |
 | index                    |         | string   | the elasticsearch index to sink                                                                                                                               |
 | compression              | true    | bool     | whether compression the `IndexRequest`, default true                                                                                                          |
