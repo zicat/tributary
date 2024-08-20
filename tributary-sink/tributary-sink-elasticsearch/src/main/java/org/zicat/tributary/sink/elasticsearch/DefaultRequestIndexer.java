@@ -130,4 +130,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
     public String identity() {
         return "default";
     }
+
+    @Override
+    public void close() {}
 }

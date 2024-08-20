@@ -147,7 +147,7 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            IOUtils.closeQuietly(client);
+            IOUtils.closeQuietly(indexer, client);
         }
     }
 

@@ -22,10 +22,11 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Context;
 
+import java.io.Closeable;
 import java.util.Map;
 
 /** RequestIndexer. */
-public interface RequestIndexer extends SpiFactory {
+public interface RequestIndexer extends SpiFactory, Closeable {
 
     /**
      * open .
