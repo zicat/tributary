@@ -75,6 +75,7 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description(
                             "The timeout for requesting a connection from the connection manager.")
                     .defaultValue(Duration.ofSeconds(30));
+
     public static final ConfigOption<Duration> CONNECTION_TIMEOUT =
             ConfigOptions.key("connection.timeout")
                     .durationType()
@@ -97,6 +98,18 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description(
                             "bulk async queue size, if task over this value will throw exception")
                     .defaultValue(1024);
+    public static final ConfigOption<Duration> QUEUE_FULL_AWAIT_TIMEOUT =
+            ConfigOptions.key("async.bulk.queue.await.timeout")
+                    .durationType()
+                    .description(
+                            "await timeout when queue is full, default value is connection.request-timeout")
+                    .defaultValue(null);
+    public static final ConfigOption<Duration> OPTION_IDLE_TRIGGER =
+            ConfigOptions.key("idle.trigger")
+                    .durationType()
+                    .description("idle trigger, default 30s")
+                    .defaultValue(Duration.ofSeconds(30));
+
     public static final String IDENTITY = "elasticsearch";
 
     @Override

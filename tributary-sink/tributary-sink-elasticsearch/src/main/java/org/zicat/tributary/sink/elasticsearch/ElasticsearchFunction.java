@@ -20,7 +20,6 @@ package org.zicat.tributary.sink.elasticsearch;
 
 import io.prometheus.client.Counter;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -30,14 +29,13 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.function.Trigger;
 
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
@@ -46,9 +44,8 @@ import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactor
 
 /** ElasticsearchFunction. */
 @SuppressWarnings("deprecation")
-public class ElasticsearchFunction extends AbstractFunction {
+public class ElasticsearchFunction extends AbstractFunction implements Trigger {
 
-    private static final Exception NO_EXCEPTION = new Exception();
     private static final Counter SINK_ELASTICSEARCH_COUNTER =
             Counter.build()
                     .name("sink_elasticsearch_counter")
@@ -60,7 +57,6 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected transient Counter.Child sinkCounter;
     protected transient RequestIndexer indexer;
     protected transient BlockingQueue<DefaultActionListener> listenerQueue;
-    protected transient int listenerQueueSize;
     protected transient long awaitTimeout;
 
     @Override
@@ -68,16 +64,18 @@ public class ElasticsearchFunction extends AbstractFunction {
         super.open(context);
         client = createRestHighLevelClient(context);
         sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
-        listenerQueueSize = context.get(OPTION_ASYNC_BULK_QUEUE_SIZE);
-        listenerQueue = new ArrayBlockingQueue<>(listenerQueueSize);
-        awaitTimeout = context.get(CONNECTION_REQUEST_TIMEOUT).toMillis();
+        listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
+        awaitTimeout =
+                context.get(QUEUE_FULL_AWAIT_TIMEOUT) != null
+                        ? context.get(QUEUE_FULL_AWAIT_TIMEOUT).toMillis()
+                        : context.get(CONNECTION_REQUEST_TIMEOUT).toMillis();
         indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
         indexer.open(context);
     }
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
-        checkState();
+        checkAndClearDoneListeners();
         final AtomicInteger sendCount = new AtomicInteger();
         final BulkRequest request = new BulkRequest();
         while (iterator.hasNext()) {
@@ -103,13 +101,26 @@ public class ElasticsearchFunction extends AbstractFunction {
      * @param request request.
      * @param offset offset
      */
-    protected void sendAndCommit(BulkRequest request, Offset offset) {
+    protected void sendAndCommit(BulkRequest request, Offset offset) throws Exception {
         if (request.numberOfActions() == 0) {
             return;
         }
-        final DefaultActionListener listener = new DefaultActionListener(offset);
-        listenerQueue.add(listener);
+        final DefaultActionListener listener = createDefaultActionListener(offset);
+        if (!listenerQueue.offer(listener)) {
+            awaitFirstListenerFinished();
+            listenerQueue.add(listener);
+        }
         bulkAsync(request, listener);
+    }
+
+    /**
+     * create default action listener.
+     *
+     * @param offset offset
+     * @return DefaultActionListener
+     */
+    protected DefaultActionListener createDefaultActionListener(Offset offset) {
+        return new DefaultActionListener(offset);
     }
 
     /**
@@ -135,14 +146,22 @@ public class ElasticsearchFunction extends AbstractFunction {
     @Override
     public void close() {
         try {
-            checkAndClearDoneListeners();
-            while (!listenerQueue.isEmpty()) {
-                awaitFirstListenerFinished();
-            }
+            sync();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             IOUtils.closeQuietly(client);
+        }
+    }
+
+    /**
+     * wait down.
+     *
+     * @throws Exception Exception
+     */
+    public void sync() throws Exception {
+        while (!listenerQueue.isEmpty()) {
+            awaitFirstListenerFinished();
         }
     }
 
@@ -161,7 +180,7 @@ public class ElasticsearchFunction extends AbstractFunction {
             final Exception e = listener.exception();
             if (e == null) {
                 listenerQueue.poll();
-                listener.commit();
+                commit(listener.offset());
             } else {
                 listenerQueue.clear();
                 throw e;
@@ -174,128 +193,31 @@ public class ElasticsearchFunction extends AbstractFunction {
      *
      * @throws Exception Exception
      */
-    protected void awaitFirstListenerFinished() throws Exception {
-        DefaultActionListener listener = listenerQueue.poll();
+    private void awaitFirstListenerFinished() throws Exception {
+        final DefaultActionListener listener = listenerQueue.poll();
         if (listener == null) {
             return;
         }
-        if (listener.awaitDone(awaitTimeout, TimeUnit.MILLISECONDS)) {
+        if (!listener.awaitDone(awaitTimeout, TimeUnit.MILLISECONDS)) {
             listenerQueue.clear();
             throw new IllegalStateException("await listener timeout " + awaitTimeout + " ms");
         }
         final Exception e = listener.exception();
         if (e == null) {
-            listener.commit();
+            commit(listener.offset());
         } else {
             listenerQueue.clear();
             throw e;
         }
     }
 
-    /**
-     * checkState.
-     *
-     * @throws Exception Exception
-     */
-    protected void checkState() throws Exception {
-        checkAndClearDoneListeners();
-        // if full check first listener state
-        if (listenerQueue.size() > listenerQueueSize) {
-            awaitFirstListenerFinished();
-        }
+    @Override
+    public long idleTimeMillis() {
+        return context.get(OPTION_IDLE_TRIGGER).toMillis();
     }
 
-    /** DefaultActionListener. */
-    protected class DefaultActionListener implements ActionListener<BulkResponse> {
-
-        private final Offset offset;
-        private final AtomicReference<Exception> state;
-        private final CountDownLatch countDownLatch = new CountDownLatch(1);
-
-        public DefaultActionListener(Offset offset) {
-            this.offset = offset;
-            this.state = new AtomicReference<>();
-        }
-
-        @Override
-        public void onResponse(BulkResponse response) {
-            if (!response.hasFailures()) {
-                updateState(NO_EXCEPTION);
-                return;
-            }
-            for (BulkItemResponse item : response.getItems()) {
-                if (!item.isFailed()) {
-                    continue;
-                }
-                final String index = item.getIndex();
-                final String id = item.getId();
-                final String error = item.getFailureMessage();
-                updateState(
-                        new IllegalStateException(
-                                "Failed to index document id: "
-                                        + id
-                                        + ", index: "
-                                        + index
-                                        + ", error: "
-                                        + error));
-                return;
-            }
-            updateState(NO_EXCEPTION);
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            updateState(e);
-        }
-
-        /** commit offset. */
-        public void commit() {
-            ElasticsearchFunction.super.commit(offset);
-        }
-
-        /**
-         * update state.
-         *
-         * @param e e
-         */
-        private void updateState(Exception e) {
-            state.set(e);
-            countDownLatch.countDown();
-        }
-
-        /**
-         * check is done.
-         *
-         * @return return true if done.
-         */
-        public boolean isDone() {
-            return state.get() != null;
-        }
-
-        /**
-         * await done.
-         *
-         * @param timeout timeout
-         * @param unit unit
-         * @return true if the count reached zero and false if the waiting time elapsed before the
-         *     count reached zero
-         * @throws InterruptedException InterruptedException
-         */
-        public boolean awaitDone(long timeout, TimeUnit unit) throws InterruptedException {
-            return countDownLatch.await(timeout, unit);
-        }
-
-        /**
-         * get exception.
-         *
-         * @return exception.
-         */
-        public Exception exception() {
-            final Exception e = state.get();
-            if (e == null) {
-                throw new IllegalStateException("ActionListener is not done.");
-            }
-            return e == NO_EXCEPTION ? null : e;
-        }
+    @Override
+    public void idleTrigger() throws Throwable {
+        checkAndClearDoneListeners();
     }
 }

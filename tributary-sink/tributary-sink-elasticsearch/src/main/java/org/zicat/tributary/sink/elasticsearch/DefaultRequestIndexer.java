@@ -37,7 +37,7 @@ import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 /** DefaultRequestIndexer. */
 public class DefaultRequestIndexer implements RequestIndexer {
 
-    private static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
+    public static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
             Counter.build()
                     .name("sink_elasticsearch_discard_counter")
                     .help("sink elasticsearch discard counter")
@@ -45,7 +45,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
                     .register();
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final String KEY_TOPIC = "_topic";
+    public static final String KEY_TOPIC = "_topic";
 
     private transient String index;
     private transient Counter.Child sinkDiscardCounter;
@@ -84,7 +84,10 @@ public class DefaultRequestIndexer implements RequestIndexer {
     protected IndexRequest indexRequest(
             String topic, byte[] key, byte[] value, Map<String, byte[]> headers) {
         final IndexRequest indexRequest = new IndexRequest(index);
-        indexRequest.id(id(topic, key, value, headers));
+        final String id = id(topic, key, value, headers);
+        if (id != null) {
+            indexRequest.id(id);
+        }
         final JsonNode jsonNode;
         try {
             jsonNode = MAPPER.readTree(new String(value, StandardCharsets.UTF_8));
@@ -115,8 +118,9 @@ public class DefaultRequestIndexer implements RequestIndexer {
      * @param headers headers
      * @return id
      */
+    @SuppressWarnings("unused")
     protected String id(String topic, byte[] key, byte[] value, Map<String, byte[]> headers) {
-        if (key == null) {
+        if (key == null || key.length == 0) {
             return null;
         }
         return new String(key, StandardCharsets.UTF_8);

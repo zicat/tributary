@@ -18,29 +18,49 @@
 
 package org.zicat.tributary.sink.elasticsearch.test;
 
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.test.ESSingleNodeTestCase;
+import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.records.DefaultRecord;
-import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
-import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.common.records.*;
+import org.zicat.tributary.sink.elasticsearch.DefaultActionListener;
+import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_ASYNC_BULK_QUEUE_SIZE;
+import static java.lang.Long.parseLong;
+import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.SINK_ELASTICSEARCH_DISCARD_COUNTER;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
 import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 
 /** ElasticsearchFunctionTest. */
 @SuppressWarnings("ALL")
+@RunWith(RandomizedRunner.class)
+@ThreadLeakScope(ThreadLeakScope.Scope.NONE)
 public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
 
     private static final String topic = "kt1";
@@ -48,6 +68,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
     @Test
     public void test() throws Exception {
 
+        final long start = System.currentTimeMillis();
         final ContextBuilder builder =
                 new ContextBuilder()
                         .id("f1")
@@ -57,6 +78,8 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
                         .startOffset(Offset.ZERO);
         builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
         builder.addCustomProperty(OPTION_ASYNC_BULK_QUEUE_SIZE, 2);
+        builder.addCustomProperty(OPTION_INDEX, topic);
+        builder.addCustomProperty(QUEUE_FULL_AWAIT_TIMEOUT, Duration.ofSeconds(3));
 
         final Map<String, byte[]> recordHeader1 = new HashMap<>();
         recordHeader1.put("rhk1", "rhv1".getBytes());
@@ -70,7 +93,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         recordHeader2.put("rhk2", "rhv2".getBytes());
         final Record record2 =
                 new DefaultRecord(
-                        recordHeader2, null, "{\"name\":\"n1\", \"score\":20}".getBytes());
+                        recordHeader2, null, "{\"name\":\"n2\", \"score\":20}".getBytes());
 
         final Map<String, byte[]> recordHeader3 = new HashMap<>();
         recordHeader3.put("rhk3", "rhv3".getBytes());
@@ -83,17 +106,81 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
                 new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2, record3));
 
         final List<Records> recordsList = Collections.singletonList(records);
-        try (ElasticsearchFunctionITCase function =
-                new ElasticsearchFunctionITCase(node().client())) {
-            function.open(builder.build());
+
+        ElasticsearchFunctionITCase function = null;
+        try {
+            function = new ElasticsearchFunctionITCase(node().client());
+            final Context context = builder.build();
+            function.open(context);
             function.process(Offset.ZERO, recordsList.iterator());
+            Assert.assertEquals(2, function.sinkCount());
+            Assert.assertEquals(
+                    1, (int) labelHostId(context, SINK_ELASTICSEARCH_DISCARD_COUNTER).get());
+            function.sync();
+            Assert.assertEquals(Offset.ZERO, function.committableOffset());
+            Assert.assertTrue(function.isEmpty());
+            Assert.assertEquals(1, function.bulkInsertCount());
+            node().client().admin().indices().refresh(new RefreshRequest(topic)).actionGet();
+
+            final GetResponse response = node().client().get(new GetRequest(topic, "rk1")).get();
+            final Map<String, Object> source = response.getSource();
+            Assert.assertEquals(topic, source.get(DefaultRequestIndexer.KEY_TOPIC));
+            Assert.assertEquals("n1", source.get("name"));
+            Assert.assertEquals(10, source.get("score"));
+            Assert.assertEquals("rhv1", source.get("rhk1"));
+            Assert.assertEquals("rshv1", source.get("rshk1"));
+            final long sentTs = parseLong(source.get(RecordsUtils.HEAD_KEY_SENT_TS).toString());
+            Assert.assertTrue(sentTs >= start && sentTs <= System.currentTimeMillis());
+
+            final QueryBuilder query = new TermQueryBuilder("name", "n2");
+            final SearchResponse searchResponse =
+                    node().client()
+                            .search(
+                                    new SearchRequest(topic)
+                                            .source(
+                                                    new SearchSourceBuilder()
+                                                            .from(0)
+                                                            .size(1)
+                                                            .query(query)))
+                            .get();
+            Assert.assertEquals(1L, searchResponse.getHits().getTotalHits().value);
+            final Map<String, Object> source2 =
+                    searchResponse.getHits().getHits()[0].getSourceAsMap();
+            Assert.assertEquals(topic, source2.get(DefaultRequestIndexer.KEY_TOPIC));
+            Assert.assertEquals("n2", source2.get("name"));
+            Assert.assertEquals(20, source2.get("score"));
+            Assert.assertEquals("rhv2", source2.get("rhk2"));
+            Assert.assertEquals("rshv1", source2.get("rshk1"));
+            final long sentTs2 = parseLong(source2.get(RecordsUtils.HEAD_KEY_SENT_TS).toString());
+            Assert.assertTrue(sentTs2 >= start && sentTs2 <= System.currentTimeMillis());
+
+            // test timeout
+            function.setSleepTime(10000);
+            function.process(new Offset(0, 1), recordsList.iterator());
+            function.process(new Offset(0, 2), recordsList.iterator());
+            try {
+                function.process(new Offset(0, 3), recordsList.iterator());
+                Assert.fail();
+            } catch (Exception ignore) {
+                Assert.assertTrue(function.isEmpty());
+                Assert.assertEquals(Offset.ZERO, function.committableOffset());
+            }
+
+            function.setSleepTime(0);
+            function.process(new Offset(0, 10), recordsList.iterator());
+        } finally {
+            IOUtils.closeQuietly(function);
         }
+        Assert.assertTrue(function.isEmpty());
+        Assert.assertEquals(2, function.bulkInsertCount());
     }
 
     /** ElasticsearchFunctionMock. */
     private static class ElasticsearchFunctionITCase extends ElasticsearchFunction {
 
         private final Client client;
+        private final AtomicInteger bulkInsertCounter = new AtomicInteger();
+        private volatile int sleepTime = 0;
 
         public ElasticsearchFunctionITCase(Client client) {
             this.client = client;
@@ -109,6 +196,39 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
             client.bulk(request, listener);
         }
 
-        public void waitDone() {}
+        public void setSleepTime(int sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
+        @Override
+        protected DefaultActionListener createDefaultActionListener(Offset offset) {
+            return new DefaultActionListener(offset) {
+                @Override
+                public void onResponse(BulkResponse response) {
+                    bulkInsertCounter.incrementAndGet();
+                    Threads.sleepQuietly(sleepTime);
+                    super.onResponse(response);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    bulkInsertCounter.incrementAndGet();
+                    Threads.sleepQuietly(sleepTime);
+                    super.onFailure(e);
+                }
+            };
+        }
+
+        public int sinkCount() {
+            return (int) sinkCounter.get();
+        }
+
+        public int bulkInsertCount() {
+            return bulkInsertCounter.get();
+        }
+
+        public boolean isEmpty() {
+            return listenerQueue.isEmpty();
+        }
     }
 }
