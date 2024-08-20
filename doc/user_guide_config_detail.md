@@ -357,21 +357,21 @@ sink.group_4.async.bulk.queue.await.timeout=30s
 sink.group_4.idle.trigger=30s
 ```
 
-| key                      | default | type     | describe                                                                                                                                                      |
-|--------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| hosts                    |         | string   | the elasticsearch hosts, split by `;`                                                                                                                         |
-| path-prefix              | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                       |
-| index                    |         | string   | the elasticsearch index to sink                                                                                                                               |
-| compression              | true    | bool     | whether compress the index request, default true                                                                                                              |
-| username                 | null    | string   | the username of elasticsearch, default null                                                                                                                   |
-| password                 | null    | string   | the password of elasticsearch, default null                                                                                                                   |
-| request.timeout          | 30s     | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                              |
-| connection.timeout       | 10s     | duration | the timeout for establishing a connection, default 10s                                                                                                        |
-| socket.timeout           | 20s     | duration | the socket timeout (SO_TIMEOUT) for waiting for data or, put differently,a maximum period inactivity between two consecutive data packets, default 20s        |
-| async.bulk.queue.size    | 1024    | int      | the queue size which putted async bulk insert listener callback instances                                                                                     |
-| bulk.queue.await.timeout | 30s     | duration | throw exception if bulk queue is full over this param                                                                                                         |
-| idle.trigger             | 30s     | duration | set idle trigger callback, if sink is no-data over this param, will cleanup resources                                                                         |
-| request.indexer          | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java) |
+| key                            | default | type     | describe                                                                                                                                                      |
+|--------------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| hosts                          |         | string   | the elasticsearch hosts, split by `;`                                                                                                                         |
+| path-prefix                    | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                       |
+| index                          |         | string   | the elasticsearch index to sink                                                                                                                               |
+| compression                    | true    | bool     | whether compress the index request, default true                                                                                                              |
+| username                       | null    | string   | the username of elasticsearch, default null                                                                                                                   |
+| password                       | null    | string   | the password of elasticsearch, default null                                                                                                                   |
+| request.timeout                | 30s     | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                              |
+| connection.timeout             | 10s     | duration | the timeout for establishing a connection, default 10s                                                                                                        |
+| socket.timeout                 | 20s     | duration | the socket timeout (SO_TIMEOUT) for waiting for data or, put differently,a maximum period inactivity between two consecutive data packets, default 20s        |
+| async.bulk.queue.size          | 1024    | int      | the queue size which putted async bulk insert listener callback instances                                                                                     |
+| async.bulk.queue.await.timeout | 30s     | duration | throw exception if bulk queue is full over this param                                                                                                         |
+| idle.trigger                   | 30s     | duration | set idle trigger callback, if sink is no-data over this param, will cleanup resources                                                                         |
+| request.indexer                | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java) |
 
 ## The complete demo config
 
