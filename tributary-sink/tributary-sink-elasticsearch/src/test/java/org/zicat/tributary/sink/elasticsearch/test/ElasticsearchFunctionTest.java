@@ -165,7 +165,6 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
                 Assert.assertTrue(function.isEmpty());
                 Assert.assertEquals(Offset.ZERO, function.committableOffset());
             }
-
             function.setSleepTime(0);
             function.process(new Offset(0, 10), recordsList.iterator());
         } finally {
