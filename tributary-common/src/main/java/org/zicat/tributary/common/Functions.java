@@ -30,6 +30,48 @@ public class Functions {
     private static final Logger LOG = LoggerFactory.getLogger(Functions.class);
 
     /**
+     * run with retry.
+     *
+     * @param runnable runnable
+     * @param maxRetries maxRetries
+     * @param sleepOnFail sleepOnFail
+     * @return Throwable
+     */
+    public static Exception runWithRetry(Runnable runnable, int maxRetries, long sleepOnFail) {
+        int retryCount = 0;
+        Exception firstE = null;
+        do {
+            try {
+                runnable.run();
+                return null;
+            } catch (Exception t) {
+                retryCount++;
+                if (firstE == null) {
+                    firstE = t;
+                }
+                Threads.sleepQuietly(sleepOnFail);
+            }
+        } while (retryCount <= maxRetries);
+        return firstE;
+    }
+
+    /**
+     * run with retry, throw exception if run fail.
+     *
+     * @param runnable runnable
+     * @param maxRetries maxRetries
+     * @param sleepOnFail sleepOnFail
+     * @throws Exception Exception
+     */
+    public static void runWithRetryThrowException(
+            Runnable runnable, int maxRetries, long sleepOnFail) throws Exception {
+        final Exception e = runWithRetry(runnable, maxRetries, sleepOnFail);
+        if (e != null) {
+            throw e;
+        }
+    }
+
+    /**
      * loopCloseableFunction.
      *
      * @param function function
@@ -87,5 +129,16 @@ public class Functions {
         } catch (InterruptedException ignore) {
             return true;
         }
+    }
+
+    /** Runnable. */
+    public interface Runnable {
+
+        /**
+         * run method with exception.
+         *
+         * @throws Exception Exception
+         */
+        void run() throws Exception;
     }
 }

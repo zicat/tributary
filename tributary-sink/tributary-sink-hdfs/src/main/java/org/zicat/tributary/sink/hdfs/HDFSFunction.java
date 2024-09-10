@@ -51,8 +51,8 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
                     .labelNames("host", "id")
                     .register();
 
-    protected transient Gauge.Child openFilesGaugeChild;
-    protected transient Counter.Child sinkCounterChild;
+    protected transient Gauge.Child openFilesGauge;
+    protected transient Counter.Child sinkCounter;
     protected transient Offset lastOffset;
     protected transient RecordsWriterManager recordsWriterManager;
     protected transient BucketGenerator bucketGenerator;
@@ -61,8 +61,8 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        sinkCounterChild = labelHostId(HDFS_SINK_COUNTER);
-        openFilesGaugeChild = labelHostId(HDFS_OPEN_FILES_GAUGE);
+        sinkCounter = labelHostId(HDFS_SINK_COUNTER);
+        openFilesGauge = labelHostId(HDFS_OPEN_FILES_GAUGE);
         recordsWriterManager = createRecordsWriterManager();
         recordsWriterManager.open(context);
         bucketGenerator = createBucketGenerator();
@@ -95,8 +95,8 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
             totalCount += recordsWriterManager.getOrCreateRecordsWriter(bucket).append(records);
         }
         lastOffset = offset;
-        sinkCounterChild.inc(totalCount);
-        openFilesGaugeChild.set(recordsWriterManager.bucketsCount());
+        sinkCounter.inc(totalCount);
+        openFilesGauge.set(recordsWriterManager.bucketsCount());
     }
 
     @Override

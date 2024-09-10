@@ -88,6 +88,18 @@ public abstract class AbstractFunction implements Function {
      * @param <CHILD> CHILD
      */
     protected <CHILD> CHILD labelHostId(SimpleCollector<CHILD> collector) {
-        return collector.labels(metricsHost(), context.id());
+        return labelHostId(context, collector);
+    }
+
+    /**
+     * label host group id topic.
+     *
+     * @param context context
+     * @param collector collector
+     * @return child
+     * @param <CHILD> CHILD
+     */
+    public static <CHILD> CHILD labelHostId(Context context, SimpleCollector<CHILD> collector) {
+        return collector.labels(context.get(OPTION_METRICS_HOST), context.id());
     }
 }

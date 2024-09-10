@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.sink.hdfs.bucket;
 
-import org.zicat.tributary.common.Threads;
-
 /** BucketMeta. */
 public class BucketMeta {
 
@@ -29,12 +27,19 @@ public class BucketMeta {
     protected final String fileName;
     protected final long rollSize;
     protected final int maxRetries;
+    protected final long retryIntervalMs;
 
-    public BucketMeta(String bucketPath, String fileName, long rollSize, int maxRetries) {
+    public BucketMeta(
+            String bucketPath,
+            String fileName,
+            long rollSize,
+            int maxRetries,
+            long retryIntervalMs) {
         this.bucketPath = bucketPath;
         this.fileName = fileName;
         this.rollSize = rollSize;
         this.maxRetries = maxRetries;
+        this.retryIntervalMs = retryIntervalMs;
     }
 
     /**
@@ -51,36 +56,7 @@ public class BucketMeta {
      *
      * @return millis
      */
-    protected long sleepOnFail() {
-        return 200L;
-    }
-
-    /**
-     * running with retry.
-     *
-     * @param runner runner
-     */
-    protected Throwable runWithRetry(BucketWriter.CallRunner runner, long sleepOnFail) {
-        int retryCount = 0;
-        Throwable exception = null;
-        do {
-            try {
-                runner.call();
-                return null;
-            } catch (Throwable t) {
-                if (exception == null) {
-                    exception = t;
-                }
-                Threads.sleepQuietly(sleepOnFail);
-            } finally {
-                retryCount++;
-            }
-        } while (retryCount < maxRetries);
-        return exception;
-    }
-
-    /** call runner. */
-    public interface CallRunner {
-        void call() throws Exception;
+    protected long retryIntervalMs() {
+        return retryIntervalMs;
     }
 }

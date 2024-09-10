@@ -22,6 +22,8 @@
         <kafka-version>2.5.0</kafka-version>
         <prometheus-version>0.5.0</prometheus-version>
         <netty-version>4.1.65.Final</netty-version>
+        <elasticsearch-client-version>7.17.23</elasticsearch-client-version>
+        <snappy-java>1.1.8.4</snappy-java>
     </properties>
     <scm>
         <url>https://github.com/zicat/tributary</url>
