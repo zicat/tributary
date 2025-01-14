@@ -18,11 +18,13 @@
 
 package org.zicat.tributary.sink.hbase.test;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.client.DefaultRequestController;
 import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
@@ -41,10 +43,6 @@ import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.hbase.HBaseFunction;
 
 import java.util.*;
-
-import static org.apache.hadoop.hbase.client.RequestControllerFactory.REQUEST_CONTROLLER_IMPL_CONF_KEY;
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
-import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
 
 /** HBaseFunctionTest. */
 public class HBaseFunctionTest {
@@ -100,9 +98,6 @@ public class HBaseFunctionTest {
                     protected Configuration createConfiguration() {
                         final Configuration oldConf = super.createConfiguration();
                         Assert.assertEquals("10", oldConf.get("aaa"));
-                        Assert.assertEquals(
-                                DefaultRequestController.class.getName(),
-                                oldConf.get(REQUEST_CONTROLLER_IMPL_CONF_KEY));
                         return configuration;
                     }
                 }) {

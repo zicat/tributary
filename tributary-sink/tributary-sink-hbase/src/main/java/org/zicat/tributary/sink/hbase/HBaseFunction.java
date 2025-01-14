@@ -18,7 +18,13 @@
 
 package org.zicat.tributary.sink.hbase;
 
+import static org.zicat.tributary.common.IOUtils.getClasspathResource;
+import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
+import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
+import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
+
 import io.prometheus.client.Counter;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -42,12 +48,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.apache.hadoop.hbase.client.RequestControllerFactory.REQUEST_CONTROLLER_IMPL_CONF_KEY;
-import static org.zicat.tributary.common.IOUtils.getClasspathResource;
-import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
-import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
 
 /** HBaseFunction. */
 public class HBaseFunction extends AbstractFunction implements BufferedMutator.ExceptionListener {
@@ -177,7 +177,6 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
                 conf.addResource(new Path(hbaseSiteXmlPath));
             }
         }
-        conf.set(REQUEST_CONTROLLER_IMPL_CONF_KEY, DefaultRequestController.class.getName());
         final String zkConfig = conf.get(HConstants.ZOOKEEPER_QUORUM);
         if (zkConfig == null || zkConfig.trim().isEmpty()) {
             throw new TributaryRuntimeException(HConstants.ZOOKEEPER_QUORUM + " not found");
