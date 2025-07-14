@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.channel.file;
 
+import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.BlockWriter;
@@ -33,9 +36,6 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
-import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
 
 /** FileSegment storage data to file. */
 public class FileSegment extends Segment {
@@ -81,9 +81,9 @@ public class FileSegment extends Segment {
         if (recycled.compareAndSet(false, true)) {
             final boolean deleted = file.delete();
             if (deleted) {
-                LOG.info("expired file " + file.getPath() + " deleted success");
+                LOG.info("expired file {} deleted success", file.getPath());
             } else {
-                LOG.warn("expired file " + file.getPath() + " deleted fail");
+                LOG.warn("expired file {} deleted fail", file.getPath());
             }
         }
     }

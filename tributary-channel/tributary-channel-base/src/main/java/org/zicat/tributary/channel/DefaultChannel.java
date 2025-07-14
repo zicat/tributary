@@ -68,7 +68,9 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
                                 t -> {
                                     boolean success = true;
                                     for (C channel : channels) {
-                                        success = success && channel.flushQuietly();
+                                        if (channel.flushIdleMillis() >= flushPeriodMillis) {
+                                            success = success && channel.flushQuietly();
+                                        }
                                     }
                                     return success;
                                 },

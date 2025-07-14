@@ -119,4 +119,11 @@ public interface SingleChannel extends Channel, SingleGroupManager {
     default Offset committedOffset(String groupId, int partition) {
         return committedOffset(groupId);
     }
+
+    /**
+     * get flush idle time in ms.
+     *
+     * @return the flush idle time
+     */
+    long flushIdleMillis();
 }

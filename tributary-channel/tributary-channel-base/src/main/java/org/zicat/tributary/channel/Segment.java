@@ -18,6 +18,10 @@
 
 package org.zicat.tributary.channel;
 
+import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
+import static org.zicat.tributary.common.BytesUtils.toBytes;
+import static org.zicat.tributary.common.IOUtils.reAllocate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
-import static org.zicat.tributary.common.BytesUtils.toBytes;
-import static org.zicat.tributary.common.IOUtils.reAllocate;
 
 /**
  * A segment instance is the represent of parts data in one channel.
@@ -66,6 +66,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             new CountDownLatchWitException(1);
     protected final CompressionType compression;
     protected long cacheUsed = 0;
+    protected long preFreshTime = System.currentTimeMillis();
     private final ChannelBlockCache bCache;
     private final BlockWriter.BlockFlushHandler blockFlushHandler;
 
@@ -408,9 +409,19 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             }
             persist(force);
             cacheUsed = 0;
+            preFreshTime = System.currentTimeMillis();
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * get flush idle milli.
+     *
+     * @return idle time
+     */
+    public long flushIdleMillis() {
+        return System.currentTimeMillis() - preFreshTime;
     }
 
     /**

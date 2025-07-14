@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel;
 
+import static org.zicat.tributary.channel.group.GroupManager.uninitializedOffset;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
@@ -37,8 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static org.zicat.tributary.channel.group.GroupManager.uninitializedOffset;
 
 /** AbstractChannel. */
 public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
@@ -368,5 +368,10 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         } catch (Throwable ignore) {
             return false;
         }
+    }
+
+    @Override
+    public long flushIdleMillis() {
+        return latestSegment.flushIdleMillis();
     }
 }
