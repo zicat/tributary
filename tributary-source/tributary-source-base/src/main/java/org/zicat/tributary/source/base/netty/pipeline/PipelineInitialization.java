@@ -16,15 +16,19 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.base.netty.pipeline;
 
-import org.zicat.tributary.source.base.Source;
+import io.netty.channel.ChannelPipeline;
 
-import java.util.Map;
+import java.io.Closeable;
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
-    }
+/** PipelineInitialization. */
+public interface PipelineInitialization extends Closeable {
+
+    /**
+     * init pipeline.
+     *
+     * @param pipeline pipeline
+     */
+    void init(ChannelPipeline pipeline);
 }

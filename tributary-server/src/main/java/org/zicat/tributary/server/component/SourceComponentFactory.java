@@ -18,18 +18,19 @@
 
 package org.zicat.tributary.server.component;
 
+import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
+import static org.zicat.tributary.common.SpiFactory.findFactory;
+
 import io.prometheus.client.GaugeMetricFamily;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.*;
-import org.zicat.tributary.source.Source;
-import org.zicat.tributary.source.SourceFactory;
+import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.source.base.SourceFactory;
 
 import java.util.*;
-
-import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
-import static org.zicat.tributary.common.SpiFactory.findFactory;
 
 /** SourceComponentFactory. */
 public class SourceComponentFactory implements SafeFactory<SourceComponent> {

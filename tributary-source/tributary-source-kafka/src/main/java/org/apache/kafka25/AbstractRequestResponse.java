@@ -16,15 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.apache.kafka25;
 
-import org.zicat.tributary.source.base.Source;
-
-import java.util.Map;
-
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
-    }
-}
+/** AbstractRequestResponse. */
+public interface AbstractRequestResponse {}

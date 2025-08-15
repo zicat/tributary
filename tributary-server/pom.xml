@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>tributary-source</artifactId>
+            <artifactId>tributary-source-base</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

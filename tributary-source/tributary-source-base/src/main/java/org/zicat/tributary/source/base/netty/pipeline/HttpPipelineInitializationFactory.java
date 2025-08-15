@@ -16,15 +16,23 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.base.netty.pipeline;
 
-import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.source.base.netty.DefaultNettySource;
 
-import java.util.Map;
+/** HttpPipelineInitializationFactory. */
+public class HttpPipelineInitializationFactory implements PipelineInitializationFactory {
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
+    public static final String IDENTITY = "httpDecoder";
+
+    @Override
+    public String identity() {
+        return IDENTITY;
+    }
+
+    @Override
+    public PipelineInitialization createPipelineInitialization(DefaultNettySource source)
+            throws Exception {
+        return new HttpPipelineInitialization(source);
     }
 }

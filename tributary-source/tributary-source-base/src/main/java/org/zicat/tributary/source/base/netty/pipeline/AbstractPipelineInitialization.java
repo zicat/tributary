@@ -16,15 +16,32 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.base.netty.pipeline;
 
-import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.source.base.netty.AbstractNettySource;
 
-import java.util.Map;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
+/** AbstractPipelineInitialization. */
+public abstract class AbstractPipelineInitialization implements PipelineInitialization {
+
+    protected final AtomicInteger count = new AtomicInteger();
+    protected final AbstractNettySource source;
+
+    public AbstractPipelineInitialization(AbstractNettySource source) {
+        this.source = source;
     }
+
+    /**
+     * select partition id.
+     *
+     * @return partition id
+     */
+    protected int selectPartition() {
+        return (count.getAndIncrement() & 0x7fffffff) % source.partition();
+    }
+
+    @Override
+    public void close() throws IOException {}
 }

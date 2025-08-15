@@ -16,15 +16,25 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.kafka;
 
-import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
+import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
-import java.util.Map;
+/** KafkaPipelineInitializationFactory. */
+public class KafkaPipelineInitializationFactory implements PipelineInitializationFactory {
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
+    public static final String IDENTITY = "kafkaDecoder";
+
+    @Override
+    public String identity() {
+        return IDENTITY;
+    }
+
+    @Override
+    public PipelineInitialization createPipelineInitialization(DefaultNettySource source)
+            throws Exception {
+        return new KafkaPipelineInitialization(source);
     }
 }

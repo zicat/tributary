@@ -16,15 +16,24 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.apache.kafka25;
 
-import org.zicat.tributary.source.base.Source;
+import org.apache.kafka.common.network.TransportLayer;
 
-import java.util.Map;
+import java.nio.channels.GatheringByteChannel;
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
+/** TransportLayers. */
+public class TransportLayers {
+    private TransportLayers() {}
+
+    // This is temporary workaround as Send and Receive interfaces are used by BlockingChannel.
+    // Once BlockingChannel is removed we can make Send and Receive work with TransportLayer rather
+    // than
+    // GatheringByteChannel or ScatteringByteChannel.
+    public static boolean hasPendingWrites(GatheringByteChannel channel) {
+        if (channel instanceof TransportLayer) {
+            return ((TransportLayer) channel).hasPendingWrites();
+        }
+        return false;
     }
 }

@@ -16,15 +16,22 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.base.netty.pipeline;
 
-import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.source.base.netty.DefaultNettySource;
 
-import java.util.Map;
+/** LengthPipelineInitializationFactory. */
+public class LengthPipelineInitializationFactory implements PipelineInitializationFactory {
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
+    public static final String IDENTITY = "lengthDecoder";
+
+    @Override
+    public String identity() {
+        return IDENTITY;
+    }
+
+    @Override
+    public PipelineInitialization createPipelineInitialization(DefaultNettySource source) {
+        return new LengthPipelineInitialization(source);
     }
 }

@@ -16,15 +16,21 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.apache.kafka25;
 
-import org.zicat.tributary.source.base.Source;
+import java.nio.ByteBuffer;
 
-import java.util.Map;
+/** NetworkSend. */
+public class NetworkSend extends ByteBufferSend {
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
+    public NetworkSend(String destination, ByteBuffer buffer) {
+        super(destination, sizeBuffer(buffer.remaining()), buffer);
+    }
+
+    private static ByteBuffer sizeBuffer(int size) {
+        ByteBuffer sizeBuffer = ByteBuffer.allocate(4);
+        sizeBuffer.putInt(size);
+        sizeBuffer.rewind();
+        return sizeBuffer;
     }
 }

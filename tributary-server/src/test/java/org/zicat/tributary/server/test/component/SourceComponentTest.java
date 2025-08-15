@@ -27,7 +27,7 @@ import org.zicat.tributary.server.component.SourceComponent;
 import org.zicat.tributary.server.component.SourceComponentFactory;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
-import org.zicat.tributary.source.netty.AbstractNettySource;
+import org.zicat.tributary.source.base.netty.AbstractNettySource;
 
 import java.io.IOException;
 import java.util.Properties;

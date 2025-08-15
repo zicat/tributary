@@ -16,15 +16,21 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.base;
 
-import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.SpiFactory;
 
-import java.util.Map;
+/** SourceFactory. */
+public interface SourceFactory extends SpiFactory {
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
-    }
+    /**
+     * create source.
+     *
+     * @param channel channel
+     * @param config config
+     * @return Source
+     */
+    Source createSource(String sourceId, Channel channel, ReadableConfig config) throws Exception;
 }

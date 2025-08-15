@@ -16,15 +16,30 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.apache.kafka25;
 
-import org.zicat.tributary.source.base.Source;
+import java.io.IOException;
+import java.nio.channels.GatheringByteChannel;
 
-import java.util.Map;
+/** Send. */
+public interface Send {
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
-    }
+    /** The id for the destination of this send */
+    String destination();
+
+    /** Is this send complete? */
+    boolean completed();
+
+    /**
+     * Write some as-yet unwritten bytes from this send to the provided channel. It may take
+     * multiple calls for the send to be completely written
+     *
+     * @param channel The Channel to write to
+     * @return The number of bytes written
+     * @throws IOException If the write fails
+     */
+    long writeTo(GatheringByteChannel channel) throws IOException;
+
+    /** Size of the send */
+    long size();
 }

@@ -16,15 +16,18 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.base.netty.pipeline;
 
-import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.common.SpiFactory;
+import org.zicat.tributary.source.base.netty.DefaultNettySource;
 
-import java.util.Map;
+/** PipelineInitializationFactory. */
+public interface PipelineInitializationFactory extends SpiFactory {
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
-    }
+    /**
+     * create pipeline initialization.
+     *
+     * @return PipelineInitialization
+     */
+    PipelineInitialization createPipelineInitialization(DefaultNettySource source) throws Exception;
 }

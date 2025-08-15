@@ -16,15 +16,35 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.server.component;
+package org.zicat.tributary.source.base;
 
-import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.common.GaugeFamily;
+import org.zicat.tributary.common.GaugeKey;
 
+import java.io.Closeable;
 import java.util.Map;
 
-/** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
-        super(elements);
-    }
+/** Source. */
+public interface Source extends Closeable, SourceChannel {
+
+    /**
+     * start the source to receive records.
+     *
+     * @throws Exception Exception
+     */
+    void start() throws Exception;
+
+    /**
+     * get channel metrics.
+     *
+     * @return map metrics
+     */
+    Map<GaugeKey, GaugeFamily> gaugeFamily();
+
+    /**
+     * get id.
+     *
+     * @return id
+     */
+    String sourceId();
 }

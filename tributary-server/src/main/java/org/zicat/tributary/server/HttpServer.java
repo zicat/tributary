@@ -18,6 +18,11 @@
 
 package org.zicat.tributary.server;
 
+import static org.zicat.tributary.source.base.netty.AbstractNettySource.*;
+import static org.zicat.tributary.source.base.netty.handler.HttpMessageDecoder.addTextPlainUtf8Headers;
+import static org.zicat.tributary.source.base.netty.handler.HttpMessageDecoder.notFoundResponse;
+import static org.zicat.tributary.source.base.utils.HostUtils.realHostAddress;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -27,6 +32,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.*;
@@ -37,11 +43,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
-
-import static org.zicat.tributary.source.netty.AbstractNettySource.*;
-import static org.zicat.tributary.source.netty.handler.HttpMessageDecoder.addTextPlainUtf8Headers;
-import static org.zicat.tributary.source.netty.handler.HttpMessageDecoder.notFoundResponse;
-import static org.zicat.tributary.source.utils.HostUtils.realHostAddress;
 
 /** HttpServer. */
 public class HttpServer implements Closeable {

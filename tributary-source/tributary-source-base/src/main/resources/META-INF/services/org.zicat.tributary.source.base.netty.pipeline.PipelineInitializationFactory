@@ -1,0 +1,3 @@
+org.zicat.tributary.source.base.netty.pipeline.LinePipelineInitializationFactory
+org.zicat.tributary.source.base.netty.pipeline.LengthPipelineInitializationFactory
+org.zicat.tributary.source.base.netty.pipeline.HttpPipelineInitializationFactory
