@@ -37,6 +37,16 @@
         </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
+            <artifactId>tributary-source-kafka</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zicat</groupId>
+            <artifactId>tributary-source-beats</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zicat</groupId>
             <artifactId>tributary-channel-file</artifactId>
             <version>${project.version}</version>
         </dependency>

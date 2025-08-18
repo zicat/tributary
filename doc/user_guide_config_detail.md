@@ -72,18 +72,18 @@ follows :
 ```properties
 source.s1.netty.host=10\\.103\\.1\\..*,localhost
 source.s1.netty.port=8200
-source.s1.netty.threads=10
+source.s1.netty.threads.event-loop=10
 source.s1.netty.idle=60sec
 source.s1.netty.decoder=lineDecoder
 ```
 
-| key           | default       | type        | describe                                                                                                                                                                                                                         |
-|---------------|---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host    | null          | string      | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
-| netty.port    |               | int(number) | the port to bind, range 1000-65535                                                                                                                                                                                               |
-| netty.threads | 10            | int(number) | the count of netty event loop threads                                                                                                                                                                                            |
-| netty.idle    | 120sec        | duration    | the idle time to close the socket                                                                                                                                                                                                |
-| netty.decoder | lengthDecoder | enum        | the parser of network streaming                                                                                                                                                                                                  |
+| key                      | default       | type        | describe                                                                                                                                                                                                                         |
+|--------------------------|---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.host               | null          | string      | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
+| netty.port               |               | int(number) | the port to bind, range 1000-65535                                                                                                                                                                                               |
+| netty.threads.event-loop | 10            | int(number) | the count of netty event loop threads                                                                                                                                                                                            |
+| netty.idle               | 120sec        | duration    | the idle time to close the socket                                                                                                                                                                                                |
+| netty.decoder            | lengthDecoder | enum        | the parser of network streaming                                                                                                                                                                                                  |
 
 ### Netty Decoder
 
@@ -143,6 +143,37 @@ $ curl -X POST http://localhost:8200?topic=my_topic&partition=10 \
      -H "Content-Type: application/json; charset=UTF-8" \
      -H "my_records_header: hv1" \
      -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i
+```
+
+#### [beatsDecoder](#beatsDecoder)
+
+The beatsDecoder parses streaming records by beats protocal. It supports more configuration as follows:
+
+| key                                             | default | type   | describe                                                            |
+|-------------------------------------------------|---------|--------|---------------------------------------------------------------------|
+| netty.decoder.beats.worker-threads              | 10      | int    | the worker threads to process beats data, default 10.               |
+| netty.decoder.beats.ssl                         | false   | bool   | whether use ssl to decode beats data, default false.                |
+| netty.decoder.beats.ssl.certificate.authorities | null    | string | the authorities ca path, find the classpath first then find in path |
+| netty.decoder.beats.ssl.certificate             | null    | string | the server ca path, find the classpath first then find in path      |
+| netty.decoder.beats.ssl.key                     | null    | string | the server key path, find the classpath first then find in path     |
+
+The beat request demo as follows, before send request please start tributary
+with [beats source config](../sample-code/src/main/resources/application-beats-source-print-sink.properties)
+first:
+
+```sheel
+$ cat > filebeat.yml <<EOF
+filebeat.inputs:
+- type: stdin
+
+output.logstash:
+  hosts: ["localhost:5044"]
+  index: filebeat
+EOF
+$ filebeat -c filebeat.yml
+sadfasdfasdfads
+123123123
+sadfasfasdfasdf
 ```
 
 ## Channel
@@ -390,13 +421,13 @@ server.host=.*
 source.s1.channel=c1
 source.s1.implement=netty
 source.s1.netty.port=8200
-source.s1.netty.threads=10
+source.s1.netty.threads.event-loop=10
 source.s1.netty.idle=60sec
 
 source.s2.channel=c1
 source.s2.implement=netty
 source.s2.netty.port=8300
-source.s2.netty.threads=5
+source.s2.netty.threads.event-loop=5
 source.s2.netty.idle=120sec
 source.s2.netty.decoder=lineDecoder
 
@@ -405,7 +436,7 @@ source.s3.implement=netty
 source.s3.netty.host=localhost
 source.s3.netty.port=9093
 source.s3.netty.idle=60sec
-source.s3.netty.threads=10
+source.s3.netty.threads.event-loop=10
 source.s3.netty.decoder=kafkaDecoder
 source.s3.netty.decoder.kafka.meta.ttl=10sec
 source.s3.netty.decoder.kafka.topic.partitions=60
@@ -416,6 +447,16 @@ source.s3.netty.decoder.kafka.zookeeper.connection.timeout=15sec
 source.s3.netty.decoder.kafka.zookeeper.session.timeout=60sec
 source.s3.netty.decoder.kafka.sasl.plain=true
 source.s3.netty.decoder.kafka.sasl.plain.usernames=user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc
+
+source.s4.channel=c1
+source.s4.implement=netty
+source.s4.netty.port=5044
+source.s4.netty.decoder=beatsDecoder
+source.s4.netty.decoder.beats.worker-threads=10
+source.s4.netty.decoder.beats.ssl=true
+source.s4.netty.decoder.beats.ssl.certificate.authorities=ssl/ca.crt
+source.s4.netty.decoder.beats.ssl.certificate=ssl/server.crt
+source.s4.netty.decoder.beats.ssl.key=ssl/server.key
 
 channel.c1.type=file
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3

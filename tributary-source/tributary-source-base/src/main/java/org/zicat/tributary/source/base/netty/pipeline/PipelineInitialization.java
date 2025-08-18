@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.base.netty.pipeline;
 
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.Channel;
 
 import java.io.Closeable;
 
@@ -28,7 +28,7 @@ public interface PipelineInitialization extends Closeable {
     /**
      * init pipeline.
      *
-     * @param pipeline pipeline
+     * @param socketChannel socketChannel
      */
-    void init(ChannelPipeline pipeline);
+    void init(Channel socketChannel);
 }

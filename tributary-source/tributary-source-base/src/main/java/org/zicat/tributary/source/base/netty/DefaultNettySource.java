@@ -59,7 +59,7 @@ public class DefaultNettySource extends AbstractNettySource {
      */
     @Override
     protected void initChannel(SocketChannel ch) {
-        pipelineInitialization.init(ch.pipeline());
+        pipelineInitialization.init(ch);
     }
 
     /**

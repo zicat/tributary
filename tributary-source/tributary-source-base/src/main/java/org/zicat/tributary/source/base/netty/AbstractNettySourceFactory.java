@@ -34,8 +34,8 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
                     .description("netty port")
                     .noDefaultValue();
 
-    public static final ConfigOption<Integer> OPTION_NETTY_THREADS =
-            ConfigOptions.key("netty.threads")
+    public static final ConfigOption<Integer> OPTION_NETTY_THREADS_EVENT_LOOP =
+            ConfigOptions.key("netty.threads.event-loop")
                     .integerType()
                     .description("netty event loop threads count")
                     .defaultValue(10);
@@ -51,7 +51,7 @@ public abstract class AbstractNettySourceFactory implements SourceFactory {
             throws Exception {
         final String host = config.get(OPTION_NETTY_HOST);
         final int port = config.get(OPTION_NETTY_PORT);
-        final int threads = config.get(OPTION_NETTY_THREADS);
+        final int threads = config.get(OPTION_NETTY_THREADS_EVENT_LOOP);
         return createNettySource(sourceId, host, port, threads, channel, config);
     }
 

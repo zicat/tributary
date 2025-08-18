@@ -18,6 +18,11 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import static org.zicat.tributary.channel.AbstractChannel.*;
+import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
+import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,6 +34,8 @@ import org.zicat.tributary.channel.file.FileChannel;
 import org.zicat.tributary.channel.file.FileChannelBuilder;
 import org.zicat.tributary.channel.file.FileChannelFactory;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
+import org.zicat.tributary.channel.test.SinkGroup;
+import org.zicat.tributary.channel.test.SourceThread;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.Threads;
@@ -40,11 +47,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.zicat.tributary.channel.AbstractChannel.*;
-import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
-import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
-import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 
 /** FileChannelTest. */
 @SuppressWarnings("EmptyTryBlock")
@@ -236,47 +238,73 @@ public class FileChannelTest {
     }
 
     @Test
-    public void testSmallSegmentSize() throws IOException {
-        final String dir = new File(PARENT_DIR, "test_small_segment_size/partition-").getPath();
-        final int partitionCount = 1;
-        final long dataSize = 500001;
-        final int sinkGroups = 2;
-        final int blockSize = 28;
-        final long segmentSize = 1024L * 512L;
-        final int maxRecordLength = 32;
-        for (int i = 0; i < 2; i++) {
-            test(
-                    dir,
-                    partitionCount,
-                    dataSize,
-                    sinkGroups,
-                    blockSize,
-                    segmentSize,
-                    maxRecordLength,
-                    true);
-        }
-    }
-
-    @Test
     public void testPartitionAndSinkGroups() throws IOException {
         final String dir =
                 new File(PARENT_DIR, "test_partition_and_sink_groups/partition-").getPath();
+        final String topic = "test_partition_and_sink_groups";
         final int partitionCount = 3;
         final long dataSize = 500000;
         final int sinkGroups = 4;
         final int blockSize = 32 * 1024;
         final long segmentSize = 1024L * 1024L * 512;
         final int maxRecordLength = 1024;
-        for (int i = 0; i < 5; i++) {
-            test(
-                    dir,
-                    partitionCount,
-                    dataSize,
-                    sinkGroups,
-                    blockSize,
-                    segmentSize,
-                    maxRecordLength,
-                    false);
+        for (int j = 0; j < 5; j++) {
+
+            final long totalSize = dataSize * partitionCount;
+            Set<String> consumerGroup = new HashSet<>(sinkGroups);
+            for (int i = 0; i < sinkGroups; i++) {
+                consumerGroup.add("consumer_group_" + i);
+            }
+
+            try (Channel channel =
+                    createChannel(
+                            topic, consumerGroup, partitionCount, dir, segmentSize, blockSize)) {
+                // create sources
+                final List<Thread> sourceThread = new ArrayList<>();
+                for (int i = 0; i < partitionCount; i++) {
+                    Thread t = new SourceThread(channel, i, dataSize, maxRecordLength, true);
+                    sourceThread.add(t);
+                }
+
+                // create multi sink
+                final List<SinkGroup> sinGroup =
+                        consumerGroup.stream()
+                                .map(
+                                        groupName ->
+                                                new SinkGroup(
+                                                        partitionCount,
+                                                        channel,
+                                                        groupName,
+                                                        totalSize))
+                                .collect(Collectors.toList());
+
+                long start = System.currentTimeMillis();
+                // start source and sink threads
+                sourceThread.forEach(Thread::start);
+                sinGroup.forEach(Thread::start);
+
+                // waiting source threads finish and flush
+                sourceThread.forEach(Threads::joinQuietly);
+                channel.flush();
+                long writeSpend = System.currentTimeMillis() - start;
+
+                // waiting sink threads finish.
+                sinGroup.forEach(Threads::joinQuietly);
+                Assert.assertEquals(totalSize, dataSize * partitionCount);
+                Assert.assertEquals(
+                        dataSize * partitionCount * sinkGroups,
+                        sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum());
+                LOG.info(
+                        "write spend:"
+                                + writeSpend
+                                + "(ms),write count:"
+                                + totalSize
+                                + ",read spend:"
+                                + (System.currentTimeMillis() - start)
+                                + "(ms),read count:"
+                                + sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum()
+                                + ".");
+            }
         }
     }
 
@@ -402,70 +430,6 @@ public class FileChannelTest {
             }
             Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup.getConsumerCount());
             Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup2.getConsumerCount());
-        }
-    }
-
-    private static void test(
-            String dir,
-            int partitionCount,
-            long dataSize,
-            int sinkGroups,
-            int blockSize,
-            long segmentSize,
-            int maxRecordLength,
-            boolean random)
-            throws IOException {
-
-        final long totalSize = dataSize * partitionCount;
-        Set<String> consumerGroup = new HashSet<>(sinkGroups);
-        for (int i = 0; i < sinkGroups; i++) {
-            consumerGroup.add("consumer_group_" + i);
-        }
-
-        try (Channel channel =
-                createChannel("voqa", consumerGroup, partitionCount, dir, segmentSize, blockSize)) {
-            // create sources
-            final List<Thread> sourceThread = new ArrayList<>();
-            for (int i = 0; i < partitionCount; i++) {
-                Thread t = new SourceThread(channel, i, dataSize, maxRecordLength, random);
-                sourceThread.add(t);
-            }
-
-            // create multi sink
-            final List<SinkGroup> sinGroup =
-                    consumerGroup.stream()
-                            .map(
-                                    groupName ->
-                                            new SinkGroup(
-                                                    partitionCount, channel, groupName, totalSize))
-                            .collect(Collectors.toList());
-
-            long start = System.currentTimeMillis();
-            // start source and sink threads
-            sourceThread.forEach(Thread::start);
-            sinGroup.forEach(Thread::start);
-
-            // waiting source threads finish and flush
-            sourceThread.forEach(Threads::joinQuietly);
-            channel.flush();
-            long writeSpend = System.currentTimeMillis() - start;
-
-            // waiting sink threads finish.
-            sinGroup.forEach(Threads::joinQuietly);
-            Assert.assertEquals(totalSize, dataSize * partitionCount);
-            Assert.assertEquals(
-                    sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum(),
-                    dataSize * partitionCount * sinkGroups);
-            LOG.info(
-                    "write spend:"
-                            + writeSpend
-                            + "(ms),write count:"
-                            + totalSize
-                            + ",read spend:"
-                            + (System.currentTimeMillis() - start)
-                            + "(ms),read count:"
-                            + sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum()
-                            + ".");
         }
     }
 

@@ -18,11 +18,14 @@
 
 package org.zicat.tributary.sink.test;
 
+import static org.zicat.tributary.sink.SinkGroupManager.KEY_SINK_LAG;
+import static org.zicat.tributary.sink.test.function.AssertCountFunction.OPTION_ASSERT_COUNT;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
-import org.zicat.tributary.channle.file.test.SourceThread;
+import org.zicat.tributary.channel.test.SourceThread;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -34,9 +37,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.zicat.tributary.sink.SinkGroupManager.KEY_SINK_LAG;
-import static org.zicat.tributary.sink.test.function.AssertCountFunction.OPTION_ASSERT_COUNT;
 
 /** SinkManager test. */
 public class SinkManagerTest {

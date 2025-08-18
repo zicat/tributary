@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.source.base.netty.pipeline;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
@@ -36,7 +37,8 @@ public class LinePipelineInitialization extends AbstractPipelineInitialization {
     }
 
     @Override
-    public void init(ChannelPipeline pipeline) {
+    public void init(Channel channel) {
+        final ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast(source.idleStateHandler());
         pipeline.addLast(new IdleCloseHandler());
         pipeline.addLast(new LineDecoder());

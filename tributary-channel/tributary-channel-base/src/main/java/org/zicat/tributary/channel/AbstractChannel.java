@@ -131,21 +131,22 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            segment.readonly();
-            final S retrySegment = this.latestSegment;
-            final AppendResult result2 = retrySegment.append(byteBuffer);
-            if (result2.appended()) {
-                return result2;
+            if (segment != this.latestSegment) {
+                return innerAppend(byteBuffer);
             }
-            retrySegment.readonly();
-            final long newSegmentId = retrySegment.segmentId() + 1L;
+            segment.readonly();
+            final long newSegmentId = segment.segmentId() + 1L;
             final S newSegment = createSegment(newSegmentId);
-            final AppendResult result3 = append2Segment(newSegment, byteBuffer);
+            final AppendResult newResult = append2Segment(newSegment, byteBuffer);
+            if (!newResult.appended()) {
+                throw new IllegalStateException(
+                        "write data to new segment failed, segmentId: " + newSegmentId);
+            }
             writeBytes.addAndGet(latestSegment.position());
             addSegment(newSegment);
             this.latestSegment = newSegment;
             newSegmentCondition.signalAll();
-            return result3;
+            return newResult;
         } finally {
             lock.unlock();
         }
@@ -332,6 +333,9 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         }
         for (S segment : expiredSegments) {
             final S segmentInCache = cache.remove(segment.segmentId());
+            if (segmentInCache == null) {
+                continue;
+            }
             IOUtils.closeQuietly(segmentInCache);
             segmentInCache.recycle();
         }

@@ -18,6 +18,10 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
+import static org.zicat.tributary.common.IOUtils.deleteDir;
+import static org.zicat.tributary.common.IOUtils.makeDir;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -36,9 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
 
 /** SegmentTest. */
 public class SegmentTest {
@@ -195,20 +196,6 @@ public class SegmentTest {
                                 0,
                                 length)
                         .appended());
-    }
-
-    /**
-     * create test string data.
-     *
-     * @param a a
-     * @return string
-     */
-    public static String createStringByLength(int a) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < a; i++) {
-            sb.append("a");
-        }
-        return sb.toString();
     }
 
     @BeforeClass

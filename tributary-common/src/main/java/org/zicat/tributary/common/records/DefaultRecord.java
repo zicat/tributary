@@ -38,6 +38,10 @@ public class DefaultRecord implements Record {
         this.value = value == null ? EMPTY : value;
     }
 
+    public DefaultRecord(Map<String, byte[]> headers, byte[] value) {
+        this(headers, null, value);
+    }
+
     @Override
     public Map<String, byte[]> headers() {
         return headers;

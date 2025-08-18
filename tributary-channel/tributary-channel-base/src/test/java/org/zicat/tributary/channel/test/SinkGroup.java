@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channle.file.test;
+package org.zicat.tributary.channel.test;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.Threads;

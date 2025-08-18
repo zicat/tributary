@@ -53,7 +53,7 @@ public class LinePipelineInitializationFactoryTest {
                 DefaultNettySource source = new DefaultNettySourceMock(channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
-            pipelineInitialization.init(embeddedChannel.pipeline());
+            pipelineInitialization.init(embeddedChannel);
             final ByteBuf byteBuf = embeddedChannel.alloc().buffer();
             try {
                 byteBuf.writeBytes("lynn".getBytes());

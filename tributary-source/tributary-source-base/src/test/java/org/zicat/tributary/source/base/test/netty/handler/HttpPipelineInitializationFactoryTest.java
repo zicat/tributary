@@ -88,7 +88,7 @@ public class HttpPipelineInitializationFactoryTest {
                 "[{\"key\":\"key1\",\"value\":\"value1\",\"headers\":{\"header1\":\"value1\",\"header11\":\"value11\"}}]"
                         .getBytes(StandardCharsets.UTF_8);
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
-        pipelineInitialization.init(embeddedChannel.pipeline());
+        pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
                 new DefaultFullHttpRequest(
                         HttpVersion.HTTP_1_1,
@@ -155,7 +155,7 @@ public class HttpPipelineInitializationFactoryTest {
 
     private void assertErrorJson(PipelineInitialization pipelineInitialization) throws IOException {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
-        pipelineInitialization.init(embeddedChannel.pipeline());
+        pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
                 new DefaultFullHttpRequest(
                         HttpVersion.HTTP_1_1,
@@ -177,7 +177,7 @@ public class HttpPipelineInitializationFactoryTest {
     private void assertTopicNotFound(PipelineInitialization pipelineInitialization)
             throws IOException {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
-        pipelineInitialization.init(embeddedChannel.pipeline());
+        pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
                 new DefaultFullHttpRequest(
                         HttpVersion.HTTP_1_1,
@@ -199,7 +199,7 @@ public class HttpPipelineInitializationFactoryTest {
     private void assertErrorContentType(PipelineInitialization pipelineInitialization)
             throws IOException {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
-        pipelineInitialization.init(embeddedChannel.pipeline());
+        pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
                 new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, path));
         final ByteBuf response = embeddedChannel.readOutbound();
@@ -216,7 +216,7 @@ public class HttpPipelineInitializationFactoryTest {
     private void assertPathNotMatch(PipelineInitialization pipelineInitialization)
             throws IOException {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
-        pipelineInitialization.init(embeddedChannel.pipeline());
+        pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
                 new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, path + "aa"));
         final ByteBuf response = embeddedChannel.readOutbound();
@@ -232,7 +232,7 @@ public class HttpPipelineInitializationFactoryTest {
     private void assertNotPostRequest(PipelineInitialization pipelineInitialization)
             throws IOException {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
-        pipelineInitialization.init(embeddedChannel.pipeline());
+        pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
                 new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, path));
         final ByteBuf response = embeddedChannel.readOutbound();

@@ -307,7 +307,7 @@ public class KafkaPipelineInitializationFactoryTest {
                                 KafkaPipelineInitializationFactory.IDENTITY,
                                 PipelineInitializationFactory.class)
                         .createPipelineInitialization(source);
-        pipelineInit.init(nettyChannel.pipeline());
+        pipelineInit.init(nettyChannel);
     }
 
     private static void assertApiVersionResponse(EmbeddedChannel channel) {

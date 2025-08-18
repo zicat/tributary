@@ -25,6 +25,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** ThreadPoolUtils. */
+@SuppressWarnings("NullableProblems")
 public class Threads {
 
     private static final Logger LOG = LoggerFactory.getLogger(Threads.class);
@@ -37,15 +38,26 @@ public class Threads {
      * @return ThreadFactory
      */
     public static ThreadFactory createThreadFactoryByName(String prefixName, boolean daemon) {
+        return createThreadFactoryByName(prefixName, daemon, null);
+    }
+
+    /**
+     * create thread factory by prefix name.
+     *
+     * @param prefixName prefix name
+     * @param daemon daemon
+     * @return ThreadFactory
+     */
+    public static ThreadFactory createThreadFactoryByName(
+            String prefixName, boolean daemon, ThreadGroup threadGroup) {
 
         return new ThreadFactory() {
             private final AtomicInteger count = new AtomicInteger();
 
             @Override
             public Thread newThread(Runnable r) {
-                final Thread t = new Thread(r);
+                final Thread t = new Thread(threadGroup, r, prefixName + count.incrementAndGet());
                 t.setDaemon(daemon);
-                t.setName(prefixName + count.incrementAndGet());
                 return t;
             }
         };

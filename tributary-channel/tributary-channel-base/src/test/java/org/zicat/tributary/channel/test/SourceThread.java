@@ -16,7 +16,10 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.channle.file.test;
+package org.zicat.tributary.channel.test;
+
+import static org.zicat.tributary.common.BytesUtils.toBytes;
+import static org.zicat.tributary.common.records.RecordsUtils.createBytesRecords;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +30,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.Random;
-
-import static org.zicat.tributary.common.BytesUtils.toBytes;
-import static org.zicat.tributary.common.records.RecordsUtils.createBytesRecords;
 
 /** ConsumerThread. */
 public class SourceThread extends Thread {

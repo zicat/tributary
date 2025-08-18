@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.sink.test.handler;
 
+import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_MAX_RETAIN_SIZE;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -44,9 +47,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.zicat.tributary.channle.file.test.SegmentTest.createStringByLength;
-import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_MAX_RETAIN_SIZE;
 
 /** AbstractSinkHandlerTest. */
 public class AbstractPartitionHandlerTest {

@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.source.base.netty.pipeline;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -58,7 +59,8 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
     }
 
     @Override
-    public void init(ChannelPipeline pip) {
+    public void init(Channel channel) {
+        final ChannelPipeline pip = channel.pipeline();
         pip.addLast(new HttpResponseEncoder());
         pip.addLast(source.idleStateHandler());
         pip.addLast(new IdleCloseHandler());

@@ -53,7 +53,7 @@
         </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>tributary-channel-file</artifactId>
+            <artifactId>tributary-channel-base</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
