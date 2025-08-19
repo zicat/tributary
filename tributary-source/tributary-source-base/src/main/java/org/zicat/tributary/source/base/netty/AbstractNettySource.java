@@ -39,6 +39,7 @@ import org.zicat.tributary.source.base.AbstractSource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -69,7 +70,7 @@ public abstract class AbstractNettySource extends AbstractSource {
         this.host = host;
         this.port = port;
         this.eventThreads = eventThreads;
-        this.hostNames = realHostAddress(host);
+        this.hostNames = host == null ? Collections.emptyList() : realHostAddress(host);
         this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
         this.workGroup = createWorkGroup(eventThreads);
         this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);

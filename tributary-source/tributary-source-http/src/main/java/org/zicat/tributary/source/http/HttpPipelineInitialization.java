@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base.netty.pipeline;
+package org.zicat.tributary.source.http;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
@@ -28,8 +28,8 @@ import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
-import org.zicat.tributary.source.base.netty.handler.HttpMessageDecoder;
 import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
+import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
 /** HttpPipelineInitialization. */
 public class HttpPipelineInitialization extends AbstractPipelineInitialization {

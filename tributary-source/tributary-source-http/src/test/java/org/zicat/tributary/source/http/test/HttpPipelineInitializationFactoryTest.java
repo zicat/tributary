@@ -16,11 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base.test.netty.handler;
+package org.zicat.tributary.source.http.test;
 
-import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
-import static org.zicat.tributary.channel.test.ChannelBaseTest.readChannel;
-import static org.zicat.tributary.source.base.netty.handler.HttpMessageDecoder.*;
+import static org.zicat.tributary.source.http.HttpMessageDecoder.*;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -31,16 +29,18 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
+import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
+import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
-import org.zicat.tributary.source.base.netty.pipeline.HttpPipelineInitialization;
-import org.zicat.tributary.source.base.netty.pipeline.HttpPipelineInitializationFactory;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 import org.zicat.tributary.source.base.test.netty.DefaultNettySourceMock;
+import org.zicat.tributary.source.http.HttpPipelineInitialization;
+import org.zicat.tributary.source.http.HttpPipelineInitializationFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -50,7 +50,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /** HttpPipelineInitializationFactoryTest. */
-@SuppressWarnings("VulnerableCodeUsages")
 public class HttpPipelineInitializationFactoryTest {
 
     private static final String HTTP_BAD_REQUEST = "HTTP/1.1 400 Bad Request";
@@ -69,7 +68,9 @@ public class HttpPipelineInitializationFactoryTest {
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put(HttpPipelineInitialization.OPTIONS_PATH, path);
 
-        try (Channel channel = memoryChannelFactory(groupId).createChannel(topic, null);
+        try (Channel channel =
+                        MemoryChannelTestUtils.memoryChannelFactory(groupId)
+                                .createChannel(topic, null);
                 DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
@@ -126,7 +127,7 @@ public class HttpPipelineInitializationFactoryTest {
         channel.flush();
 
         final Offset offset = Offset.ZERO;
-        final List<byte[]> data = readChannel(channel, 0, offset, 2).data;
+        final List<byte[]> data = ChannelBaseTest.readChannel(channel, 0, offset, 2).data;
 
         final Records records1 = Records.parse(data.get(0));
         Assert.assertEquals(topic, records1.topic());

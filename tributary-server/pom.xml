@@ -47,6 +47,11 @@
         </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
+            <artifactId>tributary-source-http</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zicat</groupId>
             <artifactId>tributary-channel-file</artifactId>
             <version>${project.version}</version>
         </dependency>

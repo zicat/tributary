@@ -19,9 +19,9 @@
 package org.zicat.tributary.server;
 
 import static org.zicat.tributary.source.base.netty.AbstractNettySource.*;
-import static org.zicat.tributary.source.base.netty.handler.HttpMessageDecoder.addTextPlainUtf8Headers;
-import static org.zicat.tributary.source.base.netty.handler.HttpMessageDecoder.notFoundResponse;
 import static org.zicat.tributary.source.base.utils.HostUtils.realHostAddress;
+import static org.zicat.tributary.source.http.HttpMessageDecoder.addTextPlainUtf8Headers;
+import static org.zicat.tributary.source.http.HttpMessageDecoder.notFoundResponse;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
@@ -52,7 +52,8 @@ public class HttpServer implements Closeable {
             ConfigOptions.key("port").integerType().defaultValue(8765);
 
     public static final ConfigOption<String> OPTION_HOST =
-            ConfigOptions.key("host").stringType().defaultValue(".*");
+            ConfigOptions.key("host").stringType().defaultValue(null);
+
     public static final ConfigOption<Integer> OPTION_THREADS =
             ConfigOptions.key("threads").integerType().defaultValue(5);
     public static final ConfigOption<String> OPTION_METRICS_PATH =
@@ -71,13 +72,17 @@ public class HttpServer implements Closeable {
         this.registry = registry;
         this.port = serverConfig.get(OPTION_PORT);
         final String hostPattern = serverConfig.get(OPTION_HOST);
-        final List<String> hosts = realHostAddress(hostPattern);
-        if (hosts.isEmpty()) {
-            throw new IllegalStateException("Host not found by config " + hostPattern);
-        }
-        this.host = hosts.get(0);
-        if (hosts.size() > 1) {
-            LOG.warn("Multiple hosts " + hosts + ", use the first " + host);
+        if (hostPattern == null) {
+            this.host = null;
+        } else {
+            final List<String> hosts = realHostAddress(hostPattern);
+            if (hosts.isEmpty()) {
+                throw new IllegalStateException("Host not found by config " + hostPattern);
+            }
+            this.host = hosts.get(0);
+            if (hosts.size() > 1) {
+                LOG.warn("Multiple hosts {}, use the first {}", hosts, host);
+            }
         }
         this.metricsPath = serverConfig.get(OPTION_METRICS_PATH);
         final int threads = serverConfig.get(OPTION_THREADS);
@@ -86,7 +91,6 @@ public class HttpServer implements Closeable {
     }
 
     /** start. */
-    @SuppressWarnings("VulnerableCodeUsages")
     public void start() throws InterruptedException {
         final ServerBootstrap b = createServerBootstrap(bossGroup, workerGroup);
         b.childHandler(
@@ -100,8 +104,9 @@ public class HttpServer implements Closeable {
                         ch.pipeline().addLast(new HttpServerHandler(registry, metricsPath));
                     }
                 });
-        this.channel = b.bind(host, port).sync().channel();
-        LOG.info("HttpServer started on {}:{}", host, port);
+        this.channel =
+                host == null ? b.bind(port).sync().channel() : b.bind(host, port).sync().channel();
+        LOG.info("HttpServer started on {}:{}", host(), port);
     }
 
     @Override
@@ -175,7 +180,7 @@ public class HttpServer implements Closeable {
      * @return string
      */
     public String host() {
-        return host;
+        return host == null ? "*" : host;
     }
 
     /**

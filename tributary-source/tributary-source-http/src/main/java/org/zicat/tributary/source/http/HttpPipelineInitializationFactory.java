@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base.netty.pipeline;
+package org.zicat.tributary.source.http;
 
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
+import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
 /** HttpPipelineInitializationFactory. */
 public class HttpPipelineInitializationFactory implements PipelineInitializationFactory {

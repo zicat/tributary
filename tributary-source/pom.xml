@@ -12,6 +12,7 @@
         <module>tributary-source-kafka</module>
         <module>tributary-source-base</module>
         <module>tributary-source-logstash-beats</module>
+        <module>tributary-source-http</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 

@@ -29,11 +29,11 @@ channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
 sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
 ```
 
-| Key                 | default  | valid value | describe                                                                                                      |
-|---------------------|----------|-------------|---------------------------------------------------------------------------------------------------------------|
-| server.port         |          | int(number) | the port to bind, range 1000-65535                                                                            |
-| server.host         | .*       | string      | the pattern to filter expected host as the metrics value of host dimension, select first if found multi hosts |
-| server.metrics.path | /metrics | string      | the metrics http path                                                                                         |
+| Key                 | default  | valid value | describe                                                                                                                                     |
+|---------------------|----------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| server.port         |          | int(number) | the port to bind, range 1000-65535                                                                                                           |
+| server.host         | null     | string      | the pattern to filter expected host as the metrics value of host dimension, select first if found multi hosts, default null meaning bind all |
+| server.metrics.path | /metrics | string      | the metrics http path                                                                                                                        |
 
 ## Source
 

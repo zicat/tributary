@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base.netty.handler;
+package org.zicat.tributary.source.http;
 
 import static org.zicat.tributary.source.base.utils.SourceHeaders.sourceHeaders;
 
