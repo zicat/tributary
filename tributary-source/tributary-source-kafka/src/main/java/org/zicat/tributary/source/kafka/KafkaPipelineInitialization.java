@@ -18,8 +18,12 @@
 
 package org.zicat.tributary.source.kafka;
 
+import static org.zicat.tributary.common.Threads.createThreadFactoryByName;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -95,13 +99,28 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
                     .stringType()
                     .defaultValue(null);
 
+    public static final ConfigOption<Integer> OPTION_KAFKA_WORKER_THREADS =
+            ConfigOptions.key("netty.decoder.kafka.worker-threads")
+                    .integerType()
+                    .description("The number of worker threads for the Kafka handler.")
+                    .defaultValue(10);
+
     protected final DefaultNettySource source;
     protected final KafkaMessageDecoder kafkaMessageDecoder;
+    protected final EventExecutorGroup kafkaHandlerExecutorGroup;
 
     public KafkaPipelineInitialization(DefaultNettySource source) throws Exception {
         super(source);
         this.source = source;
         this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
+        final int workerThreads = source.getConfig().get(OPTION_KAFKA_WORKER_THREADS);
+        this.kafkaHandlerExecutorGroup =
+                workerThreads == -1
+                        ? null
+                        : new DefaultEventExecutorGroup(
+                                workerThreads,
+                                createThreadFactoryByName(
+                                        source.sourceId() + "-kafkaHandler", true));
     }
 
     @Override
@@ -110,7 +129,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
         pipeline.addLast(source.idleStateHandler());
         pipeline.addLast(new IdleCloseHandler());
         pipeline.addLast(new LengthDecoder());
-        pipeline.addLast(kafkaMessageDecoder);
+        pipeline.addLast(kafkaHandlerExecutorGroup, kafkaMessageDecoder);
     }
 
     /**

@@ -123,6 +123,7 @@ more configuration as follows:
 | netty.decoder.kafka.topic.partitions               | 60          | int(number) | the topic partitions to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata), recommend to set as multiples of tributary instances count for load balancing |
 | netty.decoder.kafka.sasl.plain                     | false       | bool        | the security switch whether open sasl plain                                                                                                                                                                     |
 | netty.decoder.kafka.sasl.plain.usernames           | null        | string      | the plain users configuration, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                                              |
+| netty.decoder.kafka.worker-threads                 | 10          | int(number) | the worker threads to process kafka protocol data, default 10.                                                                                                                                                  |
 
 #### [httpDecoder](#httpDecoder)
 
@@ -438,6 +439,7 @@ source.s3.netty.port=9093
 source.s3.netty.idle=60sec
 source.s3.netty.threads.event-loop=10
 source.s3.netty.decoder=kafkaDecoder
+source.s3.netty.decoder.kafka.worker-threads=10
 source.s3.netty.decoder.kafka.meta.ttl=10sec
 source.s3.netty.decoder.kafka.topic.partitions=60
 source.s3.netty.decoder.kafka.zookeeper.connect=localhost:2181/tributary_source_kafka
