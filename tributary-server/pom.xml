@@ -42,7 +42,7 @@
         </dependency>
         <dependency>
             <groupId>org.zicat</groupId>
-            <artifactId>tributary-source-beats</artifactId>
+            <artifactId>tributary-source-logstash-beats</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

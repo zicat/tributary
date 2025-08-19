@@ -146,9 +146,9 @@ $ curl -X POST http://localhost:8200?topic=my_topic&partition=10 \
      -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i
 ```
 
-#### [beatsDecoder](#beatsDecoder)
+#### [logstashBeatsDecoder](#logstashBeatsDecoder)
 
-The beatsDecoder parses streaming records by beats protocal. It supports more configuration as follows:
+The logstashBeatsDecoder parses streaming records by beats protocal. It supports more configuration as follows:
 
 | key                                             | default | type   | describe                                                            |
 |-------------------------------------------------|---------|--------|---------------------------------------------------------------------|
@@ -453,7 +453,7 @@ source.s3.netty.decoder.kafka.sasl.plain.usernames=user1_16Ew658jjzvmxDqk,user2_
 source.s4.channel=c1
 source.s4.implement=netty
 source.s4.netty.port=5044
-source.s4.netty.decoder=beatsDecoder
+source.s4.netty.decoder=logstashBeatsDecoder
 source.s4.netty.decoder.beats.worker-threads=10
 source.s4.netty.decoder.beats.ssl=true
 source.s4.netty.decoder.beats.ssl.certificate.authorities=ssl/ca.crt
