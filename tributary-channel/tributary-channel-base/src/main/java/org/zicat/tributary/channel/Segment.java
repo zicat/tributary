@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,6 +132,14 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             return HAS_IN_STORAGE;
         }
         return append(ByteBuffer.wrap(data, offset, length));
+    }
+
+    public AppendResult append(String value) throws IOException {
+        if (value == null || value.isEmpty()) {
+            return HAS_IN_STORAGE;
+        }
+        final byte[] bs = value.getBytes(StandardCharsets.UTF_8);
+        return append(bs, 0, bs.length);
     }
 
     /**

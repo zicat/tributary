@@ -25,7 +25,6 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
-import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -40,73 +39,50 @@ public class SinkThread extends Thread {
     private final long totalSize;
     private final Offset startOffset;
     private final String groupId;
-    private final int sleep;
 
     public SinkThread(
-            Channel channel,
-            int partitionId,
-            String groupId,
-            AtomicLong readSize,
-            long totalSize,
-            int sleep) {
+            Channel channel, int partitionId, String groupId, AtomicLong readSize, long totalSize) {
         this.channel = channel;
         this.partitionId = partitionId;
         this.readSize = readSize;
         this.totalSize = totalSize;
         this.groupId = groupId;
         this.startOffset = channel.committedOffset(groupId, partitionId);
-        this.sleep = sleep;
     }
 
-    @SuppressWarnings("BusyWait")
     @Override
     public void run() {
 
         try {
             Offset offset = startOffset;
-            RecordsResultSet result = null;
-            long readLength = 0;
-            long start = System.currentTimeMillis();
-            DecimalFormat df = new DecimalFormat("######0.00");
-            Long preFileId = null;
-            boolean firstThread = false;
-            boolean middleThread = false;
-            while (readSize.get() < totalSize || (result != null && result.hasNext())) {
-                result = channel.poll(partitionId, offset, 10, TimeUnit.MILLISECONDS);
-                while (result.hasNext()) {
-                    readLength += result.next().length;
-                    readSize.incrementAndGet();
-                    if (preFileId == null) {
-                        preFileId = result.nexOffset().segmentId();
-                    } else if (preFileId != result.nexOffset().segmentId()) {
-                        channel.commit(partitionId, groupId, offset);
-                        preFileId = result.nexOffset().segmentId();
+            RecordsResultSet result;
+            int peakEmptyCount = 0;
+            while (readSize.get() < totalSize) {
+                result = channel.poll(partitionId, offset, 10000, TimeUnit.MILLISECONDS);
+                if (result.isEmpty()) {
+                    peakEmptyCount++;
+                    if (peakEmptyCount >= 100) {
+                        throw new RuntimeException(
+                                "read empty for 100 times, maybe channel is closed or no data, partitionId: "
+                                        + partitionId
+                                        + ", groupId: "
+                                        + groupId);
                     }
+                } else {
+                    peakEmptyCount = 0;
                 }
-                long spend = System.currentTimeMillis() - start;
-                if (readLength >= 1024 * 1024 * 1024 && spend > 0) {
-                    LOG.info(
-                            "read spend:"
-                                    + df.format(readLength / 1024.0 / 1024.0 / (spend / 1000.0))
-                                    + "(mb/s), file id:"
-                                    + result.nexOffset().segmentId()
-                                    + ", lag:"
-                                    + channel.lag(partitionId, result.nexOffset()));
-                    readLength = 0;
-                    start = System.currentTimeMillis();
+                while (result.hasNext()) {
+                    result.next();
+                    readSize.incrementAndGet();
                 }
                 offset = result.nexOffset();
-                if (sleep > 0) {
-                    if (!firstThread) {
-                        firstThread = true;
-                        Thread.sleep(sleep);
-                    }
-                    if (!middleThread && readSize.get() > totalSize / 2) {
-                        middleThread = true;
-                        Thread.sleep(sleep);
-                    }
-                }
             }
+            LOG.info(
+                    "read finished, partitionId:{}, groupId:{}, readSize:{}, expectSize:{}",
+                    partitionId,
+                    groupId,
+                    readSize.get(),
+                    totalSize);
             channel.commit(partitionId, groupId, offset);
         } catch (Exception e) {
             throw new TributaryRuntimeException(e);

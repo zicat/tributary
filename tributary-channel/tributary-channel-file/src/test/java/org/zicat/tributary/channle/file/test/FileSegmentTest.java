@@ -28,7 +28,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.channel.BlockReaderOffset;
 import org.zicat.tributary.channel.BlockWriter;
-import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.file.FileSegment;
 import org.zicat.tributary.common.IOUtils;
@@ -42,7 +41,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /** SegmentTest. */
-public class SegmentTest {
+public class FileSegmentTest {
 
     private static final File DIR = FileUtils.createTmpDir("log_segment_test");
 
@@ -66,64 +65,6 @@ public class SegmentTest {
                 segment.append(createStringByLength(5).getBytes(StandardCharsets.UTF_8), 0, 5)
                         .appended());
         IOUtils.closeQuietly(segment);
-    }
-
-    @Test
-    public void testMultiThread() throws InterruptedException, IOException {
-        final File childDir = new File(DIR, "test_multi_thread");
-        makeDir(childDir);
-        final FileSegment.Builder builder = new FileSegment.Builder();
-        final int fileId = 1;
-        try (final FileSegment segment =
-                builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16))) {
-            Thread writerThread =
-                    new Thread(
-                            () -> {
-                                try {
-                                    Assert.assertTrue(
-                                            segment.append("".getBytes(), 0, 0).appended());
-                                    testAppend(6, segment);
-                                    testAppend(20, segment);
-                                } catch (IOException ioException) {
-                                    throw new RuntimeException(ioException);
-                                }
-                            });
-            Thread readThread =
-                    new Thread(
-                            () -> {
-                                final List<String> result = new ArrayList<>();
-                                result.add(createStringByLength(6));
-                                result.add(createStringByLength(20));
-
-                                BlockReaderOffset offset =
-                                        BlockReaderOffset.cast(new Offset(fileId, 0));
-                                while (!result.isEmpty()) {
-                                    RecordsResultSet resultSet;
-                                    try {
-                                        resultSet =
-                                                segment.readBlock(offset, 1, TimeUnit.MILLISECONDS)
-                                                        .toResultSet();
-                                        Assert.assertTrue(resultSet.hasNext());
-                                        while (resultSet.hasNext()) {
-                                            byte[] bs = resultSet.next();
-                                            Assert.assertTrue(
-                                                    result.remove(
-                                                            new String(
-                                                                    bs, StandardCharsets.UTF_8)));
-                                        }
-                                        offset = BlockReaderOffset.cast(resultSet.nexOffset());
-                                    } catch (Exception e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                }
-                            });
-            writerThread.start();
-            readThread.start();
-            writerThread.join();
-            segment.readonly();
-            readThread.join(1000);
-            readThread.interrupt();
-        }
     }
 
     @Test

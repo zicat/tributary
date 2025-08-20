@@ -33,10 +33,12 @@ import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.channel.memory.MemoryChannel;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
+import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
 import org.zicat.tributary.channel.test.SinkGroup;
 import org.zicat.tributary.channel.test.SourceThread;
 import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.common.Threads;
 
 import java.io.IOException;
@@ -47,9 +49,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /** OnePartitionMemoryChannelTest. */
+@SuppressWarnings("LoggingSimilarMessage")
 public class MemoryChannelTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(MemoryChannelTest.class);
+    private static final String LOG_FORMAT =
+            "write spend:{},write count:{},read spend:{},read count:{}.";
+
+    @Test
+    public void testChannelStorage() throws Exception {
+        final ChannelFactory factory = new MemoryChannelFactory();
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put(OPTION_GROUPS, Arrays.asList("g1", "g2"));
+        config.put(OPTION_PARTITION_COUNT, 2);
+        ChannelBaseTest.testChannelStorage(factory, "test_channel_storage", config);
+    }
 
     @Test
     public void testSyncAwait() throws IOException, InterruptedException {
@@ -119,7 +133,7 @@ public class MemoryChannelTest {
                         102400L,
                         CompressionType.NONE,
                         1)) {
-            final Offset offset = channel.committedOffset(groupId);
+            final Offset offset = channel.committedOffset(groupId, 0);
             final Random random = new Random(1023312);
             final List<byte[]> result = new ArrayList<>();
             for (int i = 0; i < 200000; i++) {
@@ -163,7 +177,7 @@ public class MemoryChannelTest {
                 consumerGroup.add(groupId);
                 consumerGroupOffset.put(groupId, Offset.ZERO);
             }
-            try (Channel channel =
+            try (MemoryChannel channel =
                     createMemoryChannel(
                             topic,
                             createMemoryGroupManagerFactory(consumerGroupOffset),
@@ -204,19 +218,233 @@ public class MemoryChannelTest {
                 sinGroup.forEach(Threads::joinQuietly);
                 Assert.assertEquals(totalSize, dataSize * partitionCount);
                 LOG.info(
-                        "write spend:"
-                                + writeSpend
-                                + "(ms),write count:"
-                                + totalSize
-                                + ",read spend:"
-                                + (System.currentTimeMillis() - start)
-                                + "(ms),read count:"
-                                + sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum()
-                                + ".");
+                        LOG_FORMAT,
+                        totalSize,
+                        writeSpend,
+                        System.currentTimeMillis() - start,
+                        sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum());
+
                 Assert.assertEquals(
                         dataSize * partitionCount * sinkGroups,
                         sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum());
             }
         }
+    }
+
+    @Test
+    public void testPartitionAndSinkGroups() throws IOException {
+        final int partitionCount = 3;
+        final long dataSizePerPartition = 10000;
+        final int sinkGroups = 4;
+        final int blockSize = 32 * 1024;
+        final long segmentSize = 1024L * 1024L * 512;
+        final int maxRecordLength = 1024;
+
+        final long totalSize = dataSizePerPartition * partitionCount;
+        Set<String> consumerGroup = new HashSet<>(sinkGroups);
+        for (int i = 0; i < sinkGroups; i++) {
+            final String groupId = "consumer_group_" + i;
+            consumerGroup.add(groupId);
+        }
+
+        try (Channel channel =
+                createDefaultMemoryChannel(
+                        "t1",
+                        blockSize,
+                        segmentSize,
+                        CompressionType.NONE,
+                        1,
+                        partitionCount,
+                        consumerGroup)) {
+            // create sources
+            final List<Thread> sourceThread = new ArrayList<>();
+            for (int i = 0; i < partitionCount; i++) {
+                Thread t =
+                        new SourceThread(channel, i, dataSizePerPartition, maxRecordLength, true);
+                sourceThread.add(t);
+            }
+
+            // create multi sink
+            final List<SinkGroup> sinGroup =
+                    consumerGroup.stream()
+                            .map(
+                                    groupName ->
+                                            new SinkGroup(
+                                                    partitionCount, channel, groupName, totalSize))
+                            .collect(Collectors.toList());
+
+            long start = System.currentTimeMillis();
+            // start source and sink threads
+            sourceThread.forEach(Thread::start);
+            sinGroup.forEach(Thread::start);
+
+            // waiting source threads finish and flush
+            sourceThread.forEach(Threads::joinQuietly);
+            channel.flush();
+            long writeSpend = System.currentTimeMillis() - start;
+
+            // waiting sink threads finish.
+            sinGroup.forEach(Threads::joinQuietly);
+            Assert.assertEquals(totalSize, dataSizePerPartition * partitionCount);
+            Assert.assertEquals(
+                    dataSizePerPartition * partitionCount * sinkGroups,
+                    sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum());
+            LOG.info(
+                    LOG_FORMAT,
+                    writeSpend,
+                    totalSize,
+                    String.valueOf(System.currentTimeMillis() - start),
+                    (sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum()));
+        }
+    }
+
+    @Test
+    public void testTake() throws IOException {
+        final long dataSize = 1000000;
+        final int blockSize = 32 * 1024;
+        final long segmentSize = 1024L * 1024L * 125;
+        final int consumerGroupCount = 5;
+        final Set<String> consumerGroups = new HashSet<>();
+        final Map<String, Offset> groupOffsets = new HashMap<>();
+        for (int i = 0; i < consumerGroupCount; i++) {
+            String groupId = "group_" + i;
+            consumerGroups.add(groupId);
+            groupOffsets.put(groupId, Offset.ZERO);
+        }
+        try (MemoryChannel channel =
+                createMemoryChannel(
+                        "t1",
+                        createMemoryGroupManagerFactory(groupOffsets),
+                        blockSize,
+                        segmentSize,
+                        CompressionType.NONE,
+                        1)) {
+            final int writeThread = 2;
+            final List<Thread> writeThreads = new ArrayList<>();
+            final byte[] data = new byte[1024];
+            final Random random = new Random();
+            for (int i = 0; i < data.length; i++) {
+                data[i] = (byte) random.nextInt();
+            }
+            for (int i = 0; i < writeThread; i++) {
+                final Thread thread =
+                        new Thread(
+                                () -> {
+                                    for (int j = 0; j < dataSize; j++) {
+                                        try {
+                                            channel.append(0, data);
+                                        } catch (IOException | InterruptedException ioException) {
+                                            throw new RuntimeException(ioException);
+                                        }
+                                    }
+                                });
+                writeThreads.add(thread);
+            }
+            List<Thread> readTreads = new ArrayList<>();
+            for (String groupId : consumerGroups) {
+                final Offset startOffset = channel.committedOffset(groupId, 0);
+                final Thread readTread =
+                        new Thread(
+                                () -> {
+                                    RecordsResultSet result;
+                                    int readSize = 0;
+                                    Offset offset = startOffset;
+                                    while (readSize < dataSize * writeThread) {
+                                        try {
+                                            result = channel.take(0, offset);
+                                            while (result.hasNext()) {
+                                                result.next();
+                                                readSize++;
+                                            }
+                                            offset = result.nexOffset();
+                                        } catch (IOException | InterruptedException ioException) {
+                                            throw new RuntimeException(ioException);
+                                        }
+                                    }
+                                    try {
+                                        channel.commit(0, groupId, offset);
+                                    } catch (IOException ioException) {
+                                        throw new RuntimeException(ioException);
+                                    }
+                                });
+                readTreads.add(readTread);
+            }
+            writeThreads.forEach(Thread::start);
+            readTreads.forEach(Thread::start);
+            writeThreads.forEach(Threads::joinQuietly);
+            channel.flush();
+            readTreads.forEach(Threads::joinQuietly);
+        }
+    }
+
+    @Test
+    public void testOnePartitionMultiWriter() throws IOException {
+        for (int j = 0; j < 10; j++) {
+            final int blockSize = 32 * 1024;
+            final long segmentSize = 1024L * 1024L * 51;
+
+            final String consumerGroup = "consumer_group";
+            final String consumerGroup2 = "consumer_group2";
+            final Map<String, Offset> groupOffsets = new HashMap<>();
+            groupOffsets.put(consumerGroup, Offset.ZERO);
+            groupOffsets.put(consumerGroup2, Offset.ZERO);
+            final int maxRecordLength = 1024;
+            final long perThreadWriteCount = 100000;
+            final int writeThread = 15;
+            SinkGroup sinkGroup;
+            SinkGroup sinkGroup2;
+            try (MemoryChannel channel =
+                    createMemoryChannel(
+                            "t1",
+                            createMemoryGroupManagerFactory(groupOffsets),
+                            blockSize,
+                            segmentSize,
+                            CompressionType.NONE,
+                            1)) {
+
+                final List<Thread> sourceThreads = new ArrayList<>();
+                for (int i = 0; i < writeThread; i++) {
+                    SourceThread sourceThread =
+                            new SourceThread(
+                                    channel, 0, perThreadWriteCount, maxRecordLength, true);
+                    sourceThreads.add(sourceThread);
+                }
+                sinkGroup =
+                        new SinkGroup(1, channel, consumerGroup, writeThread * perThreadWriteCount);
+                sinkGroup2 =
+                        new SinkGroup(
+                                1, channel, consumerGroup2, writeThread * perThreadWriteCount);
+                for (Thread thread : sourceThreads) {
+                    thread.start();
+                }
+                sinkGroup.start();
+                sinkGroup2.start();
+                sourceThreads.forEach(Threads::joinQuietly);
+                channel.flush();
+                Threads.joinQuietly(sinkGroup);
+                Threads.joinQuietly(sinkGroup2);
+            }
+            Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup.getConsumerCount());
+            Assert.assertEquals(perThreadWriteCount * writeThread, sinkGroup2.getConsumerCount());
+        }
+    }
+
+    public static Channel createDefaultMemoryChannel(
+            String topic,
+            int blockSize,
+            long segmentSize,
+            CompressionType compressionType,
+            int blockCount,
+            int partition,
+            Set<String> groups)
+            throws IOException {
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put(OPTION_PARTITION_COUNT, partition);
+        config.put(OPTION_BLOCK_SIZE, new MemorySize(blockSize));
+        config.put(OPTION_SEGMENT_SIZE, new MemorySize(segmentSize));
+        config.put(OPTION_COMPRESSION, compressionType);
+        config.put(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE, blockCount);
+        config.put(OPTION_GROUPS, new ArrayList<>(groups));
+        return new MemoryChannelFactory().createChannel(topic, config);
     }
 }

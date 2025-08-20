@@ -85,9 +85,8 @@ public class SourceThread extends Thread {
                 long spend = System.currentTimeMillis() - start;
                 if (writeLength >= 1024 * 1024 * 1024 && spend > 0) {
                     LOG.info(
-                            "write spend:"
-                                    + df.format(writeLength / 1024.0 / 1024.0 / (spend / 1000.0))
-                                    + "(mb/s)");
+                            "write spend:{}(mb/s)",
+                            df.format(writeLength / 1024.0 / 1024.0 / (spend / 1000.0)));
                     writeLength = 0;
                     start = System.currentTimeMillis();
                 }
@@ -95,6 +94,7 @@ public class SourceThread extends Thread {
                 throw new TributaryRuntimeException(e);
             }
         }
+        LOG.info("SourceThread finished, partition:{}, count:{}", partition, dataSize);
     }
 
     private Random getRandom() {

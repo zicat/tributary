@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /** DefaultRecords. */
+@SuppressWarnings("NullableProblems")
 public class DefaultRecords implements Records {
 
     private final String topic;

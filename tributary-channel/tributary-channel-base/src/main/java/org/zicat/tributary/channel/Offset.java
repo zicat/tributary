@@ -151,4 +151,9 @@ public class Offset implements Comparable<Offset> {
     public Offset skipOffset(long offset) {
         return skip2Target(segmentId, offset);
     }
+
+    @Override
+    public String toString() {
+        return "Offset{" + "segmentId=" + segmentId + ", offset=" + offset + '}';
+    }
 }

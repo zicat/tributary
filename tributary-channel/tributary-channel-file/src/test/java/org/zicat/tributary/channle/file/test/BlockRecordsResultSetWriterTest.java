@@ -18,48 +18,23 @@
 
 package org.zicat.tributary.channle.file.test;
 
-import org.junit.After;
+import static org.zicat.tributary.common.VIntUtil.putVInt;
+
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.file.FileSegment;
 import org.zicat.tributary.channel.file.FileSegmentUtil;
 import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
-import static org.zicat.tributary.common.VIntUtil.putVInt;
-
 /** BufferReaderWriterTest. */
 public class BlockRecordsResultSetWriterTest {
-
-    RandomAccessFile randomAccessFile;
-    FileChannel fileChannel;
-    File dir = FileUtils.createTmpDir("buffer_records_result_set_writer_test");
-    File file = new File(dir, "foo.log");
-
-    @Before
-    public void before() throws IOException {
-        IOUtils.deleteDir(dir);
-        IOUtils.makeDir(dir);
-        randomAccessFile = new RandomAccessFile(file, "rw");
-        fileChannel = randomAccessFile.getChannel();
-        ByteBuffer segmentHeader = ByteBuffer.allocate(FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE);
-        IOUtils.writeFull(fileChannel, segmentHeader);
-    }
-
-    @After
-    public void after() {
-        IOUtils.closeQuietly(fileChannel, randomAccessFile);
-        IOUtils.deleteDir(dir);
-    }
 
     static final class MockBlockFlushHandler implements BlockWriter.BlockFlushHandler {
 
@@ -82,6 +57,7 @@ public class BlockRecordsResultSetWriterTest {
     @Test
     public void test() throws IOException {
 
+        FileChannelMock fileChannel = new FileChannelMock(8);
         // test writer. append "foo"
         final MockBlockFlushHandler handler =
                 new MockBlockFlushHandler(fileChannel, CompressionType.SNAPPY);
@@ -125,7 +101,7 @@ public class BlockRecordsResultSetWriterTest {
                         CompressionType.SNAPPY,
                         10240,
                         FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE,
-                        file,
+                        new File("aa"),
                         fileChannel);
         RecordsResultSet resultSet =
                 fileSegment.read(bufferRecordsResultSet, fileChannel.position()).toResultSet();

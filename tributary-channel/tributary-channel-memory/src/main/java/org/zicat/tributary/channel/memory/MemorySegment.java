@@ -32,7 +32,7 @@ public class MemorySegment extends Segment {
 
     private final List<ByteBuffer> chunkChain = new ArrayList<>();
     private static final int CHUNK_SIZE = 16 * 1024;
-    private ByteBuffer currentChunk;
+    private volatile ByteBuffer currentChunk;
     private final int chunkSize;
 
     public MemorySegment(
@@ -47,7 +47,7 @@ public class MemorySegment extends Segment {
     }
 
     @Override
-    protected long legalOffset(long offset) {
+    public long legalOffset(long offset) {
         return offset;
     }
 
@@ -124,5 +124,6 @@ public class MemorySegment extends Segment {
     public void recycle() {
         super.recycle();
         chunkChain.clear();
+        currentChunk = null;
     }
 }

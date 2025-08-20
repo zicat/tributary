@@ -117,9 +117,8 @@ public class ChannelBaseTest {
                     }
                 }
             }
-        }
-        // consume again with commit
-        try (Channel channel = factory.createChannel(topic, config)) {
+
+            // consume again with commit
             for (String group : channel.groups()) {
                 for (int i = 0; i < channel.partition(); i++) {
                     final Offset offset = channel.committedOffset(group, i);

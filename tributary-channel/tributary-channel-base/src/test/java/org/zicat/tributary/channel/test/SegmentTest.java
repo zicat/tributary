@@ -131,7 +131,6 @@ public class SegmentTest {
             }
             while (recordsResultSet.hasNext()) {
                 count++;
-                System.out.println(count);
                 Assert.assertArrayEquals(data, recordsResultSet.next());
             }
             newRecordOffset = BlockReaderOffset.cast(recordsResultSet.nexOffset());

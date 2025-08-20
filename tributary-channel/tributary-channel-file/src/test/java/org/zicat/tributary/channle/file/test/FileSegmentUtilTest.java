@@ -18,6 +18,11 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.legalFileOffset;
+import static org.zicat.tributary.common.IOUtils.deleteDir;
+import static org.zicat.tributary.common.IOUtils.makeDir;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,16 +30,14 @@ import org.junit.Test;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.SegmentUtil;
 import org.zicat.tributary.channel.file.FileSegment;
+import org.zicat.tributary.channel.file.FileSegmentUtil;
 import org.zicat.tributary.common.test.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
-
 /** SegmentUtilTest. */
-public class SegmentUtilTest {
+public class FileSegmentUtilTest {
 
     private static final File DIR = FileUtils.createTmpDir("segment_util_test");
 
@@ -49,6 +52,34 @@ public class SegmentUtilTest {
     @AfterClass
     public static void after() {
         deleteDir(DIR);
+    }
+
+    @Test
+    public void testLegalFileOffset() {
+        Assert.assertEquals(FILE_SEGMENT_HEAD_SIZE, legalFileOffset(0));
+        Assert.assertEquals(FILE_SEGMENT_HEAD_SIZE, legalFileOffset(4));
+        Assert.assertEquals(FILE_SEGMENT_HEAD_SIZE, legalFileOffset(8));
+        Assert.assertEquals(9, legalFileOffset(9));
+    }
+
+    @Test
+    public void testGetIdByName() {
+        Assert.assertEquals(1, FileSegmentUtil.getIdByName("aa", "aa_segment_1.log"));
+        Assert.assertEquals(2, FileSegmentUtil.getIdByName("bb", "bb_segment_2.log"));
+        Assert.assertEquals(3, FileSegmentUtil.getIdByName("cc", "cc_segment_3.log"));
+    }
+
+    @Test
+    public void testGetNameById() {
+        Assert.assertEquals("aa_segment_1.log", FileSegmentUtil.getNameById("aa", 1));
+    }
+
+    @Test
+    public void testIsFileSegment() {
+        Assert.assertTrue(FileSegmentUtil.isFileSegment("aa", "aa_segment_1.log"));
+        Assert.assertFalse(FileSegmentUtil.isFileSegment("aa", "aa_segment_a.log"));
+        Assert.assertFalse(FileSegmentUtil.isFileSegment("bb", "aa_segment_1.log"));
+        Assert.assertFalse(FileSegmentUtil.isFileSegment("aa", "aa_segment_1.txt"));
     }
 
     @Test

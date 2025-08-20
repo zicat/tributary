@@ -32,14 +32,9 @@ public class SinkGroup extends Thread {
     private final AtomicLong consumerCount = new AtomicLong();
 
     public SinkGroup(int partitionCount, Channel channel, String groupName, long totalSize) {
-        this(partitionCount, channel, groupName, totalSize, 5);
-    }
-
-    public SinkGroup(
-            int partitionCount, Channel channel, String groupName, long totalSize, int sleep) {
         for (int j = 0; j < partitionCount; j++) {
             // register group id to channel and start consumer each partition
-            sinkThreads.add(new SinkThread(channel, j, groupName, consumerCount, totalSize, sleep));
+            sinkThreads.add(new SinkThread(channel, j, groupName, consumerCount, totalSize));
         }
     }
 
