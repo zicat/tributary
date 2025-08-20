@@ -19,6 +19,7 @@
 package org.zicat.tributary.source.http;
 
 import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+import static org.zicat.tributary.source.http.HttpPipelineInitializationFactory.*;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
@@ -27,48 +28,37 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.util.concurrent.EventExecutorGroup;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.Strings;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 /** HttpPipelineInitialization. */
 public class HttpPipelineInitialization extends AbstractPipelineInitialization {
 
-    public static final ConfigOption<String> OPTIONS_PATH =
-            ConfigOptions.key("netty.decoder.http.path")
-                    .stringType()
-                    .description(
-                            "set netty http path, if not match return http 404 code, default null match all")
-                    .defaultValue(null);
-    public static final ConfigOption<Integer> OPTION_MAX_CONTENT_LENGTH =
-            ConfigOptions.key("netty.decoder.http.content-length-max")
-                    .integerType()
-                    .description("set http content max size, default 16mb")
-                    .defaultValue(1024 * 1024 * 16);
-
-    public static final ConfigOption<Integer> OPTION_HTTP_WORKER_THREADS =
-            ConfigOptions.key("netty.decoder.http.worker-threads")
-                    .integerType()
-                    .description("set http content max size, default 16mb")
-                    .defaultValue(1024 * 1024 * 16);
-
-    private final String path;
-    private final int maxContentLength;
-    private final DefaultNettySource source;
-    private final EventExecutorGroup httpHandlerExecutorGroup;
+    private static final Logger LOG = LoggerFactory.getLogger(HttpPipelineInitialization.class);
+    protected final String path;
+    protected final int maxContentLength;
+    protected final DefaultNettySource source;
+    protected final EventExecutorGroup httpHandlerExecutorGroup;
+    protected final String authToken;
 
     public HttpPipelineInitialization(DefaultNettySource source) {
         super(source);
         this.source = source;
         final ReadableConfig conf = source.getConfig();
         this.path = formatPath(conf.get(OPTIONS_PATH));
-        this.maxContentLength = conf.get(OPTION_MAX_CONTENT_LENGTH);
-        final int workerThreads = source.getConfig().get(OPTION_HTTP_WORKER_THREADS);
+        this.maxContentLength = maxContentLength(conf);
         this.httpHandlerExecutorGroup =
-                createEventExecutorGroup(source.sourceId() + "-httpHandler", workerThreads);
+                createEventExecutorGroup(
+                        source.sourceId() + "-httpHandler", httpWorkerThread(conf));
+        this.authToken = authToken(conf, source.sourceId());
     }
 
     @Override
@@ -79,8 +69,73 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
         pip.addLast(new IdleCloseHandler());
         pip.addLast(new HttpRequestDecoder());
         pip.addLast(new HttpObjectAggregator(maxContentLength));
-        pip.addLast(
-                httpHandlerExecutorGroup, new HttpMessageDecoder(source, selectPartition(), path));
+        pip.addLast(httpHandlerExecutorGroup, createHttpMessageDecoder());
+    }
+
+    /**
+     * authToken.
+     *
+     * @param username username
+     * @param password password
+     * @return token
+     */
+    protected String authToken(String username, String password) {
+        if (username == null || password == null) {
+            return null;
+        }
+        final String credentials = username + ":" + password;
+        final byte[] credentialsBytes = credentials.getBytes(StandardCharsets.UTF_8);
+        final String encodedCredentials = Base64.getEncoder().encodeToString(credentialsBytes);
+        return "Basic " + encodedCredentials;
+    }
+
+    /**
+     * username.
+     *
+     * @param config config
+     * @return string
+     */
+    protected String username(ReadableConfig config) {
+        return Strings.blank2Null(config.get(OPTION_HTTP_USER));
+    }
+
+    /**
+     * password.
+     *
+     * @param config config
+     * @return string
+     */
+    protected String password(ReadableConfig config) {
+        return Strings.blank2Null(config.get(OPTION_HTTP_PASSWORD));
+    }
+
+    /**
+     * maxContentLength.
+     *
+     * @param config config
+     * @return int
+     */
+    protected int maxContentLength(ReadableConfig config) {
+        return config.get(OPTION_MAX_CONTENT_LENGTH);
+    }
+
+    /**
+     * getHttpWorkerThread.
+     *
+     * @param config config
+     * @return int
+     */
+    protected int httpWorkerThread(ReadableConfig config) {
+        return config.get(OPTION_HTTP_WORKER_THREADS);
+    }
+
+    /**
+     * create http message decoder.
+     *
+     * @return HttpMessageDecoder
+     */
+    protected HttpMessageDecoder createHttpMessageDecoder() {
+        return new HttpMessageDecoder(source, selectPartition(), path, authToken);
     }
 
     /**
@@ -95,5 +150,20 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
         }
         final String trimPath = path.trim();
         return trimPath.endsWith("/") ? trimPath.substring(1, trimPath.length() - 1) : trimPath;
+    }
+
+    /**
+     * authToken.
+     *
+     * @param conf conf
+     * @param sourceId sourceId
+     * @return String
+     */
+    private String authToken(ReadableConfig conf, String sourceId) {
+        final String authToken = authToken(username(conf), password(conf));
+        if (authToken == null) {
+            LOG.info("Source {} not set http basic auth, will not check auth token", sourceId);
+        }
+        return authToken;
     }
 }

@@ -20,7 +20,7 @@ package org.zicat.tributary.source.kafka.test;
 
 import static org.apache.kafka25.ApiKeys.*;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
-import static org.zicat.tributary.source.kafka.KafkaPipelineInitialization.*;
+import static org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory.*;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;

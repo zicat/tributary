@@ -54,7 +54,7 @@ public abstract class AbstractSource implements Source {
         } catch (IOException e) {
             LOG.error("append data error, close source", e);
             IOUtils.closeQuietly(this);
-            throw new IOException(e);
+            throw e;
         }
     }
 

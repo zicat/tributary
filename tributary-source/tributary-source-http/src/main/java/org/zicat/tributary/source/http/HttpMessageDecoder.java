@@ -29,9 +29,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.PathParams;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.AbstractNettySource;
 
 import java.io.IOException;
@@ -44,12 +47,16 @@ import java.util.Map;
 /** HttpMessageDecoder. */
 public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequest> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HttpMessageDecoder.class);
     private static final byte[] EMPTY = new byte[0];
-    private static final ObjectMapper MAPPER =
+    public static final ObjectMapper MAPPER =
             new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    private static final TypeReference<List<Record>> BODY_TYPE =
+
+    protected static final TypeReference<List<Record>> BODY_TYPE =
             new TypeReference<List<Record>>() {};
 
+    private static final byte[] UNAUTHORIZED =
+            "Authentication required".getBytes(StandardCharsets.UTF_8);
     private static final String HTTP_HEADER_VALUE_UTF8 = "; charset=UTF-8";
     private static final String HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8 =
             HttpHeaderValues.APPLICATION_JSON + HTTP_HEADER_VALUE_UTF8;
@@ -68,23 +75,29 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     public static final String RESPONSE_BAD_TOPIC_NOT_IN_PARAMS =
             HTTP_QUERY_KEY_TOPIC + " not found in params";
 
-    public static final String RESPONSE_BAD_JSON_PARSE_FAIL = "json body parse to records fail";
+    protected final AbstractNettySource source;
+    protected final String path;
+    protected final int defaultPartition;
+    protected final String authToken;
 
-    private final AbstractNettySource source;
-    private final String path;
-    private final int defaultPartition;
-
-    public HttpMessageDecoder(AbstractNettySource source, int defaultPartition, String path) {
+    public HttpMessageDecoder(
+            AbstractNettySource source, int defaultPartition, String path, String authToken) {
         this.source = source;
         this.defaultPartition = defaultPartition;
         this.path = path;
+        this.authToken = authToken;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg)
-            throws URISyntaxException, IOException, InterruptedException {
+            throws URISyntaxException, IOException {
 
-        final ByteBuf byteBuf = msg.content();
+        final String authHeader = msg.headers().get(HttpHeaderNames.AUTHORIZATION);
+        if (authToken != null && !authToken.equals(authHeader)) {
+            unauthorizedResponse(ctx);
+            return;
+        }
+
         if (!HttpMethod.POST.equals(msg.method())) {
             badRequestResponse(ctx, RESPONSE_BAD_METHOD);
             return;
@@ -94,37 +107,77 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             notFoundResponse(ctx, pathParams.path());
             return;
         }
-        final Map<String, String> httpHeaders = httpHeaders(msg);
-        final String contentType = httpHeaders.get(HTTP_HEADER_KEY_CONTENT_TYPE);
-        if (!HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8.equals(contentType)) {
-            badRequestResponse(ctx, RESPONSE_BAD_CONTENT_TYPE);
+        final String contentTypeCheck = checkContentType(msg);
+        if (contentTypeCheck != null) {
+            badRequestResponse(ctx, contentTypeCheck);
             return;
         }
-        final String topic = pathParams.params().get(HTTP_QUERY_KEY_TOPIC);
+        final String topic = topic(pathParams);
         if (topic == null || topic.trim().isEmpty()) {
             badRequestResponse(ctx, RESPONSE_BAD_TOPIC_NOT_IN_PARAMS);
             return;
         }
-
-        final Map<String, byte[]> recordsHeader = recordsHeaders(httpHeaders);
-        final byte[] bytes = new byte[byteBuf.readableBytes()];
-        byteBuf.getBytes(byteBuf.readerIndex(), bytes).discardReadBytes();
-
-        List<Record> records;
         try {
-            records = MAPPER.readValue(bytes, BODY_TYPE);
+            final ByteBuf byteBuf = msg.content();
+            final byte[] body = new byte[byteBuf.readableBytes()];
+            byteBuf.getBytes(byteBuf.readerIndex(), body).discardReadBytes();
+            final String dataPartition = pathParams.params().get(HTTP_QUERY_KEY_PARTITION);
+            final int realPartition =
+                    dataPartition == null
+                            ? defaultPartition
+                            : Integer.parseInt(dataPartition) % source.partition();
+            source.append(realPartition, parseRecords(ctx, topic, httpHeaders(msg), body));
+            okResponse(ctx);
         } catch (Exception e) {
-            badRequestResponse(ctx, RESPONSE_BAD_JSON_PARSE_FAIL);
-            return;
+            LOG.error(
+                    "parse http request body to records error, path: {}, topic: {}, partition: {}",
+                    pathParams.path(),
+                    topic,
+                    pathParams.params().get(HTTP_QUERY_KEY_PARTITION),
+                    e);
+            badRequestResponse(ctx, e.getClass().getName());
         }
+    }
 
-        final String dataPartition = pathParams.params().get(HTTP_QUERY_KEY_PARTITION);
-        final int realPartition =
-                dataPartition == null
-                        ? defaultPartition
-                        : Integer.parseInt(dataPartition) % source.partition();
-        source.append(realPartition, new DefaultRecords(topic, recordsHeader, records));
-        okResponse(ctx);
+    /**
+     * parse body to records.
+     *
+     * @param ctx ChannelHandlerContext
+     * @param topic topic
+     * @param httpHeaders httpHeaders
+     * @param body body
+     * @return Records
+     * @throws IOException IOException
+     */
+    protected Records parseRecords(
+            ChannelHandlerContext ctx, String topic, Map<String, String> httpHeaders, byte[] body)
+            throws IOException {
+        final List<Record> records = MAPPER.readValue(body, BODY_TYPE);
+        return new DefaultRecords(topic, recordsHeaders(httpHeaders), records);
+    }
+
+    /**
+     * get topic from path params.
+     *
+     * @param pathParams pathParams
+     * @return topic
+     */
+    protected String topic(PathParams pathParams) {
+        return pathParams.params().get(HTTP_QUERY_KEY_TOPIC);
+    }
+
+    /**
+     * check content type.
+     *
+     * @param msg msg
+     * @return if content type is not application/json; charset=UTF-8, return error message
+     */
+    protected String checkContentType(FullHttpRequest msg) {
+        final String contentType = msg.headers().get(HTTP_HEADER_KEY_CONTENT_TYPE);
+        if (HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8.equals(contentType)) {
+            return null;
+        }
+        return RESPONSE_BAD_CONTENT_TYPE;
     }
 
     /**
@@ -133,34 +186,16 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param msg msg
      * @return map
      */
-    private static Map<String, String> httpHeaders(FullHttpRequest msg) {
+    protected Map<String, String> httpHeaders(FullHttpRequest msg) {
+        msg.headers().remove(HTTP_HEADER_KEY_CONTENT_TYPE);
+        msg.headers().remove(HttpHeaderNames.CONTENT_LENGTH);
+        msg.headers().remove(HttpHeaderNames.AUTHORIZATION);
+
         final Map<String, String> result = new HashMap<>();
         for (Map.Entry<String, String> entry : msg.headers()) {
             result.put(entry.getKey(), entry.getValue());
         }
         return result;
-    }
-
-    /**
-     * records headers.
-     *
-     * @param httpHeaders http headers
-     * @return map
-     */
-    private static Map<String, byte[]> recordsHeaders(Map<String, String> httpHeaders) {
-        final long receivedTime = System.currentTimeMillis();
-        final Map<String, byte[]> recordsHeader = new HashMap<>(sourceHeaders(receivedTime));
-        httpHeaders.forEach(
-                (k, v) -> {
-                    if (k.equals(HTTP_HEADER_KEY_CONTENT_TYPE)) {
-                        return;
-                    }
-                    if (k.equals(HttpHeaderNames.CONTENT_LENGTH.toString())) {
-                        return;
-                    }
-                    recordsHeader.put(k, v.getBytes(StandardCharsets.UTF_8));
-                });
-        return recordsHeader;
     }
 
     /**
@@ -174,6 +209,19 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return true;
         }
         return this.path.equals(path);
+    }
+
+    /**
+     * records headers.
+     *
+     * @param httpHeaders http headers
+     * @return map
+     */
+    private static Map<String, byte[]> recordsHeaders(Map<String, String> httpHeaders) {
+        final long receivedTime = System.currentTimeMillis();
+        final Map<String, byte[]> recordsHeader = new HashMap<>(sourceHeaders(receivedTime));
+        httpHeaders.forEach((k, v) -> recordsHeader.put(k, v.getBytes(StandardCharsets.UTF_8)));
+        return recordsHeader;
     }
 
     @Override
@@ -191,7 +239,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      *
      * @param ctx ctx
      */
-    private static void okResponse(ChannelHandlerContext ctx) {
+    protected void okResponse(ChannelHandlerContext ctx) {
         final byte[] content = EMPTY;
         final ByteBuf byteBuf = ctx.alloc().buffer(content.length);
         byteBuf.writeBytes(content);
@@ -212,7 +260,21 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
         byteBuf.writeBytes(content);
         final FullHttpResponse response =
                 new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST, byteBuf);
+                        HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR, byteBuf);
+        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
+    }
+
+    /**
+     * unauthorized response.
+     *
+     * @param ctx ctx
+     */
+    private static void unauthorizedResponse(ChannelHandlerContext ctx) {
+        final ByteBuf byteBuf = ctx.alloc().buffer(UNAUTHORIZED.length);
+        byteBuf.writeBytes(UNAUTHORIZED);
+        final FullHttpResponse response =
+                new DefaultFullHttpResponse(
+                        HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED, byteBuf);
         ctx.writeAndFlush(addTextPlainUtf8Headers(response));
     }
 

@@ -18,12 +18,12 @@
 
 package org.zicat.tributary.common.test;
 
+import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.DefaultReadableConfig;
-
-import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
 
 /** ConfigOptionTest. */
 public class ConfigOptionsTest {
@@ -45,6 +45,7 @@ public class ConfigOptionsTest {
         config.put("bb", "zstd");
         config.put("cc", "snappy");
         config.put("dd", "Zstd");
+        config.put("ee", "ZSTD");
         Assert.assertEquals(
                 CompressionTypeMock.NONE,
                 config.get(
@@ -68,6 +69,12 @@ public class ConfigOptionsTest {
                 CompressionTypeMock.ZSTD,
                 config.get(
                         ConfigOptions.key("dd")
+                                .enumType(CompressionTypeMock.class)
+                                .noDefaultValue()));
+        Assert.assertEquals(
+                CompressionTypeMock.ZSTD,
+                config.get(
+                        ConfigOptions.key("ee")
                                 .enumType(CompressionTypeMock.class)
                                 .noDefaultValue()));
     }

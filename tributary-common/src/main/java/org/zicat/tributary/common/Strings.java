@@ -22,7 +22,7 @@ package org.zicat.tributary.common;
 public class Strings {
 
     /**
-     * remove last if match.
+     * remove last if matched.
      *
      * @param value value
      * @param matcher matcher
@@ -35,5 +35,15 @@ public class Strings {
         return value.endsWith(matcher)
                 ? value.substring(0, value.length() - matcher.length())
                 : value;
+    }
+
+    /**
+     * check blank 2 null.
+     *
+     * @param value value
+     * @return String
+     */
+    public static String blank2Null(String value) {
+        return value == null || value.trim().isEmpty() ? null : value;
     }
 }

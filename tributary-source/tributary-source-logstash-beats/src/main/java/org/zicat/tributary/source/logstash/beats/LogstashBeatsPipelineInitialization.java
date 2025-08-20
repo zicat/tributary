@@ -20,6 +20,7 @@ package org.zicat.tributary.source.logstash.beats;
 
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
 import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory.*;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
@@ -28,13 +29,9 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import org.logstash.beats.*;
 import org.logstash.netty.SslContextBuilder;
 import org.logstash.netty.SslHandlerProvider;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
-
-import java.time.Duration;
 
 /** LogstashBeatsPipelineInitialization. */
 public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitialization {
@@ -44,42 +41,6 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
     private static final String CONNECTION_HANDLER = "connection-handler";
     private static final String IDLESTATE_HANDLER = "idlestate-handler";
 
-    public static final ConfigOption<Integer> OPTION_BEATS_WORKER_THREADS =
-            ConfigOptions.key("netty.decoder.beats.worker-threads")
-                    .integerType()
-                    .description("The number of worker threads for the Beats handler.")
-                    .defaultValue(10);
-
-    public static final ConfigOption<Boolean> OPTION_BEATS_SSL =
-            ConfigOptions.key("netty.decoder.beats.ssl")
-                    .booleanType()
-                    .description("Whether to use SSL for the Beats connection.")
-                    .defaultValue(false);
-
-    public static final ConfigOption<String> OPTION_BEATS_SSL_CERTIFICATE_AUTHORITIES =
-            ConfigOptions.key("netty.decoder.beats.ssl.certificate.authorities")
-                    .stringType()
-                    .description("The certificate authorities for the SSL connection.")
-                    .defaultValue(null);
-
-    public static final ConfigOption<String> OPTION_BEATS_SSL_CERTIFICATE =
-            ConfigOptions.key("netty.decoder.beats.ssl.certificate")
-                    .stringType()
-                    .description("The certificate for the SSL connection.")
-                    .defaultValue(null);
-
-    public static final ConfigOption<String> OPTION_BEATS_SSL_KEY =
-            ConfigOptions.key("netty.decoder.beats.ssl.key")
-                    .stringType()
-                    .description("The key for the SSL connection.")
-                    .defaultValue(null);
-
-    public static final ConfigOption<Duration> OPTION_BEATS_SSL_TIMEOUT =
-            ConfigOptions.key("netty.decoder.beats.ssl.timeout")
-                    .durationType()
-                    .description("The timeout for the SSL handshake, default 10s.")
-                    .defaultValue(Duration.ofSeconds(10));
-
     protected final SslHandlerProvider sslHandlerProvider;
     protected final DefaultNettySource source;
     protected final EventExecutorGroup beatsHandlerExecutorGroup;
@@ -88,7 +49,7 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
         super(source);
         this.source = source;
         this.sslHandlerProvider = createSslHandlerProvider(source.getConfig());
-        final int workerThreads = source.getConfig().get(OPTION_BEATS_WORKER_THREADS);
+        final int workerThreads = source.getConfig().get(OPTION_LOGSTASH_BEATS_WORKER_THREADS);
         this.beatsHandlerExecutorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-logstashBeatsHandler", workerThreads);
@@ -116,21 +77,22 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
      * @throws Exception Exception
      */
     private SslHandlerProvider createSslHandlerProvider(ReadableConfig config) throws Exception {
-        if (!config.get(OPTION_BEATS_SSL)) {
+        if (!config.get(OPTION_LOGSTASH_BEATS_SSL)) {
             return null;
         }
-        final String sslCertificate = getResourcePath(config.get(OPTION_BEATS_SSL_CERTIFICATE));
+        final String sslCertificate =
+                getResourcePath(config.get(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE));
         if (sslCertificate == null) {
             throw new IllegalStateException(
                     "SSL certificate is required when SSL is enabled for Beats source.");
         }
-        final String sslKey = getResourcePath(config.get(OPTION_BEATS_SSL_KEY));
+        final String sslKey = getResourcePath(config.get(OPTION_LOGSTASH_BEATS_SSL_KEY));
         if (sslKey == null) {
             throw new IllegalStateException(
                     "SSL key is required when SSL is enabled for Beats source.");
         }
         final String sslCertificateAuthorities =
-                getResourcePath(config.get(OPTION_BEATS_SSL_CERTIFICATE_AUTHORITIES));
+                getResourcePath(config.get(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES));
         if (sslCertificateAuthorities == null) {
             throw new IllegalStateException(
                     "SSL certificate authorities are required when SSL is enabled for Beats source.");
@@ -142,6 +104,7 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
                                 SslContextBuilder.SslClientVerifyMode.REQUIRED,
                                 certificateAuthorities);
         return new SslHandlerProvider(
-                sslBuilder.buildContext(), config.get(OPTION_BEATS_SSL_TIMEOUT).toMillis());
+                sslBuilder.buildContext(),
+                config.get(OPTION_LOGSTASH_BEATS_SSL_TIMEOUT).toMillis());
     }
 }

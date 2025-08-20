@@ -23,17 +23,16 @@ import org.zicat.tributary.server.config.PropertiesLoader;
 
 import java.io.IOException;
 
-/** HttpSourcePrintSinkApplication. */
-public class HttpSourcePrintSinkApplication {
+/** LogstashHttpSourcePrintSinkApplication. */
+public class LogstashHttpSourcePrintSinkApplication {
 
-    private static final String ACTIVE_PROFILE = "http-source-print-sink";
+    private static final String ACTIVE_PROFILE = "logstash-http-source-print-sink";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         /*
-            curl -u user1:password1 -X POST http://localhost:8200?topic=my_topic    \
-                -H "Content-Type: application/json; charset=UTF-8"              \
-                -H "my_records_header: hv1"                                     \
-                -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i
+           curl -u user1:password1 -X POST "http://localhost:11223/" \
+             -H "Content-Type: application/text" \
+             -d '{"aa":"bb"}'
         */
         try (Starter starter = new Starter(new PropertiesLoader(ACTIVE_PROFILE).load())) {
             starter.start();

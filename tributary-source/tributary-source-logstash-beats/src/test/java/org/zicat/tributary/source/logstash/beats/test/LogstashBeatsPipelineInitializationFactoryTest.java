@@ -21,6 +21,7 @@ package org.zicat.tributary.source.logstash.beats.test;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
 import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitialization.*;
+import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -79,11 +80,11 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
         final String topic = "t1";
         final String caCertPath = "ca.crt";
         final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_BEATS_WORKER_THREADS, -1);
-        config.put(OPTION_BEATS_SSL, true);
-        config.put(OPTION_BEATS_SSL_CERTIFICATE, "server.crt");
-        config.put(OPTION_BEATS_SSL_KEY, "server.key");
-        config.put(OPTION_BEATS_SSL_CERTIFICATE_AUTHORITIES, caCertPath);
+        config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1);
+        config.put(OPTION_LOGSTASH_BEATS_SSL, true);
+        config.put(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE, "server.crt");
+        config.put(OPTION_LOGSTASH_BEATS_SSL_KEY, "server.key");
+        config.put(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES, caCertPath);
 
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 DefaultNettySource source = new DefaultNettySourceMock(config, topic, channel)) {
@@ -175,7 +176,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
 
         final String topic = "t1";
         final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_BEATS_WORKER_THREADS, -1); // set to sync for test
+        config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1); // set to sync for test
         final AtomicBoolean clientReceivedAck = new AtomicBoolean();
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 DefaultNettySource source = new DefaultNettySourceMock(config, topic, channel)) {

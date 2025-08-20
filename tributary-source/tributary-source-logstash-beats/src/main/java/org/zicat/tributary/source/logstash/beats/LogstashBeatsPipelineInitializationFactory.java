@@ -18,12 +18,52 @@
 
 package org.zicat.tributary.source.logstash.beats;
 
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
+import java.time.Duration;
+
 /** LogstashBeatsPipelineInitializationFactory. */
 public class LogstashBeatsPipelineInitializationFactory implements PipelineInitializationFactory {
+
+    public static final ConfigOption<Integer> OPTION_LOGSTASH_BEATS_WORKER_THREADS =
+            ConfigOptions.key("netty.decoder.logstash-beats.worker-threads")
+                    .integerType()
+                    .description("The number of worker threads for the Beats handler.")
+                    .defaultValue(10);
+
+    public static final ConfigOption<Boolean> OPTION_LOGSTASH_BEATS_SSL =
+            ConfigOptions.key("netty.decoder.logstash-beats.ssl")
+                    .booleanType()
+                    .description("Whether to use SSL for the Beats connection.")
+                    .defaultValue(false);
+
+    public static final ConfigOption<String> OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES =
+            ConfigOptions.key("netty.decoder.logstash-beats.ssl.certificate.authorities")
+                    .stringType()
+                    .description("The certificate authorities for the SSL connection.")
+                    .defaultValue(null);
+
+    public static final ConfigOption<String> OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE =
+            ConfigOptions.key("netty.decoder.logstash-beats.ssl.certificate")
+                    .stringType()
+                    .description("The certificate for the SSL connection.")
+                    .defaultValue(null);
+
+    public static final ConfigOption<String> OPTION_LOGSTASH_BEATS_SSL_KEY =
+            ConfigOptions.key("netty.decoder.logstash-beats.ssl.key")
+                    .stringType()
+                    .description("The key for the SSL connection.")
+                    .defaultValue(null);
+
+    public static final ConfigOption<Duration> OPTION_LOGSTASH_BEATS_SSL_TIMEOUT =
+            ConfigOptions.key("netty.decoder.logstash-beats.ssl.timeout")
+                    .durationType()
+                    .description("The timeout for the SSL handshake, default 10s.")
+                    .defaultValue(Duration.ofSeconds(10));
 
     public static final String IDENTITY = "logstashBeatsDecoder";
 

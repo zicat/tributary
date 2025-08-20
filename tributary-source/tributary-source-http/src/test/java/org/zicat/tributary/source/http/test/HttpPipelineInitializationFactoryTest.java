@@ -18,7 +18,11 @@
 
 package org.zicat.tributary.source.http.test;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+
 import static org.zicat.tributary.source.http.HttpMessageDecoder.*;
+
+import com.fasterxml.jackson.core.JsonParseException;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -39,7 +43,6 @@ import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 import org.zicat.tributary.source.base.test.netty.DefaultNettySourceMock;
-import org.zicat.tributary.source.http.HttpPipelineInitialization;
 import org.zicat.tributary.source.http.HttpPipelineInitializationFactory;
 
 import java.io.BufferedReader;
@@ -52,12 +55,12 @@ import java.util.List;
 /** HttpPipelineInitializationFactoryTest. */
 public class HttpPipelineInitializationFactoryTest {
 
-    private static final String HTTP_BAD_REQUEST = "HTTP/1.1 400 Bad Request";
-    private static final String HTTP_NOT_FOUNT_REQUEST = "HTTP/1.1 404 Not Found";
-    private static final String HTTP_OK_REQUEST = "HTTP/1.1 200 OK";
-    private static final String path = "/my/path";
-    private static final String groupId = "g1";
-    private static final String topic = "t1";
+    public static final String HTTP_UNAUTHORIZED = "HTTP/1.1 401 Unauthorized";
+    public static final String HTTP_NOT_FOUNT_REQUEST = "HTTP/1.1 404 Not Found";
+    public static final String HTTP_OK_REQUEST = "HTTP/1.1 200 OK";
+    public static final String PATH = "/my/path";
+    public static final String GROUP_ID = "g1";
+    public static final String TOPIC = "t1";
 
     @Test
     public void test() throws Exception {
@@ -66,12 +69,12 @@ public class HttpPipelineInitializationFactoryTest {
                         HttpPipelineInitializationFactory.IDENTITY,
                         PipelineInitializationFactory.class);
         final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(HttpPipelineInitialization.OPTIONS_PATH, path);
-        config.put(HttpPipelineInitialization.OPTION_HTTP_WORKER_THREADS, -1);
+        config.put(HttpPipelineInitializationFactory.OPTIONS_PATH, PATH);
+        config.put(HttpPipelineInitializationFactory.OPTION_HTTP_WORKER_THREADS, -1);
 
         try (Channel channel =
-                        MemoryChannelTestUtils.memoryChannelFactory(groupId)
-                                .createChannel(topic, null);
+                        MemoryChannelTestUtils.memoryChannelFactory(GROUP_ID)
+                                .createChannel(TOPIC, null);
                 DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
@@ -95,7 +98,7 @@ public class HttpPipelineInitializationFactoryTest {
                 new DefaultFullHttpRequest(
                         HttpVersion.HTTP_1_1,
                         HttpMethod.POST,
-                        path + "?topic=" + topic,
+                        PATH + "?topic=" + TOPIC,
                         Unpooled.buffer(body1.length).writeBytes(body1),
                         getHeaders(),
                         getHeaders()));
@@ -114,7 +117,7 @@ public class HttpPipelineInitializationFactoryTest {
                 new DefaultFullHttpRequest(
                         HttpVersion.HTTP_1_1,
                         HttpMethod.POST,
-                        path + "?topic=" + topic,
+                        PATH + "?topic=" + TOPIC,
                         Unpooled.buffer(body2.length).writeBytes(body2),
                         getHeaders(),
                         getHeaders()));
@@ -131,7 +134,7 @@ public class HttpPipelineInitializationFactoryTest {
         final List<byte[]> data = ChannelBaseTest.readChannel(channel, 0, offset, 2).data;
 
         final Records records1 = Records.parse(data.get(0));
-        Assert.assertEquals(topic, records1.topic());
+        Assert.assertEquals(TOPIC, records1.topic());
         Assert.assertEquals(1, records1.count());
         final Record record1 = records1.iterator().next();
         Assert.assertEquals("key1", new String(record1.key(), StandardCharsets.UTF_8));
@@ -143,7 +146,7 @@ public class HttpPipelineInitializationFactoryTest {
                 "value11", new String(record1.headers().get("header11"), StandardCharsets.UTF_8));
 
         final Records records2 = Records.parse(data.get(1));
-        Assert.assertEquals(topic, records2.topic());
+        Assert.assertEquals(TOPIC, records2.topic());
         Assert.assertEquals(1, records2.count());
         final Record record2 = records2.iterator().next();
         Assert.assertEquals("key2", new String(record2.key(), StandardCharsets.UTF_8));
@@ -162,15 +165,15 @@ public class HttpPipelineInitializationFactoryTest {
                 new DefaultFullHttpRequest(
                         HttpVersion.HTTP_1_1,
                         HttpMethod.POST,
-                        path + "?topic=aa",
+                        PATH + "?topic=aa",
                         Unpooled.buffer(1026).writeBytes(new byte[12060]),
                         getHeaders(),
                         getHeaders()));
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
-            Assert.assertEquals(HTTP_BAD_REQUEST, protocol);
-            Assert.assertEquals(RESPONSE_BAD_JSON_PARSE_FAIL, readBody(reader));
+            Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
+            Assert.assertEquals(JsonParseException.class.getName(), readBody(reader));
         } finally {
             response.release();
         }
@@ -184,14 +187,14 @@ public class HttpPipelineInitializationFactoryTest {
                 new DefaultFullHttpRequest(
                         HttpVersion.HTTP_1_1,
                         HttpMethod.POST,
-                        path,
+                        PATH,
                         Unpooled.buffer(0),
                         getHeaders(),
                         getHeaders()));
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
-            Assert.assertEquals(HTTP_BAD_REQUEST, protocol);
+            Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
             Assert.assertEquals(RESPONSE_BAD_TOPIC_NOT_IN_PARAMS, readBody(reader));
         } finally {
             response.release();
@@ -203,11 +206,11 @@ public class HttpPipelineInitializationFactoryTest {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
-                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, path));
+                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, PATH));
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
-            Assert.assertEquals(HTTP_BAD_REQUEST, protocol);
+            Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
             Assert.assertEquals(RESPONSE_BAD_CONTENT_TYPE, readBody(reader));
 
         } finally {
@@ -220,12 +223,12 @@ public class HttpPipelineInitializationFactoryTest {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
-                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, path + "aa"));
+                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, PATH + "aa"));
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
             Assert.assertEquals(HTTP_NOT_FOUNT_REQUEST, protocol);
-            Assert.assertEquals(path + "aa not found", readBody(reader));
+            Assert.assertEquals(PATH + "aa not found", readBody(reader));
         } finally {
             response.release();
         }
@@ -236,11 +239,11 @@ public class HttpPipelineInitializationFactoryTest {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
-                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, path));
+                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, PATH));
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
-            Assert.assertEquals(HTTP_BAD_REQUEST, protocol);
+            Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
             Assert.assertEquals(RESPONSE_BAD_METHOD, readBody(reader));
         } finally {
             response.release();
@@ -248,7 +251,7 @@ public class HttpPipelineInitializationFactoryTest {
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
-    private static String readBody(BufferedReader reader) throws IOException {
+    public static String readBody(BufferedReader reader) throws IOException {
         while (!reader.readLine().isEmpty()) {}
         final StringBuilder builder = new StringBuilder();
         String line;
@@ -266,7 +269,7 @@ public class HttpPipelineInitializationFactoryTest {
         return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(bytes)));
     }
 
-    private static HttpHeaders getHeaders() {
+    public static HttpHeaders getHeaders() {
         HttpHeaders headers = new DefaultHttpHeaders();
         headers.add("Content-Type", "application/json; charset=UTF-8");
         return headers;

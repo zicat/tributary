@@ -55,17 +55,17 @@ The source must config the implement to receive data, convert
 as [Records](../tributary-common/src/main/java/org/zicat/tributary/common/records/Records.java) and
 append to channel for sinks to consume.
 
-| key       | default | type   | describe                                                                                                      |
-|-----------|---------|--------|---------------------------------------------------------------------------------------------------------------|
-| channel   |         | string | the channel to append records                                                                                 |   
-| implement | netty   | string | the [SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java) identity |
+| key       | default | type   | describe                                                                                                                                 |
+|-----------|---------|--------|------------------------------------------------------------------------------------------------------------------------------------------|
+| channel   |         | string | the channel to append records                                                                                                            |   
+| implement | netty   | string | the [SourceFactory](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/SourceFactory.java) identity |
 
 Tributary provide the
-[SourceFactory](../tributary-source/src/main/java/org/zicat/tributary/source/SourceFactory.java)
+[SourceFactory](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/SourceFactory.java)
 interface that supports the development of specific sources scenarios.
 
 Tributary also provides the default implementation of
-[Netty](../tributary-source/src/main/java/org/zicat/tributary/source/netty/DefaultNettySourceFactory.java),
+[Netty](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/netty/DefaultNettySourceFactory.java),
 which supports receiving data from the network. The configuration parameters for Netty are as
 follows :
 
@@ -134,6 +134,9 @@ follows:
 |---------------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------------|
 | netty.decoder.http.path               | null    | string | the http path to match, if null means match any path. If the http path not matched, will return http 400 code(bad request) |
 | netty.decoder.http.content-length-max | 16mb    | int    | the limited content length, the http body over this will refused                                                           |
+| netty.decoder.http.user               | null    | string | the http user to authenticate, if null means no authentication required                                                    |
+| netty.decoder.http.password           | null    | string | the http password to authenticate, if null means no authentication required                                                |
+| netty.decoder.http.worker-threads     | 10      | int    | the worker threads to process http data.                                                                                   |
 
 The http request demo as follows, before send request please start tributary
 with [http source config](../sample-code/src/main/resources/application-http-source-print-sink.properties)
@@ -148,18 +151,19 @@ $ curl -X POST http://localhost:8200?topic=my_topic&partition=10 \
 
 #### [logstashBeatsDecoder](#logstashBeatsDecoder)
 
-The logstashBeatsDecoder parses streaming records by beats protocal. It supports more configuration as follows:
+The logstashBeatsDecoder parses streaming records by logstash beats input protocal. It supports more configuration as
+follows:
 
-| key                                             | default | type   | describe                                                            |
-|-------------------------------------------------|---------|--------|---------------------------------------------------------------------|
-| netty.decoder.beats.worker-threads              | 10      | int    | the worker threads to process beats data, default 10.               |
-| netty.decoder.beats.ssl                         | false   | bool   | whether use ssl to decode beats data, default false.                |
-| netty.decoder.beats.ssl.certificate.authorities | null    | string | the authorities ca path, find the classpath first then find in path |
-| netty.decoder.beats.ssl.certificate             | null    | string | the server ca path, find the classpath first then find in path      |
-| netty.decoder.beats.ssl.key                     | null    | string | the server key path, find the classpath first then find in path     |
+| key                                                      | default | type   | describe                                                            |
+|----------------------------------------------------------|---------|--------|---------------------------------------------------------------------|
+| netty.decoder.logstash-beats.worker-threads              | 10      | int    | the worker threads to process beats data, default 10.               |
+| netty.decoder.logstash-beats.ssl                         | false   | bool   | whether use ssl to decode beats data, default false.                |
+| netty.decoder.logstash-beats.ssl.certificate.authorities | null    | string | the authorities ca path, find the classpath first then find in path |
+| netty.decoder.logstash-beats.ssl.certificate             | null    | string | the server ca path, find the classpath first then find in path      |
+| netty.decoder.logstash-beats.ssl.key                     | null    | string | the server key path, find the classpath first then find in path     |
 
-The beat request demo as follows, before send request please start tributary
-with [beats source config](../sample-code/src/main/resources/application-beats-source-print-sink.properties)
+The logstash beat request demo as follows, before send request please start tributary
+with [logstash beats source config](../sample-code/src/main/resources/application-logstash-beats-source-print-sink.properties)
 first:
 
 ```sheel
@@ -175,6 +179,33 @@ $ filebeat -c filebeat.yml
 sadfasdfasdfads
 123123123
 sadfasfasdfasdf
+```
+
+#### [logstashHttpDecoder](#logstashBeatsDecoder)
+
+The logstashHttpDecoder parses streaming records by logstash http input protocal. It supports more configuration as
+follows:
+
+| key                                                      | default | type          | describe                                                                                                                                                                |
+|----------------------------------------------------------|---------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.decoder.logstash-http.path                         | null    | string        | the http path to match, if null means match any path. If the http path not matched, will return http 400 code(bad request)                                              |
+| netty.decoder.logstash-http.content-length-max           | 16mb    | int           | the limited content length, the http body over this will refused                                                                                                        |
+| netty.decoder.logstash-http.user                         | null    | string        | the http user to authenticate, if null means no authentication required                                                                                                 |
+| netty.decoder.logstash-http.password                     | null    | string        | the http password to authenticate, if null means no authentication required                                                                                             |
+| netty.decoder.logstash-http.worker-threads               | 10      | int           | the worker threads to process http data.                                                                                                                                |
+| netty.decoder.logstash-http.codec                        | plain   | enum          | the codec to decode the http body, default plain, support plain and json, if use plain the key named `message` add to top, if use json the keys in json will add to top |
+| netty.decoder.logstash-http.tags                         | null    | array<string> | the tags to add to the record, split by `,`, if not null, the key named `tags` add to top                                                                               |
+| netty.decoder.logstash-http.request_headers_target_field | null    | string        | the target field to store the request headers, if not null, the key set as the target field add to top and the request headers as it's map value                        |
+| netty.decoder.logstash-http.remote_host_target_field     | null    | string        | the target field to store the remote host, if not null, the key set as the target field add to top and the remote host as it's value                                    |
+
+The logstash http request demo as follows, before send request please start tributary
+with [logstash http source config](../sample-code/src/main/resources/application-logstash-http-source-print-sink.properties)
+first:
+
+```sheel
+$ curl -u user1:password1 -X POST "http://localhost:11223/" \
+      -H "Content-Type: application/text" \
+      -d '{"aa":"bb"}'
 ```
 
 ## Channel
@@ -454,11 +485,11 @@ source.s4.channel=c1
 source.s4.implement=netty
 source.s4.netty.port=5044
 source.s4.netty.decoder=logstashBeatsDecoder
-source.s4.netty.decoder.beats.worker-threads=10
-source.s4.netty.decoder.beats.ssl=true
-source.s4.netty.decoder.beats.ssl.certificate.authorities=ssl/ca.crt
-source.s4.netty.decoder.beats.ssl.certificate=ssl/server.crt
-source.s4.netty.decoder.beats.ssl.key=ssl/server.key
+source.s4.netty.decoder.logstash-beats.worker-threads=10
+source.s4.netty.decoder.logstash-beats.ssl=true
+source.s4.netty.decoder.logstash-beats.ssl.certificate.authorities=ssl/ca.crt
+source.s4.netty.decoder.logstash-beats.ssl.certificate=ssl/server.crt
+source.s4.netty.decoder.logstash-beats.ssl.key=ssl/server.key
 
 channel.c1.type=file
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
