@@ -18,11 +18,10 @@
 
 package org.zicat.tributary.source.kafka;
 
-import static org.zicat.tributary.common.Threads.createThreadFactoryByName;
+import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -115,12 +114,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
         this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
         final int workerThreads = source.getConfig().get(OPTION_KAFKA_WORKER_THREADS);
         this.kafkaHandlerExecutorGroup =
-                workerThreads == -1
-                        ? null
-                        : new DefaultEventExecutorGroup(
-                                workerThreads,
-                                createThreadFactoryByName(
-                                        source.sourceId() + "-kafkaHandler", true));
+                createEventExecutorGroup(source.sourceId() + "-kafkaHandler", workerThreads);
     }
 
     @Override

@@ -18,11 +18,14 @@
 
 package org.zicat.tributary.source.http;
 
+import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -40,8 +43,14 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
                     .description(
                             "set netty http path, if not match return http 404 code, default null match all")
                     .defaultValue(null);
-    private static final ConfigOption<Integer> OPTION_MAX_CONTENT_LENGTH =
-            ConfigOptions.key("netty.decoder.http.content.length.max")
+    public static final ConfigOption<Integer> OPTION_MAX_CONTENT_LENGTH =
+            ConfigOptions.key("netty.decoder.http.content-length-max")
+                    .integerType()
+                    .description("set http content max size, default 16mb")
+                    .defaultValue(1024 * 1024 * 16);
+
+    public static final ConfigOption<Integer> OPTION_HTTP_WORKER_THREADS =
+            ConfigOptions.key("netty.decoder.http.worker-threads")
                     .integerType()
                     .description("set http content max size, default 16mb")
                     .defaultValue(1024 * 1024 * 16);
@@ -49,6 +58,7 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
     private final String path;
     private final int maxContentLength;
     private final DefaultNettySource source;
+    private final EventExecutorGroup httpHandlerExecutorGroup;
 
     public HttpPipelineInitialization(DefaultNettySource source) {
         super(source);
@@ -56,6 +66,9 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
         final ReadableConfig conf = source.getConfig();
         this.path = formatPath(conf.get(OPTIONS_PATH));
         this.maxContentLength = conf.get(OPTION_MAX_CONTENT_LENGTH);
+        final int workerThreads = source.getConfig().get(OPTION_HTTP_WORKER_THREADS);
+        this.httpHandlerExecutorGroup =
+                createEventExecutorGroup(source.sourceId() + "-httpHandler", workerThreads);
     }
 
     @Override
@@ -66,7 +79,8 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
         pip.addLast(new IdleCloseHandler());
         pip.addLast(new HttpRequestDecoder());
         pip.addLast(new HttpObjectAggregator(maxContentLength));
-        pip.addLast(new HttpMessageDecoder(source, selectPartition(), path));
+        pip.addLast(
+                httpHandlerExecutorGroup, new HttpMessageDecoder(source, selectPartition(), path));
     }
 
     /**

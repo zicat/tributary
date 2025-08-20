@@ -133,7 +133,7 @@ follows:
 | key                                   | default | type   | describe                                                                                                                   |
 |---------------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------------|
 | netty.decoder.http.path               | null    | string | the http path to match, if null means match any path. If the http path not matched, will return http 400 code(bad request) |
-| netty.decoder.http.content.length.max | 16mb    | int    | the limited content length, the http body over this will refused                                                           |
+| netty.decoder.http.content-length-max | 16mb    | int    | the limited content length, the http body over this will refused                                                           |
 
 The http request demo as follows, before send request please start tributary
 with [http source config](../sample-code/src/main/resources/application-http-source-print-sink.properties)

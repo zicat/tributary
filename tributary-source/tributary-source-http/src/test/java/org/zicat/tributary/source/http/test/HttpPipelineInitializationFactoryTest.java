@@ -67,6 +67,7 @@ public class HttpPipelineInitializationFactoryTest {
                         PipelineInitializationFactory.class);
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put(HttpPipelineInitialization.OPTIONS_PATH, path);
+        config.put(HttpPipelineInitialization.OPTION_HTTP_WORKER_THREADS, -1);
 
         try (Channel channel =
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)

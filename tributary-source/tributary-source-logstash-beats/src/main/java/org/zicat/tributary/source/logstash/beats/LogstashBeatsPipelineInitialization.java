@@ -19,11 +19,10 @@
 package org.zicat.tributary.source.logstash.beats;
 
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
-import static org.zicat.tributary.common.Threads.createThreadFactoryByName;
+import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
 
 import org.logstash.beats.*;
@@ -91,12 +90,8 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
         this.sslHandlerProvider = createSslHandlerProvider(source.getConfig());
         final int workerThreads = source.getConfig().get(OPTION_BEATS_WORKER_THREADS);
         this.beatsHandlerExecutorGroup =
-                workerThreads == -1
-                        ? null
-                        : new DefaultEventExecutorGroup(
-                                workerThreads,
-                                createThreadFactoryByName(
-                                        source.sourceId() + "-beatsHandler", true));
+                createEventExecutorGroup(
+                        source.sourceId() + "-logstashBeatsHandler", workerThreads);
     }
 
     @Override
