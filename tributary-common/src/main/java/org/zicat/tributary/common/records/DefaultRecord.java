@@ -42,6 +42,10 @@ public class DefaultRecord implements Record {
         this(headers, null, value);
     }
 
+    public DefaultRecord(byte[] value) {
+        this(null, null, value);
+    }
+
     @Override
     public Map<String, byte[]> headers() {
         return headers;

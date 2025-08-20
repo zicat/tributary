@@ -30,7 +30,6 @@ import java.util.*;
 /** Message2ChannelListener. */
 public class Message2ChannelListener implements BatchMessageListener {
 
-    private static final String HEAD_KEY_SEQUENCE = "sequence";
     private final Source source;
     private final int partition;
 
@@ -47,12 +46,7 @@ public class Message2ChannelListener implements BatchMessageListener {
             if (message == null) {
                 continue;
             }
-            final Record record =
-                    new DefaultRecord(
-                            Collections.singletonMap(
-                                    HEAD_KEY_SEQUENCE,
-                                    String.valueOf(message.getSequence()).getBytes()),
-                            message.getData());
+            final Record record = new DefaultRecord(message.getData());
             recordList.add(record);
         }
         source.append(partition, new DefaultRecords(source.sourceId(), null, recordList));

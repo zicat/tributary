@@ -1,8 +1,5 @@
 package org.logstash.beats;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-
 import io.netty.buffer.ByteBuf;
 
 import java.util.Map;
@@ -14,9 +11,6 @@ public class Message implements Comparable<Message> {
     private byte[] bytes;
     private Batch batch;
     private ByteBuf buffer;
-
-    public static final ObjectMapper MAPPER =
-            new ObjectMapper().registerModule(new AfterburnerModule());
 
     /**
      * Create a message using a map of key, value pairs.

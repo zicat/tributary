@@ -33,8 +33,7 @@ public class HttpPipelineInitializationFactory implements PipelineInitialization
     }
 
     @Override
-    public PipelineInitialization createPipelineInitialization(DefaultNettySource source)
-            throws Exception {
+    public PipelineInitialization createPipelineInitialization(DefaultNettySource source) {
         return new HttpPipelineInitialization(source);
     }
 }
