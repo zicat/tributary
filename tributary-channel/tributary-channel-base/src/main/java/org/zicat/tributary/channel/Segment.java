@@ -51,6 +51,32 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class Segment implements SegmentStorage, Closeable, Comparable<Segment> {
 
+    private static final AppendResult HAS_IN_STORAGE =
+            new AppendResult() {
+                @Override
+                public boolean appended() {
+                    return true;
+                }
+
+                @Override
+                public boolean await2Storage(long timeout, TimeUnit unit) {
+                    return true;
+                }
+            };
+
+    private static final AppendResult APPEND_FAIL =
+            new AppendResult() {
+                @Override
+                public boolean appended() {
+                    return false;
+                }
+
+                @Override
+                public boolean await2Storage(long timeout, TimeUnit unit) {
+                    throw new IllegalStateException("append fail, never call this method");
+                }
+            };
+
     private static final String OFFSET_MESSAGE = "next offset {}, limit offset {}";
     private static final Logger LOG = LoggerFactory.getLogger(Segment.class);
     private final long id;
@@ -58,18 +84,18 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition readable = lock.newCondition();
-
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean readonly = new AtomicBoolean();
-    protected final AtomicLong position = new AtomicLong();
-    protected final BlockWriter writer;
-    protected volatile CountDownLatchWitException inStorageLatch =
-            new CountDownLatchWitException(1);
-    protected final CompressionType compression;
-    protected long cacheUsed = 0;
-    protected long preFreshTime = System.currentTimeMillis();
     private final ChannelBlockCache bCache;
     private final BlockWriter.BlockFlushHandler blockFlushHandler;
+
+    protected final AtomicLong position = new AtomicLong();
+    protected final BlockWriter writer;
+    protected final CompressionType compression;
+
+    protected volatile InBlockAppendResult inBlockResult = new InBlockAppendResult(1);
+    protected long cacheUsed = 0;
+    protected long preFreshTime = System.currentTimeMillis();
 
     public Segment(
             long id,
@@ -100,11 +126,11 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             try {
                 writeFull(block.reusedBuf());
             } catch (IOException e) {
-                inStorageLatch.setException(e);
+                inBlockResult.setException(e);
                 throw e;
             } finally {
-                inStorageLatch.countDown();
-                inStorageLatch = new CountDownLatchWitException(1);
+                inBlockResult.countDown();
+                inBlockResult = new InBlockAppendResult(1);
             }
             final long preOffset = position.getAndAdd(writeCount);
             if (buff != null) {
@@ -166,7 +192,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             }
 
             if (writer.put(byteBuffer)) {
-                return inBlock(inStorageLatch);
+                return inBlockResult;
             }
 
             /* writer is full, start to flush channel and clean writer,
@@ -174,7 +200,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
              */
             writer.clear(blockFlushHandler);
             if (writer.put(byteBuffer)) {
-                return inBlock(inStorageLatch);
+                return inBlockResult;
             }
 
             /* data length is over writer.size,
@@ -187,56 +213,38 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         }
     }
 
-    /**
-     * only in block.
-     *
-     * @param inStorageLatch inStorageLatch
-     * @return AppendResult
-     */
-    public static AppendResult inBlock(CountDownLatchWitException inStorageLatch) {
-        return new AppendResult() {
-            @Override
-            public boolean appended() {
-                return true;
-            }
+    /** InBlockAppendResult. */
+    protected static class InBlockAppendResult extends CountDownLatch implements AppendResult {
 
-            @Override
-            public boolean await2Storage(long timeout, TimeUnit unit)
-                    throws InterruptedException, IOException {
-                final boolean result = inStorageLatch.await(timeout, unit);
-                if (inStorageLatch.exception() != null) {
-                    throw inStorageLatch.exception();
-                }
-                return result;
+        protected volatile IOException exception;
+
+        public InBlockAppendResult(int count) {
+            super(count);
+        }
+
+        @Override
+        public boolean appended() {
+            return true;
+        }
+
+        @Override
+        public boolean await2Storage(long timeout, TimeUnit unit)
+                throws InterruptedException, IOException {
+            final boolean result = super.await(timeout, unit);
+            if (exception != null) {
+                throw exception;
             }
-        };
+            return result;
+        }
+
+        public void setException(IOException e) {
+            this.exception = e;
+        }
+
+        public IOException exception() {
+            return exception;
+        }
     }
-
-    private static final AppendResult HAS_IN_STORAGE =
-            new AppendResult() {
-                @Override
-                public boolean appended() {
-                    return true;
-                }
-
-                @Override
-                public boolean await2Storage(long timeout, TimeUnit unit) {
-                    return true;
-                }
-            };
-
-    private static final AppendResult APPEND_FAIL =
-            new AppendResult() {
-                @Override
-                public boolean appended() {
-                    return false;
-                }
-
-                @Override
-                public boolean await2Storage(long timeout, TimeUnit unit) {
-                    throw new IllegalStateException("append fail, never call this method");
-                }
-            };
 
     /** AppendResult. */
     public interface AppendResult {
@@ -560,22 +568,5 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             BlockReaderOffset blockReaderOffset, long newOffset, ByteBuffer reusedBuf) {
         blockReaderOffset.blockReader().reset().reusedBuf(reusedBuf);
         return blockReaderOffset.skip2TargetOffset(newOffset);
-    }
-
-    /** CountDownLatchWitException. */
-    public static class CountDownLatchWitException extends CountDownLatch {
-        private volatile IOException exception;
-
-        public CountDownLatchWitException(int count) {
-            super(count);
-        }
-
-        public void setException(IOException e) {
-            this.exception = e;
-        }
-
-        public IOException exception() {
-            return exception;
-        }
     }
 }
