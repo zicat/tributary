@@ -18,9 +18,10 @@
 
 package org.zicat.tributary.source.logstash.beats.test;
 
+import static org.logstash.netty.SslContextBuilder.SUPPORTED_CIPHERS;
+import static org.logstash.netty.SslContextBuilder.SUPPORT_PROTOCOL;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
-import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitialization.*;
 import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -52,9 +53,7 @@ import org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializa
 import org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -97,23 +96,11 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
                     SslContextBuilder.forClient()
                             .trustManager(new File(getResourcePath(caCertPath)))
                             .keyManager(
-                                    new File(
-                                            Objects.requireNonNull(
-                                                            Thread.currentThread()
-                                                                    .getContextClassLoader()
-                                                                    .getResource("client.crt"))
-                                                    .getFile()),
-                                    new File(
-                                            Objects.requireNonNull(
-                                                            Thread.currentThread()
-                                                                    .getContextClassLoader()
-                                                                    .getResource("client.key"))
-                                                    .getFile()))
+                                    new File(getResourcePath("client.crt")),
+                                    new File(getResourcePath("client.key")))
                             .sslProvider(SslProvider.JDK)
-                            .protocols("TLSv1.2", "TLSv1.3")
-                            .ciphers(
-                                    Arrays.asList(
-                                            "TLS_AES_256_GCM_SHA384", "TLS_AES_128_GCM_SHA256"))
+                            .protocols(SUPPORT_PROTOCOL)
+                            .ciphers(SUPPORTED_CIPHERS)
                             .build();
 
             final EmbeddedChannel clientChannel = new EmbeddedChannel();

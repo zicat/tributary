@@ -99,9 +99,10 @@ public class SslContextBuilder {
                 "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
                 "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
             };
+    public static final String[] SUPPORT_PROTOCOL = new String[] {"TLSv1.2", "TLSv1.3"};
 
     private String[] ciphers = DEFAULT_CIPHERS;
-    private String[] protocols = new String[] {"TLSv1.2", "TLSv1.3"};
+    private String[] protocols = SUPPORT_PROTOCOL;
     private String[] certificateAuthorities;
     private final String passphrase;
 
