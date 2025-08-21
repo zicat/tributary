@@ -62,9 +62,10 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
         super(source);
         this.source = source;
         this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
-        final int workerThreads = source.getConfig().get(OPTION_KAFKA_WORKER_THREADS);
         this.kafkaHandlerExecutorGroup =
-                createEventExecutorGroup(source.sourceId() + "-kafkaHandler", workerThreads);
+                createEventExecutorGroup(
+                        source.sourceId() + "-kafkaHandler",
+                        source.getConfig().get(OPTION_KAFKA_WORKER_THREADS));
     }
 
     @Override

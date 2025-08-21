@@ -31,6 +31,7 @@ import org.logstash.netty.SslContextBuilder;
 import org.logstash.netty.SslHandlerProvider;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
 /** LogstashBeatsPipelineInitialization. */
@@ -49,10 +50,10 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
         super(source);
         this.source = source;
         this.sslHandlerProvider = createSslHandlerProvider(source.getConfig());
-        final int workerThreads = source.getConfig().get(OPTION_LOGSTASH_BEATS_WORKER_THREADS);
         this.beatsHandlerExecutorGroup =
                 createEventExecutorGroup(
-                        source.sourceId() + "-logstashBeatsHandler", workerThreads);
+                        source.sourceId() + "-logstashBeatsHandler",
+                        source.getConfig().get(OPTION_LOGSTASH_BEATS_WORKER_THREADS));
     }
 
     @Override
@@ -62,6 +63,7 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
             pipeline.addLast(SSL_HANDLER, sslHandlerProvider.sslHandlerForChannel(channel));
         }
         pipeline.addLast(IDLESTATE_HANDLER, source.idleStateHandler());
+        pipeline.addLast(new IdleCloseHandler());
         pipeline.addLast(BEATS_ACKER, new AckEncoder());
         pipeline.addLast(CONNECTION_HANDLER, new ConnectionHandler());
         final BatchMessageListener listener =
@@ -84,18 +86,18 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
                 getResourcePath(config.get(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE));
         if (sslCertificate == null) {
             throw new IllegalStateException(
-                    "SSL certificate is required when SSL is enabled for Beats source.");
+                    "SSL certificate is required when SSL is enabled for logstash beats source.");
         }
         final String sslKey = getResourcePath(config.get(OPTION_LOGSTASH_BEATS_SSL_KEY));
         if (sslKey == null) {
             throw new IllegalStateException(
-                    "SSL key is required when SSL is enabled for Beats source.");
+                    "SSL key is required when SSL is enabled for logstash beats source.");
         }
         final String sslCertificateAuthorities =
                 getResourcePath(config.get(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES));
         if (sslCertificateAuthorities == null) {
             throw new IllegalStateException(
-                    "SSL certificate authorities are required when SSL is enabled for Beats source.");
+                    "SSL certificate authorities are required when SSL is enabled for logstash beats source.");
         }
         final String[] certificateAuthorities = new String[] {sslCertificateAuthorities};
         final SslContextBuilder sslBuilder =
