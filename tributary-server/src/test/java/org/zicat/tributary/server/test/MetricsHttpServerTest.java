@@ -21,13 +21,14 @@ package org.zicat.tributary.server.test;
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.GaugeMetricFamily;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.GaugeKey;
-import org.zicat.tributary.server.HttpServer;
+import org.zicat.tributary.server.MetricsHttpServer;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -40,7 +41,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /** HttServerTest. */
-public class HttpServerTest {
+public class MetricsHttpServerTest {
 
     @Test
     public void testMetricsPath() throws InterruptedException, IOException {
@@ -57,17 +58,14 @@ public class HttpServerTest {
         }.register(registry);
 
         final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(HttpServer.OPTION_PORT, availablePort());
-        config.put(HttpServer.OPTION_HOST, "127.0.0.1");
-        try (HttpServer httpServer = new HttpServer(registry, config)) {
-            httpServer.start();
+        config.put(MetricsHttpServer.OPTION_PORT, availablePort());
+        try (MetricsHttpServer metricsHttpServer = new MetricsHttpServer(registry, config)) {
+            metricsHttpServer.start();
             final URL url =
                     new URL(
-                            "http://"
-                                    + httpServer.host()
-                                    + ":"
-                                    + httpServer.port()
-                                    + httpServer.metricsPath());
+                            "http://localhost:"
+                                    + metricsHttpServer.port()
+                                    + metricsHttpServer.metricsPath());
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             try {
                 final String v =

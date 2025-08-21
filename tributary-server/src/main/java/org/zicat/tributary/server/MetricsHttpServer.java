@@ -41,53 +41,42 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 
-/** HttpServer. */
-public class HttpServer implements Closeable {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpServer.class);
+/** MetricsHttpServer. */
+public class MetricsHttpServer implements Closeable {
+    private static final Logger LOG = LoggerFactory.getLogger(MetricsHttpServer.class);
     public static final int MAX_CONTENT_LENGTH = 10240;
     public static final ConfigOption<Integer> OPTION_PORT =
             ConfigOptions.key("port").integerType().defaultValue(8765);
-
-    public static final ConfigOption<String> OPTION_HOST =
-            ConfigOptions.key("host").stringType().defaultValue(null);
-
     public static final ConfigOption<Integer> OPTION_THREADS =
             ConfigOptions.key("threads").integerType().defaultValue(5);
     public static final ConfigOption<String> OPTION_METRICS_PATH =
             ConfigOptions.key("metrics.path").stringType().defaultValue("/metrics");
+    public static final ConfigOption<String> OPTION_METRIC_HOST =
+            ConfigOptions.key("metrics.host-pattern").stringType().defaultValue(null);
 
     private final int port;
-    private final String host;
     private final String metricsPath;
     private final CollectorRegistry registry;
 
     private transient Channel channel;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
+    private final String metricsHost;
 
-    public HttpServer(CollectorRegistry registry, ReadableConfig serverConfig) {
+    public MetricsHttpServer(CollectorRegistry registry, ReadableConfig serverConfig)
+            throws UnknownHostException {
         this.registry = registry;
         this.port = serverConfig.get(OPTION_PORT);
-        final String hostPattern = serverConfig.get(OPTION_HOST);
-        if (hostPattern == null) {
-            this.host = null;
-        } else {
-            final List<String> hosts = realHostAddress(hostPattern);
-            if (hosts.isEmpty()) {
-                throw new IllegalStateException("Host not found by config " + hostPattern);
-            }
-            this.host = hosts.get(0);
-            if (hosts.size() > 1) {
-                LOG.warn("Multiple hosts {}, use the first {}", hosts, host);
-            }
-        }
         this.metricsPath = serverConfig.get(OPTION_METRICS_PATH);
         final int threads = serverConfig.get(OPTION_THREADS);
         this.bossGroup = createBossGroup(Math.max(1, threads / 4));
         this.workerGroup = createWorkGroup(threads);
+        this.metricsHost = metricHost(serverConfig);
     }
 
     /** start. */
@@ -104,9 +93,8 @@ public class HttpServer implements Closeable {
                         ch.pipeline().addLast(new HttpServerHandler(registry, metricsPath));
                     }
                 });
-        this.channel =
-                host == null ? b.bind(port).sync().channel() : b.bind(host, port).sync().channel();
-        LOG.info("HttpServer started on {}:{}", host(), port);
+        this.channel = b.bind(port).sync().channel();
+        LOG.info("MetricHttpServer started on *:{}", port);
     }
 
     @Override
@@ -114,7 +102,7 @@ public class HttpServer implements Closeable {
         try {
             if (channel != null) {
                 channel.close().sync();
-                LOG.info("close http server listen {}:{}", host, port);
+                LOG.info("close metric http server listen *:{}", port);
             }
         } catch (InterruptedException e) {
             throw new TributaryRuntimeException(e);
@@ -175,15 +163,6 @@ public class HttpServer implements Closeable {
     }
 
     /**
-     * get host.
-     *
-     * @return string
-     */
-    public String host() {
-        return host == null ? "*" : host;
-    }
-
-    /**
      * get port.
      *
      * @return int
@@ -192,7 +171,43 @@ public class HttpServer implements Closeable {
         return port;
     }
 
+    /**
+     * get metrics path.
+     *
+     * @return string
+     */
     public String metricsPath() {
         return metricsPath;
+    }
+
+    /**
+     * get metrics host.
+     *
+     * @return string
+     */
+    public String metricHost() {
+        return metricsHost;
+    }
+
+    /**
+     * metric host.
+     *
+     * @param serverConfig serverConfig
+     * @return string
+     * @throws UnknownHostException UnknownHostException
+     */
+    private static String metricHost(ReadableConfig serverConfig) throws UnknownHostException {
+        final String hostPattern = serverConfig.get(OPTION_METRIC_HOST);
+        if (hostPattern == null) {
+            return InetAddress.getLocalHost().getHostName();
+        }
+        final List<String> hosts = realHostAddress(hostPattern);
+        if (hosts.isEmpty()) {
+            throw new IllegalStateException("Host not found by config " + hostPattern);
+        }
+        if (hosts.size() > 1) {
+            LOG.warn("Multiple hosts {}, use the first {}", hosts, hosts.get(0));
+        }
+        return hosts.get(0);
     }
 }

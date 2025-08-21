@@ -19,6 +19,7 @@
 package org.zicat.tributary.server;
 
 import io.prometheus.client.CollectorRegistry;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.IOUtils;
@@ -29,6 +30,7 @@ import org.zicat.tributary.server.config.PropertiesLoader;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.concurrent.locks.LockSupport;
 
@@ -43,7 +45,7 @@ public class Starter implements Closeable {
     protected transient ChannelComponent channelComponent;
     protected transient SinkComponent sinkComponent;
     protected transient SourceComponent sourceComponent;
-    protected transient HttpServer server;
+    protected transient MetricsHttpServer metricsHttpServer;
 
     public Starter(Properties properties) {
         this.channelConfig = PropertiesConfigBuilder.channelConfig(properties);
@@ -53,35 +55,54 @@ public class Starter implements Closeable {
     }
 
     /** open. this method will park current thread if open success. */
-    public void start() throws InterruptedException {
+    public void start() throws InterruptedException, UnknownHostException {
         initComponent();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtils.closeQuietly(this)));
         LockSupport.park();
     }
 
     /** init component. */
-    protected void initComponent() throws InterruptedException {
+    protected void initComponent() throws InterruptedException, UnknownHostException {
         final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
-        this.server = new HttpServer(registry, serverConfig);
-
-        final String metricsHost = server.host();
+        this.metricsHttpServer = new MetricsHttpServer(registry, serverConfig);
+        final String metricsHost = metricsHttpServer.metricHost();
         this.channelComponent = channelComponentFactory(metricsHost).create().register(registry);
         this.sinkComponent =
                 sinkComponentFactory(metricsHost, channelComponent).create().register(registry);
         this.sourceComponent =
                 sourceComponentFactory(metricsHost, channelComponent).create().register(registry);
-        server.start();
+        metricsHttpServer.start();
     }
 
+    /**
+     * create ChannelComponentFactory.
+     *
+     * @param metricsHost metricsHost
+     * @return ChannelComponentFactory
+     */
     protected ChannelComponentFactory channelComponentFactory(String metricsHost) {
         return new ChannelComponentFactory(channelConfig, metricsHost);
     }
 
+    /**
+     * create SinkComponentFactory.
+     *
+     * @param metricsHost metricsHost
+     * @param channelComponent channelComponent
+     * @return SinkComponentFactory
+     */
     protected SinkComponentFactory sinkComponentFactory(
             String metricsHost, ChannelComponent channelComponent) {
         return new SinkComponentFactory(sinkConfig, channelComponent, metricsHost);
     }
 
+    /**
+     * create SourceComponentFactory.
+     *
+     * @param metricsHost metricsHost
+     * @param channelComponent channelComponent
+     * @return SourceComponentFactory
+     */
     protected SourceComponentFactory sourceComponentFactory(
             String metricsHost, ChannelComponent channelComponent) {
         return new SourceComponentFactory(sourceConfig, channelComponent, metricsHost);
@@ -90,7 +111,7 @@ public class Starter implements Closeable {
     @Override
     public void close() {
         LOG.info("start to close tributary....");
-        IOUtils.closeQuietly(server);
+        IOUtils.closeQuietly(metricsHttpServer);
         IOUtils.closeQuietly(sourceComponent);
         try {
             if (channelComponent != null) {

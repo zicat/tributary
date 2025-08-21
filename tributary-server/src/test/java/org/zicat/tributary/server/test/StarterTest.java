@@ -18,26 +18,27 @@
 
 package org.zicat.tributary.server.test;
 
+import static org.zicat.tributary.server.test.MetricsHttpServerTest.availablePorts;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.common.records.Record;
-import org.zicat.tributary.server.HttpServer;
+import org.zicat.tributary.server.MetricsHttpServer;
 import org.zicat.tributary.server.Starter;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-
-import static org.zicat.tributary.server.test.HttpServerTest.availablePorts;
 
 /** StarterTest. */
 public class StarterTest {
@@ -49,7 +50,7 @@ public class StarterTest {
         final List<Integer> availablePorts = availablePorts(2);
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put("server.port", availablePorts.get(0));
-        config.put("server.host", "127.0.0.1");
+        config.put("server.metrics.host-pattern", "127.0.0.1");
         config.put("source.s1.channel", "c1");
         config.put("source.s1.implement", "netty");
         config.put("source.s1.netty.host", "127.0.0.1");
@@ -73,15 +74,13 @@ public class StarterTest {
                 Assert.assertEquals("aaa", new String(collection.get(0).value()));
             }
 
-            final HttpServer httpServer = starter.httpServer();
+            final MetricsHttpServer metricsHttpServer = starter.httpServer();
             // check metrics
             final URL url =
                     new URL(
-                            "http://"
-                                    + httpServer.host()
-                                    + ":"
-                                    + httpServer.port()
-                                    + httpServer.metricsPath());
+                            "http://localhost:"
+                                    + metricsHttpServer.port()
+                                    + metricsHttpServer.metricsPath());
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             try {
                 final String v =
@@ -105,7 +104,7 @@ public class StarterTest {
         }
 
         @Override
-        public void start() throws InterruptedException {
+        public void start() throws InterruptedException, UnknownHostException {
             initComponent();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtils.closeQuietly(this)));
         }
@@ -114,8 +113,8 @@ public class StarterTest {
             channelComponent.flush();
         }
 
-        public HttpServer httpServer() {
-            return server;
+        public MetricsHttpServer httpServer() {
+            return metricsHttpServer;
         }
     }
 }
