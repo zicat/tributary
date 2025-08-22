@@ -18,18 +18,21 @@
 
 package org.zicat.tributary.channel.file;
 
+import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
+
 import org.zicat.tributary.channel.ChannelConfigOption;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 
 import java.time.Duration;
+import java.util.List;
 
 /** FileChannelConfigOption. */
 public class FileChannelConfigOption extends ChannelConfigOption {
 
-    public static final ConfigOption<String> OPTION_PARTITION_PATHS =
+    public static final ConfigOption<List<String>> OPTION_PARTITION_PATHS =
             ConfigOptions.key("partitions")
-                    .stringType()
+                    .listType(COMMA_SPLIT_HANDLER)
                     .description("partition paths, must allow read and write, split by ','")
                     .noDefaultValue();
 

@@ -57,7 +57,8 @@ public class FileChannelTest {
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put(
                 OPTION_PARTITION_PATHS,
-                new File(PARENT_DIR, "test_channel_storage/partition-").getPath());
+                Collections.singletonList(
+                        new File(PARENT_DIR, "test_channel_storage/partition-").getPath()));
         config.put(OPTION_GROUPS, Arrays.asList("g1", "g2"));
         ChannelBaseTest.testChannelStorage(factory, "test_channel_storage", config);
     }

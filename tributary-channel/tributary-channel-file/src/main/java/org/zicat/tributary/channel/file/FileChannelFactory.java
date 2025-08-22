@@ -18,6 +18,10 @@
 
 package org.zicat.tributary.channel.file;
 
+import static org.zicat.tributary.channel.ChannelConfigOption.*;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.*;
+import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
+
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.CompressionType;
@@ -27,19 +31,13 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-
-import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.file.FileChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
 
 /** FileChannelFactory. */
 public class FileChannelFactory implements ChannelFactory {
 
     public static final String TYPE = "file";
-    public static final String SPLIT_STR = ",";
 
     @Override
     public String type() {
@@ -49,8 +47,7 @@ public class FileChannelFactory implements ChannelFactory {
     @Override
     public Channel createChannel(String topic, ReadableConfig config) throws IOException {
 
-        final String partitionPath = config.get(OPTION_PARTITION_PATHS);
-        final List<String> dirs = Arrays.asList(partitionPath.split(SPLIT_STR));
+        final List<String> dirs = config.get(OPTION_PARTITION_PATHS);
         final Set<String> groupSet = groupSet(config);
         final int blockSize = (int) config.get(OPTION_BLOCK_SIZE).getBytes();
         final long segmentSize = config.get(OPTION_SEGMENT_SIZE).getBytes();
