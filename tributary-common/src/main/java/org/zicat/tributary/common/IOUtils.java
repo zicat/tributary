@@ -19,6 +19,7 @@
 package org.zicat.tributary.common;
 
 import com.github.luben.zstd.Zstd;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;
@@ -27,43 +28,16 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.*;
-import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /** IOUtils. */
 public class IOUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(IOUtils.class);
     private static final int INT_LENGTH = 4;
-
-    /**
-     * to byte array.
-     *
-     * @param file file
-     * @return array
-     * @throws IOException IOException
-     */
-    public static byte[] readFull(File file) throws IOException {
-        try (InputStream in = Files.newInputStream(file.toPath())) {
-            return toByteArray(in);
-        }
-    }
-
-    /**
-     * to byte array.
-     *
-     * @param in in
-     * @return array
-     * @throws IOException IOException
-     */
-    public static byte[] toByteArray(InputStream in) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024 * 4];
-        int n;
-        while ((n = in.read(buffer)) != -1) {
-            out.write(buffer, 0, n);
-        }
-        return out.toByteArray();
-    }
 
     /**
      * compression none.
@@ -424,5 +398,41 @@ public class IOUtils {
      */
     public static InputStream getClasspathResource(String resource) {
         return Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
+    }
+
+    /**
+     * concurrent closed closeable list.
+     *
+     * @param closeableList closeable.
+     */
+    public static void concurrentCloseQuietly(Collection<? extends Closeable> closeableList) {
+        if (closeableList == null || closeableList.isEmpty()) {
+            return;
+        }
+        if (closeableList.size() == 1) {
+            IOUtils.closeQuietly(closeableList.iterator().next());
+            return;
+        }
+        final List<Thread> closeThreads = new ArrayList<>();
+        for (Closeable closeable : closeableList) {
+            final Thread thread = new Thread(() -> IOUtils.closeQuietly(closeable));
+            closeThreads.add(thread);
+            thread.start();
+        }
+        for (Thread thread : closeThreads) {
+            Threads.joinQuietly(thread);
+        }
+    }
+
+    /**
+     * concurrentCloseQuietly.
+     *
+     * @param closeableList closeableList
+     */
+    public static void concurrentCloseQuietly(Closeable... closeableList) {
+        if (closeableList == null) {
+            return;
+        }
+        concurrentCloseQuietly(Arrays.asList(closeableList));
     }
 }

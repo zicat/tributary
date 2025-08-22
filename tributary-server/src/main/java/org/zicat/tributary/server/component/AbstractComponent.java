@@ -19,6 +19,7 @@
 package org.zicat.tributary.server.component;
 
 import io.prometheus.client.Collector;
+
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.Closeable;
@@ -50,7 +51,7 @@ public abstract class AbstractComponent<ID, ELEMENT extends Closeable> extends C
     @Override
     public void close() {
         if (close.compareAndSet(false, true)) {
-            elements.forEach((k, v) -> IOUtils.closeQuietly(v));
+            IOUtils.concurrentCloseQuietly(elements.values());
         }
     }
 }

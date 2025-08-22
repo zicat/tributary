@@ -18,6 +18,10 @@
 
 package org.zicat.tributary.sink;
 
+import static org.zicat.tributary.common.SpiFactory.findFactory;
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_RETAIN_SIZE_CHECK_PERIOD;
+import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.parseMaxRetainSize;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
@@ -36,10 +40,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import static org.zicat.tributary.common.SpiFactory.findFactory;
-import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_RETAIN_SIZE_CHECK_PERIOD;
-import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.parseMaxRetainSize;
 
 /**
  * One SinkGroupManager Instance maintain a group consumer one {@link Channel} with {@link
@@ -129,7 +129,7 @@ public class SinkGroupManager implements Closeable {
                 service.shutdown();
             }
         } finally {
-            handlers.forEach(IOUtils::closeQuietly);
+            IOUtils.concurrentCloseQuietly(handlers);
         }
         LOG.info("stop sink topic = {}, group = {}", channel.topic(), groupId);
     }

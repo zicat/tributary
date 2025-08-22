@@ -196,9 +196,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
         @Override
         default void destroy(C[] cs) {
-            for (C c : cs) {
-                IOUtils.closeQuietly(c);
-            }
+            IOUtils.concurrentCloseQuietly(cs);
         }
     }
 }
