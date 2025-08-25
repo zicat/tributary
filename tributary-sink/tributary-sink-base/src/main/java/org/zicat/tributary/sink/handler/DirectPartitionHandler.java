@@ -24,7 +24,6 @@ import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.Trigger;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -40,7 +39,6 @@ import java.util.List;
 public class DirectPartitionHandler extends AbstractPartitionHandler {
 
     private AbstractFunction function;
-    private Trigger trigger;
 
     public DirectPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
@@ -50,7 +48,6 @@ public class DirectPartitionHandler extends AbstractPartitionHandler {
     @Override
     public void open() {
         this.function = createFunction(null);
-        this.trigger = function instanceof Trigger ? (Trigger) function : null;
     }
 
     @Override
@@ -73,19 +70,12 @@ public class DirectPartitionHandler extends AbstractPartitionHandler {
         return Collections.singletonList(function);
     }
 
-    @Override
-    public long idleTimeMillis() {
-        return trigger == null ? -1 : trigger.idleTimeMillis();
-    }
-
     public Function getFunction() {
         return function;
     }
 
     @Override
-    public void idleTrigger() throws Throwable {
-        if (trigger != null) {
-            trigger.idleTrigger();
-        }
+    public void snapshot() throws Exception {
+        function.snapshot();
     }
 }

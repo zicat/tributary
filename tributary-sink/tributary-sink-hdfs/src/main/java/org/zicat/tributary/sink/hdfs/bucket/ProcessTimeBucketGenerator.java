@@ -18,14 +18,14 @@
 
 package org.zicat.tributary.sink.hdfs.bucket;
 
+import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
+
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.Clock;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.hdfs.RecordsWriterManager;
 
 import java.io.IOException;
-
-import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
 
 /** ProcessTimeBucketGenerator. */
 public class ProcessTimeBucketGenerator implements BucketGenerator {
@@ -50,9 +50,9 @@ public class ProcessTimeBucketGenerator implements BucketGenerator {
     }
 
     @Override
-    public void checkRefresh(boolean force, RefreshHandler handler) throws Exception {
+    public void checkRefresh(RefreshHandler handler) throws Exception {
         final String currentTimeBucket = clock.currentTime(bucketDateFormat, bucketDateTimeZone);
-        if (force || !currentTimeBucket.equals(timeBucket)) {
+        if (!currentTimeBucket.equals(timeBucket)) {
             handler.doRefresh();
             timeBucket = currentTimeBucket;
         }

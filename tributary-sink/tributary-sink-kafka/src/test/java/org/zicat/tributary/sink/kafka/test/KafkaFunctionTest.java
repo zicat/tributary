@@ -18,7 +18,10 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+
 import io.prometheus.client.Counter;
+
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -38,8 +41,6 @@ import org.zicat.tributary.sink.kafka.KafkaFunctionFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
 
 /** KafkaFunctionTest. */
 public class KafkaFunctionTest {
@@ -88,14 +89,15 @@ public class KafkaFunctionTest {
 
             final Offset groupOffset = new Offset(2, 0);
             function.process(groupOffset, recordsList.iterator());
-
             assertData(record1, mockProducer.history().get(0), recordsHeader);
             assertData(record2, mockProducer.history().get(1), recordsHeader);
+            function.snapshot();
             Assert.assertEquals(groupOffset, function.committableOffset());
 
             function.process(groupOffset.skipNextSegmentHead(), recordsList.iterator());
             assertData(record1, mockProducer.history().get(0), recordsHeader);
             assertData(record2, mockProducer.history().get(1), recordsHeader);
+            function.snapshot();
             Assert.assertEquals(groupOffset.skipNextSegmentHead(), function.committableOffset());
 
             for (ProducerRecord<byte[], byte[]> r : mockProducer.history()) {

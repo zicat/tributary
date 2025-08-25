@@ -21,17 +21,32 @@ package org.zicat.tributary.sink.handler;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.sink.SinkGroupConfig;
+
+import java.time.Duration;
 
 /** DefaultPartitionHandlerFactory. */
 public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
 
     public static final String IDENTITY = "default";
+
     public static final ConfigOption<Integer> OPTION_THREADS =
             ConfigOptions.key("partition.concurrent")
                     .integerType()
                     .description("consume threads per partition")
                     .defaultValue(1);
+    public static final ConfigOption<MemorySize> OPTION_MAX_RETAIN_SIZE =
+            ConfigOptions.key("partition.retain.max.bytes")
+                    .memoryType()
+                    .description("delete oldest segment if one partition lag over this param")
+                    .defaultValue(null);
+    public static final ConfigOption<Duration> OPTION_CHECKPOINT_INTERVAL =
+            ConfigOptions.key("partition.checkpoint.interval")
+                    .durationType()
+                    .description("snapshot interval, default 1 minutes")
+                    .defaultValue(Duration.ofMinutes(1));
 
     @Override
     public String identity() {
@@ -48,5 +63,33 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
         } else {
             return new DirectPartitionHandler(groupId, channel, partitionId, sinkGroupConfig);
         }
+    }
+
+    /**
+     * parse max retain size.
+     *
+     * @param config config
+     * @return value
+     */
+    public static Long parseMaxRetainSize(ReadableConfig config) {
+        final MemorySize memorySize = config.get(OPTION_MAX_RETAIN_SIZE);
+        return memorySize == null ? null : memorySize.getBytes();
+    }
+
+    /**
+     * snapshot interval mills.
+     *
+     * @param config config.
+     * @return value
+     */
+    public static long snapshotIntervalMills(ReadableConfig config) {
+        final long snapshotIntervalMills = config.get(OPTION_CHECKPOINT_INTERVAL).toMillis();
+        if (snapshotIntervalMills < 5000) {
+            throw new IllegalStateException(
+                    "snapshot interval must be greater than 5000 ms, but got: "
+                            + snapshotIntervalMills
+                            + " ms");
+        }
+        return snapshotIntervalMills;
     }
 }

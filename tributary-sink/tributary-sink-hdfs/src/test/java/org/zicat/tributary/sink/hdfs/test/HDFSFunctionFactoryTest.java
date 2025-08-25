@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
+import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.FunctionFactory;
 import org.zicat.tributary.sink.hdfs.HDFSFunction;
 import org.zicat.tributary.sink.hdfs.HDFSFunctionFactory;
 
@@ -33,9 +33,7 @@ public class HDFSFunctionFactoryTest {
 
     @Test
     public void test() throws IOException {
-        try (Function f =
-                SpiFactory.findFactory(HDFSFunctionFactory.IDENTITY, FunctionFactory.class)
-                        .create()) {
+        try (Function f = findFunctionFactory(HDFSFunctionFactory.IDENTITY).create()) {
             Assert.assertEquals(HDFSFunction.class, f.getClass());
         }
     }

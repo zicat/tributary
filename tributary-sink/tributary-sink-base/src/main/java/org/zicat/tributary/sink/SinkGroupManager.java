@@ -19,8 +19,6 @@
 package org.zicat.tributary.sink;
 
 import static org.zicat.tributary.common.SpiFactory.findFactory;
-import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_RETAIN_SIZE_CHECK_PERIOD;
-import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.parseMaxRetainSize;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +26,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
@@ -37,9 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * One SinkGroupManager Instance maintain a group consumer one {@link Channel} with {@link
@@ -54,7 +50,6 @@ public class SinkGroupManager implements Closeable {
     private final Channel channel;
     private final SinkGroupConfig sinkGroupConfig;
     private final List<AbstractPartitionHandler> handlers = new ArrayList<>();
-    private ScheduledExecutorService service;
 
     public SinkGroupManager(String groupId, Channel channel, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
@@ -77,28 +72,6 @@ public class SinkGroupManager implements Closeable {
         }
         handlers.forEach(AbstractPartitionHandler::open);
         handlers.forEach(Thread::start);
-        supportMaxRetainSize();
-    }
-
-    /** support max retain size. */
-    private void supportMaxRetainSize() {
-        if (maxRetainSize() != null) {
-            final long periodMill = sinkGroupConfig.get(OPTION_RETAIN_SIZE_CHECK_PERIOD).toMillis();
-            service = Executors.newSingleThreadScheduledExecutor();
-            service.scheduleWithFixedDelay(
-                    () -> {
-                        for (AbstractPartitionHandler handler : handlers) {
-                            try {
-                                handler.updateCommitOffsetWaterMark();
-                            } catch (Throwable e) {
-                                LOG.warn("period commit handle error", e);
-                            }
-                        }
-                    },
-                    periodMill,
-                    periodMill,
-                    TimeUnit.MILLISECONDS);
-        }
     }
 
     public Map<GaugeKey, GaugeFamily> gaugeFamily() {
@@ -124,13 +97,7 @@ public class SinkGroupManager implements Closeable {
 
     @Override
     public void close() {
-        try {
-            if (service != null) {
-                service.shutdown();
-            }
-        } finally {
-            IOUtils.concurrentCloseQuietly(handlers);
-        }
+        IOUtils.concurrentCloseQuietly(handlers);
         LOG.info("stop sink topic = {}, group = {}", channel.topic(), groupId);
     }
 
@@ -148,11 +115,11 @@ public class SinkGroupManager implements Closeable {
     }
 
     /**
-     * get max retain size.
+     * get sink group config.
      *
-     * @return max retain size
+     * @return ReadableConfig
      */
-    public final Long maxRetainSize() {
-        return parseMaxRetainSize(sinkGroupConfig);
+    public final ReadableConfig sinkGroupConfig() {
+        return sinkGroupConfig;
     }
 }

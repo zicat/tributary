@@ -76,6 +76,7 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
     protected transient Connection connection;
     protected transient BufferedMutator mutator;
     protected transient AtomicReference<Exception> failureThrowable;
+    protected transient Offset lastOffset;
 
     @Override
     public void open(Context context) throws Exception {
@@ -111,21 +112,16 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
                     },
                     defaultSinkExtraHeaders());
         }
-        flushAndCommit(offset);
+        lastOffset = offset;
         sinkCounter.inc(counter.get());
         sinkDiscardCounter.inc(discardCounter.get());
     }
 
-    /**
-     * flush data and commit offset.
-     *
-     * @param offset offset
-     * @throws IOException IOException
-     */
-    protected void flushAndCommit(Offset offset) throws Exception {
+    @Override
+    public void snapshot() throws Exception {
         mutator.flush();
         checkErrorAndRethrow();
-        commit(offset);
+        commit(lastOffset);
     }
 
     /**

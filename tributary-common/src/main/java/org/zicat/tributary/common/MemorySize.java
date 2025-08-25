@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.common;
 
+import static org.zicat.tributary.common.MemorySize.MemoryUnit.*;
+
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.IntStream;
-
-import static org.zicat.tributary.common.MemorySize.MemoryUnit.*;
 
 /** MemorySize. */
 public class MemorySize implements java.io.Serializable, Comparable<MemorySize> {
@@ -94,7 +94,7 @@ public class MemorySize implements java.io.Serializable, Comparable<MemorySize> 
 
     @Override
     public int hashCode() {
-        return (int) (bytes ^ (bytes >>> 32));
+        return Long.hashCode(bytes);
     }
 
     @Override

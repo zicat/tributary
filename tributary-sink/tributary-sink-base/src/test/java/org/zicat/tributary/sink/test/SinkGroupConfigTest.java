@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
-import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
+import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
 import java.util.HashMap;
@@ -39,7 +39,7 @@ public class SinkGroupConfigTest {
         final Map<String, Object> mapValue = new HashMap<>();
         mapValue.put("m_1", "m_v_1");
         builder.functionIdentity(AssertFunctionFactory.IDENTITY)
-                .handlerIdentity(DirectPartitionHandlerFactory.IDENTITY);
+                .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY);
         builder.addCustomProperty("aa", "bb")
                 .addCustomPropertyIfContainKey("aa", "cc", "dd")
                 .addCustomPropertyIfContainKey("bb", "ee", "ff")
@@ -49,7 +49,7 @@ public class SinkGroupConfigTest {
                 .addCustomProperty("kk", 3);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         Assert.assertEquals(
-                DirectPartitionHandlerFactory.IDENTITY, sinkGroupConfig.handlerIdentity());
+                DefaultPartitionHandlerFactory.IDENTITY, sinkGroupConfig.handlerIdentity());
         Assert.assertEquals(AssertFunctionFactory.IDENTITY, sinkGroupConfig.functionIdentity());
         Assert.assertEquals("bb", sinkGroupConfig.get("aa"));
         Assert.assertEquals("dd", sinkGroupConfig.get("cc"));

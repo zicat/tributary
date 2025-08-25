@@ -44,10 +44,9 @@ public interface BucketGenerator extends Closeable {
     /**
      * check whether should refresh bucket, if should execute handler.
      *
-     * @param force force
      * @param handler handler
      */
-    void checkRefresh(boolean force, RefreshHandler handler) throws Exception;
+    void checkRefresh(RefreshHandler handler) throws Exception;
 
     /** RefreshHandler. */
     interface RefreshHandler {

@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
+import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.FunctionFactory;
 import org.zicat.tributary.sink.kafka.KafkaFunction;
 import org.zicat.tributary.sink.kafka.KafkaFunctionFactory;
 
@@ -33,9 +33,7 @@ public class KafkaFunctionFactoryTest {
 
     @Test
     public void test() throws IOException {
-        try (Function f =
-                SpiFactory.findFactory(KafkaFunctionFactory.IDENTITY, FunctionFactory.class)
-                        .create()) {
+        try (Function f = findFunctionFactory(KafkaFunctionFactory.IDENTITY).create()) {
             Assert.assertEquals(KafkaFunction.class, f.getClass());
         }
     }

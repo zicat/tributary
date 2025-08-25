@@ -18,7 +18,14 @@
 
 package org.zicat.tributary.sink.kafka;
 
+import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
+import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
+import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
+import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
+import static org.zicat.tributary.sink.kafka.KafkaFunctionFactory.OPTION_TOPIC;
+
 import io.prometheus.client.Counter;
+
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -34,12 +41,6 @@ import org.zicat.tributary.sink.function.Context;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
-
-import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
-import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
-import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-import static org.zicat.tributary.sink.kafka.KafkaFunctionFactory.OPTION_TOPIC;
 
 /** KafkaFunction. */
 public class KafkaFunction extends AbstractFunction {
@@ -60,6 +61,7 @@ public class KafkaFunction extends AbstractFunction {
     protected transient Counter.Child sinkCounter;
     protected transient TributaryKafkaCallback callback;
     protected transient String defaultTopic;
+    protected transient Offset lastOffset;
 
     @Override
     public void open(Context context) throws Exception {
@@ -76,8 +78,13 @@ public class KafkaFunction extends AbstractFunction {
         while (iterator.hasNext()) {
             totalCount += sendKafka(iterator.next());
         }
-        flushAndCommit(offset);
+        lastOffset = offset;
         sinkCounter.inc(totalCount);
+    }
+
+    @Override
+    public void snapshot() throws Exception {
+        flushAndCommit(lastOffset);
     }
 
     /**

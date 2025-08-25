@@ -18,8 +18,16 @@
 
 package org.zicat.tributary.sink.elasticsearch.test;
 
+import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.SINK_ELASTICSEARCH_DISCARD_COUNTER;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
+import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
+
+import static java.lang.Long.parseLong;
+
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
+
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -50,12 +58,6 @@ import org.zicat.tributary.sink.function.ContextBuilder;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.lang.Long.parseLong;
-import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.SINK_ELASTICSEARCH_DISCARD_COUNTER;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
-import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 
 /** ElasticsearchFunctionTest. */
 @SuppressWarnings("ALL")

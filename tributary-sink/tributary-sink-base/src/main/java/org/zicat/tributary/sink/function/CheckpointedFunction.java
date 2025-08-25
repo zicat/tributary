@@ -18,16 +18,9 @@
 
 package org.zicat.tributary.sink.function;
 
-/** Trigger. */
-public interface Trigger {
+/** CheckpointedFunction. */
+public interface CheckpointedFunction {
 
-    /**
-     * set idle time millis to trigger.
-     *
-     * @return millis
-     */
-    long idleTimeMillis();
-
-    /** trigger if function set idle time . */
-    void idleTrigger() throws Throwable;
+    /** execute snapshot. */
+    void snapshot() throws Exception;
 }

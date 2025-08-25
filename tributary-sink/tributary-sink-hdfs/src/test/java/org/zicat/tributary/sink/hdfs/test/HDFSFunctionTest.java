@@ -18,6 +18,16 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
+import static org.zicat.tributary.common.BytesUtils.toBytes;
+import static org.zicat.tributary.common.IOUtils.deleteDir;
+import static org.zicat.tributary.common.IOUtils.makeDir;
+import static org.zicat.tributary.common.records.RecordsUtils.HEAD_KEY_SENT_TS;
+import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
+import static org.zicat.tributary.sink.hdfs.HDFSFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
+import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriter.*;
+import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriterFactory.OPTION_OUTPUT_COMPRESSION_CODEC;
+
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
@@ -45,16 +55,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
-
-import static org.zicat.tributary.common.BytesUtils.toBytes;
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
-import static org.zicat.tributary.common.records.RecordsUtils.HEAD_KEY_SENT_TS;
-import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
-import static org.zicat.tributary.sink.hdfs.HDFSFunction.OPTION_METRICS_HOST;
-import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
-import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriter.*;
-import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriterFactory.OPTION_OUTPUT_COMPRESSION_CODEC;
 
 /** HDFSFunctionTest. */
 public class HDFSFunctionTest {
@@ -111,7 +111,6 @@ public class HDFSFunctionTest {
                             .startOffset(Offset.ZERO)
                             .topic(topic);
             builder.addCustomProperty(OPTION_SINK_PATH, DIR.getCanonicalFile().getPath())
-                    .addCustomProperty(OPTION_IDLE_TRIGGER, 10000)
                     .addCustomProperty(OPTION_BUCKET_DATE_FORMAT, timeFormat)
                     .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE, timeZoneId)
                     .addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC, "snappy")
@@ -129,7 +128,7 @@ public class HDFSFunctionTest {
 
             // refresh by time rolling
             mockClock.setCurrentTimeMillis(mockClock.currentTimeMillis() + 120 * 1000);
-            function.refresh(false);
+            function.snapshot();
 
             List<File> parquetFiles =
                     Arrays.asList(
@@ -181,10 +180,13 @@ public class HDFSFunctionTest {
             function.process(
                     groupOffset2,
                     Collections.singletonList(createStringRecords(topic, "aa", "bb")).iterator());
-            currentBucketPath = currentBucketPath(generator);
-            function.idleTrigger();
-            function.idleTrigger();
 
+            currentBucketPath = currentBucketPath(generator);
+
+            mockClock.setCurrentTimeMillis(mockClock.currentTimeMillis() + 120 * 1000);
+            function.snapshot();
+            mockClock.setCurrentTimeMillis(mockClock.currentTimeMillis() + 120 * 1000);
+            function.snapshot();
             parquetFiles =
                     Arrays.asList(
                             Objects.requireNonNull(

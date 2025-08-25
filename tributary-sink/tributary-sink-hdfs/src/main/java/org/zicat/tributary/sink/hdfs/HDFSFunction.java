@@ -20,12 +20,12 @@ package org.zicat.tributary.sink.hdfs;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
+
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
-import org.zicat.tributary.sink.function.Trigger;
 import org.zicat.tributary.sink.hdfs.bucket.BucketGenerator;
 import org.zicat.tributary.sink.hdfs.bucket.BucketGenerator.RefreshHandler;
 import org.zicat.tributary.sink.hdfs.bucket.ProcessTimeBucketGenerator;
@@ -33,10 +33,8 @@ import org.zicat.tributary.sink.hdfs.bucket.ProcessTimeBucketGenerator;
 import java.io.IOException;
 import java.util.Iterator;
 
-import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.OPTION_IDLE_TRIGGER;
-
 /** HDFSFunction. */
-public class HDFSFunction extends AbstractFunction implements Trigger {
+public class HDFSFunction extends AbstractFunction {
 
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
@@ -77,17 +75,16 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
     /**
      * refresh.
      *
-     * @param force force
      * @throws Exception Exception
      */
-    public void refresh(boolean force) throws Exception {
-        bucketGenerator.checkRefresh(force, refreshHandler);
+    public void refresh() throws Exception {
+        bucketGenerator.checkRefresh(refreshHandler);
     }
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
 
-        refresh(false);
+        refresh();
         int totalCount = 0;
         while (iterator.hasNext()) {
             final Records records = iterator.next();
@@ -105,13 +102,8 @@ public class HDFSFunction extends AbstractFunction implements Trigger {
     }
 
     @Override
-    public long idleTimeMillis() {
-        return context.get(OPTION_IDLE_TRIGGER).toMillis();
-    }
-
-    @Override
-    public void idleTrigger() throws Throwable {
-        refresh(true);
+    public void snapshot() throws Exception {
+        refresh();
     }
 
     /**

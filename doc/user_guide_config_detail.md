@@ -304,8 +304,8 @@ sink.group_4.partition.retain.max.bytes=100gb
 |-------------------------------|---------|--------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | function.id                   |         | enum[print,kafka,hdfs,hbase,elasticsearch] | the function identity that configure how to consume records, user can customize functions by  implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java) |
 | partition.retain.max.bytes    |         | bytes                                      | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful                                                                                       |
-| partition.group.commit.period | 30sec   | duration                                   | the period to commit consume group id                                                                                                                                                                                                  |
 | partition.concurrent          | 1       | int(number)                                | the threads to consume one partition data from channel, multi threads will cause data disorder in one partition, be careful                                                                                                            |  
+| partition.checkpoint.interval | 1min    | duration                                   | the interval to callback [CheckpointedFunction.snapshot()](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/CheckpointedFunction.java)                                                            |
 
 ### Sink HDFS
 
@@ -320,22 +320,20 @@ sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
 sink.group_1.writer.parquet.compression.codec=snappy
-sink.group_1.idle.trigger=60sec
 ```
 
-| key                              | default     | type        | describe                                                                                                                                                                                |
-|----------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| sink.path                        |             | string      | the root path to sink                                                                                                                                                                   |
-| roll.size                        | 256mb       | bytes       | the max size of the file                                                                                                                                                                |
-| bucket.date.format               | yyyyMMdd_HH | string      | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                     |   
-| bucket.date.timezone             | UTC         | string      | the timezone of bucket date format                                                                                                                                                      | 
-| max.retries                      | 3           | int(number) | the max retry times when operate hdfs fail                                                                                                                                              |
-| retry.interval                   | 200ms       | duration    | the interval between 2 retries                                                                                                                                                          |
-| keytab                           |             | string      | the keytab if hdfs use kerberos authenticator                                                                                                                                           |
-| principle                        |             | string      | the principle if hdfs use kerberos authenticator                                                                                                                                        |
-| writer.identity                  | parquet     | string      | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java)       |
-| writer.parquet.compression.codec | snappy      | string      | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                         | 
-| idle.trigger                     | 30sec       | duration    | the idle time to trigger the idleTrigger() function if function implement [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java) |
+| key                              | default     | type        | describe                                                                                                                                                                          |
+|----------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sink.path                        |             | string      | the root path to sink                                                                                                                                                             |
+| roll.size                        | 256mb       | bytes       | the max size of the file                                                                                                                                                          |
+| bucket.date.format               | yyyyMMdd_HH | string      | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                               |   
+| bucket.date.timezone             | UTC         | string      | the timezone of bucket date format                                                                                                                                                | 
+| max.retries                      | 3           | int(number) | the max retry times when operate hdfs fail                                                                                                                                        |
+| retry.interval                   | 200ms       | duration    | the interval between 2 retries                                                                                                                                                    |
+| keytab                           |             | string      | the keytab if hdfs use kerberos authenticator                                                                                                                                     |
+| principle                        |             | string      | the principle if hdfs use kerberos authenticator                                                                                                                                  |
+| writer.identity                  | parquet     | string      | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java) |
+| writer.parquet.compression.codec | snappy      | string      | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                   | 
 
 [more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
@@ -411,7 +409,6 @@ sink.group_4.socket.timeout=20s
 sink.group_4.request.indexer.identity=default
 sink.group_4.async.bulk.queue.size=1024
 sink.group_4.async.bulk.queue.await.timeout=30s
-sink.group_4.idle.trigger=30s
 ```
 
 | key                            | default | type     | describe                                                                                                                                                      |
@@ -427,7 +424,6 @@ sink.group_4.idle.trigger=30s
 | socket.timeout                 | 20s     | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                           |
 | async.bulk.queue.size          | 1024    | int      | the size of the queue which contains async bulk insert listener callback instances                                                                            |
 | async.bulk.queue.await.timeout | 30s     | duration | throw exception if wait timeout to put instance to queue over this param                                                                                      |
-| idle.trigger                   | 30s     | duration | set idle trigger to call trigger callback function, for elasticsearch, sink instance will deal with top finished requests callback instances in the queue     |
 | request.indexer                | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java) |
 
 Note:
@@ -509,7 +505,6 @@ channel.c2.segment.size=4gb
 channel.c2.flush.period=1sec
 
 sink.group_1.partition.retain.max.bytes=100gb
-sink.group_1.partition.group.commit.period=30sec
 sink.group_1.function.id=hdfs
 sink.group_1.sink.path=/tmp/test/cache
 sink.group_1.roll.size=10mb
@@ -520,10 +515,8 @@ sink.group_1.keytab=
 sink.group_1.principle=
 sink.group_1.writer.identity=parquet
 sink.group_1.writer.parquet.compression.codec=snappy
-sink.group_1.idle.trigger=60sec
 
 sink.group_2.partition.retain.max.bytes=100gb
-sink.group_2.partition.group.commit.period=30sec
 sink.group_2.partition.concurrent=3
 sink.group_2.function.id=kafka
 sink.group_2.kafka.bootstrap.servers=127.0.0.1:9092
@@ -534,7 +527,6 @@ sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
 
 sink.group_3.partition.retain.max.bytes=100gb
-sink.group_3.partition.group.commit.period=30sec
 sink.group_3.function.id=hbase
 sink.group_3.hbase-site-xml.path=/tmp/hbase-site.xml
 sink.group_3.table.name=table_test
@@ -544,7 +536,6 @@ sink.group_3.table.column.topic.name=topic
 sink.group_3.table.column.head.name.prefix=head_
 
 sink.group_4.partition.retain.max.bytes=100gb
-sink.group_4.partition.group.commit.period=30sec
 sink.group_4.function.id=elasticsearch
 sink.group_4.hosts=http://localhost:9200
 sink.group_4.path-prefix=

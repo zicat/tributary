@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.sink.hbase.test;
 
+import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.FunctionFactory;
 import org.zicat.tributary.sink.hbase.HBaseFunction;
 import org.zicat.tributary.sink.hbase.HBaseFunctionFactory;
 
@@ -33,9 +33,7 @@ public class HBaseFunctionFactoryTest {
 
     @Test
     public void test() throws IOException {
-        try (Function f =
-                SpiFactory.findFactory(HBaseFunctionFactory.IDENTITY, FunctionFactory.class)
-                        .create()) {
+        try (Function f = findFunctionFactory(HBaseFunctionFactory.IDENTITY).create()) {
             Assert.assertEquals(HBaseFunction.class, f.getClass());
         }
     }

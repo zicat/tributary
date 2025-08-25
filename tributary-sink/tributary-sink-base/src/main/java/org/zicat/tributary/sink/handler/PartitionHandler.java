@@ -18,11 +18,19 @@
 
 package org.zicat.tributary.sink.handler;
 
+import static org.zicat.tributary.common.Threads.joinQuietly;
+import static org.zicat.tributary.common.Threads.sleepQuietly;
+import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
+import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.parseMaxRetainSize;
+import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.snapshotIntervalMills;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
@@ -33,36 +41,46 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zicat.tributary.common.SpiFactory.findFactory;
-import static org.zicat.tributary.common.Threads.joinQuietly;
-
 /** PartitionHandler. */
-public abstract class PartitionHandler extends Thread implements Closeable, Trigger {
+public abstract class PartitionHandler extends Thread implements Closeable, CheckpointedFunction {
+
+    public static final ConfigOption<Clock> OPTION_PARTITION_HANDLER_CLOCK =
+            ConfigOptions.key("_partition_handler_clock")
+                    .<Clock>objectType()
+                    .defaultValue(new SystemClock());
 
     private static final Logger LOG = LoggerFactory.getLogger(PartitionHandler.class);
-    protected static final long DEFAULT_WAIT_TIME_MILLIS = 5000;
+    private static final long DEFAULT_WAIT_TIME_MILLIS = 500;
+    private static final long DEFAULT_SLEEP_WHEN_EXCEPTION = 1000;
 
     protected final String groupId;
-    private final Channel channel;
+    protected final Channel channel;
     protected final Integer partitionId;
     protected final FunctionFactory functionFactory;
     protected final SinkGroupConfig sinkGroupConfig;
     protected final Offset startOffset;
+    protected final Long maxRetainSize;
     protected final AtomicBoolean closed;
-    private Offset commitOffsetWaterMark;
+    protected final long snapshotIntervalMills;
+    protected final Clock clock;
+    protected Offset committedOffset;
+    private long preSnapshotTime;
 
     public PartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
         this.channel = channel;
         this.partitionId = partitionId;
+        this.snapshotIntervalMills = snapshotIntervalMills(sinkGroupConfig);
         this.sinkGroupConfig = sinkGroupConfig;
-        this.functionFactory =
-                findFactory(sinkGroupConfig.functionIdentity(), FunctionFactory.class);
+        this.clock = sinkGroupConfig.get(OPTION_PARTITION_HANDLER_CLOCK);
+        this.preSnapshotTime = clock.currentTimeMillis();
+        this.functionFactory = findFunctionFactory(sinkGroupConfig.functionIdentity());
         this.startOffset = channel.committedOffset(groupId, partitionId);
-        this.commitOffsetWaterMark = startOffset;
+        this.maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
         this.closed = new AtomicBoolean(false);
         setName(threadName());
+        this.committedOffset = startOffset;
     }
 
     /**
@@ -72,6 +90,16 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      */
     public final int partitionId() {
         return partitionId;
+    }
+
+    /** check snapshot. */
+    public void checkTriggerCheckpoint() throws Exception {
+        final long currentTime = clock.currentTimeMillis();
+        if (currentTime - preSnapshotTime >= snapshotIntervalMills) {
+            snapshot();
+            updateAndCommitOffset();
+            preSnapshotTime = currentTime;
+        }
     }
 
     /** open sink handler. */
@@ -112,7 +140,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         }
         try {
             channel.commit(partitionId, groupId, offset);
-            commitOffsetWaterMark = channel.committedOffset(groupId, partitionId);
+            committedOffset = offset;
         } catch (Throwable e) {
             LOG.warn("commit fail", e);
         }
@@ -122,15 +150,13 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      * default poll data, subclass can override this function.
      *
      * @param groupOffset groupOffset
-     * @param idleTimeMillis idleTimeMillis
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    protected RecordsResultSet poll(Offset groupOffset, long idleTimeMillis)
-            throws IOException, InterruptedException {
-        final long waitTime = idleTimeMillis <= 0 ? DEFAULT_WAIT_TIME_MILLIS : idleTimeMillis;
-        return channel.poll(partitionId, groupOffset, waitTime, TimeUnit.MILLISECONDS);
+    protected RecordsResultSet poll(Offset groupOffset) throws IOException, InterruptedException {
+        return channel.poll(
+                partitionId, groupOffset, DEFAULT_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -181,6 +207,11 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
         }
     }
 
+    /** sleep when exception, protect while true cause cpu high. */
+    protected void sleepWhenException() {
+        sleepQuietly(DEFAULT_SLEEP_WHEN_EXCEPTION);
+    }
+
     /**
      * get lag by group offset.
      *
@@ -196,7 +227,48 @@ public abstract class PartitionHandler extends Thread implements Closeable, Trig
      *
      * @return GroupOffset
      */
-    public Offset commitOffsetWaterMark() {
-        return commitOffsetWaterMark;
+    public Offset committedOffset() {
+        return committedOffset;
     }
+
+    /** update commit offset watermark. */
+    protected void updateAndCommitOffset() {
+        final Offset committedOffset = committedOffset();
+        final Offset newCommittedOffset =
+                skipGroupOffsetByMaxRetainSize(Offset.max(committableOffset(), committedOffset));
+        if (newCommittedOffset.compareTo(committedOffset) > 0) {
+            commit(newCommittedOffset);
+        }
+    }
+
+    /** skip commit offset watermark by max retain size. */
+    protected Offset skipGroupOffsetByMaxRetainSize(final Offset offset) {
+        if (maxRetainSize == null) {
+            return offset;
+        }
+        Offset newOffset = offset;
+        Offset preOffset = offset;
+        while (true) {
+            final long lag = lag(newOffset);
+            if (lag > maxRetainSize) {
+                preOffset = newOffset;
+                newOffset = newOffset.skipNextSegmentHead();
+                continue;
+            }
+            if (lag <= 0) {
+                newOffset = preOffset;
+            }
+            break;
+        }
+
+        if (preOffset == offset) {
+            return offset;
+        }
+
+        LOG.warn("lag over {}, committed {}, skip target = {}", maxRetainSize, offset, newOffset);
+        return newOffset;
+    }
+
+    @Override
+    public void snapshot() throws Exception {}
 }

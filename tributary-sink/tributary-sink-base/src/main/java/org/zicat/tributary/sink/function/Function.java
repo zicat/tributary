@@ -34,7 +34,7 @@ import java.util.Iterator;
  * <p>{@link AbstractPartitionHandler} create at least one Function and each Function only bind one
  * thread.
  */
-public interface Function extends Closeable {
+public interface Function extends Closeable, CheckpointedFunction {
 
     /**
      * open the function.

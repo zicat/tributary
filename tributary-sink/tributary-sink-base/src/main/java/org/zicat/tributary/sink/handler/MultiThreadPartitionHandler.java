@@ -18,10 +18,13 @@
 
 package org.zicat.tributary.sink.handler;
 
+import static org.zicat.tributary.sink.utils.Collections.copy;
+
 import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
@@ -33,7 +36,6 @@ import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.Trigger;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -44,8 +46,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import static org.zicat.tributary.sink.utils.Collections.copy;
 
 /**
  * Disruptor sink handler.
@@ -79,11 +79,6 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     private DataHandler[] handlers;
     private final AtomicReference<Throwable> error = new AtomicReference<>(null);
     private final int workerNumber;
-
-    public MultiThreadPartitionHandler(
-            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        this(groupId, channel, partitionId, sinkGroupConfig.get(OPTION_THREADS), sinkGroupConfig);
-    }
 
     public MultiThreadPartitionHandler(
             String groupId,
@@ -208,32 +203,25 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     }
 
     @Override
-    public long idleTimeMillis() {
-        return Arrays.stream(handlers).mapToLong(DataHandler::idleTimeMillis).min().orElse(-1);
-    }
-
-    @Override
     public List<AbstractFunction> getFunctions() {
         return Arrays.stream(handlers).map(v -> v.function).collect(Collectors.toList());
     }
 
     @Override
-    public void idleTrigger() {
+    public void snapshot() throws Exception {
         for (DataHandler handler : handlers) {
-            handler.idleTrigger();
+            handler.snapshot();
         }
     }
 
     /** data handler. */
-    public static class DataHandler implements WorkHandler<Block>, Closeable, Trigger {
+    public static class DataHandler implements WorkHandler<Block>, Closeable {
 
         private final AbstractFunction function;
-        private final Trigger trigger;
         private final AtomicReference<Throwable> error;
 
         public DataHandler(AbstractFunction function, AtomicReference<Throwable> error) {
             this.function = function;
-            this.trigger = function instanceof Trigger ? (Trigger) function : null;
             this.error = error;
         }
 
@@ -257,26 +245,12 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
             function.close();
         }
 
+        public void snapshot() throws Exception {
+            function.snapshot();
+        }
+
         public String functionId() {
             return function.context().id();
-        }
-
-        @Override
-        public long idleTimeMillis() {
-            return trigger == null ? -1 : trigger.idleTimeMillis();
-        }
-
-        @Override
-        public void idleTrigger() {
-            if (trigger != null) {
-                try {
-                    synchronized (this) {
-                        trigger.idleTrigger();
-                    }
-                } catch (Throwable e) {
-                    LOG.warn("trigger fail", e);
-                }
-            }
         }
     }
 

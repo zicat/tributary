@@ -21,30 +21,15 @@ package org.zicat.tributary.sink.test.function;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.function.Trigger;
 
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** MockTriggerFunction. */
-public class MockTriggerFunction extends AbstractFunction implements Trigger {
-
-    public AtomicInteger idleTriggerCounter = new AtomicInteger();
-    public static final long IDLE_TIME_MILLIS = 10;
+public class MockTriggerFunction extends AbstractFunction {
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) {}
 
     @Override
     public void close() {}
-
-    @Override
-    public long idleTimeMillis() {
-        return IDLE_TIME_MILLIS;
-    }
-
-    @Override
-    public void idleTrigger() {
-        idleTriggerCounter.incrementAndGet();
-    }
 }

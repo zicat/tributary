@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.function;
 
 import io.prometheus.client.SimpleCollector;
+
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
@@ -102,4 +103,8 @@ public abstract class AbstractFunction implements Function {
     public static <CHILD> CHILD labelHostId(Context context, SimpleCollector<CHILD> collector) {
         return collector.labels(context.get(OPTION_METRICS_HOST), context.id());
     }
+
+    /** default snapshot, subclass can override this function. */
+    @Override
+    public void snapshot() throws Exception {}
 }

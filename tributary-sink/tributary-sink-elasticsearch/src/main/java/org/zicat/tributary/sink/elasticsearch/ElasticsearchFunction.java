@@ -18,7 +18,13 @@
 
 package org.zicat.tributary.sink.elasticsearch;
 
+import static org.zicat.tributary.common.SpiFactory.findFactory;
+import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
+import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
+
 import io.prometheus.client.Counter;
+
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -29,7 +35,6 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
-import org.zicat.tributary.sink.function.Trigger;
 
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -37,14 +42,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zicat.tributary.common.SpiFactory.findFactory;
-import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
-import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
-
 /** ElasticsearchFunction. */
 @SuppressWarnings("deprecation")
-public class ElasticsearchFunction extends AbstractFunction implements Trigger {
+public class ElasticsearchFunction extends AbstractFunction {
 
     private static final Counter SINK_ELASTICSEARCH_COUNTER =
             Counter.build()
@@ -58,6 +58,7 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
     protected transient RequestIndexer indexer;
     protected transient BlockingQueue<DefaultActionListener> listenerQueue;
     protected transient long awaitTimeout;
+    protected transient Offset lastOffset;
 
     @Override
     public void open(Context context) throws Exception {
@@ -72,7 +73,6 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
-        checkAndClearDoneListeners();
         final AtomicInteger sendCount = new AtomicInteger();
         final BulkRequest request = new BulkRequest();
         while (iterator.hasNext()) {
@@ -88,8 +88,14 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
                     },
                     defaultSinkExtraHeaders());
         }
-        sendAndCommit(request, offset);
+        sendAsync(request, offset);
+        lastOffset = offset;
         sinkCounter.inc(sendCount.get());
+    }
+
+    @Override
+    public void snapshot() throws Exception {
+        checkAndClearDoneListeners();
     }
 
     /**
@@ -98,7 +104,7 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
      * @param request request.
      * @param offset offset
      */
-    protected void sendAndCommit(BulkRequest request, Offset offset) throws Exception {
+    protected void sendAsync(BulkRequest request, Offset offset) throws Exception {
         if (request.numberOfActions() == 0) {
             return;
         }
@@ -209,15 +215,5 @@ public class ElasticsearchFunction extends AbstractFunction implements Trigger {
             listenerQueue.clear();
             throw e;
         }
-    }
-
-    @Override
-    public long idleTimeMillis() {
-        return context.get(OPTION_IDLE_TRIGGER).toMillis();
-    }
-
-    @Override
-    public void idleTrigger() throws Throwable {
-        checkAndClearDoneListeners();
     }
 }

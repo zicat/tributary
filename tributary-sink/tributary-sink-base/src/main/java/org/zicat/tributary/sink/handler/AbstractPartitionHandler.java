@@ -23,19 +23,13 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.List;
-
-import static org.zicat.tributary.common.Threads.sleepQuietly;
 
 /**
  * AbstractPartitionHandler.
@@ -54,40 +48,27 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPartitionHandler.class);
 
-    public static final ConfigOption<MemorySize> OPTION_MAX_RETAIN_SIZE =
-            ConfigOptions.key("partition.retain.max.bytes")
-                    .memoryType()
-                    .description("delete oldest segment if one partition lag over this param")
-                    .defaultValue(null);
-
-    public static final ConfigOption<Duration> OPTION_RETAIN_SIZE_CHECK_PERIOD =
-            ConfigOptions.key("partition.group.commit.period")
-                    .durationType()
-                    .description("partition group commit period millisecond, default 30s")
-                    .defaultValue(Duration.ofSeconds(30));
-
-    protected final Long maxRetainSize;
     private Offset fetchOffset;
 
     public AbstractPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
         super(groupId, channel, partitionId, sinkGroupConfig);
         this.fetchOffset = startOffset;
-        this.maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
     }
 
     @Override
     public void run() {
 
-        final long idleTimeMillis = idleTimeMillis();
         while (true) {
             try {
-                final RecordsResultSet result = poll(fetchOffset, idleTimeMillis);
+                final RecordsResultSet result = poll(fetchOffset);
                 if (closed.get() && result.isEmpty()) {
                     break;
                 }
-                processRecords(result, idleTimeMillis);
-                updateCommitOffsetWaterMark();
+                if (!result.isEmpty()) {
+                    process(result.nexOffset(), result);
+                }
+                checkTriggerCheckpoint();
                 fetchOffset = nextFetchOffset(result.nexOffset());
             } catch (InterruptedException interruptedException) {
                 if (closed.get()) {
@@ -98,10 +79,9 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
                 if (closed.get()) {
                     break;
                 }
-                updateCommitOffsetWaterMark();
+                updateAndCommitOffset();
                 fetchOffset = nextFetchOffset(null);
-                // protect while true cause cpu high
-                sleepQuietly(DEFAULT_WAIT_TIME_MILLIS);
+                sleepWhenException();
             }
         }
     }
@@ -113,66 +93,11 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
      * @return GroupOffset
      */
     private Offset nextFetchOffset(Offset nextOffset) {
-        if (nextOffset == null || nextOffset.compareTo(commitOffsetWaterMark()) < 0) {
-            return fetchOffset.skip2Target(commitOffsetWaterMark());
+        if (nextOffset == null || nextOffset.compareTo(committedOffset()) < 0) {
+            return fetchOffset.skip2Target(committedOffset());
         } else {
             return nextOffset;
         }
-    }
-
-    /**
-     * process records.
-     *
-     * @param result result
-     * @param idleTimeMillis idleTimeMillis
-     * @throws Throwable Throwable
-     */
-    private void processRecords(RecordsResultSet result, long idleTimeMillis) throws Throwable {
-        if (!result.isEmpty()) {
-            process(result.nexOffset(), result);
-        } else if (idleTimeMillis > 0) {
-            idleTrigger();
-        }
-    }
-
-    /** update commit offset watermark. */
-    public void updateCommitOffsetWaterMark() {
-        final Offset oldWaterMark = commitOffsetWaterMark();
-        final Offset newWaterMark = Offset.max(committableOffset(), oldWaterMark);
-        final Offset skipWaterMark = skipGroupOffsetByMaxRetainSize(newWaterMark);
-        if (skipWaterMark.compareTo(oldWaterMark) > 0) {
-            commit(skipWaterMark);
-        }
-    }
-
-    /** skip commit offset watermark by max retain size. */
-    protected Offset skipGroupOffsetByMaxRetainSize(Offset offset) {
-
-        if (maxRetainSize == null) {
-            return offset;
-        }
-
-        Offset newOffset = offset;
-        Offset preOffset = offset;
-        while (true) {
-            final long lag = lag(newOffset);
-            if (lag > maxRetainSize) {
-                preOffset = newOffset;
-                newOffset = new Offset(newOffset.segmentId() + 1, 0L);
-                continue;
-            }
-            if (lag <= 0) {
-                newOffset = preOffset;
-            }
-            break;
-        }
-
-        if (preOffset == offset) {
-            return offset;
-        }
-
-        LOG.warn("lag over {}, committed {}, skip target = {}", maxRetainSize, offset, newOffset);
-        return newOffset;
     }
 
     /**
@@ -184,19 +109,8 @@ public abstract class AbstractPartitionHandler extends PartitionHandler {
         return lag(fetchOffset);
     }
 
-    /**
-     * parse max retain size.
-     *
-     * @param sinkGroupConfig sinkGroupConfig
-     * @return value
-     */
-    public static Long parseMaxRetainSize(SinkGroupConfig sinkGroupConfig) {
-        final MemorySize memorySize = sinkGroupConfig.get(OPTION_MAX_RETAIN_SIZE);
-        return memorySize == null ? null : memorySize.getBytes();
-    }
-
     @Override
-    public final void close() throws IOException {
+    public void close() throws IOException {
         try {
             // wait for function consumer data ending.
             super.close();

@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink.test.handler;
 
+import static org.zicat.tributary.sink.handler.MultiThreadPartitionHandler.OPTION_THREADS;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
@@ -29,8 +31,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.zicat.tributary.sink.handler.MultiThreadPartitionHandler.OPTION_THREADS;
-
 /** DisruptorMultiSinkHandlerTest. */
 public class MultiThreadPartitionHandlerTest {
 
@@ -41,10 +41,10 @@ public class MultiThreadPartitionHandlerTest {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         int threads = 0;
-        builder.addCustomProperty(OPTION_THREADS, threads);
         try (Channel channel = MemoryChannelTestUtils.createChannel(topic, groupId)) {
             try (MultiThreadPartitionHandler handler =
-                    new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
+                    new MultiThreadPartitionHandler(
+                            groupId, channel, 0, threads, builder.build())) {
                 try {
                     handler.open();
                     Assert.fail();
@@ -55,7 +55,8 @@ public class MultiThreadPartitionHandlerTest {
             threads = 10;
             builder.addCustomProperty(OPTION_THREADS, threads);
             try (MultiThreadPartitionHandler handler2 =
-                    new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
+                    new MultiThreadPartitionHandler(
+                            groupId, channel, 0, threads, builder.build())) {
                 handler2.open();
                 Assert.assertEquals(threads, handler2.handlers().length);
             }
@@ -70,10 +71,10 @@ public class MultiThreadPartitionHandlerTest {
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
         final int threads = 4;
-        builder.addCustomProperty(OPTION_THREADS, threads);
         try (Channel channel = MemoryChannelTestUtils.createChannel(topic, groupId);
                 MultiThreadPartitionHandler handler =
-                        new MultiThreadPartitionHandler(groupId, channel, 0, builder.build())) {
+                        new MultiThreadPartitionHandler(
+                                groupId, channel, 0, threads, builder.build())) {
             handler.open();
             Assert.assertEquals(threads, handler.handlers().length);
             final Set<String> distinctIds = new HashSet<>();

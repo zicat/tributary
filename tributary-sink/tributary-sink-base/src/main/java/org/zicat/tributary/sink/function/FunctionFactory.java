@@ -22,4 +22,15 @@ import org.zicat.tributary.common.SafeFactory;
 import org.zicat.tributary.common.SpiFactory;
 
 /** FunctionFactory create function. */
-public interface FunctionFactory extends SafeFactory<Function>, SpiFactory {}
+public interface FunctionFactory extends SafeFactory<Function>, SpiFactory {
+
+    /**
+     * find function factory by identity.
+     *
+     * @param identity identity
+     * @return FunctionFactory
+     */
+    static FunctionFactory findFunctionFactory(String identity) {
+        return SpiFactory.findFactory(identity, FunctionFactory.class);
+    }
+}

@@ -18,20 +18,21 @@
 
 package org.zicat.tributary.sink.test.handler;
 
+import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
+
 import org.junit.Assert;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
+import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import org.zicat.tributary.sink.test.function.AssertFunction;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
 
 /** SinkHandlerTestBase. */
 public class SinkHandlerTestBase {
@@ -42,10 +43,9 @@ public class SinkHandlerTestBase {
      * test sink handler.
      *
      * @param testData test data
-     * @param handlerIdentity handlerIdentity
      * @throws IOException IOException
      */
-    public static void test(List<String> testData, String handlerIdentity)
+    public static void test(List<String> testData, int threads)
             throws IOException, InterruptedException {
 
         final List<String> copyData = new ArrayList<>(testData);
@@ -55,9 +55,10 @@ public class SinkHandlerTestBase {
                 MemoryChannelTestUtils.createChannel("t1", partitionCount, groupId)) {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
-                            .handlerIdentity(handlerIdentity)
+                            .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
                             .functionIdentity(AssertFunctionFactory.IDENTITY);
-            builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData);
+            builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData)
+                    .addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, threads);
             final SinkGroupConfig sinkGroupConfig = builder.build();
             try (SinkGroupManager sinkManager =
                     new SinkGroupManager(groupId, channel, sinkGroupConfig)) {

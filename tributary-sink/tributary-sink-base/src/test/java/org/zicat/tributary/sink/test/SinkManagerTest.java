@@ -31,6 +31,7 @@ import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
+import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public class SinkManagerTest {
                         "voqa", partitionCount, consumerGroup.toArray(new String[] {}))) {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
-                            .handlerIdentity("direct")
+                            .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
                             .functionIdentity("assertCount");
             builder.addCustomProperty(OPTION_ASSERT_COUNT, dataSize);
             final SinkGroupConfig sinkGroupConfig = builder.build();

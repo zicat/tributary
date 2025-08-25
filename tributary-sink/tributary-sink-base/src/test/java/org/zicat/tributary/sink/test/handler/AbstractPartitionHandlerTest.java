@@ -19,12 +19,12 @@
 package org.zicat.tributary.sink.test.handler;
 
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
-import static org.zicat.tributary.sink.handler.AbstractPartitionHandler.OPTION_MAX_RETAIN_SIZE;
+import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_CHECKPOINT_INTERVAL;
+import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_MAX_RETAIN_SIZE;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_PARTITION_HANDLER_CLOCK;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.Offset;
@@ -34,11 +34,8 @@ import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
-import org.zicat.tributary.sink.handler.DirectPartitionHandler;
-import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
-import org.zicat.tributary.sink.test.function.MockIdleTriggerFactory;
-import org.zicat.tributary.sink.test.function.MockTriggerFunction;
+import org.zicat.tributary.sink.test.function.MockClock;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -51,55 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /** AbstractSinkHandlerTest. */
 public class AbstractPartitionHandlerTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractPartitionHandlerTest.class);
     final String groupId = "test_group";
-
-    @Test
-    public void testIdleTrigger() throws InterruptedException, IOException {
-        try (Channel channel = MemoryChannelTestUtils.createChannel("t1", groupId)) {
-            final SinkGroupConfigBuilder builder =
-                    SinkGroupConfigBuilder.newBuilder().functionIdentity(MockIdleTriggerFactory.ID);
-            final SinkGroupConfig sinkGroupConfig = builder.build();
-
-            /*
-               Because idle trigger depend on child class implements,
-               Using SimpleSinkHandler & DisruptorMultiSinkHandler test idle trigger
-            */
-            try (AbstractPartitionHandler handler =
-                    new DirectPartitionHandler(groupId, channel, 0, sinkGroupConfig)) {
-                handler.open();
-                handler.start();
-                // wait for idle trigger
-                Thread.sleep(100);
-                int triggerTimes =
-                        handler.getFunctions().stream()
-                                .mapToInt(v -> ((MockTriggerFunction) v).idleTriggerCounter.get())
-                                .max()
-                                .orElse(-1);
-                LOG.info("trigger times {}", triggerTimes);
-                Assert.assertTrue(triggerTimes > 1 && triggerTimes <= 10);
-            }
-
-            try (AbstractPartitionHandler handler =
-                    new MultiThreadPartitionHandler(groupId, channel, 0, sinkGroupConfig)) {
-                handler.open();
-                handler.start();
-                Thread.sleep(100);
-                int triggerTimes =
-                        handler.getFunctions().stream()
-                                .mapToInt(v -> ((MockTriggerFunction) v).idleTriggerCounter.get())
-                                .max()
-                                .orElse(-1);
-                Assert.assertTrue(triggerTimes > 3 && triggerTimes <= 10);
-                triggerTimes =
-                        handler.getFunctions().stream()
-                                .mapToInt(v -> ((MockTriggerFunction) v).idleTriggerCounter.get())
-                                .min()
-                                .orElse(-1);
-                Assert.assertTrue(triggerTimes > 3 && triggerTimes <= 10);
-            }
-        }
-    }
 
     @Test
     public void testIllegalCommittableOffset() throws IOException, InterruptedException {
@@ -117,6 +66,7 @@ public class AbstractPartitionHandlerTest {
             final int partitionId = 0;
             handler =
                     new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
+
                         @Override
                         public void closeCallback() {}
 
@@ -124,14 +74,6 @@ public class AbstractPartitionHandlerTest {
                         public List<AbstractFunction> getFunctions() {
                             return null;
                         }
-
-                        @Override
-                        public long idleTimeMillis() {
-                            return -1;
-                        }
-
-                        @Override
-                        public void idleTrigger() {}
 
                         @Override
                         public void open() {}
@@ -162,22 +104,26 @@ public class AbstractPartitionHandlerTest {
                 IOUtils.closeQuietly(handler);
             }
         }
-        Assert.assertEquals(5, handler.commitOffsetWaterMark().segmentId());
+        Assert.assertEquals(5, handler.committedOffset().segmentId());
     }
 
     @Test
     public void testMaxRetainPerPartition() throws IOException, InterruptedException {
 
         final AtomicBoolean skip = new AtomicBoolean(false);
+        final MockClock clock = new MockClock().setCurrentTimeMillis(System.currentTimeMillis());
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
         AbstractPartitionHandler handler;
         try (Channel channel =
                 MemoryChannelTestUtils.createChannel(
-                        "t1", 2, 50, 50L, CompressionType.NONE, groupId)) {
+                        "t1", 1, 50, 50L, CompressionType.NONE, groupId)) {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
                             .functionIdentity(AssertFunctionFactory.IDENTITY);
             // configuration maxRetainSize = 80 to skip segment
             builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE, 80L);
+            builder.addCustomProperty(OPTION_CHECKPOINT_INTERVAL, 100000);
+            builder.addCustomProperty(OPTION_PARTITION_HANDLER_CLOCK, clock);
 
             final SinkGroupConfig sinkGroupConfig = builder.build();
 
@@ -196,13 +142,7 @@ public class AbstractPartitionHandlerTest {
             handler =
                     new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
 
-                        @Override
-                        public long idleTimeMillis() {
-                            return -1;
-                        }
-
-                        @Override
-                        public void idleTrigger() {}
+                        private int count = 0;
 
                         @Override
                         public void open() {}
@@ -215,6 +155,11 @@ public class AbstractPartitionHandlerTest {
                                                 new String(
                                                         iterator.next(), StandardCharsets.UTF_8)));
                             }
+                            count++;
+                            if (count == testData.size()) {
+                                // trigger snapshot
+                                ((MockClock) clock).addMillis(100000);
+                            }
                         }
 
                         @Override
@@ -223,11 +168,11 @@ public class AbstractPartitionHandlerTest {
                         }
 
                         @Override
-                        public void updateCommitOffsetWaterMark() {
-                            final Offset groupOffset = commitOffsetWaterMark();
-                            super.updateCommitOffsetWaterMark();
-                            final Offset groupOffset2 = commitOffsetWaterMark();
-                            skip.set(groupOffset != groupOffset2 || skip.get());
+                        public Offset skipGroupOffsetByMaxRetainSize(Offset offset) {
+                            final Offset offset2 = super.skipGroupOffsetByMaxRetainSize(offset);
+                            skip.set(!offset.equals(offset2));
+                            countDownLatch.countDown();
+                            return offset2;
                         }
 
                         @Override
@@ -240,17 +185,17 @@ public class AbstractPartitionHandlerTest {
                     };
             try {
                 handler.start();
-
                 for (String data : testData) {
                     channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
-                    channel.flush();
                 }
+                channel.flush();
+                countDownLatch.await();
+                Assert.assertTrue(skip.get());
             } finally {
                 IOUtils.closeQuietly(handler);
             }
         }
-        Assert.assertEquals(5, handler.commitOffsetWaterMark().segmentId());
-        Assert.assertTrue(skip.get());
+        Assert.assertEquals(5, handler.committedOffset().segmentId());
     }
 
     @Test
@@ -280,14 +225,6 @@ public class AbstractPartitionHandlerTest {
                         public List<AbstractFunction> getFunctions() {
                             return null;
                         }
-
-                        @Override
-                        public long idleTimeMillis() {
-                            return -1;
-                        }
-
-                        @Override
-                        public void idleTrigger() {}
 
                         private Offset offset;
 

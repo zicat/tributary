@@ -18,31 +18,23 @@
 
 package org.zicat.tributary.sink.function;
 
+import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
+
 import io.prometheus.client.Counter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.records.Records;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-
 /** PrintFunction. */
-public class PrintFunction extends AbstractFunction implements Trigger {
+public class PrintFunction extends AbstractFunction {
 
     protected static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
-
-    public static final ConfigOption<Duration> OPTION_IDLE_TRIGGER =
-            ConfigOptions.key("idle.trigger")
-                    .durationType()
-                    .description("idle trigger, default 30s")
-                    .defaultValue(Duration.ofSeconds(30));
 
     private static final Counter SINK_PRINT_COUNTER =
             Counter.build()
@@ -51,13 +43,11 @@ public class PrintFunction extends AbstractFunction implements Trigger {
                     .labelNames("host", "id")
                     .register();
 
-    private long triggerMillis;
     protected Counter.Child sinkCountChild;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        this.triggerMillis = context.get(OPTION_IDLE_TRIGGER).toMillis();
         this.sinkCountChild = labelHostId(SINK_PRINT_COUNTER);
     }
 
@@ -99,14 +89,4 @@ public class PrintFunction extends AbstractFunction implements Trigger {
 
     @Override
     public void close() {}
-
-    @Override
-    public long idleTimeMillis() {
-        return triggerMillis;
-    }
-
-    @Override
-    public void idleTrigger() {
-        LOG.info("trigger idle period {}", triggerMillis);
-    }
 }

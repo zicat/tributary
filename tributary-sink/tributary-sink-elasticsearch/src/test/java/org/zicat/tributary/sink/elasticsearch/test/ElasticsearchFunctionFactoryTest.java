@@ -18,13 +18,13 @@
 
 package org.zicat.tributary.sink.elasticsearch.test;
 
+import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunction;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory;
 import org.zicat.tributary.sink.function.Function;
-import org.zicat.tributary.sink.function.FunctionFactory;
 
 import java.io.IOException;
 
@@ -33,9 +33,7 @@ public class ElasticsearchFunctionFactoryTest {
 
     @Test
     public void test() throws IOException {
-        try (Function f =
-                SpiFactory.findFactory(ElasticsearchFunctionFactory.IDENTITY, FunctionFactory.class)
-                        .create()) {
+        try (Function f = findFunctionFactory(ElasticsearchFunctionFactory.IDENTITY).create()) {
             Assert.assertEquals(ElasticsearchFunction.class, f.getClass());
         }
     }

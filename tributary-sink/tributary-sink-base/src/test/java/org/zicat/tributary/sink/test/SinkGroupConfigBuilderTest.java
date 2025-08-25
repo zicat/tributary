@@ -24,7 +24,6 @@ import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.function.PrintFunctionFactory;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
-import org.zicat.tributary.sink.handler.DirectPartitionHandlerFactory;
 
 /** SinkGroupConfigBuilderTest. */
 public class SinkGroupConfigBuilderTest {
@@ -40,10 +39,10 @@ public class SinkGroupConfigBuilderTest {
 
         final SinkGroupConfig config2 =
                 SinkGroupConfigBuilder.newBuilder()
-                        .handlerIdentity(DirectPartitionHandlerFactory.IDENTITY)
+                        .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
                         .functionIdentity(PrintFunctionFactory.IDENTITY)
                         .build();
-        Assert.assertEquals(DirectPartitionHandlerFactory.IDENTITY, config2.handlerIdentity());
+        Assert.assertEquals(DefaultPartitionHandlerFactory.IDENTITY, config2.handlerIdentity());
 
         try {
             SinkGroupConfigBuilder.newBuilder().build();

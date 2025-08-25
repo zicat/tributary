@@ -29,8 +29,13 @@ public class MockClock implements Clock {
 
     private long currentTimeMillis;
 
-    public void setCurrentTimeMillis(long currentTimeMillis) {
+    public MockClock setCurrentTimeMillis(long currentTimeMillis) {
         this.currentTimeMillis = currentTimeMillis;
+        return this;
+    }
+
+    public void addMillis(long millis) {
+        this.currentTimeMillis += millis;
     }
 
     @Override

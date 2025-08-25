@@ -104,11 +104,12 @@ public class HBaseFunctionTest {
             function.open(builder.build());
             function.process(Offset.ZERO, recordsList.iterator());
 
-            final List<Mutation> flushedList =
-                    connection.getBufferedMutator(TableName.valueOf("tl1")).flushedList;
+            final MockBufferedMutator bufferedMutator =
+                    connection.getBufferedMutator(TableName.valueOf("tl1"));
+            final List<Mutation> mutateList = bufferedMutator.mutateList;
             final byte[] family = Bytes.toBytes("f1");
-            Assert.assertEquals(2, flushedList.size());
-            final Mutation m1 = flushedList.get(0);
+            Assert.assertEquals(2, mutateList.size());
+            final Mutation m1 = mutateList.get(0);
             Assert.assertEquals("rk1", Bytes.toString(m1.getRow()));
             Assert.assertEquals("rv1", toString(m1.get(family, Bytes.toBytes("v1")).get(0)));
             Assert.assertEquals(topic, toString(m1.get(family, Bytes.toBytes("tp1")).get(0)));
@@ -116,13 +117,18 @@ public class HBaseFunctionTest {
             Assert.assertEquals("rshv1", toString(m1.get(family, Bytes.toBytes("h_rshk1")).get(0)));
             Assert.assertNotNull(toString(m1.get(family, Bytes.toBytes("h__sent_ts")).get(0)));
 
-            final Mutation m2 = flushedList.get(1);
+            final Mutation m2 = mutateList.get(1);
             Assert.assertEquals("rk2", Bytes.toString(m2.getRow()));
             Assert.assertEquals("rv2", toString(m2.get(family, Bytes.toBytes("v1")).get(0)));
             Assert.assertEquals(topic, toString(m2.get(family, Bytes.toBytes("tp1")).get(0)));
             Assert.assertEquals("rhv2", toString(m2.get(family, Bytes.toBytes("h_rhk2")).get(0)));
             Assert.assertEquals("rshv1", toString(m2.get(family, Bytes.toBytes("h_rshk1")).get(0)));
             Assert.assertNotNull(toString(m2.get(family, Bytes.toBytes("h__sent_ts")).get(0)));
+
+            final List<Mutation> flushList = bufferedMutator.flushedList;
+            Assert.assertTrue(flushList.isEmpty());
+            function.snapshot();
+            Assert.assertEquals(2, flushList.size());
         }
     }
 
