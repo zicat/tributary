@@ -87,14 +87,14 @@ public abstract class AbstractNettySource extends AbstractSource {
      *
      * @param ch ch
      */
-    protected abstract void initChannel(SocketChannel ch) throws IOException;
+    protected abstract void initChannel(SocketChannel ch) throws Exception;
 
     /** init handlers. */
     private void initHandlers() {
         serverBootstrap.childHandler(
                 new ChannelInitializer<SocketChannel>() {
                     @Override
-                    protected void initChannel(SocketChannel ch) throws IOException {
+                    protected void initChannel(SocketChannel ch) throws Exception {
                         AbstractNettySource.this.initChannel(ch);
                     }
                 });

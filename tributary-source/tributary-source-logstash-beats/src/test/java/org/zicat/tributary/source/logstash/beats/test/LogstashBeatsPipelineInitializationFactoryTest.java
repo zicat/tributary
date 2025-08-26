@@ -22,6 +22,9 @@ import static org.logstash.netty.SslContextBuilder.SUPPORTED_CIPHERS;
 import static org.logstash.netty.SslContextBuilder.SUPPORT_PROTOCOL;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
+import org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory;
+import static org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory.OPTION_LOCAL_FILE_PATH;
+import static org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder.OPTION_MESSAGE_FILTER_FACTORY_ID;
 import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -155,6 +158,58 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
                     (key, value, allHeaders) ->
                             Assert.assertEquals(
                                     "test2", MAPPER.readValue(value, MAP_TYPE_REFERENCE).get("k")));
+        }
+    }
+
+    @Test
+    public void testMessageFilter() throws Exception {
+        final String topic = "t1";
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1); // set to sync for test
+        config.put(
+                CONFIG_PREFIX + OPTION_MESSAGE_FILTER_FACTORY_ID.key(),
+                LocalFileMessageFilterFactory.IDENTITY);
+        config.put(CONFIG_PREFIX + OPTION_LOCAL_FILE_PATH.key(), "DefaultMessageFilterTest.txt");
+
+        final AtomicBoolean clientReceivedAck = new AtomicBoolean();
+        try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
+                DefaultNettySource source = new DefaultNettySourceMock(config, topic, channel)) {
+            final LogstashBeatsPipelineInitialization pipelineInitialization =
+                    beatsPipelineInitialization(source);
+            final EmbeddedChannel serverChannel = new EmbeddedChannel();
+            pipelineInitialization.init(serverChannel);
+
+            final EmbeddedChannel clientChannel =
+                    new EmbeddedChannel(
+                            new AckDecoder(clientReceivedAck, Protocol.VERSION_2, 1),
+                            new BatchEncoder(),
+                            new DummyV2JsonSender());
+            clientChannel.writeInbound("{\"a\":\"b\"}");
+            final ByteBuf byteBuf = clientChannel.readOutbound();
+
+            serverChannel.pipeline().fireChannelActive();
+            serverChannel.writeInbound(byteBuf);
+
+            final Object serverAckResponse = serverChannel.readOutbound();
+            clientChannel.writeInbound(serverAckResponse);
+            Assert.assertTrue(clientReceivedAck.get());
+
+            channel.flush();
+            RecordsResultSet resultSet = channel.poll(0, Offset.ZERO, 10, TimeUnit.MILLISECONDS);
+            Assert.assertFalse(resultSet.isEmpty());
+
+            final Records records = Records.parse(resultSet.next());
+            Assert.assertEquals(1, records.count());
+            Assert.assertEquals(topic, records.topic());
+
+            RecordsUtils.foreachRecord(
+                    records,
+                    (key, value, allHeaders) -> {
+                        Map<String, String> data = MAPPER.readValue(value, MAP_TYPE_REFERENCE);
+                        Assert.assertEquals("b", data.get("a"));
+                        Assert.assertEquals("_test_value", data.get("_test"));
+                        Assert.assertEquals(2, data.size());
+                    });
         }
     }
 

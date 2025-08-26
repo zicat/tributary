@@ -10,6 +10,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.source.logstash.base.Message;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -65,7 +66,6 @@ public class BeatsParser extends ByteToMessageDecoder {
             case READ_HEADER:
                 {
                     logger.trace("Running: READ_HEADER");
-
                     int version = Protocol.version(in.readByte());
 
                     if (batch == null) {
@@ -151,7 +151,7 @@ public class BeatsParser extends ByteToMessageDecoder {
                                 "Invalid number of fields, received: " + fieldsCount);
                     }
 
-                    Map<String, String> dataMap = new HashMap<>(fieldsCount);
+                    Map<String, Object> dataMap = new HashMap<>(fieldsCount);
 
                     while (count < fieldsCount) {
                         int fieldLength = (int) in.readUnsignedInt();
@@ -168,7 +168,7 @@ public class BeatsParser extends ByteToMessageDecoder {
 
                         count++;
                     }
-                    Message message = new Message(sequence, MAPPER.writeValueAsBytes(dataMap));
+                    Message<Object> message = new Message<>(batch, sequence, dataMap);
                     ((V1Batch) batch).addMessage(message);
 
                     if (batch.isComplete()) {

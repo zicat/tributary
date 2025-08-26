@@ -126,6 +126,11 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
                     dataPartition == null
                             ? defaultPartition
                             : Integer.parseInt(dataPartition) % source.partition();
+            final Records records = parseRecords(ctx, topic, httpHeaders(msg), body);
+            if (records == null || records.count() == 0) {
+                okResponse(ctx);
+                return;
+            }
             source.append(realPartition, parseRecords(ctx, topic, httpHeaders(msg), body));
             okResponse(ctx);
         } catch (Exception e) {

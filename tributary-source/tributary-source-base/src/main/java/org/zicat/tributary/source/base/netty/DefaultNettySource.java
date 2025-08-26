@@ -58,7 +58,7 @@ public class DefaultNettySource extends AbstractNettySource {
      * @param ch ch
      */
     @Override
-    protected void initChannel(SocketChannel ch) {
+    protected void initChannel(SocketChannel ch) throws Exception {
         pipelineInitialization.init(ch);
     }
 

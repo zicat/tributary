@@ -3,20 +3,15 @@ package org.logstash.beats;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-
 import org.junit.Before;
 import org.junit.Test;
+import org.zicat.tributary.source.logstash.base.Message;
 
 import java.security.SecureRandom;
 import java.util.HashMap;
 
 /** V1BatchTest. */
 public class V1BatchTest {
-    public static final ObjectMapper MAPPER =
-            new ObjectMapper().registerModule(new AfterburnerModule());
 
     private V1Batch batch;
 
@@ -26,16 +21,16 @@ public class V1BatchTest {
     }
 
     @Test
-    public void testIsEmpty() throws JsonProcessingException {
+    public void testIsEmpty() {
         assertTrue(batch.isEmpty());
-        batch.addMessage(new Message(1, MAPPER.writeValueAsBytes(new HashMap<>())));
+        batch.addMessage(new Message<>(batch, 1, new HashMap<>()));
         assertFalse(batch.isEmpty());
     }
 
     @Test
-    public void testSize() throws JsonProcessingException {
+    public void testSize() {
         assertEquals(0, batch.size());
-        batch.addMessage(new Message(1, MAPPER.writeValueAsBytes(new HashMap<>())));
+        batch.addMessage(new Message<>(batch, 1, new HashMap<>()));
         assertEquals(1, batch.size());
     }
 
@@ -45,58 +40,51 @@ public class V1BatchTest {
     }
 
     @Test
-    public void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent()
-            throws JsonProcessingException {
+    public void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() {
         int numberOfEvent = 2;
 
         batch.setBatchSize(numberOfEvent);
 
         for (int i = 1; i <= numberOfEvent; i++) {
-            batch.addMessage(new Message(i, MAPPER.writeValueAsBytes(new HashMap<>())));
+            batch.addMessage(new Message<>(batch, i, new HashMap<>()));
         }
 
         assertTrue(batch.isComplete());
     }
 
     @Test
-    public void testCompleteBatchWithSequenceNumbersNotStartingAtOne()
-            throws JsonProcessingException {
+    public void testCompleteBatchWithSequenceNumbersNotStartingAtOne() {
         int numberOfEvent = 2;
         int startSequenceNumber = new SecureRandom().nextInt(10000);
         batch.setBatchSize(numberOfEvent);
 
         for (int i = 1; i <= numberOfEvent; i++) {
-            batch.addMessage(
-                    new Message(
-                            startSequenceNumber + i, MAPPER.writeValueAsBytes(new HashMap<>())));
+            batch.addMessage(new Message<>(batch, startSequenceNumber + i, new HashMap<>()));
         }
 
         assertTrue(batch.isComplete());
     }
 
     @Test
-    public void testHighSequence() throws JsonProcessingException {
+    public void testHighSequence() {
         int numberOfEvent = 2;
         int startSequenceNumber = new SecureRandom().nextInt(10000);
         batch.setBatchSize(numberOfEvent);
 
         for (int i = 1; i <= numberOfEvent; i++) {
-            batch.addMessage(
-                    new Message(
-                            startSequenceNumber + i, MAPPER.writeValueAsBytes(new HashMap<>())));
+            batch.addMessage(new Message<>(batch, startSequenceNumber + i, new HashMap<>()));
         }
 
         assertEquals(startSequenceNumber + numberOfEvent, batch.getHighestSequence());
     }
 
     @Test
-    public void testCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize()
-            throws JsonProcessingException {
+    public void testCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
         int numberOfEvent = 2;
 
         batch.setBatchSize(numberOfEvent);
 
-        batch.addMessage(new Message(1, MAPPER.writeValueAsBytes(new HashMap<>())));
+        batch.addMessage(new Message<>(batch, 1, new HashMap<>()));
 
         assertFalse(batch.isComplete());
     }

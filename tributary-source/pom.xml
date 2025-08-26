@@ -11,12 +11,16 @@
     <modules>
         <module>tributary-source-kafka</module>
         <module>tributary-source-base</module>
-        <module>tributary-source-logstash-beats</module>
         <module>tributary-source-http</module>
+        <module>tributary-source-logstash-base</module>
         <module>tributary-source-logstash-http</module>
+        <module>tributary-source-logstash-beats</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tributary-source</artifactId>
 
+    <dependencies>
+
+    </dependencies>
 </project>

@@ -32,7 +32,7 @@ public class LogstashHttpSourcePrintSinkApplication {
         /*
            curl -u user1:password1 -X POST "http://localhost:11223/" \
              -H "Content-Type: application/text" \
-             -d '{"aa":"bb"}'
+             -d '{"aa":"bb","bb":"cc","cc":"dd"}'
         */
         try (Starter starter = new Starter(new PropertiesLoader(ACTIVE_PROFILE).load())) {
             starter.start();

@@ -5,6 +5,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.beats.BatchMessageListener;
 
 import java.io.IOException;
@@ -86,23 +87,26 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
             logger.debug("Sending 0-seq ACK for empty batch");
             writeAck(ctx, batch.getProtocol(), 0);
         }
-        final Iterator<Message> iterator = batch.iterator();
+        final Iterator<Message<Object>> iterator = batch.iterator();
         messageListener.consume(
-                new Iterator<Message>() {
+                new Iterator<Message<Object>>() {
                     @Override
                     public boolean hasNext() {
                         return iterator.hasNext();
                     }
 
                     @Override
-                    public Message next() {
-                        final Message message = iterator.next();
+                    public Message<Object> next() {
+                        final Message<Object> message = iterator.next();
                         logger.debug(
                                 "Sending a new message for listener, sequence: {}",
                                 message.getSequence());
                         if (needAck(message)) {
                             logger.trace("Ack message number {}", message.getSequence());
-                            writeAck(ctx, message.getBatch().getProtocol(), message.getSequence());
+                            writeAck(
+                                    ctx,
+                                    ((Batch) message.getPayload()).getProtocol(),
+                                    message.getSequence());
                         }
                         return message;
                     }
@@ -117,8 +121,8 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
         return false;
     }
 
-    private boolean needAck(Message message) {
-        return message.getSequence() == message.getBatch().getHighestSequence();
+    private boolean needAck(Message<Object> message) {
+        return message.getSequence() == ((Batch) message.getPayload()).getHighestSequence();
     }
 
     private void writeAck(ChannelHandlerContext ctx, byte protocol, int sequence) {

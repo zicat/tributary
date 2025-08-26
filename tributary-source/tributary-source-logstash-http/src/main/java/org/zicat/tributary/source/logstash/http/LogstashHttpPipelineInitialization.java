@@ -21,12 +21,16 @@ package org.zicat.tributary.source.logstash.http;
 import static org.zicat.tributary.common.Strings.blank2Null;
 import static org.zicat.tributary.source.logstash.http.LogstashHttpPipelineInitializationFactory.*;
 
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.Strings;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.http.HttpMessageDecoder;
 import org.zicat.tributary.source.http.HttpPipelineInitialization;
+import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
+import org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder;
 
+import java.io.IOException;
 import java.util.List;
 
 /** LogstashHttpPipelineInitialization. */
@@ -36,8 +40,9 @@ public class LogstashHttpPipelineInitialization extends HttpPipelineInitializati
     protected final String remoteHostTargetField;
     protected final String requestHeadersTargetField;
     protected final List<String> tags;
+    protected final MessageFilterFactory messageFilterFactory;
 
-    public LogstashHttpPipelineInitialization(DefaultNettySource source) {
+    public LogstashHttpPipelineInitialization(DefaultNettySource source) throws Exception {
         super(source);
         final ReadableConfig conf = source.getConfig();
         this.codec = conf.get(OPTION_LOGSTASH_CODEC);
@@ -46,6 +51,10 @@ public class LogstashHttpPipelineInitialization extends HttpPipelineInitializati
         this.requestHeadersTargetField =
                 blank2Null(conf.get(OPTION_LOGSTASH_HTTP_REQUEST_HEADERS_TARGET_FIELD));
         this.tags = conf.get(OPTION_LOGSTASH_HTTP_TAGS);
+        this.messageFilterFactory =
+                MessageFilterFactoryBuilder.newBuilder()
+                        .config(conf.filterAndRemovePrefixKey(CONFIG_PREFIX))
+                        .buildAndOpen();
     }
 
     @Override
@@ -58,7 +67,8 @@ public class LogstashHttpPipelineInitialization extends HttpPipelineInitializati
                 codec,
                 remoteHostTargetField,
                 requestHeadersTargetField,
-                tags);
+                tags,
+                messageFilterFactory);
     }
 
     @Override
@@ -79,5 +89,14 @@ public class LogstashHttpPipelineInitialization extends HttpPipelineInitializati
     @Override
     protected String password(ReadableConfig config) {
         return Strings.blank2Null(config.get(OPTION_LOGSTASH_HTTP_PASSWORD));
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            super.close();
+        } finally {
+            IOUtils.closeQuietly(messageFilterFactory);
+        }
     }
 }

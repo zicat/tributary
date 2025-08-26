@@ -62,7 +62,7 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
     }
 
     @Override
-    public void init(Channel channel) {
+    public void init(Channel channel) throws Exception {
         final ChannelPipeline pip = channel.pipeline();
         pip.addLast(new HttpResponseEncoder());
         pip.addLast(source.idleStateHandler());

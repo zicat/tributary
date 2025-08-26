@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
@@ -18,6 +17,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.zicat.tributary.source.logstash.base.Message;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,11 +29,10 @@ import java.util.Random;
 /** BeatsParserTest. */
 @SuppressWarnings({"deprecation"})
 public class BeatsParserTest {
+
     private V1Batch v1Batch;
     public static final ObjectMapper MAPPER =
             new ObjectMapper().registerModule(new AfterburnerModule());
-    private static final TypeReference<Map<String, String>> MAPPER_TYPE_REF =
-            new TypeReference<Map<String, String>>() {};
 
     private final int numberOfMessage = 20;
 
@@ -44,11 +43,11 @@ public class BeatsParserTest {
         this.v1Batch = new V1Batch();
 
         for (int i = 1; i <= numberOfMessage; i++) {
-            Map<String, String> map = new HashMap<>();
+            Map<String, Object> map = new HashMap<>();
             map.put("line", "Another world");
             map.put("from", "Little big Adventure");
 
-            Message message = new Message(i, MAPPER.writeValueAsBytes(map));
+            Message<Object> message = new Message<>(v1Batch, i, map);
             this.v1Batch.addMessage(message);
         }
 
@@ -110,10 +109,10 @@ public class BeatsParserTest {
         // Generate Data with Keys and String with UTF-8
         for (int i = 0; i < numberOfMessage; i++) {
 
-            Map<String, String> map = new HashMap<>();
+            Map<String, Object> map = new HashMap<>();
             map.put("étoile", "mystère");
             map.put("from", "ÉeèAççï");
-            Message message = new Message(i + 1, MAPPER.writeValueAsBytes(map));
+            Message<Object> message = new Message<>(batch, i + 1, map);
             batch.addMessage(message);
         }
 
@@ -275,27 +274,24 @@ public class BeatsParserTest {
         channel.writeInbound(o);
     }
 
-    private void assertMessages(Batch expected, Batch actual) throws IOException {
+    private void assertMessages(Batch expected, Batch actual) {
 
         assertNotNull(actual);
         assertEquals(expected.size(), actual.size());
 
-        int i = 0;
-        Iterator<Message> expectedMessages = expected.iterator();
-        for (Message actualMessage : actual) {
-            Message expectedMessage = expectedMessages.next();
+        Iterator<Message<Object>> expectedMessages = expected.iterator();
+        for (Message<Object> actualMessage : actual) {
+            Message<Object> expectedMessage = expectedMessages.next();
             assertEquals(expectedMessage.getSequence(), actualMessage.getSequence());
 
-            Map<String, String> expectedData =
-                    MAPPER.readValue(expectedMessage.getData(), MAPPER_TYPE_REF);
-            Map<String, String> actualData =
-                    MAPPER.readValue(actualMessage.getData(), MAPPER_TYPE_REF);
+            Map<String, Object> expectedData = expectedMessage.getData();
+            Map<String, Object> actualData = actualMessage.getData();
 
             assertEquals(expectedData.size(), actualData.size());
 
-            for (Map.Entry<String, String> e : expectedData.entrySet()) {
+            for (Map.Entry<String, Object> e : expectedData.entrySet()) {
                 String key = e.getKey();
-                String value = e.getValue();
+                Object value = e.getValue();
                 assertEquals(value, actualData.get(key));
             }
         }

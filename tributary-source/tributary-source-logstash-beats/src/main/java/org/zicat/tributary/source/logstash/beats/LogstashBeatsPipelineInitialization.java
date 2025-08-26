@@ -29,10 +29,15 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import org.logstash.beats.*;
 import org.logstash.netty.SslContextBuilder;
 import org.logstash.netty.SslHandlerProvider;
+import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
+import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
+import org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder;
+
+import java.io.IOException;
 
 /** LogstashBeatsPipelineInitialization. */
 public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitialization {
@@ -45,15 +50,21 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
     protected final SslHandlerProvider sslHandlerProvider;
     protected final DefaultNettySource source;
     protected final EventExecutorGroup beatsHandlerExecutorGroup;
+    protected final MessageFilterFactory messageFilterFactory;
 
     public LogstashBeatsPipelineInitialization(DefaultNettySource source) throws Exception {
         super(source);
         this.source = source;
-        this.sslHandlerProvider = createSslHandlerProvider(source.getConfig());
+        final ReadableConfig conf = source.getConfig();
+        this.sslHandlerProvider = createSslHandlerProvider(conf);
         this.beatsHandlerExecutorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-logstashBeatsHandler",
-                        source.getConfig().get(OPTION_LOGSTASH_BEATS_WORKER_THREADS));
+                        conf.get(OPTION_LOGSTASH_BEATS_WORKER_THREADS));
+        this.messageFilterFactory =
+                MessageFilterFactoryBuilder.newBuilder()
+                        .config(conf.filterAndRemovePrefixKey(CONFIG_PREFIX))
+                        .buildAndOpen();
     }
 
     @Override
@@ -67,7 +78,7 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
         pipeline.addLast(BEATS_ACKER, new AckEncoder());
         pipeline.addLast(CONNECTION_HANDLER, new ConnectionHandler());
         final BatchMessageListener listener =
-                new Message2ChannelListener(source, selectPartition());
+                new Message2ChannelListener(source, selectPartition(), messageFilterFactory);
         pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(), new BeatsHandler(listener));
     }
 
@@ -108,5 +119,14 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
         return new SslHandlerProvider(
                 sslBuilder.buildContext(),
                 config.get(OPTION_LOGSTASH_BEATS_SSL_TIMEOUT).toMillis());
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            super.close();
+        } finally {
+            IOUtils.closeQuietly(messageFilterFactory);
+        }
     }
 }

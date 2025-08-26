@@ -2,7 +2,6 @@ package org.logstash.beats;
 
 import static org.junit.Assert.assertEquals;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
@@ -10,6 +9,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.beats.BatchMessageListener;
 
 import java.security.SecureRandom;
@@ -30,29 +30,29 @@ public class BeatsHandlerTest {
 
     /** SpyListener. */
     private static class SpyListener implements BatchMessageListener {
-        private final List<Message> lastMessages = new ArrayList<Message>();
+        private final List<Message<Object>> lastMessages = new ArrayList<>();
 
         @Override
-        public void consume(Iterator<Message> iterator) {
+        public void consume(Iterator<Message<Object>> iterator) {
             while (iterator.hasNext()) {
-                Message message = iterator.next();
+                Message<Object> message = iterator.next();
                 lastMessages.add(message);
             }
         }
 
-        public List<Message> getLastMessages() {
+        public List<Message<Object>> getLastMessages() {
             return lastMessages;
         }
     }
 
     @Before
-    public void setup() throws JsonProcessingException {
+    public void setup() {
         spyListener = new SpyListener();
         batch = new V1Batch();
         batch.setBatchSize(messageCount);
         for (int i = 0; i < messageCount; i++) {
-            Message message =
-                    new Message(i + startSequenceNumber, MAPPER.writeValueAsBytes(new HashMap<>()));
+            Message<Object> message =
+                    new Message<>(batch, i + startSequenceNumber, new HashMap<>());
             batch.addMessage(message);
         }
     }

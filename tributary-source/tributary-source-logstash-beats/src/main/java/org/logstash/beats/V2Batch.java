@@ -1,18 +1,30 @@
 package org.logstash.beats;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.source.logstash.base.Message;
 
+import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Implementation of {@link Batch} for the v2 protocol backed by ByteBuf. *must* be released after
  * use.
  */
 public class V2Batch implements Batch {
+
+    public static final ObjectMapper MAPPER =
+            new ObjectMapper().registerModule(new AfterburnerModule());
+    private static final TypeReference<Map<String, Object>> MAPPER_TYPE_REF =
+            new TypeReference<Map<String, Object>>() {};
 
     private static final Logger logger = LoggerFactory.getLogger(V2Batch.class);
     private static volatile int lastNotifiedMaxOrder = -1;
@@ -38,26 +50,32 @@ public class V2Batch implements Batch {
     }
 
     @SuppressWarnings("NullableProblems")
-    public Iterator<Message> iterator() {
+    public Iterator<Message<Object>> iterator() {
         internalBuffer.resetReaderIndex();
-        return new Iterator<Message>() {
+        return new Iterator<Message<Object>>() {
             @Override
             public boolean hasNext() {
                 return read < written;
             }
 
             @Override
-            public Message next() {
+            public Message<Object> next() {
                 int sequenceNumber = internalBuffer.readInt();
                 int readableBytes = internalBuffer.readInt();
-                Message message =
-                        new Message(
-                                sequenceNumber,
-                                internalBuffer.slice(internalBuffer.readerIndex(), readableBytes));
-                internalBuffer.readerIndex(internalBuffer.readerIndex() + readableBytes);
-                message.setBatch(V2Batch.this);
-                read++;
-                return message;
+                final byte[] bs =
+                        toBytes(internalBuffer.slice(internalBuffer.readerIndex(), readableBytes));
+                try {
+                    Message<Object> message =
+                            new Message<>(
+                                    V2Batch.this,
+                                    sequenceNumber,
+                                    MAPPER.readValue(bs, MAPPER_TYPE_REF));
+                    internalBuffer.readerIndex(internalBuffer.readerIndex() + readableBytes);
+                    read++;
+                    return message;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         };
     }
@@ -178,5 +196,11 @@ public class V2Batch implements Batch {
     // visible for testing
     public static void resetReportedOrders() {
         lastNotifiedMaxOrder = -1;
+    }
+
+    private static byte[] toBytes(ByteBuf buffer) {
+        byte[] bytes = new byte[buffer.readableBytes()];
+        buffer.getBytes(buffer.readerIndex(), bytes);
+        return bytes;
     }
 }

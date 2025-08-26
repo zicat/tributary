@@ -18,11 +18,16 @@
 
 package org.zicat.tributary.source.logstash.beats;
 
-import org.logstash.beats.Message;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.source.base.Source;
+import org.zicat.tributary.source.logstash.base.Message;
+import org.zicat.tributary.source.logstash.base.MessageFilter;
+import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -30,24 +35,37 @@ import java.util.*;
 /** Message2ChannelListener. */
 public class Message2ChannelListener implements BatchMessageListener {
 
+    public static final ObjectMapper MAPPER =
+            new ObjectMapper().registerModule(new AfterburnerModule());
     private final Source source;
     private final int partition;
+    private final MessageFilterFactory messageFilterFactory;
+    private volatile MessageFilter<Object> filter;
 
-    public Message2ChannelListener(Source source, int partition) {
+    public Message2ChannelListener(
+            Source source, int partition, MessageFilterFactory messageFilterFactory) {
         this.source = source;
         this.partition = partition;
+        this.messageFilterFactory = messageFilterFactory;
     }
 
     @Override
-    public void consume(Iterator<Message> iterator) throws InterruptedException, IOException {
+    public void consume(Iterator<Message<Object>> iterator)
+            throws InterruptedException, IOException {
         final List<Record> recordList = new ArrayList<>();
         while (iterator.hasNext()) {
-            final Message message = iterator.next();
+            final Message<Object> message = iterator.next();
             if (message == null) {
                 continue;
             }
-            final Record record = new DefaultRecord(message.getData());
+            if (!messageFilterFactory.getMessageFilter().filter(message)) {
+                continue;
+            }
+            final Record record = new DefaultRecord(MAPPER.writeValueAsBytes(message.getData()));
             recordList.add(record);
+        }
+        if (recordList.isEmpty()) {
+            return;
         }
         source.append(partition, new DefaultRecords(source.sourceId(), null, recordList));
     }

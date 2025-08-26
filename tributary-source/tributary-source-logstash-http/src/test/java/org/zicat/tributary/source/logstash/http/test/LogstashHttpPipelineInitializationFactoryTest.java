@@ -18,8 +18,12 @@
 
 package org.zicat.tributary.source.logstash.http.test;
 
+import org.zicat.tributary.common.records.RecordsUtils;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.MAPPER;
 import static org.zicat.tributary.source.http.test.HttpPipelineInitializationFactoryTest.*;
+import org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory;
+import static org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory.OPTION_LOCAL_FILE_PATH;
+import static org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder.OPTION_MESSAGE_FILTER_FACTORY_ID;
 import static org.zicat.tributary.source.logstash.http.LogstashHttpPipelineInitializationFactory.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -37,7 +41,6 @@ import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
@@ -135,14 +138,17 @@ public class LogstashHttpPipelineInitializationFactoryTest {
             Assert.assertFalse(resultSet.isEmpty());
             final Records records = Records.parse(resultSet.next());
             Assert.assertEquals(1, records.count());
-            final Record record = records.iterator().next();
-            final Map<String, Object> data = MAPPER.readValue(record.value(), MAP_STRING_TYPE);
-            Assert.assertEquals("test", data.get("message"));
-            Assert.assertEquals(1, ((Map<?, ?>) data.get("request_headers")).size());
-            Assert.assertNotNull(data.get("remote_host"));
-            Assert.assertArrayEquals(
-                    new String[] {"t1", "t2"},
-                    ((List<?>) data.get("tags")).toArray(new Object[] {}));
+            RecordsUtils.foreachRecord(
+                    records,
+                    (key, value, allHeaders) -> {
+                        Map<String, Object> data = MAPPER.readValue(value, MAP_STRING_TYPE);
+                        Assert.assertEquals("test", data.get("message"));
+                        Assert.assertEquals(1, ((Map<?, ?>) data.get("request_headers")).size());
+                        Assert.assertNotNull(data.get("remote_host"));
+                        Assert.assertArrayEquals(
+                                new String[] {"t1", "t2"},
+                                ((List<?>) data.get("tags")).toArray(new Object[] {}));
+                    });
         }
     }
 
@@ -194,10 +200,126 @@ public class LogstashHttpPipelineInitializationFactoryTest {
             Assert.assertFalse(resultSet.isEmpty());
             final Records records = Records.parse(resultSet.next());
             Assert.assertEquals(1, records.count());
-            final Record record = records.iterator().next();
-            final Map<String, Object> data = MAPPER.readValue(record.value(), MAP_STRING_TYPE);
-            Assert.assertEquals(1, data.size());
-            Assert.assertEquals(1, data.get("id"));
+            RecordsUtils.foreachRecord(
+                    records,
+                    (key, value, allHeaders) -> {
+                        Map<String, Object> data = MAPPER.readValue(value, MAP_STRING_TYPE);
+                        Assert.assertEquals(1, data.size());
+                        Assert.assertEquals((Integer) 1, data.get("id"));
+                    });
+        }
+    }
+
+    @Test
+    public void testMessageFilter() throws Exception {
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1);
+        config.put(OPTION_LOGSTASH_CODEC, Codec.JSON);
+        config.put(
+                CONFIG_PREFIX + OPTION_MESSAGE_FILTER_FACTORY_ID.key(),
+                LocalFileMessageFilterFactory.IDENTITY);
+        config.put(CONFIG_PREFIX + OPTION_LOCAL_FILE_PATH.key(), "DefaultMessageFilterTest.txt");
+
+        final PipelineInitializationFactory factory =
+                SpiFactory.findFactory(
+                        LogstashHttpPipelineInitializationFactory.IDENTITY,
+                        PipelineInitializationFactory.class);
+
+        try (Channel channel =
+                        MemoryChannelTestUtils.memoryChannelFactory(groupId)
+                                .createChannel(topic, null);
+                DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
+            final PipelineInitialization pipelineInitialization =
+                    factory.createPipelineInitialization(source);
+            final EmbeddedChannel serverChannel = new EmbeddedChannel();
+            pipelineInitialization.init(serverChannel);
+
+            final HttpHeaders headers = new DefaultHttpHeaders();
+            headers.add("my_header1", "1111");
+
+            serverChannel.writeInbound(
+                    new DefaultFullHttpRequest(
+                            HttpVersion.HTTP_1_1,
+                            HttpMethod.POST,
+                            "/",
+                            ByteBufAllocator.DEFAULT
+                                    .buffer()
+                                    .writeBytes("{\"id\":1}".getBytes(StandardCharsets.UTF_8)),
+                            headers,
+                            EmptyHttpHeaders.INSTANCE));
+            ByteBuf response = serverChannel.readOutbound();
+            try (final BufferedReader reader =
+                    HttpPipelineInitializationFactoryTest.parse(response)) {
+                final String protocol = reader.readLine();
+                Assert.assertEquals(HTTP_OK_REQUEST, protocol);
+                Assert.assertEquals("ok", readBody(reader));
+            } finally {
+                response.release();
+            }
+
+            channel.flush();
+            RecordsResultSet resultSet = channel.poll(0, Offset.ZERO, 10, TimeUnit.MILLISECONDS);
+            Assert.assertFalse(resultSet.isEmpty());
+            final Records records = Records.parse(resultSet.next());
+            Assert.assertEquals(1, records.count());
+            RecordsUtils.foreachRecord(
+                    records,
+                    (key, value, allHeaders) -> {
+                        Map<String, Object> data = MAPPER.readValue(value, MAP_STRING_TYPE);
+                        Assert.assertEquals((Integer) 1, data.get("id"));
+                        Assert.assertEquals("_test_value", data.get("_test"));
+                        Assert.assertEquals(2, data.size());
+                    });
+
+            // test filter return false
+            serverChannel.writeInbound(
+                    new DefaultFullHttpRequest(
+                            HttpVersion.HTTP_1_1,
+                            HttpMethod.POST,
+                            "/",
+                            ByteBufAllocator.DEFAULT
+                                    .buffer()
+                                    .writeBytes(
+                                            "{\"id\":1, \"_test_test\":123}"
+                                                    .getBytes(StandardCharsets.UTF_8)),
+                            headers,
+                            EmptyHttpHeaders.INSTANCE));
+            serverChannel.writeInbound(
+                    new DefaultFullHttpRequest(
+                            HttpVersion.HTTP_1_1,
+                            HttpMethod.POST,
+                            "/",
+                            ByteBufAllocator.DEFAULT
+                                    .buffer()
+                                    .writeBytes(
+                                            "{\"id\":2, \"test_test\":123}"
+                                                    .getBytes(StandardCharsets.UTF_8)),
+                            headers,
+                            EmptyHttpHeaders.INSTANCE));
+            ByteBuf response2 = serverChannel.readOutbound();
+            try (final BufferedReader reader =
+                    HttpPipelineInitializationFactoryTest.parse(response2)) {
+                final String protocol = reader.readLine();
+                Assert.assertEquals(HTTP_OK_REQUEST, protocol);
+                Assert.assertEquals("ok", readBody(reader));
+            } finally {
+                response2.release();
+            }
+            channel.flush();
+            RecordsResultSet resultSet2 =
+                    channel.poll(0, resultSet.nexOffset(), 10, TimeUnit.MILLISECONDS);
+            Assert.assertFalse(resultSet2.isEmpty());
+            final Records records2 = Records.parse(resultSet2.next());
+            Assert.assertEquals(1, records2.count());
+            RecordsUtils.foreachRecord(
+                    records2,
+                    (key, value, allHeaders) -> {
+                        Map<String, Object> data = MAPPER.readValue(value, MAP_STRING_TYPE);
+                        Assert.assertEquals((Integer) 2, data.get("id"));
+                        Assert.assertEquals("_test_value", data.get("_test"));
+                        Assert.assertEquals((Integer) 123, data.get("test_test"));
+                        Assert.assertEquals(3, data.size());
+                    });
         }
     }
 }

@@ -1,5 +1,7 @@
 package org.logstash.beats;
 
+import org.zicat.tributary.source.logstash.base.Message;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -8,7 +10,7 @@ import java.util.List;
 public class V1Batch implements Batch {
 
     private int batchSize;
-    private final List<Message> messages = new ArrayList<>();
+    private final List<Message<Object>> messages = new ArrayList<>();
     private byte protocol = Protocol.VERSION_1;
     private int highestSequence = -1;
 
@@ -26,8 +28,7 @@ public class V1Batch implements Batch {
      *
      * @param message Message to add to the batch
      */
-    public void addMessage(Message message) {
-        message.setBatch(this);
+    public void addMessage(Message<Object> message) {
         messages.add(message);
         if (message.getSequence() > highestSequence) {
             highestSequence = message.getSequence();
@@ -36,7 +37,7 @@ public class V1Batch implements Batch {
 
     @SuppressWarnings("NullableProblems")
     @Override
-    public Iterator<Message> iterator() {
+    public Iterator<Message<Object>> iterator() {
         return messages.iterator();
     }
 

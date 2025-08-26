@@ -26,6 +26,8 @@ import org.zicat.tributary.common.PathParams;
 import org.zicat.tributary.common.records.*;
 import org.zicat.tributary.source.base.netty.AbstractNettySource;
 import org.zicat.tributary.source.http.HttpMessageDecoder;
+import org.zicat.tributary.source.logstash.base.Message;
+import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -46,6 +48,8 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
     protected final String remoteHostTargetField;
     protected final String requestHeadersTargetField;
     protected final List<String> tags;
+    protected final MessageFilterFactory messageFilterFactory;
+    protected int offset;
 
     public LogstashHttpMessageDecoder(
             AbstractNettySource source,
@@ -55,12 +59,14 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
             Codec codec,
             String remoteHostTargetField,
             String requestHeadersTargetField,
-            List<String> tags) {
+            List<String> tags,
+            MessageFilterFactory messageFilterFactory) {
         super(source, defaultPartition, path, authToken);
         this.codec = codec;
         this.remoteHostTargetField = remoteHostTargetField;
         this.requestHeadersTargetField = requestHeadersTargetField;
         this.tags = tags;
+        this.messageFilterFactory = messageFilterFactory;
     }
 
     @Override
@@ -77,6 +83,10 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
         }
         if (tags != null && !tags.isEmpty()) {
             data.put(KEY_TAGS, tags);
+        }
+        final Message<Object> message = new Message<>(offset++, data);
+        if (!messageFilterFactory.getMessageFilter().filter(message)) {
+            return null;
         }
         final Record record = new DefaultRecord(MAPPER.writeValueAsBytes(data));
         return new SingleRecords(topic, record);

@@ -46,4 +46,13 @@ public class Strings {
     public static String blank2Null(String value) {
         return value == null || value.trim().isEmpty() ? null : value;
     }
+
+    /**
+     * is blank.
+     * @param value value
+     * @return boolean
+     */
+    public static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
 }

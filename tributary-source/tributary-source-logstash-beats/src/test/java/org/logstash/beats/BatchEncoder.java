@@ -1,6 +1,6 @@
 package org.logstash.beats;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
@@ -10,6 +10,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.source.logstash.base.Message;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,8 +24,6 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
     public static final ObjectMapper MAPPER =
             new ObjectMapper().registerModule(new AfterburnerModule());
-    private static final TypeReference<Map<String, String>> MAPPER_TYPE_REF =
-            new TypeReference<Map<String, String>>() {};
 
     private static final Logger logger = LoggerFactory.getLogger(BatchEncoder.class);
 
@@ -45,9 +44,8 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
     protected ByteBuf getPayload(ChannelHandlerContext ctx, Batch batch) throws IOException {
         ByteBuf payload = ctx.alloc().buffer();
-
         // Aggregates the payload that we could decide to compress or not.
-        for (Message message : batch) {
+        for (Message<Object> message : batch) {
             if (batch.getProtocol() == Protocol.VERSION_2) {
                 encodeMessageWithJson(payload, message);
             } else {
@@ -57,26 +55,25 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
         return payload;
     }
 
-    public static void encodeMessageWithJson(ByteBuf payload, Message message) {
+    public static void encodeMessageWithJson(ByteBuf payload, Message<Object> message)
+            throws JsonProcessingException {
         payload.writeByte(Protocol.VERSION_2);
         payload.writeByte('J');
         payload.writeInt(message.getSequence());
-        byte[] bs = message.getData();
+        final byte[] bs = MAPPER.writeValueAsBytes(message.getData());
         payload.writeInt(bs.length);
         payload.writeBytes(bs);
     }
 
-    public static void encodeMessageWithFields(ByteBuf payload, Message message)
-            throws IOException {
+    public static void encodeMessageWithFields(ByteBuf payload, Message<Object> message) {
         payload.writeByte(Protocol.VERSION_1);
         payload.writeByte('D');
         payload.writeInt(message.getSequence());
-        final byte[] bytes = message.getData();
-        final Map<String, String> data = MAPPER.readValue(bytes, MAPPER_TYPE_REF);
+        final Map<String, Object> data = message.getData();
         payload.writeInt(data.size());
-        for (Map.Entry<String, String> e : data.entrySet()) {
+        for (Map.Entry<String, Object> e : data.entrySet()) {
             final byte[] key = e.getKey().getBytes(StandardCharsets.UTF_8);
-            final byte[] value = e.getValue().getBytes(StandardCharsets.UTF_8);
+            final byte[] value = e.getValue().toString().getBytes(StandardCharsets.UTF_8);
             logger.debug("New entry: key: {}, value: {}", key, value);
             payload.writeInt(key.length);
             payload.writeBytes(key);

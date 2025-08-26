@@ -28,6 +28,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -286,6 +287,17 @@ public class IOUtils {
         return byteBuffer;
     }
 
+    public static byte[] readFully(InputStream inputStream) throws IOException {
+        try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int n;
+            while ((n = inputStream.read(buffer)) != -1) {
+                byteArrayOutputStream.write(buffer, 0, n);
+            }
+            return byteArrayOutputStream.toByteArray();
+        }
+    }
+
     /**
      * write bytebuffer to channel.
      *
@@ -434,5 +446,24 @@ public class IOUtils {
             return;
         }
         concurrentCloseQuietly(Arrays.asList(closeableList));
+    }
+
+    /**
+     * transform file.
+     *
+     * @param source source
+     * @param target target
+     * @throws IOException IOException
+     */
+    public static void transform(File source, File target) throws IOException {
+        try (InputStream in = Files.newInputStream(source.toPath());
+                OutputStream os = Files.newOutputStream(target.toPath())) {
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) != -1) {
+                os.write(buf, 0, len);
+            }
+            os.flush();
+        }
     }
 }

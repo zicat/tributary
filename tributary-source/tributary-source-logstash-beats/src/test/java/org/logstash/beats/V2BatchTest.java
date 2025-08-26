@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.source.logstash.base.Message;
 
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -79,11 +80,13 @@ public class V2BatchTest {
         try {
             ByteBuf content = messageContents();
             for (int i = 0; i < size; i++) {
+                content.markReaderIndex();
                 batch.addMessage(i, content, content.readableBytes());
+                content.resetReaderIndex();
             }
             assertEquals(size, batch.size());
             int i = 0;
-            for (Message message : batch) {
+            for (Message<Object> message : batch) {
                 assertEquals(message.getSequence(), i++);
             }
         } finally {

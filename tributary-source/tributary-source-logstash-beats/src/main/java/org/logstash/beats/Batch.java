@@ -1,7 +1,9 @@
 package org.logstash.beats;
 
+import org.zicat.tributary.source.logstash.base.Message;
+
 /** Interface representing a Batch of {@link Message}. */
-public interface Batch extends Iterable<Message> {
+public interface Batch extends Iterable<Message<Object>> {
     /**
      * Returns the protocol of the send messages that this batch was constructed from.
      *

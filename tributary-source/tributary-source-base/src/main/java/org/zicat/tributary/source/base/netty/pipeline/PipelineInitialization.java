@@ -30,5 +30,5 @@ public interface PipelineInitialization extends Closeable {
      *
      * @param socketChannel socketChannel
      */
-    void init(Channel socketChannel);
+    void init(Channel socketChannel) throws Exception;
 }

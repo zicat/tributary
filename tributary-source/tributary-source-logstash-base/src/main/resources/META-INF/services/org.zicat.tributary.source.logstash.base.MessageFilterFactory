@@ -1,0 +1,2 @@
+org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory
+org.zicat.tributary.source.logstash.base.DefaultMessageFilterFactory

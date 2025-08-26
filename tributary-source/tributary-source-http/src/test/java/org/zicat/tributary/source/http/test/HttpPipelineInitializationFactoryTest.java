@@ -88,7 +88,7 @@ public class HttpPipelineInitializationFactoryTest {
     }
 
     private void assertOkRequest(PipelineInitialization pipelineInitialization, Channel channel)
-            throws IOException, InterruptedException {
+            throws Exception {
         final byte[] body1 =
                 "[{\"key\":\"key1\",\"value\":\"value1\",\"headers\":{\"header1\":\"value1\",\"header11\":\"value11\"}}]"
                         .getBytes(StandardCharsets.UTF_8);
@@ -158,7 +158,7 @@ public class HttpPipelineInitializationFactoryTest {
                 "value22", new String(record2.headers().get("header22"), StandardCharsets.UTF_8));
     }
 
-    private void assertErrorJson(PipelineInitialization pipelineInitialization) throws IOException {
+    private void assertErrorJson(PipelineInitialization pipelineInitialization) throws Exception {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
@@ -180,7 +180,7 @@ public class HttpPipelineInitializationFactoryTest {
     }
 
     private void assertTopicNotFound(PipelineInitialization pipelineInitialization)
-            throws IOException {
+            throws Exception {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
@@ -202,7 +202,7 @@ public class HttpPipelineInitializationFactoryTest {
     }
 
     private void assertErrorContentType(PipelineInitialization pipelineInitialization)
-            throws IOException {
+            throws Exception {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
@@ -219,7 +219,7 @@ public class HttpPipelineInitializationFactoryTest {
     }
 
     private void assertPathNotMatch(PipelineInitialization pipelineInitialization)
-            throws IOException {
+            throws Exception {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
@@ -235,7 +235,7 @@ public class HttpPipelineInitializationFactoryTest {
     }
 
     private void assertNotPostRequest(PipelineInitialization pipelineInitialization)
-            throws IOException {
+            throws Exception {
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         pipelineInitialization.init(embeddedChannel);
         embeddedChannel.writeInbound(
