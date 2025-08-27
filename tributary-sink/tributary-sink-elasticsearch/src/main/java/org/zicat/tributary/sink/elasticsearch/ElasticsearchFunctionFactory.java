@@ -103,11 +103,6 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description(
                             "await timeout when queue is full, default value is connection.request-timeout")
                     .defaultValue(Duration.ofSeconds(30));
-    public static final ConfigOption<Duration> OPTION_IDLE_TRIGGER =
-            ConfigOptions.key("idle.trigger")
-                    .durationType()
-                    .description("idle trigger, default 30s")
-                    .defaultValue(Duration.ofSeconds(30));
 
     public static final String IDENTITY = "elasticsearch";
 

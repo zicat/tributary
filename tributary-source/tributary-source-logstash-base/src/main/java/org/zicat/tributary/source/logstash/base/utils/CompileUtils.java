@@ -32,7 +32,7 @@ public final class CompileUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CompileUtils.class);
     private static final String PATTERN_PACKAGE = "package\\s+[^;]+;";
     private static final Pattern PATTERN_CLAS_NAME =
-            Pattern.compile("class\\s+(\\w+)\\s+implements\\s+MessageFilter");
+            Pattern.compile("class\\s+(\\w+)\\s");
 
     @SuppressWarnings("unchecked")
     public static synchronized <T> Class<T> doCompile(String name, String code) {

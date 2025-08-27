@@ -58,7 +58,6 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected transient RequestIndexer indexer;
     protected transient BlockingQueue<DefaultActionListener> listenerQueue;
     protected transient long awaitTimeout;
-    protected transient Offset lastOffset;
 
     @Override
     public void open(Context context) throws Exception {
@@ -89,7 +88,6 @@ public class ElasticsearchFunction extends AbstractFunction {
                     defaultSinkExtraHeaders());
         }
         sendAsync(request, offset);
-        lastOffset = offset;
         sinkCounter.inc(sendCount.get());
     }
 

@@ -21,14 +21,19 @@ package org.zicat.tributary.common.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.IOUtils;
+import static org.zicat.tributary.common.IOUtils.concurrentCloseQuietly;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** IOUtilsTest. */
@@ -201,5 +206,55 @@ public class IOUtilsTest {
         dataBuffer.putInt(bs.length).put(bs).flip();
         dataBuffer.getInt();
         return dataBuffer;
+    }
+
+    @SuppressWarnings("resource")
+    @Test
+    public void testConcurrentCloseQuietly() {
+        final TestCloseable[] closeables = {
+            new TestCloseable(), new TestCloseable(), new TestCloseable()
+        };
+        concurrentCloseQuietly(closeables);
+        for (TestCloseable closeable : closeables) {
+            Assert.assertTrue(closeable.closed.get());
+        }
+        concurrentCloseQuietly((TestCloseable[]) null);
+    }
+
+    @Test
+    public void testTransform() throws IOException {
+        File source = Files.createTempFile("test_transform", ".txt").toFile();
+        try {
+            final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            for (int i = 0; i < 1024; i++) {
+                bytes.write("aaaa".getBytes(StandardCharsets.UTF_8));
+            }
+            try (OutputStream os = Files.newOutputStream(source.toPath())) {
+                os.write(bytes.toByteArray());
+                os.flush();
+            }
+            File target = File.createTempFile("test_transform_target", ".txt");
+            try {
+                IOUtils.transform(source, target);
+                try (InputStream is = Files.newInputStream(target.toPath())) {
+                    byte[] targetBs = IOUtils.readFully(is);
+                    Assert.assertArrayEquals(bytes.toByteArray(), targetBs);
+                }
+            } finally {
+                Assert.assertTrue(target.delete());
+            }
+        } finally {
+            Assert.assertTrue(source.delete());
+        }
+    }
+
+    /** TestCloseable. */
+    private static class TestCloseable implements Closeable {
+        public final AtomicBoolean closed = new AtomicBoolean(false);
+
+        @Override
+        public void close() {
+            closed.set(true);
+        }
     }
 }

@@ -26,7 +26,6 @@ import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.logstash.base.Message;
-import org.zicat.tributary.source.logstash.base.MessageFilter;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ public class Message2ChannelListener implements BatchMessageListener {
     private final Source source;
     private final int partition;
     private final MessageFilterFactory messageFilterFactory;
-    private volatile MessageFilter<Object> filter;
 
     public Message2ChannelListener(
             Source source, int partition, MessageFilterFactory messageFilterFactory) {

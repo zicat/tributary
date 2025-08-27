@@ -32,4 +32,20 @@ public class StringsTest {
         Assert.assertEquals("bb", Strings.removeLastIfMatch("bbbb", "bb"));
         Assert.assertEquals("cccc", Strings.removeLastIfMatch("cccc", "bb"));
     }
+
+    @Test
+    public void testIsBlank() {
+        Assert.assertTrue(Strings.isBlank(null));
+        Assert.assertTrue(Strings.isBlank(""));
+        Assert.assertTrue(Strings.isBlank("   "));
+        Assert.assertFalse(Strings.isBlank("  a  "));
+    }
+
+    @Test
+    public void testBlank2Null() {
+        Assert.assertNull(Strings.blank2Null(null));
+        Assert.assertNull(Strings.blank2Null(""));
+        Assert.assertNull(Strings.blank2Null("   "));
+        Assert.assertEquals("  a  ", Strings.blank2Null("  a  "));
+    }
 }
