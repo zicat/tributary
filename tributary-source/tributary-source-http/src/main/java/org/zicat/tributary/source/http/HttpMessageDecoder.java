@@ -35,7 +35,7 @@ import org.zicat.tributary.common.PathParams;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.AbstractNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -75,13 +75,13 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     public static final String RESPONSE_BAD_TOPIC_NOT_IN_PARAMS =
             HTTP_QUERY_KEY_TOPIC + " not found in params";
 
-    protected final AbstractNettySource source;
+    protected final NettySource source;
     protected final String path;
     protected final int defaultPartition;
     protected final String authToken;
 
     public HttpMessageDecoder(
-            AbstractNettySource source, int defaultPartition, String path, String authToken) {
+            NettySource source, int defaultPartition, String path, String authToken) {
         this.source = source;
         this.defaultPartition = defaultPartition;
         this.path = path;

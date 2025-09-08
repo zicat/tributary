@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.source.http;
 
+import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
 import static org.zicat.tributary.source.http.HttpPipelineInitializationFactory.*;
 
@@ -32,8 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.Strings;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
-import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
 import java.nio.charset.StandardCharsets;
@@ -45,13 +44,11 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
     private static final Logger LOG = LoggerFactory.getLogger(HttpPipelineInitialization.class);
     protected final String path;
     protected final int maxContentLength;
-    protected final DefaultNettySource source;
     protected final EventExecutorGroup httpHandlerExecutorGroup;
     protected final String authToken;
 
-    public HttpPipelineInitialization(DefaultNettySource source) {
+    public HttpPipelineInitialization(NettySource source) {
         super(source);
-        this.source = source;
         final ReadableConfig conf = source.getConfig();
         this.path = formatPath(conf.get(OPTIONS_PATH));
         this.maxContentLength = maxContentLength(conf);
@@ -62,14 +59,12 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
     }
 
     @Override
-    public void init(Channel channel) throws Exception {
+    public void init(Channel channel) {
         final ChannelPipeline pip = channel.pipeline();
-        pip.addLast(new HttpResponseEncoder());
-        pip.addLast(source.idleStateHandler());
-        pip.addLast(new IdleCloseHandler());
-        pip.addLast(new HttpRequestDecoder());
-        pip.addLast(new HttpObjectAggregator(maxContentLength));
-        pip.addLast(httpHandlerExecutorGroup, createHttpMessageDecoder());
+        idleClosedChannelPipeline(pip.addLast(new HttpResponseEncoder()))
+                .addLast(new HttpRequestDecoder())
+                .addLast(new HttpObjectAggregator(maxContentLength))
+                .addLast(httpHandlerExecutorGroup, createHttpMessageDecoder());
     }
 
     /**

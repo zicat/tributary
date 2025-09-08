@@ -19,6 +19,7 @@
 package org.zicat.tributary.source.logstash.http.test;
 
 import org.zicat.tributary.common.records.RecordsUtils;
+import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.MAPPER;
 import static org.zicat.tributary.source.http.test.HttpPipelineInitializationFactoryTest.*;
 import org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory;
@@ -42,10 +43,9 @@ import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
-import org.zicat.tributary.source.base.test.netty.DefaultNettySourceMock;
+import org.zicat.tributary.source.base.test.netty.NettySourceMock;
 import org.zicat.tributary.source.http.test.HttpPipelineInitializationFactoryTest;
 import org.zicat.tributary.source.logstash.http.Codec;
 import org.zicat.tributary.source.logstash.http.LogstashHttpPipelineInitializationFactory;
@@ -85,7 +85,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
         try (Channel channel =
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)
                                 .createChannel(topic, null);
-                DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
+                NettySource source = new NettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -167,7 +167,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
         try (Channel channel =
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)
                                 .createChannel(topic, null);
-                DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
+                NettySource source = new NettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -228,7 +228,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
         try (Channel channel =
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)
                                 .createChannel(topic, null);
-                DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
+                NettySource source = new NettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();

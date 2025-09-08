@@ -18,20 +18,23 @@
 
 package org.zicat.tributary.source.base.test.netty;
 
-import static org.zicat.tributary.source.base.netty.AbstractNettySourceFactory.OPTION_NETTY_HOST;
-import static org.zicat.tributary.source.base.netty.AbstractNettySourceFactory.OPTION_NETTY_THREADS_EVENT_LOOP;
-import static org.zicat.tributary.source.base.netty.DefaultNettySourceFactory.OPTION_NETTY_IDLE;
+import org.zicat.tributary.source.base.netty.NettySource;
+import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NETTY_HOST;
+import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NETTY_IDLE;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NETTY_THREADS_EVENT_LOOP;
+import org.zicat.tributary.source.base.netty.pipeline.LengthPipelineInitialization;
+import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 
 import java.time.Duration;
 
-/** DefaultNettySourceMock. */
-public class DefaultNettySourceMock extends DefaultNettySource {
-    public DefaultNettySourceMock(
+/** NettySourceMock. */
+public class NettySourceMock extends NettySource {
+
+    public NettySourceMock(
             String sourceId,
             ReadableConfig config,
             String host,
@@ -40,10 +43,10 @@ public class DefaultNettySourceMock extends DefaultNettySource {
             Channel channel,
             Duration idle)
             throws Exception {
-        super(sourceId, config, host, port, eventThreads, channel, idle);
+        super(sourceId, config, channel, host, port, eventThreads, idle.toMillis());
     }
 
-    public DefaultNettySourceMock(int port, Channel channel) throws Exception {
+    public NettySourceMock(int port, Channel channel) throws Exception {
         this(
                 "",
                 new DefaultReadableConfig(),
@@ -54,11 +57,11 @@ public class DefaultNettySourceMock extends DefaultNettySource {
                 OPTION_NETTY_IDLE.defaultValue());
     }
 
-    public DefaultNettySourceMock(ReadableConfig config, Channel channel) throws Exception {
+    public NettySourceMock(ReadableConfig config, Channel channel) throws Exception {
         this(config, OPTION_NETTY_HOST.defaultValue(), 0, channel);
     }
 
-    public DefaultNettySourceMock(ReadableConfig config, String sourceId, Channel channel)
+    public NettySourceMock(ReadableConfig config, String sourceId, Channel channel)
             throws Exception {
         this(
                 sourceId,
@@ -70,7 +73,7 @@ public class DefaultNettySourceMock extends DefaultNettySource {
                 OPTION_NETTY_IDLE.defaultValue());
     }
 
-    public DefaultNettySourceMock(ReadableConfig config, String host, int port, Channel channel)
+    public NettySourceMock(ReadableConfig config, String host, int port, Channel channel)
             throws Exception {
         this(
                 "",
@@ -82,7 +85,12 @@ public class DefaultNettySourceMock extends DefaultNettySource {
                 OPTION_NETTY_IDLE.defaultValue());
     }
 
-    public DefaultNettySourceMock(Channel channel) throws Exception {
+    public NettySourceMock(Channel channel) throws Exception {
         this(0, channel);
+    }
+
+    @Override
+    protected PipelineInitialization createPipelineInitialization() throws Exception {
+        return new LengthPipelineInitialization(this);
     }
 }

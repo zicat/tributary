@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.server;
 
-import static org.zicat.tributary.source.base.netty.AbstractNettySource.*;
+import static org.zicat.tributary.source.base.netty.NettySource.*;
 import static org.zicat.tributary.source.base.utils.HostUtils.realHostAddress;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.addTextPlainUtf8Headers;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.notFoundResponse;

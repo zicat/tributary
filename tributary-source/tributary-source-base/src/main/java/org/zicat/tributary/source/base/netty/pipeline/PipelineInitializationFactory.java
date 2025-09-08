@@ -19,7 +19,7 @@
 package org.zicat.tributary.source.base.netty.pipeline;
 
 import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 
 /** PipelineInitializationFactory. */
 public interface PipelineInitializationFactory extends SpiFactory {
@@ -29,5 +29,5 @@ public interface PipelineInitializationFactory extends SpiFactory {
      *
      * @return PipelineInitialization
      */
-    PipelineInitialization createPipelineInitialization(DefaultNettySource source) throws Exception;
+    PipelineInitialization createPipelineInitialization(NettySource source) throws Exception;
 }

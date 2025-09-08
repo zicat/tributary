@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.base.netty.pipeline;
 
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 
 /** LinePipelineInitializationFactory. */
 public class LinePipelineInitializationFactory implements PipelineInitializationFactory {
@@ -31,7 +31,7 @@ public class LinePipelineInitializationFactory implements PipelineInitialization
     }
 
     @Override
-    public PipelineInitialization createPipelineInitialization(DefaultNettySource source) {
+    public PipelineInitialization createPipelineInitialization(NettySource source) {
         return new LinePipelineInitialization(source);
     }
 }

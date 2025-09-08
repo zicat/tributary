@@ -20,7 +20,7 @@ package org.zicat.tributary.source.logstash.beats;
 
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
@@ -70,7 +70,7 @@ public class LogstashBeatsPipelineInitializationFactory implements PipelineIniti
     public static final String IDENTITY = "logstashBeatsDecoder";
 
     @Override
-    public PipelineInitialization createPipelineInitialization(DefaultNettySource source)
+    public PipelineInitialization createPipelineInitialization(NettySource source)
             throws Exception {
         return new LogstashBeatsPipelineInitialization(source);
     }

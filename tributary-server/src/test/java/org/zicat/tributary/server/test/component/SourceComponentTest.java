@@ -27,7 +27,7 @@ import org.zicat.tributary.server.component.SourceComponent;
 import org.zicat.tributary.server.component.SourceComponentFactory;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
-import org.zicat.tributary.source.base.netty.AbstractNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -51,9 +51,9 @@ public class SourceComponentTest {
                                 .create()) {
             Assert.assertEquals(3, sourceComponent.size());
 
-            final AbstractNettySource source1 = (AbstractNettySource) sourceComponent.get("s1");
-            final AbstractNettySource source2 = (AbstractNettySource) sourceComponent.get("s2");
-            final AbstractNettySource source3 = (AbstractNettySource) sourceComponent.get("s3");
+            final NettySource source1 = (NettySource) sourceComponent.get("s1");
+            final NettySource source2 = (NettySource) sourceComponent.get("s2");
+            final NettySource source3 = (NettySource) sourceComponent.get("s3");
 
             Assert.assertEquals("c1", source1.topic());
             Assert.assertEquals("c2", source2.topic());

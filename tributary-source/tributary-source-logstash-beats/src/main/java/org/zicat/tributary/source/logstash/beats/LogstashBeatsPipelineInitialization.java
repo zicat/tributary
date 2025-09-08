@@ -19,6 +19,7 @@
 package org.zicat.tributary.source.logstash.beats;
 
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
+import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
 import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory.*;
 
@@ -31,8 +32,6 @@ import org.logstash.netty.SslContextBuilder;
 import org.logstash.netty.SslHandlerProvider;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
-import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder;
@@ -45,16 +44,13 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
     private static final String SSL_HANDLER = "ssl-handler";
     private static final String BEATS_ACKER = "beats-acker";
     private static final String CONNECTION_HANDLER = "connection-handler";
-    private static final String IDLESTATE_HANDLER = "idlestate-handler";
 
     protected final SslHandlerProvider sslHandlerProvider;
-    protected final DefaultNettySource source;
     protected final EventExecutorGroup beatsHandlerExecutorGroup;
     protected final MessageFilterFactory messageFilterFactory;
 
-    public LogstashBeatsPipelineInitialization(DefaultNettySource source) throws Exception {
+    public LogstashBeatsPipelineInitialization(NettySource source) throws Exception {
         super(source);
-        this.source = source;
         final ReadableConfig conf = source.getConfig();
         this.sslHandlerProvider = createSslHandlerProvider(conf);
         this.beatsHandlerExecutorGroup =
@@ -73,13 +69,12 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
         if (sslHandlerProvider != null) {
             pipeline.addLast(SSL_HANDLER, sslHandlerProvider.sslHandlerForChannel(channel));
         }
-        pipeline.addLast(IDLESTATE_HANDLER, source.idleStateHandler());
-        pipeline.addLast(new IdleCloseHandler());
-        pipeline.addLast(BEATS_ACKER, new AckEncoder());
-        pipeline.addLast(CONNECTION_HANDLER, new ConnectionHandler());
         final BatchMessageListener listener =
                 new Message2ChannelListener(source, selectPartition(), messageFilterFactory);
-        pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(), new BeatsHandler(listener));
+        idleClosedChannelPipeline(pipeline)
+                .addLast(BEATS_ACKER, new AckEncoder())
+                .addLast(CONNECTION_HANDLER, new ConnectionHandler())
+                .addLast(beatsHandlerExecutorGroup, new BeatsParser(), new BeatsHandler(listener));
     }
 
     /**

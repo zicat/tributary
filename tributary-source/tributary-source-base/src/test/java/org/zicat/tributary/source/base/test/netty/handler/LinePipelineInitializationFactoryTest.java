@@ -30,11 +30,11 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.pipeline.LinePipelineInitializationFactory;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
-import org.zicat.tributary.source.base.test.netty.DefaultNettySourceMock;
+import org.zicat.tributary.source.base.test.netty.NettySourceMock;
 
 import java.util.List;
 
@@ -50,7 +50,7 @@ public class LinePipelineInitializationFactoryTest {
         final String groupId = "g1";
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         try (Channel channel = memoryChannelFactory(groupId).createChannel("t1", null);
-                DefaultNettySource source = new DefaultNettySourceMock(channel)) {
+                NettySource source = new NettySourceMock(channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel);

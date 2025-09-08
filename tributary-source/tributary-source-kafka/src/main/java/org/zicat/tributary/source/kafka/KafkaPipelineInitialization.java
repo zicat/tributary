@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.source.kafka;
 
+import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
 import static org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory.*;
 
@@ -38,8 +39,6 @@ import org.apache.kafka25.HostPort;
 import org.apache.kafka25.PlainServerCallbackHandler;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
-import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import org.zicat.tributary.source.base.netty.handler.LengthDecoder;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
@@ -54,13 +53,11 @@ import javax.security.sasl.SaslServer;
 /** KafkaPipelineInitialization. */
 public class KafkaPipelineInitialization extends AbstractPipelineInitialization {
 
-    protected final DefaultNettySource source;
     protected final KafkaMessageDecoder kafkaMessageDecoder;
     protected final EventExecutorGroup kafkaHandlerExecutorGroup;
 
-    public KafkaPipelineInitialization(DefaultNettySource source) throws Exception {
+    public KafkaPipelineInitialization(NettySource source) throws Exception {
         super(source);
-        this.source = source;
         this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
         this.kafkaHandlerExecutorGroup =
                 createEventExecutorGroup(
@@ -71,10 +68,9 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
     @Override
     public void init(Channel channel) {
         final ChannelPipeline pipeline = channel.pipeline();
-        pipeline.addLast(source.idleStateHandler());
-        pipeline.addLast(new IdleCloseHandler());
-        pipeline.addLast(new LengthDecoder());
-        pipeline.addLast(kafkaHandlerExecutorGroup, kafkaMessageDecoder);
+        idleClosedChannelPipeline(pipeline)
+                .addLast(new LengthDecoder())
+                .addLast(kafkaHandlerExecutorGroup, kafkaMessageDecoder);
     }
 
     /**
@@ -83,7 +79,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
      * @param source source
      * @return KafkaMessageDecoder
      */
-    private static KafkaMessageDecoder createKafkaMessageDeCoder(DefaultNettySource source)
+    private static KafkaMessageDecoder createKafkaMessageDeCoder(NettySource source)
             throws Exception {
 
         final ReadableConfig config = source.getConfig();

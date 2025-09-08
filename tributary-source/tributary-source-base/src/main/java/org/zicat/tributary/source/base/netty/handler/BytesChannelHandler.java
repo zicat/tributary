@@ -25,7 +25,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.AbstractNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.utils.SourceHeaders;
 
 import java.io.IOException;
@@ -34,10 +34,10 @@ import java.util.Collections;
 /** ChannelHandler. */
 public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
-    private final AbstractNettySource source;
+    private final NettySource source;
     private final int partition;
 
-    public BytesChannelHandler(AbstractNettySource source, int partition) {
+    public BytesChannelHandler(NettySource source, int partition) {
         this.source = source;
         this.partition = partition;
     }
@@ -66,7 +66,7 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
     /** MuteBytesChannelHandler. */
     public static class MuteBytesChannelHandler extends BytesChannelHandler {
 
-        public MuteBytesChannelHandler(AbstractNettySource source, int partition) {
+        public MuteBytesChannelHandler(NettySource source, int partition) {
             super(source, partition);
         }
 
@@ -77,7 +77,7 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
     /** LengthResponseBytesChannelHandler. */
     public static class LengthResponseBytesChannelHandler extends BytesChannelHandler {
 
-        public LengthResponseBytesChannelHandler(AbstractNettySource source, int partition) {
+        public LengthResponseBytesChannelHandler(NettySource source, int partition) {
             super(source, partition);
         }
 

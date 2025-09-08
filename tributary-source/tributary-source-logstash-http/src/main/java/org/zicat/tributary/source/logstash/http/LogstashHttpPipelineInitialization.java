@@ -19,12 +19,12 @@
 package org.zicat.tributary.source.logstash.http;
 
 import static org.zicat.tributary.common.Strings.blank2Null;
+import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.logstash.http.LogstashHttpPipelineInitializationFactory.*;
 
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.Strings;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.http.HttpMessageDecoder;
 import org.zicat.tributary.source.http.HttpPipelineInitialization;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
@@ -42,7 +42,7 @@ public class LogstashHttpPipelineInitialization extends HttpPipelineInitializati
     protected final List<String> tags;
     protected final MessageFilterFactory messageFilterFactory;
 
-    public LogstashHttpPipelineInitialization(DefaultNettySource source) throws Exception {
+    public LogstashHttpPipelineInitialization(NettySource source) throws Exception {
         super(source);
         final ReadableConfig conf = source.getConfig();
         this.codec = conf.get(OPTION_LOGSTASH_CODEC);

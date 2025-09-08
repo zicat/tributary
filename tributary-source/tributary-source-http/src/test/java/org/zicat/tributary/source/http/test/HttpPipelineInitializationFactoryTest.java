@@ -20,6 +20,7 @@ package org.zicat.tributary.source.http.test;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 
+import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -39,10 +40,9 @@ import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
-import org.zicat.tributary.source.base.test.netty.DefaultNettySourceMock;
+import org.zicat.tributary.source.base.test.netty.NettySourceMock;
 import org.zicat.tributary.source.http.HttpPipelineInitializationFactory;
 
 import java.io.BufferedReader;
@@ -75,7 +75,7 @@ public class HttpPipelineInitializationFactoryTest {
         try (Channel channel =
                         MemoryChannelTestUtils.memoryChannelFactory(GROUP_ID)
                                 .createChannel(TOPIC, null);
-                DefaultNettySource source = new DefaultNettySourceMock(config, channel)) {
+                NettySource source = new NettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             assertNotPostRequest(pipelineInitialization);

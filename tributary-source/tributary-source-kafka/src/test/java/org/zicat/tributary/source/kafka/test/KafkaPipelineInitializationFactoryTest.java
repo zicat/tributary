@@ -20,6 +20,7 @@ package org.zicat.tributary.source.kafka.test;
 
 import static org.apache.kafka25.ApiKeys.*;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
+import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory.*;
 
 import io.netty.buffer.ByteBuf;
@@ -45,10 +46,9 @@ import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
-import org.zicat.tributary.source.base.test.netty.DefaultNettySourceMock;
+import org.zicat.tributary.source.base.test.netty.NettySourceMock;
 import org.zicat.tributary.source.kafka.KafkaMessageDecoder;
 import org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory;
 
@@ -87,7 +87,7 @@ public class KafkaPipelineInitializationFactoryTest {
     }
 
     private void test(Channel channel, ReadableConfig config) throws Exception {
-        try (DefaultNettySource source = createSource(config, channel, port1)) {
+        try (NettySource source = createSource(config, channel, port1)) {
             final EmbeddedChannel nettyChannel1 = new EmbeddedChannel();
             initChannel(source, nettyChannel1);
             assertApiVersionResponse(nettyChannel1);
@@ -145,7 +145,7 @@ public class KafkaPipelineInitializationFactoryTest {
             Assert.assertTrue(record.headers().containsKey("h1"));
             Assert.assertEquals("hv1", new String(record.headers().get("h1")));
 
-            try (DefaultNettySource source2 = createSource(config, channel, port2)) {
+            try (NettySource source2 = createSource(config, channel, port2)) {
                 final EmbeddedChannel nettyChannel3 = new EmbeddedChannel();
                 initChannel(source2, nettyChannel3);
                 login(nettyChannel3);
@@ -296,12 +296,12 @@ public class KafkaPipelineInitializationFactoryTest {
                 apiKeys.requestHeaderVersion(apiKeys.latestVersion()));
     }
 
-    private static DefaultNettySource createSource(ReadableConfig config, Channel channel, int port)
+    private static NettySource createSource(ReadableConfig config, Channel channel, int port)
             throws Exception {
-        return new DefaultNettySourceMock(config, HOST, port, channel);
+        return new NettySourceMock(config, HOST, port, channel);
     }
 
-    private static void initChannel(DefaultNettySource source, EmbeddedChannel nettyChannel)
+    private static void initChannel(NettySource source, EmbeddedChannel nettyChannel)
             throws Exception {
         PipelineInitialization pipelineInit =
                 SpiFactory.findFactory(

@@ -21,27 +21,22 @@ package org.zicat.tributary.source.base.netty.pipeline;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.handler.BytesChannelHandler.LengthResponseBytesChannelHandler;
-import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import org.zicat.tributary.source.base.netty.handler.LengthDecoder;
 
 /** LengthPipelineInitialization. */
 public class LengthPipelineInitialization extends AbstractPipelineInitialization {
 
-    protected final DefaultNettySource source;
-
-    public LengthPipelineInitialization(DefaultNettySource source) {
+    public LengthPipelineInitialization(NettySource source) {
         super(source);
-        this.source = source;
     }
 
     @Override
     public void init(Channel channel) {
         final ChannelPipeline pipeline = channel.pipeline();
-        pipeline.addLast(source.idleStateHandler());
-        pipeline.addLast(new IdleCloseHandler());
-        pipeline.addLast(new LengthDecoder());
-        pipeline.addLast(new LengthResponseBytesChannelHandler(source, selectPartition()));
+        idleClosedChannelPipeline(pipeline)
+                .addLast(new LengthDecoder())
+                .addLast(new LengthResponseBytesChannelHandler(source, selectPartition()));
     }
 }

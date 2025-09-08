@@ -18,7 +18,9 @@
 
 package org.zicat.tributary.source.base.netty.pipeline;
 
-import org.zicat.tributary.source.base.netty.AbstractNettySource;
+import io.netty.channel.ChannelPipeline;
+import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,9 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractPipelineInitialization implements PipelineInitialization {
 
     protected final AtomicInteger count = new AtomicInteger();
-    protected final AbstractNettySource source;
+    protected final NettySource source;
 
-    public AbstractPipelineInitialization(AbstractNettySource source) {
+    public AbstractPipelineInitialization(NettySource source) {
         this.source = source;
     }
 
@@ -40,6 +42,15 @@ public abstract class AbstractPipelineInitialization implements PipelineInitiali
      */
     protected int selectPartition() {
         return (count.getAndIncrement() & 0x7fffffff) % source.partition();
+    }
+
+    /**
+     * idle closed channel pipeline.
+     * @param pipeline pipeline
+     * @return ChannelPipeline
+     */
+    protected ChannelPipeline idleClosedChannelPipeline(ChannelPipeline pipeline) {
+        return pipeline.addLast(source.idleStateHandler()).addLast(new IdleCloseHandler());
     }
 
     @Override

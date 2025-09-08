@@ -22,6 +22,7 @@ import static org.logstash.netty.SslContextBuilder.SUPPORTED_CIPHERS;
 import static org.logstash.netty.SslContextBuilder.SUPPORT_PROTOCOL;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
+import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory;
 import static org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory.OPTION_LOCAL_FILE_PATH;
 import static org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder.OPTION_MESSAGE_FILTER_FACTORY_ID;
@@ -49,9 +50,8 @@ import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
-import org.zicat.tributary.source.base.test.netty.DefaultNettySourceMock;
+import org.zicat.tributary.source.base.test.netty.NettySourceMock;
 import org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitialization;
 import org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory;
 
@@ -69,7 +69,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
             new TypeReference<Map<String, String>>() {};
 
     private LogstashBeatsPipelineInitialization beatsPipelineInitialization(
-            DefaultNettySource source) throws Exception {
+            NettySource source) throws Exception {
         return (LogstashBeatsPipelineInitialization)
                 SpiFactory.findFactory(
                                 LogstashBeatsPipelineInitializationFactory.IDENTITY,
@@ -89,7 +89,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
         config.put(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES, caCertPath);
 
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
-                DefaultNettySource source = new DefaultNettySourceMock(config, topic, channel)) {
+                NettySource source = new NettySourceMock(config, topic, channel)) {
             final LogstashBeatsPipelineInitialization pipelineInitialization =
                     beatsPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -173,7 +173,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
 
         final AtomicBoolean clientReceivedAck = new AtomicBoolean();
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
-                DefaultNettySource source = new DefaultNettySourceMock(config, topic, channel)) {
+                NettySource source = new NettySourceMock(config, topic, channel)) {
             final LogstashBeatsPipelineInitialization pipelineInitialization =
                     beatsPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -221,7 +221,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
         config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1); // set to sync for test
         final AtomicBoolean clientReceivedAck = new AtomicBoolean();
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
-                DefaultNettySource source = new DefaultNettySourceMock(config, topic, channel)) {
+                NettySource source = new NettySourceMock(config, topic, channel)) {
             final LogstashBeatsPipelineInitialization pipelineInitialization =
                     beatsPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();

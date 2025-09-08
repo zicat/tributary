@@ -20,7 +20,7 @@ package org.zicat.tributary.source.http;
 
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
@@ -68,7 +68,7 @@ public class HttpPipelineInitializationFactory implements PipelineInitialization
     }
 
     @Override
-    public PipelineInitialization createPipelineInitialization(DefaultNettySource source) {
+    public PipelineInitialization createPipelineInitialization(NettySource source) {
         return new HttpPipelineInitialization(source);
     }
 }

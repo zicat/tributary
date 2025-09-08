@@ -22,7 +22,7 @@ import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
 
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.source.base.netty.DefaultNettySource;
+import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
@@ -85,7 +85,7 @@ public class LogstashHttpPipelineInitializationFactory implements PipelineInitia
     public static final String IDENTITY = "logstashHttpDecoder";
 
     @Override
-    public PipelineInitialization createPipelineInitialization(DefaultNettySource source)
+    public PipelineInitialization createPipelineInitialization(NettySource source)
             throws Exception {
         return new LogstashHttpPipelineInitialization(source);
     }

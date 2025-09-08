@@ -18,6 +18,9 @@
 
 package org.zicat.tributary.source.base.netty;
 
+import io.netty.handler.timeout.IdleStateHandler;
+import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import static org.zicat.tributary.source.base.utils.HostUtils.realHostAddress;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -41,39 +44,46 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** AbstractNettySource. */
-public abstract class AbstractNettySource extends AbstractSource {
+/** NettySource. */
+public abstract class NettySource extends AbstractSource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractNettySource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NettySource.class);
 
     protected final String host;
     protected int port;
     protected final int eventThreads;
+    protected final long idle;
     protected final EventLoopGroup bossGroup;
     protected final EventLoopGroup workGroup;
     protected final ServerBootstrap serverBootstrap;
+    protected final PipelineInitialization pipelineInitialization;
     protected List<Channel> channelList;
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final List<String> hostNames;
 
-    public AbstractNettySource(
+    public NettySource(
             String sourceId,
             ReadableConfig config,
+            org.zicat.tributary.channel.Channel channel,
             String host,
             int port,
             int eventThreads,
-            org.zicat.tributary.channel.Channel channel) {
+            long idleTimeout)
+            throws Exception {
         super(sourceId, config, channel);
         this.host = host;
         this.port = port;
         this.eventThreads = eventThreads;
+        this.idle = idleTimeout;
         this.hostNames = host == null ? Collections.emptyList() : realHostAddress(host);
         this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
         this.workGroup = createWorkGroup(eventThreads);
         this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
+        this.pipelineInitialization = createPipelineInitialization();
     }
 
     @Override
@@ -83,11 +93,20 @@ public abstract class AbstractNettySource extends AbstractSource {
     }
 
     /**
+     * get netty decoder.
+     *
+     * @return NettyDecoder
+     */
+    protected abstract PipelineInitialization createPipelineInitialization() throws Exception;
+
+    /**
      * init channel.
      *
      * @param ch ch
      */
-    protected abstract void initChannel(SocketChannel ch) throws Exception;
+    protected void initChannel(SocketChannel ch) throws Exception {
+        pipelineInitialization.init(ch);
+    }
 
     /** init handlers. */
     private void initHandlers() {
@@ -95,7 +114,7 @@ public abstract class AbstractNettySource extends AbstractSource {
                 new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        AbstractNettySource.this.initChannel(ch);
+                        NettySource.this.initChannel(ch);
                     }
                 });
     }
@@ -192,6 +211,18 @@ public abstract class AbstractNettySource extends AbstractSource {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
+        try {
+            closeServerChannelsAndGroup();
+        } finally {
+            try {
+                super.close();
+            } finally {
+                IOUtils.closeQuietly(pipelineInitialization);
+            }
+        }
+    }
+
+    private void closeServerChannelsAndGroup() {
         if (channelList != null) {
             channelList.forEach(
                     f -> {
@@ -209,7 +240,15 @@ public abstract class AbstractNettySource extends AbstractSource {
         if (bossGroup != null) {
             bossGroup.shutdownGracefully();
         }
-        super.close();
+    }
+
+    /**
+     * idleStateHandler.
+     *
+     * @return ChannelHandler
+     */
+    public ChannelHandler idleStateHandler() {
+        return new IdleStateHandler(idle, idle, idle, TimeUnit.MILLISECONDS);
     }
 
     private String prettyHost(String host) {
