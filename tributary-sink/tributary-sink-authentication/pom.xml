@@ -5,11 +5,13 @@
     <parent>
         <artifactId>tributary-sink</artifactId>
         <groupId>org.zicat</groupId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>1.5.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tributary-sink-authentication</artifactId>
+    <name>Tributary : Sink : Authentication</name>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.hadoop</groupId>

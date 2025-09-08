@@ -6,10 +6,11 @@
     <parent>
         <groupId>org.zicat</groupId>
         <artifactId>tributary-sink</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>1.5.0</version>
     </parent>
 
     <artifactId>tributary-sink-hbase</artifactId>
+    <name>Tributary : Sink : Base</name>
 
     <dependencies>
         <dependency>

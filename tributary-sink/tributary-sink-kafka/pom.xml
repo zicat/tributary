@@ -5,9 +5,10 @@
     <parent>
         <artifactId>tributary-sink</artifactId>
         <groupId>org.zicat</groupId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>1.5.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
+    <name>Tributary : Sink : Kafka</name>
 
     <artifactId>tributary-sink-kafka</artifactId>
 

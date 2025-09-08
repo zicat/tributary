@@ -4,9 +4,10 @@
     <parent>
         <groupId>org.zicat</groupId>
         <artifactId>tributary-source</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>1.5.0</version>
     </parent>
     <artifactId>tributary-source-base</artifactId>
+    <name>Tributary : Source : Base</name>
 
     <dependencies>
         <dependency>
