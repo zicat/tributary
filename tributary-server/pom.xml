@@ -6,10 +6,9 @@
     <parent>
         <groupId>org.zicat</groupId>
         <artifactId>tributary</artifactId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.zicat</groupId>
     <artifactId>tributary-server</artifactId>
     <name>Tributary : Server</name>
 

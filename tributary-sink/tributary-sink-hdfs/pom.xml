@@ -5,12 +5,12 @@
     <parent>
         <artifactId>tributary-sink</artifactId>
         <groupId>org.zicat</groupId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <name>Tributary : Sink : HDFS</name>
 
     <artifactId>tributary-sink-hdfs</artifactId>
+    <name>Tributary : Sink : HDFS</name>
 
     <dependencies>
         <dependency>

@@ -5,12 +5,13 @@
     <parent>
         <artifactId>tributary-sink</artifactId>
         <groupId>org.zicat</groupId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tributary-sink-base</artifactId>
     <name>Tributary : Sink : Base</name>
+
     <dependencies>
         <dependency>
             <groupId>io.prometheus</groupId>

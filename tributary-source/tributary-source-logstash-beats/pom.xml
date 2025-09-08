@@ -4,8 +4,9 @@
     <parent>
         <groupId>org.zicat</groupId>
         <artifactId>tributary-source</artifactId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
     </parent>
+
     <artifactId>tributary-source-logstash-beats</artifactId>
     <name>Tributary : Source : Logstash-Beats</name>
 

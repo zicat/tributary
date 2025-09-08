@@ -5,13 +5,14 @@
     <parent>
         <artifactId>tributary</artifactId>
         <groupId>org.zicat</groupId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <name>Tributary : Sink : </name>
 
+    <name>Tributary : Sink : </name>
     <artifactId>tributary-sink</artifactId>
     <packaging>pom</packaging>
+
     <modules>
         <module>tributary-sink-authentication</module>
         <module>tributary-sink-base</module>
