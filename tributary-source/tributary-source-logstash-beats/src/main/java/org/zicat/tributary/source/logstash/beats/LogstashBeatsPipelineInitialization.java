@@ -28,8 +28,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.util.concurrent.EventExecutorGroup;
 
 import org.logstash.beats.*;
-import org.logstash.netty.SslContextBuilder;
-import org.logstash.netty.SslHandlerProvider;
+import org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder;
+import org.zicat.tributary.source.base.netty.ssl.SslHandlerProvider;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
@@ -57,10 +57,17 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
                 createEventExecutorGroup(
                         source.sourceId() + "-logstashBeatsHandler",
                         conf.get(OPTION_LOGSTASH_BEATS_WORKER_THREADS));
-        this.messageFilterFactory =
-                MessageFilterFactoryBuilder.newBuilder()
-                        .config(conf.filterAndRemovePrefixKey(CONFIG_PREFIX))
-                        .buildAndOpen();
+        try {
+            this.messageFilterFactory =
+                    MessageFilterFactoryBuilder.newBuilder()
+                            .config(conf.filterAndRemovePrefixKey(CONFIG_PREFIX))
+                            .buildAndOpen();
+        } catch (Exception e) {
+            if (beatsHandlerExecutorGroup != null) {
+                beatsHandlerExecutorGroup.shutdownGracefully();
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -106,10 +113,10 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
                     "SSL certificate authorities are required when SSL is enabled for logstash beats source.");
         }
         final String[] certificateAuthorities = new String[] {sslCertificateAuthorities};
-        final SslContextBuilder sslBuilder =
-                new SslContextBuilder(sslCertificate, sslKey, null)
+        final PemSslContextBuilder sslBuilder =
+                new PemSslContextBuilder(sslCertificate, sslKey, null)
                         .setClientAuthentication(
-                                SslContextBuilder.SslClientVerifyMode.REQUIRED,
+                                PemSslContextBuilder.SslClientVerifyMode.REQUIRED,
                                 certificateAuthorities);
         return new SslHandlerProvider(
                 sslBuilder.buildContext(),

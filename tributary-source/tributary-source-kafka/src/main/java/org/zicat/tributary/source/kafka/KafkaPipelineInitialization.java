@@ -18,7 +18,13 @@
 
 package org.zicat.tributary.source.kafka;
 
+import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
 import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder;
+import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder.SslClientVerifyMode;
+import org.zicat.tributary.source.base.netty.ssl.KeystoreSslContextBuilder;
+import org.zicat.tributary.source.base.netty.ssl.KeystoreSslContextBuilder.KeystoreType;
+import org.zicat.tributary.source.base.netty.ssl.SslHandlerProvider;
 import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
 import static org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory.*;
 
@@ -53,21 +59,36 @@ import javax.security.sasl.SaslServer;
 /** KafkaPipelineInitialization. */
 public class KafkaPipelineInitialization extends AbstractPipelineInitialization {
 
+    private static final String SSL_HANDLER = "ssl-handler";
+
     protected final KafkaMessageDecoder kafkaMessageDecoder;
     protected final EventExecutorGroup kafkaHandlerExecutorGroup;
+    protected final SslHandlerProvider sslHandlerProvider;
 
     public KafkaPipelineInitialization(NettySource source) throws Exception {
         super(source);
-        this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
+        final ReadableConfig config = source.getConfig();
+        this.sslHandlerProvider = createSslHandlerProvider(config);
         this.kafkaHandlerExecutorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-kafkaHandler",
-                        source.getConfig().get(OPTION_KAFKA_WORKER_THREADS));
+                        config.get(OPTION_KAFKA_WORKER_THREADS));
+        try {
+            this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
+        } catch (Exception e) {
+            if (kafkaHandlerExecutorGroup != null) {
+                kafkaHandlerExecutorGroup.shutdownGracefully();
+            }
+            throw e;
+        }
     }
 
     @Override
     public void init(Channel channel) {
         final ChannelPipeline pipeline = channel.pipeline();
+        if (sslHandlerProvider != null) {
+            pipeline.addLast(SSL_HANDLER, sslHandlerProvider.sslHandlerForChannel(channel));
+        }
         idleClosedChannelPipeline(pipeline)
                 .addLast(new LengthDecoder())
                 .addLast(kafkaHandlerExecutorGroup, kafkaMessageDecoder);
@@ -246,5 +267,27 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
         } finally {
             IOUtils.closeQuietly(kafkaMessageDecoder);
         }
+    }
+
+    private SslHandlerProvider createSslHandlerProvider(ReadableConfig config) throws Exception {
+        final String keystoreLocation = config.get(OPTION_SSL_KEYSTORE_LOCATION);
+        final String keystorePassword = config.get(OPTION_SSL_KEYSTORE_PASSWORD);
+        final String keyPassword = config.get(OPTION_SSL_KEY_PASSWORD);
+        final List<String> enableProtocols = config.get(OPTION_SSL_ENABLE_PROTOCOLS);
+        final SslClientVerifyMode verifyMode = config.get(OPTION_SSL_CLIENT_AUTH);
+        final KeystoreType keystoreType = config.get(OPTION_SSL_KEYSTORE_TYPE);
+        if (keystoreLocation == null || keystorePassword == null || keyPassword == null) {
+            return null;
+        }
+        final AbstractSslContextBuilder builder =
+                new KeystoreSslContextBuilder()
+                        .keystoreLocation(getResourcePath(keystoreLocation))
+                        .keystorePassword(keystorePassword)
+                        .keyPassword(keyPassword)
+                        .keystoreType(keystoreType)
+                        .verifyMode(verifyMode)
+                        .protocols(enableProtocols);
+        return new SslHandlerProvider(
+                builder.buildContext(), config.get(OPTION_SSL_TIMEOUT).toMillis());
     }
 }

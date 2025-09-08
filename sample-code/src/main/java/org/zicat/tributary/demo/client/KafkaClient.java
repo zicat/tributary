@@ -23,9 +23,11 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.serialization.StringSerializer;
+import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -44,16 +46,23 @@ public class KafkaClient {
         configs.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, MyPartitioner.class.getName());
 
         configs.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
-        configs.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+        configs.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
+        configs.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "JKS");
+        configs.put(
+                SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG,
+                getResourcePath("ssl/kafka.client.truststore.jks"));
+        configs.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "mytruststorepassword");
+        // configs.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "HTTPS");
+
         configs.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
         configs.put(
                 SaslConfigs.SASL_JAAS_CONFIG,
                 "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"16Ew658jjzvmxDqk\";");
+
         return configs;
     }
 
     public static void main(String[] args) throws InterruptedException {
-        // 创建KafkaProducer
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(configs())) {
             String topic = "test-topic";
             for (int i = 0; i < 10000; i++) {

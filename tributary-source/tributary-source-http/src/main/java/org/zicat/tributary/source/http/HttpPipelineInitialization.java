@@ -52,10 +52,10 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
         final ReadableConfig conf = source.getConfig();
         this.path = formatPath(conf.get(OPTIONS_PATH));
         this.maxContentLength = maxContentLength(conf);
+        this.authToken = authToken(conf, source.sourceId());
         this.httpHandlerExecutorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-httpHandler", httpWorkerThread(conf));
-        this.authToken = authToken(conf, source.sourceId());
     }
 
     @Override

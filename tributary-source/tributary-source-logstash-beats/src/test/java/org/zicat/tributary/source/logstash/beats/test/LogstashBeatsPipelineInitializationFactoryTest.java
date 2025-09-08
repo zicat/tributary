@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.source.logstash.beats.test;
 
-import static org.logstash.netty.SslContextBuilder.SUPPORTED_CIPHERS;
-import static org.logstash.netty.SslContextBuilder.SUPPORT_PROTOCOL;
+import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUPPORTED_CIPHERS;
+import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUPPORT_PROTOCOL;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
 import org.zicat.tributary.source.base.netty.NettySource;

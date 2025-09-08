@@ -20,11 +20,15 @@ package org.zicat.tributary.source.kafka;
 
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
 import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
+import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder.SslClientVerifyMode;
+import org.zicat.tributary.source.base.netty.ssl.KeystoreSslContextBuilder.KeystoreType;
 
 import java.time.Duration;
+import java.util.List;
 
 /** KafkaPipelineInitializationFactory. */
 public class KafkaPipelineInitializationFactory implements PipelineInitializationFactory {
@@ -74,6 +78,49 @@ public class KafkaPipelineInitializationFactory implements PipelineInitializatio
                     .integerType()
                     .description("The number of worker threads for the Kafka handler.")
                     .defaultValue(10);
+
+    public static final ConfigOption<List<String>> OPTION_SSL_ENABLE_PROTOCOLS =
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.enable.protocols")
+                    .listType(COMMA_SPLIT_HANDLER)
+                    .description("Set the enabled protocols for SSL/TLS connections.")
+                    .defaultValue(null);
+
+    public static final ConfigOption<SslClientVerifyMode> OPTION_SSL_CLIENT_AUTH =
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.client.auth")
+                    .enumType(SslClientVerifyMode.class)
+                    .description(
+                            "Set to 'none', 'optional', or 'required' to configure client authentication.")
+                    .defaultValue(SslClientVerifyMode.NONE);
+
+    public static final ConfigOption<String> OPTION_SSL_KEYSTORE_LOCATION =
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.keystore.location")
+                    .stringType()
+                    .description("The location of the keystore file.")
+                    .defaultValue(null);
+
+    public static final ConfigOption<String> OPTION_SSL_KEYSTORE_PASSWORD =
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.keystore.password")
+                    .stringType()
+                    .description("The password for the keystore file.")
+                    .defaultValue(null);
+
+    public static final ConfigOption<String> OPTION_SSL_KEY_PASSWORD =
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.key.password")
+                    .stringType()
+                    .description("The password for the key in the keystore file.")
+                    .defaultValue(null);
+
+    public static final ConfigOption<Duration> OPTION_SSL_TIMEOUT =
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.timeout")
+                    .durationType()
+                    .description("The ssl build timeout")
+                    .defaultValue(Duration.ofSeconds(10));
+
+    public static final ConfigOption<KeystoreType> OPTION_SSL_KEYSTORE_TYPE =
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.keystore.type")
+                    .enumType(KeystoreType.class)
+                    .description("The type of the keystore file, default JKS")
+                    .defaultValue(KeystoreType.JKS);
 
     public static final String IDENTITY = "kafkaDecoder";
 

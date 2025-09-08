@@ -1,18 +1,16 @@
-package org.logstash.netty;
+package org.zicat.tributary.source.base.test.netty.ssl;
 
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isIn;
-import static org.hamcrest.Matchers.nullValue;
+import org.hamcrest.Matchers;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.logstash.netty.SslContextBuilder.SUPPORTED_CIPHERS;
-import static org.logstash.netty.SslContextBuilder.SslClientVerifyMode;
-import static org.logstash.netty.SslContextBuilder.getDefaultCiphers;
+import org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder;
+import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUPPORTED_CIPHERS;
+import static org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder.SslClientVerifyMode;
+import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.getDefaultCiphers;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.ClientAuth;
@@ -29,9 +27,9 @@ import java.util.List;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLServerSocketFactory;
 
-/** Unit test for {@link SslContextBuilder}. */
+/** Unit test for {@link PemSslContextBuilder}. */
 @SuppressWarnings("deprecation")
-public class SslContextBuilderTest {
+public class PemSslContextBuilderTest {
 
     private static final String CERTIFICATE = "src/test/resources/host.crt";
     private static final String KEY = "src/test/resources/host.key";
@@ -44,17 +42,15 @@ public class SslContextBuilderTest {
     @Test
     public void testConstructorShouldFailWhenCertificatePathIsInvalid() {
         thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage(
-                "Certificate file cannot be read. Please confirm the user running Logstash has permissions to read: foo-bar.crt");
-        new SslContextBuilder("foo-bar.crt", KEY_ENCRYPTED, KEY_ENCRYPTED_PASS);
+        thrown.expectMessage("Certificate file cannot be read foo-bar.crt");
+        new PemSslContextBuilder("foo-bar.crt", KEY_ENCRYPTED, KEY_ENCRYPTED_PASS);
     }
 
     @Test
     public void testConstructorShouldFailWhenKeyPathIsInvalid() {
         thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage(
-                "Private key file cannot be read. Please confirm the user running Logstash has permissions to read: invalid.key");
-        new SslContextBuilder(CERTIFICATE, "invalid.key", KEY_ENCRYPTED_PASS);
+        thrown.expectMessage("Private key file cannot be read invalid.key");
+        new PemSslContextBuilder(CERTIFICATE, "invalid.key", KEY_ENCRYPTED_PASS);
     }
 
     @Test
@@ -64,7 +60,7 @@ public class SslContextBuilderTest {
 
     @Test
     public void testSetCipherSuitesShouldThrowIfAnyCiphersIsInValid() {
-        final SslContextBuilder sslContextBuilder = createSslContextBuilder();
+        final PemSslContextBuilder sslContextBuilder = createSslContextBuilder();
         final String[] ciphers =
                 SUPPORTED_CIPHERS.toArray(new String[SUPPORTED_CIPHERS.size() + 1]);
 
@@ -78,11 +74,11 @@ public class SslContextBuilderTest {
 
     @Test
     public void testSetProtocols() {
-        final SslContextBuilder sslContextBuilder = createSslContextBuilder();
+        final PemSslContextBuilder sslContextBuilder = createSslContextBuilder();
         assertArrayEquals(new String[] {"TLSv1.2", "TLSv1.3"}, sslContextBuilder.getProtocols());
-        sslContextBuilder.setProtocols(new String[] {"TLSv1.1"});
+        sslContextBuilder.protocols(new String[] {"TLSv1.1"});
         assertArrayEquals(new String[] {"TLSv1.1"}, sslContextBuilder.getProtocols());
-        sslContextBuilder.setProtocols(new String[] {"TLSv1.1", "TLSv1.2"});
+        sslContextBuilder.protocols(new String[] {"TLSv1.1", "TLSv1.2"});
         assertArrayEquals(new String[] {"TLSv1.1", "TLSv1.2"}, sslContextBuilder.getProtocols());
     }
 
@@ -95,12 +91,12 @@ public class SslContextBuilderTest {
         // Check that default ciphers is the subset of default ciphers of current Java version.
         SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         List<String> availableCiphers = Arrays.asList(ssf.getSupportedCipherSuites());
-        assertThat(Arrays.asList(defaultCiphers), Every.everyItem(isIn(availableCiphers)));
+        assertThat(Arrays.asList(defaultCiphers), Every.everyItem(Matchers.isIn(availableCiphers)));
     }
 
     @Test
     public void testSetClientAuthentication() {
-        final SslContextBuilder sslContextBuilder = createSslContextBuilder();
+        final PemSslContextBuilder sslContextBuilder = createSslContextBuilder();
         final String[] certificateAuthorities = {CA};
 
         sslContextBuilder.setClientAuthentication(
@@ -109,7 +105,7 @@ public class SslContextBuilderTest {
         assertThat(sslContextBuilder.getVerifyMode(), is(SslClientVerifyMode.REQUIRED));
         assertThat(
                 Arrays.asList(sslContextBuilder.getCertificateAuthorities()),
-                Every.everyItem(isIn(certificateAuthorities)));
+                Every.everyItem(Matchers.isIn(certificateAuthorities)));
     }
 
     @Test
@@ -124,25 +120,25 @@ public class SslContextBuilderTest {
 
     @Test
     public void testSetClientAuthenticationWithNone() {
-        final SslContextBuilder sslContextBuilder = createSslContextBuilder();
+        final PemSslContextBuilder sslContextBuilder = createSslContextBuilder();
 
         sslContextBuilder.setClientAuthentication(SslClientVerifyMode.NONE, new String[0]);
         assertThat(sslContextBuilder.getVerifyMode(), is(SslClientVerifyMode.NONE));
-        assertThat(sslContextBuilder.getCertificateAuthorities(), arrayWithSize(0));
+        assertThat(sslContextBuilder.getCertificateAuthorities(), Matchers.arrayWithSize(0));
 
         sslContextBuilder.setClientAuthentication(SslClientVerifyMode.NONE, null);
         assertThat(sslContextBuilder.getVerifyMode(), is(SslClientVerifyMode.NONE));
-        assertThat(sslContextBuilder.getCertificateAuthorities(), nullValue());
+        assertThat(sslContextBuilder.getCertificateAuthorities(), Matchers.nullValue());
     }
 
     @Test
     public void testDefaultVerifyMode() {
-        final SslContextBuilder sslContextBuilder = createSslContextBuilder();
+        final PemSslContextBuilder sslContextBuilder = createSslContextBuilder();
         assertThat(sslContextBuilder.getVerifyMode(), is(SslClientVerifyMode.NONE));
     }
 
     private void assertSetClientAuthenticationThrowWithNoCerts(SslClientVerifyMode mode) {
-        final SslContextBuilder sslContextBuilder = createSslContextBuilder();
+        final PemSslContextBuilder sslContextBuilder = createSslContextBuilder();
         final String expectedMessage =
                 "Certificate authorities are required to enable client authentication";
 
@@ -170,14 +166,14 @@ public class SslContextBuilderTest {
 
     @Test
     public void testBuildContextWithNonEncryptedKey() throws Exception {
-        SslContextBuilder sslContextBuilder = new SslContextBuilder(CERTIFICATE, KEY, null);
+        PemSslContextBuilder sslContextBuilder = new PemSslContextBuilder(CERTIFICATE, KEY, null);
         sslContextBuilder.buildContext();
     }
 
     @Test
     public void testBuildContextWithEncryptedKey() throws Exception {
-        SslContextBuilder sslContextBuilder =
-                new SslContextBuilder(CERTIFICATE, KEY_ENCRYPTED, "1234");
+        PemSslContextBuilder sslContextBuilder =
+                new PemSslContextBuilder(CERTIFICATE, KEY_ENCRYPTED, "1234");
         sslContextBuilder.buildContext();
     }
 
@@ -194,7 +190,7 @@ public class SslContextBuilderTest {
 
     @Test
     public void testBuildContextWithNoClientAuthentication() throws Exception {
-        SslContextBuilder sslContextBuilder =
+        PemSslContextBuilder sslContextBuilder =
                 createSslContextBuilder()
                         .setClientAuthentication(SslClientVerifyMode.NONE, new String[] {CA});
 
@@ -203,7 +199,7 @@ public class SslContextBuilderTest {
 
     @Test
     public void testIsClientAuthenticationRequired() {
-        final SslContextBuilder sslContextBuilder = createSslContextBuilder();
+        final PemSslContextBuilder sslContextBuilder = createSslContextBuilder();
         final String[] certificateAuthorities = {CA};
 
         sslContextBuilder.setClientAuthentication(SslClientVerifyMode.NONE, certificateAuthorities);
@@ -218,15 +214,19 @@ public class SslContextBuilderTest {
         assertTrue(sslContextBuilder.isClientAuthenticationRequired());
     }
 
-    private void assertSslContextBuilderBuildContext(SslContextBuilder sslContextBuilder)
+    private void assertSslContextBuilderBuildContext(PemSslContextBuilder sslContextBuilder)
             throws Exception {
         final SslContext context = sslContextBuilder.buildContext();
 
         assertTrue(context.isServer());
 
         final SSLEngine sslEngine = context.newEngine(ByteBufAllocator.DEFAULT);
-        assertThat(sslEngine.getEnabledCipherSuites(), equalTo(sslContextBuilder.getCiphers()));
-        assertThat(sslEngine.getEnabledProtocols(), equalTo(sslContextBuilder.getProtocols()));
+        assertThat(
+                sslEngine.getEnabledCipherSuites(),
+                Matchers.equalTo(sslContextBuilder.getCiphers()));
+        assertThat(
+                sslEngine.getEnabledProtocols(),
+                Matchers.equalTo(sslContextBuilder.getProtocols()));
 
         if (sslContextBuilder.getVerifyMode() == SslClientVerifyMode.NONE) {
             assertFalse(sslEngine.getNeedClientAuth());
@@ -240,7 +240,7 @@ public class SslContextBuilderTest {
         }
     }
 
-    private SslContextBuilder createSslContextBuilder() {
-        return new SslContextBuilder(CERTIFICATE, KEY_ENCRYPTED, KEY_ENCRYPTED_PASS);
+    private PemSslContextBuilder createSslContextBuilder() {
+        return new PemSslContextBuilder(CERTIFICATE, KEY_ENCRYPTED, KEY_ENCRYPTED_PASS);
     }
 }
