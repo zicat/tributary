@@ -44,7 +44,7 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
     private static final byte[] OK_RESPONSE = "ok".getBytes(StandardCharsets.UTF_8);
     private static final Map<String, String> EMPTY_HEADERS = new HashMap<>();
     private static final String DEFAULT_REMOTE_HOST = "0:0:0:0:0:0:0:1";
-    protected final Codec codec;
+    protected final Codec defaultCodec;
     protected final String remoteHostTargetField;
     protected final String requestHeadersTargetField;
     protected final List<String> tags;
@@ -56,13 +56,13 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
             int defaultPartition,
             String path,
             String authToken,
-            Codec codec,
+            Codec defaultCodec,
             String remoteHostTargetField,
             String requestHeadersTargetField,
             List<String> tags,
             MessageFilterFactory messageFilterFactory) {
         super(source, defaultPartition, path, authToken);
-        this.codec = codec;
+        this.defaultCodec = defaultCodec;
         this.remoteHostTargetField = remoteHostTargetField;
         this.requestHeadersTargetField = requestHeadersTargetField;
         this.tags = tags;
@@ -71,10 +71,14 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
 
     @Override
     protected Records parseRecords(
-            ChannelHandlerContext ctx, String topic, Map<String, String> recordsHeader, byte[] body)
+            ChannelHandlerContext ctx,
+            String topic,
+            String contentType,
+            Map<String, String> recordsHeader,
+            byte[] body)
             throws IOException {
         final Map<String, Object> data = new HashMap<>();
-        codec.encode(data, body);
+        findCodec(contentType).encode(data, body);
         if (requestHeadersTargetField != null) {
             data.put(requestHeadersTargetField, recordsHeader);
         }
@@ -105,6 +109,26 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
             return inetSocketAddress.getAddress().getHostAddress();
         }
         return DEFAULT_REMOTE_HOST;
+    }
+
+    /**
+     * find codec.
+     *
+     * @param contentType contentType
+     * @return Codec
+     */
+    private Codec findCodec(String contentType) {
+        if (contentType == null || contentType.isEmpty()) {
+            return defaultCodec;
+        }
+        if (contentType.contains(HttpHeaderValues.APPLICATION_JSON)) {
+            return Codec.JSON;
+        } else if (contentType.contains(HttpHeaderValues.TEXT_PLAIN)
+                || contentType.contains(HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)) {
+            return Codec.PLAIN;
+        } else {
+            return defaultCodec;
+        }
     }
 
     @Override

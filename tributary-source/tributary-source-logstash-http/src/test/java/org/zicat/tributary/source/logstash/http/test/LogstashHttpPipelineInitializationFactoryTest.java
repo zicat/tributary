@@ -211,6 +211,65 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     }
 
     @Test
+    public void testContentType() throws Exception {
+
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1);
+        config.put(OPTION_LOGSTASH_CODEC, Codec.PLAIN);
+
+        final PipelineInitializationFactory factory =
+                SpiFactory.findFactory(
+                        LogstashHttpPipelineInitializationFactory.IDENTITY,
+                        PipelineInitializationFactory.class);
+
+        try (Channel channel =
+                        MemoryChannelTestUtils.memoryChannelFactory(groupId)
+                                .createChannel(topic, null);
+                NettySource source = new NettySourceMock(config, channel)) {
+            final PipelineInitialization pipelineInitialization =
+                    factory.createPipelineInitialization(source);
+            final EmbeddedChannel serverChannel = new EmbeddedChannel();
+            pipelineInitialization.init(serverChannel);
+
+            final HttpHeaders headers = new DefaultHttpHeaders();
+            headers.add("my_header1", "1111");
+            headers.add(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
+            serverChannel.writeInbound(
+                    new DefaultFullHttpRequest(
+                            HttpVersion.HTTP_1_1,
+                            HttpMethod.POST,
+                            "/",
+                            ByteBufAllocator.DEFAULT
+                                    .buffer()
+                                    .writeBytes("{\"id\":1}".getBytes(StandardCharsets.UTF_8)),
+                            headers,
+                            EmptyHttpHeaders.INSTANCE));
+            ByteBuf response = serverChannel.readOutbound();
+            try (final BufferedReader reader =
+                    HttpPipelineInitializationFactoryTest.parse(response)) {
+                final String protocol = reader.readLine();
+                Assert.assertEquals(HTTP_OK_REQUEST, protocol);
+                Assert.assertEquals("ok", readBody(reader));
+            } finally {
+                response.release();
+            }
+
+            channel.flush();
+            RecordsResultSet resultSet = channel.poll(0, Offset.ZERO, 10, TimeUnit.MILLISECONDS);
+            Assert.assertFalse(resultSet.isEmpty());
+            final Records records = Records.parse(resultSet.next());
+            Assert.assertEquals(1, records.count());
+            RecordsUtils.foreachRecord(
+                    records,
+                    (key, value, allHeaders) -> {
+                        Map<String, Object> data = MAPPER.readValue(value, MAP_STRING_TYPE);
+                        Assert.assertEquals(1, data.size());
+                        Assert.assertEquals((Integer) 1, data.get("id"));
+                    });
+        }
+    }
+
+    @Test
     public void testMessageFilter() throws Exception {
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1);

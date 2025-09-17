@@ -124,12 +124,13 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
                     dataPartition == null
                             ? defaultPartition
                             : Integer.parseInt(dataPartition) % source.partition();
-            final Records records = parseRecords(ctx, topic, httpHeaders(msg), body);
+            final String contentType = msg.headers().get(HttpHeaderNames.CONTENT_TYPE);
+            final Records records = parseRecords(ctx, topic, contentType, httpHeaders(msg), body);
             if (records == null || records.count() == 0) {
                 okResponse(ctx);
                 return;
             }
-            source.append(realPartition, parseRecords(ctx, topic, httpHeaders(msg), body));
+            source.append(realPartition, records);
             okResponse(ctx);
         } catch (Exception e) {
             LOG.error(
@@ -147,13 +148,18 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      *
      * @param ctx ChannelHandlerContext
      * @param topic topic
+     * @param contentType contentType
      * @param httpHeaders httpHeaders
      * @param body body
      * @return Records
      * @throws IOException IOException
      */
     protected Records parseRecords(
-            ChannelHandlerContext ctx, String topic, Map<String, String> httpHeaders, byte[] body)
+            ChannelHandlerContext ctx,
+            String topic,
+            String contentType,
+            Map<String, String> httpHeaders,
+            byte[] body)
             throws IOException {
         final List<Record> records = MAPPER.readValue(body, BODY_TYPE);
         return new DefaultRecords(topic, recordsHeaders(httpHeaders), records);
