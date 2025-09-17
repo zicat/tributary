@@ -60,12 +60,9 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             HttpHeaderValues.APPLICATION_JSON + HTTP_HEADER_VALUE_UTF8;
     private static final String HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8 =
             HttpHeaderValues.TEXT_PLAIN + HTTP_HEADER_VALUE_UTF8;
-    private static final String HTTP_HEADER_KEY_CONTENT_TYPE = "Content-Type";
 
     public static final String RESPONSE_BAD_CONTENT_TYPE =
-            HTTP_HEADER_KEY_CONTENT_TYPE
-                    + " only support "
-                    + HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8;
+            "content-type only support " + HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8;
 
     public static final String RESPONSE_BAD_METHOD = "only support post request";
     private static final String HTTP_QUERY_KEY_TOPIC = "topic";
@@ -101,11 +98,13 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
         final PathParams pathParams = new PathParams(msg.uri());
-        if (!pathMatch(pathParams.path())) {
-            notFoundResponse(ctx, pathParams.path());
+        final String path = pathParams.path();
+        if (!pathMatch(path)) {
+            notFoundResponse(ctx, path);
             return;
         }
-        final String contentTypeCheck = checkContentType(msg);
+        final String contentType = msg.headers().get(HttpHeaderNames.CONTENT_TYPE);
+        final String contentTypeCheck = checkContentType(contentType);
         if (contentTypeCheck != null) {
             badRequestResponse(ctx, contentTypeCheck);
             return;
@@ -115,31 +114,53 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             badRequestResponse(ctx, RESPONSE_BAD_TOPIC_NOT_IN_PARAMS);
             return;
         }
+
+        final Records records;
         try {
-            final ByteBuf byteBuf = msg.content();
-            final byte[] body = new byte[byteBuf.readableBytes()];
-            byteBuf.getBytes(byteBuf.readerIndex(), body).discardReadBytes();
-            final String dataPartition = pathParams.params().get(HTTP_QUERY_KEY_PARTITION);
-            final int realPartition =
-                    dataPartition == null
-                            ? defaultPartition
-                            : Integer.parseInt(dataPartition) % source.partition();
-            final String contentType = msg.headers().get(HttpHeaderNames.CONTENT_TYPE);
-            final Records records = parseRecords(ctx, topic, contentType, httpHeaders(msg), body);
+            final byte[] body = parseBody(msg);
+            records = parseRecords(ctx, topic, contentType, httpHeaders(msg), body);
             if (records == null || records.count() == 0) {
                 okResponse(ctx);
                 return;
             }
+            final int realPartition = realPartition(pathParams);
             source.append(realPartition, records);
             okResponse(ctx);
         } catch (Exception e) {
-            LOG.error(
-                    "parse http request body to records error, path: {}, topic: {}, partition: {}",
-                    pathParams.path(),
-                    topic,
-                    pathParams.params().get(HTTP_QUERY_KEY_PARTITION),
-                    e);
+            LOG.error("process http request error, path: {}, topic: {}", path, topic, e);
             badRequestResponse(ctx, e.getClass().getName());
+        }
+    }
+
+    /**
+     * get http body.
+     *
+     * @param msg msg
+     * @return bytes
+     */
+    protected byte[] parseBody(FullHttpRequest msg) {
+        final ByteBuf byteBuf = msg.content();
+        final byte[] body = new byte[byteBuf.readableBytes()];
+        byteBuf.getBytes(byteBuf.readerIndex(), body).discardReadBytes();
+        return body;
+    }
+
+    /**
+     * get real partition.
+     *
+     * @param pathParams pathParams
+     * @return int value
+     */
+    protected int realPartition(PathParams pathParams) {
+        final String dataPartition = pathParams.params().get(HTTP_QUERY_KEY_PARTITION);
+        if (dataPartition == null) {
+            return defaultPartition;
+        }
+        try {
+            final int partition = Integer.parseInt(dataPartition);
+            return (partition & 0x7fffffff) % source.partition();
+        } catch (NumberFormatException ignore) {
+            return defaultPartition;
         }
     }
 
@@ -178,11 +199,10 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     /**
      * check content type.
      *
-     * @param msg msg
+     * @param contentType contentType
      * @return if content type is not application/json; charset=UTF-8, return error message
      */
-    protected String checkContentType(FullHttpRequest msg) {
-        final String contentType = msg.headers().get(HTTP_HEADER_KEY_CONTENT_TYPE);
+    protected String checkContentType(String contentType) {
         if (HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8.equals(contentType)) {
             return null;
         }
@@ -196,10 +216,9 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @return map
      */
     protected Map<String, String> httpHeaders(FullHttpRequest msg) {
-        msg.headers().remove(HTTP_HEADER_KEY_CONTENT_TYPE);
+        msg.headers().remove(HttpHeaderNames.CONTENT_TYPE);
         msg.headers().remove(HttpHeaderNames.CONTENT_LENGTH);
         msg.headers().remove(HttpHeaderNames.AUTHORIZATION);
-
         final Map<String, String> result = new HashMap<>();
         for (Map.Entry<String, String> entry : msg.headers()) {
             result.put(entry.getKey(), entry.getValue());

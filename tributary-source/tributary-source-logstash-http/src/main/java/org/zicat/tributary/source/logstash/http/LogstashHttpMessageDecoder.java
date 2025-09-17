@@ -147,7 +147,7 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
     }
 
     @Override
-    protected String checkContentType(FullHttpRequest msg) {
+    protected String checkContentType(String contentType) {
         return null;
     }
 

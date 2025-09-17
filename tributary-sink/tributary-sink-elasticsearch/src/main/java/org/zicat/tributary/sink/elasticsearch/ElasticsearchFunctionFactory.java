@@ -103,6 +103,16 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description(
                             "await timeout when queue is full, default value is connection.request-timeout")
                     .defaultValue(Duration.ofSeconds(30));
+    public static final ConfigOption<Integer> OPTION_BUCK_SIZE =
+            ConfigOptions.key("bulk.size")
+                    .integerType()
+                    .description("bulk size")
+                    .defaultValue(1000);
+    public static final ConfigOption<Integer> OPTION_THREAD_MAX_PER_ROUTING =
+            ConfigOptions.key("thread.max.per.routing")
+                    .integerType()
+                    .description("max thread per routing")
+                    .defaultValue(5);
 
     public static final String IDENTITY = "elasticsearch";
 
@@ -137,6 +147,7 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
 
         final String username = config.get(OPTION_USERNAME);
         final String password = config.get(OPTION_PASSWORD);
+        final int maxThreadPerRouting = config.get(OPTION_THREAD_MAX_PER_ROUTING);
         if (username != null
                 && !username.trim().isEmpty()
                 && password != null
@@ -147,7 +158,10 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     new UsernamePasswordCredentials(username.trim(), password.trim()));
             builder.setHttpClientConfigCallback(
                     (httpClientBuilder) ->
-                            httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
+                            httpClientBuilder
+                                    .setMaxConnPerRoute(maxThreadPerRouting)
+                                    .setMaxConnTotal(maxThreadPerRouting * hosts.size())
+                                    .setDefaultCredentialsProvider(credentialsProvider));
         }
 
         final long requestTimeoutMs = config.get(REQUEST_TIMEOUT).toMillis();

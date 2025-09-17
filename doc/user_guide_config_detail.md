@@ -65,7 +65,7 @@ Tributary provide the
 interface that supports the development of specific sources scenarios.
 
 Tributary also provides the default implementation of
-[Netty](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/netty/DefaultNettySourceFactory.java),
+[NettySourceFactory](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/netty/NettySourceFactory.java),
 which supports receiving data from the network. The configuration parameters for Netty are as
 follows :
 
@@ -311,12 +311,12 @@ sink.group_4.partition.retain.max.bytes=100gb
 
 ### Common Config
 
-| key                           | default | type                                       | describe                                                                                                                                                                                                                               |
-|-------------------------------|---------|--------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| function.id                   |         | enum[print,kafka,hdfs,hbase,elasticsearch] | the function identity that configure how to consume records, user can customize functions by  implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java) |
-| partition.retain.max.bytes    |         | bytes                                      | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful                                                                                       |
-| partition.concurrent          | 1       | int(number)                                | the threads to consume one partition data from channel, multi threads will cause data disorder in one partition, be careful                                                                                                            |  
-| partition.checkpoint.interval | 1min    | duration                                   | the interval to callback [CheckpointedFunction.snapshot()](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/CheckpointedFunction.java)                                                            |
+| key                           | default | type                                       | describe                                                                                                                                                                                                                                 |
+|-------------------------------|---------|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| function.id                   |         | enum[print,kafka,hdfs,hbase,elasticsearch] | the function identity that configure how to consume records, user can customize functions by  implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)   |
+| partition.retain.max.bytes    |         | bytes                                      | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful                                                                                         |
+| partition.concurrent          | 1       | int(number)                                | the threads to consume one partition data from channel, multi threads will cause data disorder in one partition, be careful                                                                                                              |  
+| partition.checkpoint.interval | 1min    | duration                                   | the interval to callback [CheckpointedFunction.snapshot()](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/CheckpointedFunction.java), each type of sink has different checkpoint implementations. |
 
 ### Sink HDFS
 
@@ -434,6 +434,8 @@ sink.group_4.async.bulk.queue.await.timeout=30s
 | connection.timeout             | 10s     | duration | the timeout for establishing a connection, default 10s                                                                                                        |
 | socket.timeout                 | 20s     | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                           |
 | async.bulk.queue.size          | 1024    | int      | the size of the queue which contains async bulk insert listener callback instances                                                                            |
+| bulk.size                      | 1000    | int      | the buck size to async send.the request will be sent when buck size is triggered or checkpoint point triggered                                                |
+| thread.max.per.routing         | 5       | int      | the max thread count for per routing                                                                                                                          |
 | async.bulk.queue.await.timeout | 30s     | duration | throw exception if wait timeout to put instance to queue over this param                                                                                      |
 | request.indexer                | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java) |
 

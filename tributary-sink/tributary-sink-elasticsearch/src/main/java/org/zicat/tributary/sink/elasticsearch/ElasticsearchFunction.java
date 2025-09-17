@@ -58,10 +58,14 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected transient RequestIndexer indexer;
     protected transient BlockingQueue<DefaultActionListener> listenerQueue;
     protected transient long awaitTimeout;
+    protected transient volatile BulkRequest request = new BulkRequest();
+    protected int buckSize;
+    protected Offset lastOffset;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
+        buckSize = context.get(OPTION_BUCK_SIZE);
         client = createRestHighLevelClient(context);
         sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
         listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
@@ -73,7 +77,6 @@ public class ElasticsearchFunction extends AbstractFunction {
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
         final AtomicInteger sendCount = new AtomicInteger();
-        final BulkRequest request = new BulkRequest();
         while (iterator.hasNext()) {
             final Records records = iterator.next();
             final String topic = records.topic();
@@ -84,25 +87,28 @@ public class ElasticsearchFunction extends AbstractFunction {
                         if (success) {
                             sendCount.incrementAndGet();
                         }
+                        if (request.numberOfActions() >= buckSize) {
+                            sendAsync(offset);
+                        }
                     },
                     defaultSinkExtraHeaders());
         }
-        sendAsync(request, offset);
+        lastOffset = offset;
         sinkCounter.inc(sendCount.get());
     }
 
     @Override
     public void snapshot() throws Exception {
+        sendAsync(lastOffset);
         checkAndClearDoneListeners();
     }
 
     /**
      * send bulk request.
      *
-     * @param request request.
      * @param offset offset
      */
-    protected void sendAsync(BulkRequest request, Offset offset) throws Exception {
+    protected void sendAsync(Offset offset) throws Exception {
         if (request.numberOfActions() == 0) {
             return;
         }
@@ -112,6 +118,7 @@ public class ElasticsearchFunction extends AbstractFunction {
             listenerQueue.add(listener);
         }
         bulkAsync(request, listener);
+        request = new BulkRequest();
     }
 
     /**
@@ -161,6 +168,7 @@ public class ElasticsearchFunction extends AbstractFunction {
      * @throws Exception Exception
      */
     public void sync() throws Exception {
+        sendAsync(lastOffset);
         if (listenerQueue == null) {
             return;
         }
@@ -197,7 +205,7 @@ public class ElasticsearchFunction extends AbstractFunction {
      *
      * @throws Exception Exception
      */
-    private void awaitFirstListenerFinished() throws Exception {
+    protected void awaitFirstListenerFinished() throws Exception {
         final DefaultActionListener listener = listenerQueue.poll();
         if (listener == null) {
             return;

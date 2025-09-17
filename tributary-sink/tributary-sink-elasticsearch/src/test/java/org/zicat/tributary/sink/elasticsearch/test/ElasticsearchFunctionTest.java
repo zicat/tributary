@@ -121,6 +121,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
             function.sync();
             Assert.assertEquals(Offset.ZERO, function.committableOffset());
             Assert.assertTrue(function.isEmpty());
+            function.sync();
             Assert.assertEquals(1, function.bulkInsertCount());
             node().client().admin().indices().refresh(new RefreshRequest(topic)).actionGet();
 
@@ -162,6 +163,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
             function.process(new Offset(0, 2), recordsList.iterator());
             try {
                 function.process(new Offset(0, 3), recordsList.iterator());
+                function.sync();
                 Assert.fail();
             } catch (Exception ignore) {
                 Assert.assertTrue(function.isEmpty());
@@ -231,5 +233,6 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         public boolean isEmpty() {
             return listenerQueue.isEmpty();
         }
+
     }
 }
