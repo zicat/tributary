@@ -28,13 +28,6 @@ import java.util.Map;
 public interface Source extends Closeable, SourceChannel {
 
     /**
-     * start the source to receive records.
-     *
-     * @throws Exception Exception
-     */
-    void start() throws Exception;
-
-    /**
      * get channel metrics.
      *
      * @return map metrics

@@ -40,7 +40,6 @@ import org.zicat.tributary.common.TributaryRuntimeException;
 import org.zicat.tributary.source.base.AbstractSource;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,18 +51,17 @@ public abstract class NettySource extends AbstractSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettySource.class);
 
+    protected final AtomicBoolean closed = new AtomicBoolean(false);
     protected final String host;
-    protected int port;
+    protected final int port;
     protected final int eventThreads;
     protected final long idle;
     protected final EventLoopGroup bossGroup;
     protected final EventLoopGroup workGroup;
     protected final ServerBootstrap serverBootstrap;
     protected final PipelineInitialization pipelineInitialization;
-    protected List<Channel> channelList;
-
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final List<String> hostNames;
+    protected final List<Channel> channelList;
+    protected final List<String> hostNames;
 
     public NettySource(
             String sourceId,
@@ -80,16 +78,23 @@ public abstract class NettySource extends AbstractSource {
         this.eventThreads = eventThreads;
         this.idle = idleTimeout;
         this.hostNames = host == null ? Collections.emptyList() : realHostAddress(host);
-        this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
-        this.workGroup = createWorkGroup(eventThreads);
-        this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
-        this.pipelineInitialization = createPipelineInitialization();
-    }
-
-    @Override
-    public void start() throws InterruptedException {
-        initHandlers();
-        channelList = createChannelList();
+        try {
+            this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
+            this.workGroup = createWorkGroup(eventThreads);
+            this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
+            this.pipelineInitialization = createPipelineInitialization();
+            this.serverBootstrap.childHandler(
+                    new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            pipelineInitialization.init(ch);
+                        }
+                    });
+            this.channelList = createChannelList();
+        } catch (Exception e) {
+            IOUtils.closeQuietly(this);
+            throw e;
+        }
     }
 
     /**
@@ -98,26 +103,6 @@ public abstract class NettySource extends AbstractSource {
      * @return NettyDecoder
      */
     protected abstract PipelineInitialization createPipelineInitialization() throws Exception;
-
-    /**
-     * init channel.
-     *
-     * @param ch ch
-     */
-    protected void initChannel(SocketChannel ch) throws Exception {
-        pipelineInitialization.init(ch);
-    }
-
-    /** init handlers. */
-    private void initHandlers() {
-        serverBootstrap.childHandler(
-                new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        NettySource.this.initChannel(ch);
-                    }
-                });
-    }
 
     /**
      * create channel by host.
@@ -129,16 +114,11 @@ public abstract class NettySource extends AbstractSource {
                 host == null
                         ? serverBootstrap.bind(port).sync()
                         : serverBootstrap.bind(host, port).sync();
-
-        final Channel serverChannel = syncFuture.channel();
-        port = ((InetSocketAddress) serverChannel.localAddress()).getPort();
-
-        if (syncFuture.isSuccess()) {
-            LOG.info("TcpServer started on {}:{}", prettyHost(host), port);
-        } else {
-            final String message = "TcpServer started fail on port " + port;
-            throw new TributaryRuntimeException(message, syncFuture.cause());
+        if (!syncFuture.isSuccess()) {
+            throw new TributaryRuntimeException(
+                    "TcpServer started fail on port " + port, syncFuture.cause());
         }
+        LOG.info("TcpServer started on {}:{}", prettyHost(host), port);
         return syncFuture.channel();
     }
 
@@ -224,14 +204,7 @@ public abstract class NettySource extends AbstractSource {
 
     private void closeServerChannelsAndGroup() {
         if (channelList != null) {
-            channelList.forEach(
-                    f -> {
-                        try {
-                            f.close().sync();
-                        } catch (Exception e) {
-                            LOG.info("wait close channel sync fail", e);
-                        }
-                    });
+            channelList.forEach(NettySource::closeChannelSync);
             LOG.info("close netty source listen {}:{}", prettyHost(host), port);
         }
         if (workGroup != null) {
@@ -251,6 +224,12 @@ public abstract class NettySource extends AbstractSource {
         return new IdleStateHandler(idle, idle, idle, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * pretty host.
+     *
+     * @param host host
+     * @return String
+     */
     private String prettyHost(String host) {
         return host == null || host.isEmpty() ? "*" : host;
     }
@@ -289,5 +268,21 @@ public abstract class NettySource extends AbstractSource {
      */
     public int getEventThreads() {
         return eventThreads;
+    }
+
+    /**
+     * close channel sync.
+     *
+     * @param channel channel
+     */
+    private static void closeChannelSync(Channel channel) {
+        if (channel == null) {
+            return;
+        }
+        try {
+            channel.close().sync();
+        } catch (Exception e) {
+            LOG.warn("wait close channel sync fail", e);
+        }
     }
 }

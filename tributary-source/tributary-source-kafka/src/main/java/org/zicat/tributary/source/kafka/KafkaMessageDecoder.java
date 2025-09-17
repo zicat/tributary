@@ -47,11 +47,11 @@ import org.zicat.tributary.common.BytesUtils;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.source.base.netty.NettySource;
-import org.zicat.tributary.source.base.utils.SourceHeaders;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,6 +67,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaMessageDecoder.class);
     public static final List<String> SUPPORTED_MECHANISMS = Collections.singletonList("PLAIN");
+    public static final String HEADER_KEY_AUTH_USER = "_auth_user";
 
     private static final AttributeKey<String> KEY_AUTHENTICATED_USER =
             AttributeKey.valueOf("authenticated_user");
@@ -297,9 +298,9 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
      * @return DefaultRecords
      */
     private static DefaultRecords createRecords(ChannelHandlerContext ctx, TopicPartition tp) {
-        final long receivedTs = System.currentTimeMillis();
         final String user = ctx.channel().attr(KEY_AUTHENTICATED_USER).get();
-        final Map<String, byte[]> headers = SourceHeaders.sourceHeaders(receivedTs, user);
+        final Map<String, byte[]> headers = new HashMap<>();
+        headers.put(HEADER_KEY_AUTH_USER, user.getBytes(StandardCharsets.UTF_8));
         return new DefaultRecords(tp.topic(), headers);
     }
 

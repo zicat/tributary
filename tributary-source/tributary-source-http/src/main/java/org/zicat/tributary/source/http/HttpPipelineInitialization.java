@@ -35,6 +35,7 @@ import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.Strings;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -160,5 +161,12 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
             LOG.info("Source {} not set http basic auth, will not check auth token", sourceId);
         }
         return authToken;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (httpHandlerExecutorGroup != null) {
+            httpHandlerExecutorGroup.shutdownGracefully();
+        }
     }
 }

@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.source.http;
 
-import static org.zicat.tributary.source.base.utils.SourceHeaders.sourceHeaders;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -223,8 +221,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @return map
      */
     private static Map<String, byte[]> recordsHeaders(Map<String, String> httpHeaders) {
-        final long receivedTime = System.currentTimeMillis();
-        final Map<String, byte[]> recordsHeader = new HashMap<>(sourceHeaders(receivedTime));
+        final Map<String, byte[]> recordsHeader = new HashMap<>();
         httpHeaders.forEach((k, v) -> recordsHeader.put(k, v.getBytes(StandardCharsets.UTF_8)));
         return recordsHeader;
     }

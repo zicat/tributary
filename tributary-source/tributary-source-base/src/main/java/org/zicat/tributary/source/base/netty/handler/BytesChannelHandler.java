@@ -26,7 +26,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.NettySource;
-import org.zicat.tributary.source.base.utils.SourceHeaders;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -45,12 +44,8 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] packet)
             throws IOException, InterruptedException {
-        final long receivedTs = System.currentTimeMillis();
         final Records records =
-                createBytesRecords(
-                        source.sourceId(),
-                        SourceHeaders.sourceHeaders(receivedTs),
-                        Collections.singletonList(packet));
+                createBytesRecords(source.sourceId(), Collections.singletonList(packet));
         source.append(partition, records);
         ackSuccess(packet, ctx);
     }

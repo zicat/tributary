@@ -74,7 +74,6 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
                 final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
                 final ReadableConfig config = sourceConfig.filterAndRemovePrefixKey(head);
                 final Source source = sourceFactory.createSource(sourceId, channel, config);
-                source.start();
                 sources.put(sourceId, source);
             }
             LOG.info("create source success, sources {}", sources.keySet());
