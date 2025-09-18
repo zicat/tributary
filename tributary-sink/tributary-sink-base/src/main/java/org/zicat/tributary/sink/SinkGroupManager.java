@@ -28,7 +28,7 @@ import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
+import org.zicat.tributary.sink.handler.PartitionHandler;
 import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
 
 import java.io.Closeable;
@@ -49,7 +49,7 @@ public class SinkGroupManager implements Closeable {
     private final String groupId;
     private final Channel channel;
     private final SinkGroupConfig sinkGroupConfig;
-    private final List<AbstractPartitionHandler> handlers = new ArrayList<>();
+    private final List<PartitionHandler> handlers = new ArrayList<>();
 
     public SinkGroupManager(String groupId, Channel channel, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
@@ -65,19 +65,19 @@ public class SinkGroupManager implements Closeable {
         final PartitionHandlerFactory partitionHandlerFactory =
                 findFactory(sinkGroupConfig.handlerIdentity(), PartitionHandlerFactory.class);
         for (int partitionId = 0; partitionId < channel.partition(); partitionId++) {
-            final AbstractPartitionHandler sinkHandler =
+            final PartitionHandler sinkHandler =
                     partitionHandlerFactory.createHandler(
                             groupId, channel, partitionId, sinkGroupConfig);
             handlers.add(sinkHandler);
         }
-        handlers.forEach(AbstractPartitionHandler::open);
+        handlers.forEach(PartitionHandler::open);
         handlers.forEach(Thread::start);
     }
 
     public Map<GaugeKey, GaugeFamily> gaugeFamily() {
         final Map<GaugeKey, GaugeFamily> families = new HashMap<>();
         KEY_SINK_LAG
-                .value(handlers.stream().mapToLong(AbstractPartitionHandler::lag).sum())
+                .value(handlers.stream().mapToLong(PartitionHandler::lag).sum())
                 .register(families);
         return families;
     }
@@ -89,7 +89,7 @@ public class SinkGroupManager implements Closeable {
      */
     public Map<Integer, List<AbstractFunction>> getFunctions() {
         final Map<Integer, List<AbstractFunction>> result = new HashMap<>();
-        for (AbstractPartitionHandler handler : handlers) {
+        for (PartitionHandler handler : handlers) {
             result.put(handler.partitionId(), handler.getFunctions());
         }
         return result;

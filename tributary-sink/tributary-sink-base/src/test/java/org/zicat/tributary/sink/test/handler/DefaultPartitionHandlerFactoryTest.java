@@ -24,10 +24,10 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.function.PrintFunctionFactory;
-import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
+import org.zicat.tributary.sink.handler.PartitionHandler;
 
 import java.io.IOException;
 
@@ -44,14 +44,14 @@ public class DefaultPartitionHandlerFactoryTest {
                     SinkGroupConfigBuilder.newBuilder()
                             .functionIdentity(PrintFunctionFactory.IDENTITY);
             builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, 1);
-            try (AbstractPartitionHandler handler =
+            try (PartitionHandler handler =
                     factory.createHandler(groupId, channel, 0, builder.build())) {
                 handler.open();
                 Assert.assertEquals(DirectPartitionHandler.class, handler.getClass());
             }
 
             builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, 2);
-            try (AbstractPartitionHandler handler =
+            try (PartitionHandler handler =
                     factory.createHandler(groupId, channel, 0, builder.build())) {
                 handler.open();
                 Assert.assertEquals(MultiThreadPartitionHandler.class, handler.getClass());

@@ -20,9 +20,9 @@ package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
+import org.zicat.tributary.sink.handler.PartitionHandler;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -31,8 +31,7 @@ import java.util.Iterator;
 /**
  * Function.
  *
- * <p>{@link AbstractPartitionHandler} create at least one Function and each Function only bind one
- * thread.
+ * <p>{@link PartitionHandler} create at least one Function and each Function only bind one thread.
  */
 public interface Function extends Closeable, CheckpointedFunction {
 

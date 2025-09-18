@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  * <p>Set threads and {@link Function} count by ${@link MultiThreadPartitionHandler#OPTION_THREADS}
  * .
  */
-public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
+public class MultiThreadPartitionHandler extends PartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiThreadPartitionHandler.class);
 
@@ -132,7 +132,7 @@ public class MultiThreadPartitionHandler extends AbstractPartitionHandler {
     protected Disruptor<Block> createDisruptor() {
         return new Disruptor<>(
                 Block::new,
-                formatCap(sinkGroupConfig.get(OPTION_BUFFER_SIZE)),
+                formatCap(config.get(OPTION_BUFFER_SIZE)),
                 Threads.createThreadFactoryByName(threadName() + "-", true),
                 ProducerType.SINGLE,
                 new TimeoutBlockingWaitStrategy(30, TimeUnit.SECONDS));

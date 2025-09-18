@@ -21,6 +21,7 @@ package org.zicat.tributary.sink.test.handler;
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_CHECKPOINT_INTERVAL;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_MAX_RETAIN_SIZE;
+import org.zicat.tributary.sink.handler.PartitionHandler;
 import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_PARTITION_HANDLER_CLOCK;
 
 import org.junit.Assert;
@@ -33,7 +34,6 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.handler.AbstractPartitionHandler;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 import org.zicat.tributary.sink.test.function.MockClock;
 
@@ -59,13 +59,16 @@ public class AbstractPartitionHandlerTest {
         builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE, 80L);
         final SinkGroupConfig sinkGroupConfig = builder.build();
 
-        AbstractPartitionHandler handler;
+        PartitionHandler handler;
         try (Channel channel =
                 MemoryChannelTestUtils.createChannel(
                         "t1", 2, 50, 50, CompressionType.NONE, groupId)) {
             final int partitionId = 0;
             handler =
-                    new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
+                    new PartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
+
+                        @Override
+                        public void snapshot() {}
 
                         @Override
                         public void closeCallback() {}
@@ -113,7 +116,7 @@ public class AbstractPartitionHandlerTest {
         final AtomicBoolean skip = new AtomicBoolean(false);
         final MockClock clock = new MockClock().setCurrentTimeMillis(System.currentTimeMillis());
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        AbstractPartitionHandler handler;
+        PartitionHandler handler;
         try (Channel channel =
                 MemoryChannelTestUtils.createChannel(
                         "t1", 1, 50, 50L, CompressionType.NONE, groupId)) {
@@ -140,7 +143,10 @@ public class AbstractPartitionHandlerTest {
 
             final int partitionId = 0;
             handler =
-                    new AbstractPartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
+                    new PartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
+
+                        @Override
+                        public void snapshot() {}
 
                         private int count = 0;
 
@@ -215,8 +221,11 @@ public class AbstractPartitionHandlerTest {
                             createStringByLength(77));
             final List<String> consumerData =
                     Collections.synchronizedList(new ArrayList<>(testData));
-            try (AbstractPartitionHandler handler =
-                    new AbstractPartitionHandler(groupId, channel, 0, sinkGroupConfig) {
+            try (PartitionHandler handler =
+                    new PartitionHandler(groupId, channel, 0, sinkGroupConfig) {
+
+                        @Override
+                        public void snapshot() {}
 
                         @Override
                         public void closeCallback() {}

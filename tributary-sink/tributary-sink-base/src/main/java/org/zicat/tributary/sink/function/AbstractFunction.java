@@ -21,19 +21,10 @@ package org.zicat.tributary.sink.function;
 import io.prometheus.client.SimpleCollector;
 
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.sink.utils.HostUtils;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 /** AbstractFunction. */
 public abstract class AbstractFunction implements Function {
-
-    public static final ConfigOption<String> OPTION_METRICS_HOST =
-            ConfigOptions.key("metricsHost")
-                    .stringType()
-                    .description(
-                            "export the dimension value of metrics, default the first network card ip")
-                    .defaultValue(HostUtils.getLocalHostString(".*"));
 
     protected Context context;
     private Offset committableOffset;

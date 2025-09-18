@@ -24,45 +24,34 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 /** host utils. */
 public class HostUtils {
 
-    /**
-     * get localhost string ip by pattern filter.
-     *
-     * @return host
-     */
-    public static String getLocalHostString(String metricsIpPattern) {
-        return getLocalInetAddress(metricsIpPattern).getHostAddress();
-    }
+    private static final String KEY_HOSTNAME = "HOSTNAME";
+    private static final String KEY_COMPUTERNAME = "COMPUTERNAME";
 
     /**
-     * get localhost string ip by pattern filter.
+     * get host name.
      *
-     * @return host
+     * @return hostname
      */
-    public static InetAddress getLocalInetAddress(String metricsIpPattern) {
-        final Enumeration<NetworkInterface> it;
+    public static String getHostName() {
+        String hostname = System.getenv(KEY_HOSTNAME);
+        if (hostname != null && !hostname.isEmpty()) {
+            return hostname;
+        }
+
+        hostname = System.getenv(KEY_COMPUTERNAME);
+        if (hostname != null && !hostname.isEmpty()) {
+            return hostname;
+        }
         try {
-            it = NetworkInterface.getNetworkInterfaces();
-        } catch (SocketException e) {
-            throw new TributaryRuntimeException(e);
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
         }
-        while (it.hasMoreElements()) {
-            final NetworkInterface networkInterface = it.nextElement();
-            final Enumeration<InetAddress> addressIt = networkInterface.getInetAddresses();
-            while (addressIt.hasMoreElements()) {
-                final InetAddress inetAddress = addressIt.nextElement();
-                if (!inetAddress.isLoopbackAddress()
-                        && inetAddress instanceof Inet4Address
-                        && (metricsIpPattern == null
-                                || inetAddress.getHostAddress().matches(metricsIpPattern))) {
-                    return inetAddress;
-                }
-            }
-        }
-        throw new TributaryRuntimeException("local ip not found");
     }
 }

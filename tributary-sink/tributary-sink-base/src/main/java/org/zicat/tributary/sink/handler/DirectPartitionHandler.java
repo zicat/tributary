@@ -36,7 +36,7 @@ import java.util.List;
  * <p>One Thread mode, One ${@link DirectPartitionHandler} instance bind with one {@link Function}
  * instance .
  */
-public class DirectPartitionHandler extends AbstractPartitionHandler {
+public class DirectPartitionHandler extends PartitionHandler {
 
     private AbstractFunction function;
 

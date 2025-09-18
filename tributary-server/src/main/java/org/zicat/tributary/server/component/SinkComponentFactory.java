@@ -32,7 +32,7 @@ import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import java.util.*;
 
 import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 /** SinkComponentFactory. */
 public class SinkComponentFactory implements SafeFactory<SinkComponent> {

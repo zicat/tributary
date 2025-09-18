@@ -20,7 +20,6 @@ package org.zicat.tributary.sink.elasticsearch.test;
 
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.SINK_ELASTICSEARCH_DISCARD_COUNTER;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
 import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 
 import static java.lang.Long.parseLong;
@@ -54,6 +53,7 @@ import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 import java.time.Duration;
 import java.util.*;
@@ -233,6 +233,5 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         public boolean isEmpty() {
             return listenerQueue.isEmpty();
         }
-
     }
 }

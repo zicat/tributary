@@ -23,7 +23,7 @@ import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 import static org.zicat.tributary.common.records.RecordsUtils.HEAD_KEY_SENT_TS;
 import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
-import static org.zicat.tributary.sink.hdfs.HDFSFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
 import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriter.*;
 import static org.zicat.tributary.sink.hdfs.ParquetHDFSRecordsWriterFactory.OPTION_OUTPUT_COMPRESSION_CODEC;

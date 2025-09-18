@@ -31,9 +31,9 @@ public interface PartitionHandlerFactory extends SpiFactory {
      * @param groupId groupId
      * @param channel channel
      * @param partitionId partitionId
-     * @param sinkGroupConfig sinkGroupConfig
+     * @param config config
      * @return AbstractSinkHandler
      */
-    AbstractPartitionHandler createHandler(
-            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig);
+    PartitionHandler createHandler(
+            String groupId, Channel channel, int partitionId, SinkGroupConfig config);
 }

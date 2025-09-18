@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.hbase.test;
 
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
 
 import org.apache.hadoop.conf.Configuration;

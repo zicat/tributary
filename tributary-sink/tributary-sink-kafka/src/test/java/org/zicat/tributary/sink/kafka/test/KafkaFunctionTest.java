@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
-import static org.zicat.tributary.sink.function.AbstractFunction.OPTION_METRICS_HOST;
-
 import io.prometheus.client.Counter;
 
 import org.apache.kafka.clients.producer.MockProducer;
@@ -36,6 +34,7 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.*;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 import org.zicat.tributary.sink.kafka.KafkaFunction;
 import org.zicat.tributary.sink.kafka.KafkaFunctionFactory;
 

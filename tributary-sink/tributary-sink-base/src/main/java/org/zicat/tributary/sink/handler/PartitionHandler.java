@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.handler;
 
+import io.prometheus.client.Gauge;
 import static org.zicat.tributary.common.Threads.joinQuietly;
 import static org.zicat.tributary.common.Threads.sleepQuietly;
 import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
@@ -34,53 +35,121 @@ import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
+import org.zicat.tributary.sink.utils.HostUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** PartitionHandler. */
 public abstract class PartitionHandler extends Thread implements Closeable, CheckpointedFunction {
 
+    public static final ConfigOption<String> OPTION_METRICS_HOST =
+            ConfigOptions.key("metricsHost")
+                    .stringType()
+                    .description("the metric host")
+                    .defaultValue(HostUtils.getHostName());
+
     public static final ConfigOption<Clock> OPTION_PARTITION_HANDLER_CLOCK =
             ConfigOptions.key("_partition_handler_clock")
                     .<Clock>objectType()
                     .defaultValue(new SystemClock());
 
-    private static final Logger LOG = LoggerFactory.getLogger(PartitionHandler.class);
-    private static final long DEFAULT_WAIT_TIME_MILLIS = 500;
-    private static final long DEFAULT_SLEEP_WHEN_EXCEPTION = 1000;
+    private static final Gauge SINK_SNAPSHOT_COST =
+            Gauge.build()
+                    .name("sink_snapshot_cost")
+                    .help("sink snapshot cost")
+                    .labelNames("host", "topic", "groupId", "partition_id")
+                    .register();
+
+    protected static final Logger LOG = LoggerFactory.getLogger(PartitionHandler.class);
+    protected static final long DEFAULT_WAIT_TIME_MILLIS = 500;
+    protected static final long DEFAULT_SLEEP_WHEN_EXCEPTION = 1000;
 
     protected final String groupId;
     protected final Channel channel;
     protected final Integer partitionId;
     protected final FunctionFactory functionFactory;
-    protected final SinkGroupConfig sinkGroupConfig;
+    protected final SinkGroupConfig config;
     protected final Offset startOffset;
     protected final Long maxRetainSize;
-    protected final AtomicBoolean closed;
+    protected final AtomicBoolean closed = new AtomicBoolean();
     protected final long snapshotIntervalMills;
     protected final Clock clock;
+
+    protected Offset fetchOffset;
     protected Offset committedOffset;
-    private long preSnapshotTime;
+    protected long preSnapshotTime;
+    protected Gauge.Child sinkSnapshotCost;
 
     public PartitionHandler(
-            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
+            String groupId, Channel channel, int partitionId, SinkGroupConfig config) {
         this.groupId = groupId;
         this.channel = channel;
         this.partitionId = partitionId;
-        this.snapshotIntervalMills = snapshotIntervalMills(sinkGroupConfig);
-        this.sinkGroupConfig = sinkGroupConfig;
-        this.clock = sinkGroupConfig.get(OPTION_PARTITION_HANDLER_CLOCK);
+        this.snapshotIntervalMills = snapshotIntervalMills(config);
+        this.config = config;
+        this.clock = config.get(OPTION_PARTITION_HANDLER_CLOCK);
         this.preSnapshotTime = clock.currentTimeMillis();
-        this.functionFactory = findFunctionFactory(sinkGroupConfig.functionIdentity());
+        this.functionFactory = findFunctionFactory(config.functionIdentity());
         this.startOffset = channel.committedOffset(groupId, partitionId);
-        this.maxRetainSize = parseMaxRetainSize(sinkGroupConfig);
-        this.closed = new AtomicBoolean(false);
-        setName(threadName());
+        this.maxRetainSize = parseMaxRetainSize(config);
         this.committedOffset = startOffset;
+        this.fetchOffset = startOffset;
+        this.sinkSnapshotCost =
+                SINK_SNAPSHOT_COST.labels(
+                        config.get(OPTION_METRICS_HOST),
+                        channel.topic(),
+                        groupId,
+                        String.valueOf(partitionId));
+        setName(threadName());
+    }
+
+    @Override
+    public void run() {
+
+        while (true) {
+            try {
+                final RecordsResultSet result = poll(fetchOffset);
+                if (closed.get() && result.isEmpty()) {
+                    break;
+                }
+                if (!result.isEmpty()) {
+                    process(result.nexOffset(), result);
+                }
+                checkTriggerCheckpoint();
+                fetchOffset = nextFetchOffset(result.nexOffset());
+            } catch (InterruptedException interruptedException) {
+                if (closed.get()) {
+                    return;
+                }
+            } catch (Throwable e) {
+                LOG.error("poll data failed.", e);
+                if (closed.get()) {
+                    break;
+                }
+                updateAndCommitOffset();
+                fetchOffset = nextFetchOffset(null);
+                sleepWhenException();
+            }
+        }
+    }
+
+    /**
+     * next fetch offset.
+     *
+     * @param nextOffset nextOffset
+     * @return GroupOffset
+     */
+    private Offset nextFetchOffset(Offset nextOffset) {
+        if (nextOffset == null || nextOffset.compareTo(committedOffset()) < 0) {
+            return fetchOffset.skip2Target(committedOffset());
+        } else {
+            return nextOffset;
+        }
     }
 
     /**
@@ -97,8 +166,9 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
         final long currentTime = clock.currentTimeMillis();
         if (currentTime - preSnapshotTime >= snapshotIntervalMills) {
             snapshot();
-            updateAndCommitOffset();
+            sinkSnapshotCost.set(clock.currentTimeMillis() - currentTime);
             preSnapshotTime = currentTime;
+            updateAndCommitOffset();
         }
     }
 
@@ -111,6 +181,16 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
      * @return GroupOffset
      */
     public abstract Offset committableOffset();
+
+    /** callback close. */
+    public abstract void closeCallback() throws IOException;
+
+    /**
+     * get all functions.
+     *
+     * @return function list
+     */
+    public abstract List<AbstractFunction> getFunctions();
 
     /**
      * create thread name.
@@ -177,9 +257,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
         final Function function = functionFactory.create();
         if (!(function instanceof AbstractFunction)) {
             throw new IllegalStateException(
-                    function.getClass().getName()
-                            + " must extends "
-                            + AbstractFunction.class.getName());
+                    function.getClass() + " not extends " + AbstractFunction.class);
         }
         final AbstractFunction abstractFunction = (AbstractFunction) function;
         final ContextBuilder builder =
@@ -189,7 +267,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
                         .startOffset(startOffset)
                         .groupId(groupId)
                         .topic(channel.topic());
-        builder.addAll(sinkGroupConfig);
+        builder.addAll(config);
         try {
             abstractFunction.open(builder.build());
             return abstractFunction;
@@ -202,8 +280,13 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
-            interrupt();
-            joinQuietly(this);
+            try {
+                interrupt();
+                joinQuietly(this);
+            } finally {
+                closeCallback();
+                commit(fetchOffset);
+            }
         }
     }
 
@@ -220,6 +303,15 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
      */
     public long lag(Offset offset) {
         return channel.lag(partitionId, offset);
+    }
+
+    /**
+     * get partition lag.
+     *
+     * @return lag
+     */
+    public long lag() {
+        return lag(fetchOffset);
     }
 
     /**
@@ -268,7 +360,4 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
         LOG.warn("lag over {}, committed {}, skip target = {}", maxRetainSize, offset, newOffset);
         return newOffset;
     }
-
-    @Override
-    public void snapshot() throws Exception {}
 }

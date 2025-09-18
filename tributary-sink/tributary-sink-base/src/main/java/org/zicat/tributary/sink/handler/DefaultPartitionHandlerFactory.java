@@ -54,14 +54,14 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
     }
 
     @Override
-    public AbstractPartitionHandler createHandler(
-            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        final int concurrent = sinkGroupConfig.get(OPTION_THREADS);
+    public PartitionHandler createHandler(
+            String groupId, Channel channel, int partitionId, SinkGroupConfig config) {
+        final int concurrent = config.get(OPTION_THREADS);
         if (concurrent > 1) {
             return new MultiThreadPartitionHandler(
-                    groupId, channel, partitionId, concurrent, sinkGroupConfig);
+                    groupId, channel, partitionId, concurrent, config);
         } else {
-            return new DirectPartitionHandler(groupId, channel, partitionId, sinkGroupConfig);
+            return new DirectPartitionHandler(groupId, channel, partitionId, config);
         }
     }
 
@@ -83,13 +83,11 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
      * @return value
      */
     public static long snapshotIntervalMills(ReadableConfig config) {
-        final long snapshotIntervalMills = config.get(OPTION_CHECKPOINT_INTERVAL).toMillis();
-        if (snapshotIntervalMills < 5000) {
+        final long snapshotMills = config.get(OPTION_CHECKPOINT_INTERVAL).toMillis();
+        if (snapshotMills < 5000) {
             throw new IllegalStateException(
-                    "snapshot interval must be greater than 5000 ms, but got: "
-                            + snapshotIntervalMills
-                            + " ms");
+                    "snapshot interval must be greater than 5000ms, but got: " + snapshotMills);
         }
-        return snapshotIntervalMills;
+        return snapshotMills;
     }
 }
