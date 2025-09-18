@@ -33,10 +33,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /** IOUtils. */
 public class IOUtils {
 
+    private static final int DEFAULT_BUFFER_SIZE = 4096;
     private static final Logger LOG = LoggerFactory.getLogger(IOUtils.class);
     private static final int INT_LENGTH = 4;
 
@@ -464,6 +467,42 @@ public class IOUtils {
                 os.write(buf, 0, len);
             }
             os.flush();
+        }
+    }
+
+    /**
+     * gzip extract.
+     *
+     * @param data data
+     * @return extract data
+     * @throws IOException IOException
+     */
+    public static byte[] decompressionGZip(byte[] data) throws IOException {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                GZIPInputStream gis = new GZIPInputStream(bais);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+            int len;
+            while ((len = gis.read(buffer)) != -1) {
+                baos.write(buffer, 0, len);
+            }
+            return baos.toByteArray();
+        }
+    }
+
+    /**
+     * gzip compress.
+     *
+     * @param data data
+     * @return compress data
+     * @throws IOException IOException
+     */
+    public static byte[] compressionGZip(byte[] data) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+            gos.write(data);
+            gos.finish();
+            return baos.toByteArray();
         }
     }
 }

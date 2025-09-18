@@ -18,8 +18,12 @@
 
 package org.zicat.tributary.source.http.test;
 
+import com.github.luben.zstd.Zstd;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 
+import org.xerial.snappy.Snappy;
+import static org.zicat.tributary.common.IOUtils.compressionGZip;
+import static org.zicat.tributary.common.IOUtils.decompressionGZip;
 import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.*;
 
@@ -85,6 +89,145 @@ public class HttpPipelineInitializationFactoryTest {
             assertErrorJson(pipelineInitialization);
             assertOkRequest(pipelineInitialization, channel);
         }
+
+        try (Channel channel =
+                        MemoryChannelTestUtils.memoryChannelFactory(GROUP_ID)
+                                .createChannel(TOPIC, null);
+                NettySource source = new NettySourceMock(config, channel)) {
+            final PipelineInitialization pipelineInitialization =
+                    factory.createPipelineInitialization(source);
+            assertContentEncodingRequest(
+                    pipelineInitialization,
+                    channel,
+                    new Compression() {
+                        @Override
+                        public byte[] compression(byte[] data) throws IOException {
+                            return compressionGZip(data);
+                        }
+
+                        @Override
+                        public byte[] decompression(byte[] data) throws IOException {
+                            return decompressionGZip(data);
+                        }
+                    },
+                    "gzip");
+
+            assertContentEncodingRequest(
+                    pipelineInitialization,
+                    channel,
+                    new Compression() {
+                        @Override
+                        public byte[] compression(byte[] data) throws IOException {
+                            return Snappy.compress(data);
+                        }
+
+                        @Override
+                        public byte[] decompression(byte[] data) throws IOException {
+                            return Snappy.uncompress(data);
+                        }
+                    },
+                    "snappy");
+
+            assertContentEncodingRequest(
+                    pipelineInitialization,
+                    channel,
+                    new Compression() {
+                        @Override
+                        public byte[] compression(byte[] data) {
+                            return Zstd.compress(data);
+                        }
+
+                        @Override
+                        public byte[] decompression(byte[] data) {
+                            return Zstd.decompress(data, (int) Zstd.decompressedSize(data));
+                        }
+                    },
+                    "zstd");
+
+            assertContentEncodingRequest(
+                    pipelineInitialization,
+                    channel,
+                    new Compression() {
+                        @Override
+                        public byte[] compression(byte[] data) {
+                            return Zstd.compress(data);
+                        }
+
+                        @Override
+                        public byte[] decompression(byte[] data) {
+                            return Zstd.decompress(data, (int) Zstd.decompressedSize(data));
+                        }
+                    },
+                    "zstd");
+
+            assertContentEncodingRequest(
+                    pipelineInitialization,
+                    channel,
+                    new Compression() {
+                        @Override
+                        public byte[] compression(byte[] data) {
+                            return data;
+                        }
+
+                        @Override
+                        public byte[] decompression(byte[] data) {
+                            return data;
+                        }
+                    },
+                    null);
+        }
+    }
+
+    private void assertContentEncodingRequest(
+            PipelineInitialization pipelineInitialization,
+            Channel channel,
+            Compression compression,
+            String contentEncoding)
+            throws Exception {
+
+        final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
+        pipelineInitialization.init(embeddedChannel);
+        HttpHeaders headers = new DefaultHttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
+        if (contentEncoding != null) {
+            headers.add("Content-Encoding", contentEncoding);
+        }
+
+        final byte[] body =
+                compression.compression(
+                        "[{\"key\":\"key2\",\"value\":\"value2\",\"headers\":{\"header2\":\"value2\",\"header22\":\"value22\"}}]"
+                                .getBytes(StandardCharsets.UTF_8));
+        embeddedChannel.writeInbound(
+                new DefaultFullHttpRequest(
+                        HttpVersion.HTTP_1_1,
+                        HttpMethod.POST,
+                        PATH + "?topic=" + TOPIC,
+                        Unpooled.buffer(body.length).writeBytes(body),
+                        headers,
+                        headers));
+        final ByteBuf response2 = embeddedChannel.readOutbound();
+        try (final BufferedReader reader = parse(response2)) {
+            final String protocol = reader.readLine();
+            Assert.assertEquals(HTTP_OK_REQUEST, protocol);
+        } finally {
+            response2.release();
+        }
+        channel.flush();
+
+        final Offset offset = Offset.ZERO;
+        final List<byte[]> data = ChannelBaseTest.readChannel(channel, 0, offset, 1).data;
+
+        final Records record = Records.parse(data.get(0));
+        Assert.assertEquals(TOPIC, record.topic());
+        Assert.assertEquals(1, record.count());
+        final Record record2 = record.iterator().next();
+        Assert.assertEquals("key2", new String(record2.key(), StandardCharsets.UTF_8));
+        Assert.assertEquals("value2", new String(record2.value(), StandardCharsets.UTF_8));
+        Assert.assertEquals(2, record2.headers().size());
+        Assert.assertEquals(
+                "value2", new String(record2.headers().get("header2"), StandardCharsets.UTF_8));
+        Assert.assertEquals(
+                "value22", new String(record2.headers().get("header22"), StandardCharsets.UTF_8));
     }
 
     private void assertOkRequest(PipelineInitialization pipelineInitialization, Channel channel)
@@ -273,5 +416,13 @@ public class HttpPipelineInitializationFactoryTest {
         HttpHeaders headers = new DefaultHttpHeaders();
         headers.add("Content-Type", "application/json; charset=UTF-8");
         return headers;
+    }
+
+    /** Compression. */
+    private interface Compression {
+
+        byte[] compression(byte[] data) throws IOException;
+
+        byte[] decompression(byte[] data) throws IOException;
     }
 }

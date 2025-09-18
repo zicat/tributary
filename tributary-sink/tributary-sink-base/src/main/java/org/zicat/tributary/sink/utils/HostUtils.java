@@ -18,14 +18,8 @@
 
 package org.zicat.tributary.sink.utils;
 
-import org.zicat.tributary.common.TributaryRuntimeException;
-
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
 
 /** host utils. */
 public class HostUtils {

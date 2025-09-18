@@ -138,11 +138,12 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param msg msg
      * @return bytes
      */
-    protected byte[] parseBody(FullHttpRequest msg) {
+    protected byte[] parseBody(FullHttpRequest msg) throws IOException {
         final ByteBuf byteBuf = msg.content();
         final byte[] body = new byte[byteBuf.readableBytes()];
         byteBuf.getBytes(byteBuf.readerIndex(), body).discardReadBytes();
-        return body;
+        String contentEncoding = msg.headers().get(HttpHeaderNames.CONTENT_ENCODING);
+        return Extraction.getExtraction(contentEncoding).extract(body);
     }
 
     /**

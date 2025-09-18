@@ -248,6 +248,22 @@ public class IOUtilsTest {
         }
     }
 
+    @Test
+    public void testGzip() throws IOException {
+        assertGzip("aa".getBytes(StandardCharsets.UTF_8));
+        final byte[] data = new byte[10234];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = (byte) (i % 256);
+        }
+        assertGzip(data);
+    }
+
+    private void assertGzip(byte[] data) throws IOException {
+        byte[] compress = IOUtils.compressionGZip(data);
+        byte[] decompress = IOUtils.decompressionGZip(compress);
+        Assert.assertArrayEquals(data, decompress);
+    }
+
     /** TestCloseable. */
     private static class TestCloseable implements Closeable {
         public final AtomicBoolean closed = new AtomicBoolean(false);

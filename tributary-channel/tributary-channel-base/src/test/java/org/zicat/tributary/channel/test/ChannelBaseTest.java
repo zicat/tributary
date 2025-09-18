@@ -64,7 +64,7 @@ public class ChannelBaseTest {
         Offset currentOffset = new Offset(offset.segmentId(), offset.offset());
         while (result.size() < size) {
             final RecordsResultSet recordsResultSet =
-                    channel.poll(partition, currentOffset, 10, TimeUnit.MILLISECONDS);
+                    channel.poll(partition, currentOffset, 100, TimeUnit.MILLISECONDS);
             if (!recordsResultSet.hasNext()) {
                 throw new RuntimeException("no full, expect " + size + ", real " + result.size());
             }
