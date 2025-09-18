@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,23 +78,25 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
             Map<String, String> recordsHeader,
             byte[] body)
             throws IOException {
-        final Map<String, Object> data = new HashMap<>();
-        findCodec(contentType).encode(data, body);
-        if (requestHeadersTargetField != null) {
-            data.put(requestHeadersTargetField, recordsHeader);
+        final List<Map<String, Object>> dataList = findCodec(contentType).encode(body);
+        final List<Record> records = new ArrayList<>(dataList.size());
+        for (Map<String, Object> data : dataList) {
+            if (requestHeadersTargetField != null) {
+                data.put(requestHeadersTargetField, recordsHeader);
+            }
+            if (remoteHostTargetField != null) {
+                data.put(remoteHostTargetField, getRemoteHost(ctx));
+            }
+            if (tags != null && !tags.isEmpty()) {
+                data.put(KEY_TAGS, tags);
+            }
+            final Message<Object> message = new Message<>(offset++, data);
+            if (!messageFilterFactory.getMessageFilter().filter(message)) {
+                return null;
+            }
+            records.add(new DefaultRecord(MAPPER.writeValueAsBytes(data)));
         }
-        if (remoteHostTargetField != null) {
-            data.put(remoteHostTargetField, getRemoteHost(ctx));
-        }
-        if (tags != null && !tags.isEmpty()) {
-            data.put(KEY_TAGS, tags);
-        }
-        final Message<Object> message = new Message<>(offset++, data);
-        if (!messageFilterFactory.getMessageFilter().filter(message)) {
-            return null;
-        }
-        final Record record = new DefaultRecord(MAPPER.writeValueAsBytes(data));
-        return new SingleRecords(topic, record);
+        return new DefaultRecords(topic, records);
     }
 
     /**

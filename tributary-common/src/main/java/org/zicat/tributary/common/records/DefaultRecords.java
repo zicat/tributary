@@ -42,6 +42,10 @@ public class DefaultRecords implements Records {
         this(topic, headers, new ArrayList<>());
     }
 
+    public DefaultRecords(String topic, Collection<Record> records) {
+        this(topic, null, records);
+    }
+
     @Override
     public String topic() {
         return topic;

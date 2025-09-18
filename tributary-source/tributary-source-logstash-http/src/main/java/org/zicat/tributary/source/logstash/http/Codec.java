@@ -18,12 +18,18 @@
 
 package org.zicat.tributary.source.logstash.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.MAPPER;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Codec. */
@@ -33,18 +39,31 @@ public enum Codec {
         final String key = "message";
 
         @Override
-        public void encode(Map<String, Object> target, byte[] body) {
-            target.put(key, new String(body, StandardCharsets.UTF_8));
+        public List<Map<String, Object>> encode(byte[] body) {
+            final Map<String, Object> value = new HashMap<>();
+            value.put(key, new String(body, StandardCharsets.UTF_8));
+            return Collections.singletonList(value);
         }
     },
     JSON("json") {
 
+        final TypeReference<List<Map<String, Object>>> listMapStringType =
+                new TypeReference<List<Map<String, Object>>>() {};
         final TypeReference<Map<String, Object>> mapStringType =
                 new TypeReference<Map<String, Object>>() {};
 
         @Override
-        public void encode(Map<String, Object> target, byte[] body) throws IOException {
-            target.putAll(MAPPER.readValue(body, mapStringType));
+        public List<Map<String, Object>> encode(byte[] body) throws IOException {
+            JsonNode root = MAPPER.readTree(body);
+            if (root instanceof ArrayNode) {
+                ArrayNode arrayNode = (ArrayNode) root;
+                return MAPPER.convertValue(arrayNode, listMapStringType);
+            } else if (root instanceof ObjectNode) {
+                ObjectNode objectNode = (ObjectNode) root;
+                return Collections.singletonList(MAPPER.convertValue(objectNode, mapStringType));
+            } else {
+                throw new RuntimeException("Unsupported json type: " + root.getNodeType());
+            }
         }
     };
 
@@ -61,8 +80,8 @@ public enum Codec {
     /**
      * encode body to target map.
      *
-     * @param target target
      * @param body body
+     * @return encoded map list
      */
-    public abstract void encode(Map<String, Object> target, byte[] body) throws IOException;
+    public abstract List<Map<String, Object>> encode(byte[] body) throws IOException;
 }
