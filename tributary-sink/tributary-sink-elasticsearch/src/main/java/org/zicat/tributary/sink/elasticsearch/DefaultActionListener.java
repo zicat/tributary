@@ -30,11 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 /** DefaultActionListener. */
 public class DefaultActionListener implements ActionListener<BulkResponse> {
 
-    private static final Exception NO_EXCEPTION = new Exception();
+    protected static final Exception NO_EXCEPTION = new Exception();
 
-    private final Offset offset;
-    private final AtomicReference<Exception> state;
-    private final CountDownLatch countDownLatch = new CountDownLatch(1);
+    protected final Offset offset;
+    protected final AtomicReference<Exception> state;
+    protected final CountDownLatch countDownLatch = new CountDownLatch(1);
 
     public DefaultActionListener(Offset offset) {
         this.offset = offset;
@@ -47,24 +47,24 @@ public class DefaultActionListener implements ActionListener<BulkResponse> {
             updateState(NO_EXCEPTION);
             return;
         }
+        final Exception error = checkResponseItems(response);
+        updateState(error == null ? NO_EXCEPTION : error);
+    }
+
+    /**
+     * checkResponseItems.
+     *
+     * @param response response
+     * @return string
+     */
+    protected Exception checkResponseItems(BulkResponse response) {
         for (BulkItemResponse item : response.getItems()) {
             if (!item.isFailed()) {
                 continue;
             }
-            final String index = item.getIndex();
-            final String id = item.getId();
-            final String error = item.getFailureMessage();
-            updateState(
-                    new IllegalStateException(
-                            "Failed to index document id: "
-                                    + id
-                                    + ", index: "
-                                    + index
-                                    + ", error: "
-                                    + error));
-            return;
+            return new Exception(item.getFailureMessage());
         }
-        updateState(NO_EXCEPTION);
+        return null;
     }
 
     @Override
@@ -82,7 +82,7 @@ public class DefaultActionListener implements ActionListener<BulkResponse> {
      *
      * @param e e
      */
-    private void updateState(Exception e) {
+    protected void updateState(Exception e) {
         state.set(e);
         countDownLatch.countDown();
     }
