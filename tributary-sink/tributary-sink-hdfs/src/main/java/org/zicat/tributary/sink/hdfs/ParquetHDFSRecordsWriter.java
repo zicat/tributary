@@ -33,7 +33,6 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
 
 import java.io.IOException;
-import java.util.Map;
 
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
@@ -91,7 +90,6 @@ public class ParquetHDFSRecordsWriter implements HDFSRecordsWriter {
 
     @Override
     public int append(Records records) throws Exception {
-        final Map<String, byte[]> extraHeaders = defaultSinkExtraHeaders();
         foreachRecord(
                 records,
                 (key, value, allHeaders) -> {
@@ -102,7 +100,7 @@ public class ParquetHDFSRecordsWriter implements HDFSRecordsWriter {
                     record.put(FIELD_VALUE, value);
                     writer.write(record);
                 },
-                extraHeaders);
+                defaultSinkExtraHeaders());
         return records.count();
     }
 

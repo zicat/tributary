@@ -55,6 +55,7 @@ import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -96,7 +97,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         recordHeader2.put("rhk2", "rhv2".getBytes());
         final Record record2 =
                 new DefaultRecord(
-                        recordHeader2, null, "{\"name\":\"n2\", \"score\":20}".getBytes());
+                        recordHeader2, null, "{\"name\":\"中\", \"score\":20}".getBytes(StandardCharsets.UTF_8));
 
         final Map<String, byte[]> recordHeader3 = new HashMap<>();
         recordHeader3.put("rhk3", "rhv3".getBytes());
@@ -135,7 +136,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
             final long sentTs = parseLong(source.get(RecordsUtils.HEAD_KEY_SENT_TS).toString());
             Assert.assertTrue(sentTs >= start && sentTs <= System.currentTimeMillis());
 
-            final QueryBuilder query = new TermQueryBuilder("name", "n2");
+            final QueryBuilder query = new TermQueryBuilder("name", "中");
             final SearchResponse searchResponse =
                     node().client()
                             .search(
@@ -150,7 +151,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
             final Map<String, Object> source2 =
                     searchResponse.getHits().getHits()[0].getSourceAsMap();
             Assert.assertEquals(topic, source2.get(DefaultRequestIndexer.KEY_TOPIC));
-            Assert.assertEquals("n2", source2.get("name"));
+            Assert.assertEquals("中", source2.get("name"));
             Assert.assertEquals(20, source2.get("score"));
             Assert.assertEquals("rhv2", source2.get("rhk2"));
             Assert.assertEquals("rshv1", source2.get("rshk1"));

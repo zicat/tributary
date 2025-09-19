@@ -76,6 +76,7 @@ public class ElasticsearchFunction extends AbstractFunction {
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
+        checkFirstListenerStateIfDone();
         final AtomicInteger sendCount = new AtomicInteger();
         while (iterator.hasNext()) {
             final Records records = iterator.next();
@@ -83,13 +84,13 @@ public class ElasticsearchFunction extends AbstractFunction {
             foreachRecord(
                     records,
                     (key, value, headers) -> {
-                        final boolean success = indexer.add(request, topic, key, value, headers);
-                        if (success) {
-                            sendCount.incrementAndGet();
+                        if (!indexer.add(request, topic, key, value, headers)) {
+                            return;
                         }
                         if (request.numberOfActions() >= buckSize) {
                             sendAsync(offset);
                         }
+                        sendCount.incrementAndGet();
                     },
                     defaultSinkExtraHeaders());
         }
@@ -180,23 +181,16 @@ public class ElasticsearchFunction extends AbstractFunction {
     /**
      * check and clear done listeners.
      *
-     * @throws Exception Exception
      */
-    protected void checkAndClearDoneListeners() throws Exception {
+    protected void checkAndClearDoneListeners() {
         DefaultActionListener listener;
         // quick remove all finished listeners orderly in queue
         while ((listener = listenerQueue.peek()) != null) {
             if (!listener.isDone()) {
                 break;
             }
-            final Exception e = listener.exception();
-            if (e == null) {
-                listenerQueue.poll();
-                commit(listener.offset());
-            } else {
-                listenerQueue.clear();
-                throw e;
-            }
+            checkListenerException(listener);
+            listenerQueue.poll();
         }
     }
 
@@ -214,12 +208,31 @@ public class ElasticsearchFunction extends AbstractFunction {
             listenerQueue.clear();
             throw new IllegalStateException("await listener timeout " + awaitTimeout + " ms");
         }
+        checkListenerException(listener);
+    }
+
+    /** checkFirstListenerStateIfDone. */
+    protected void checkFirstListenerStateIfDone() {
+        final DefaultActionListener listener = listenerQueue.peek();
+        if (listener == null || !listener.isDone()) {
+            return;
+        }
+        checkListenerException(listener);
+        listenerQueue.poll();
+    }
+
+    /**
+     * check listener exception.
+     *
+     * @param listener listener
+     */
+    private void checkListenerException(DefaultActionListener listener) {
         final Exception e = listener.exception();
-        if (e == null) {
-            commit(listener.offset());
-        } else {
+        if (e != null) {
             listenerQueue.clear();
-            throw e;
+            throw new RuntimeException(e);
+        } else {
+            commit(listener.offset());
         }
     }
 }

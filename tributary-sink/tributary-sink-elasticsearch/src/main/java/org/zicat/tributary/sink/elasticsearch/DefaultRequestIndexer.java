@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_INDEX;
 import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 
@@ -32,7 +34,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.xcontent.XContentType;
 import org.zicat.tributary.sink.function.Context;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -84,15 +85,13 @@ public class DefaultRequestIndexer implements RequestIndexer {
      * @return IndexRequest
      */
     protected IndexRequest indexRequest(
-            String topic, byte[] key, byte[] value, Map<String, byte[]> headers) {
+            String topic, byte[] key, byte[] value, Map<String, byte[]> headers)
+            throws JsonProcessingException {
         final IndexRequest indexRequest = new IndexRequest(index);
-        final String id = id(topic, key, value, headers);
-        if (id != null) {
-            indexRequest.id(id);
-        }
+        indexRequest.id(id(topic, key, value, headers));
         final JsonNode jsonNode;
         try {
-            jsonNode = MAPPER.readTree(new String(value, StandardCharsets.UTF_8));
+            jsonNode = MAPPER.readTree(value);
             if (!(jsonNode instanceof ObjectNode)) {
                 sinkDiscardCounter.inc();
                 return null;
@@ -106,11 +105,11 @@ public class DefaultRequestIndexer implements RequestIndexer {
             if (objectNode.has(entry.getKey())) {
                 continue;
             }
-            final String v = new String(entry.getValue(), StandardCharsets.UTF_8);
+            final String v = new String(entry.getValue(), UTF_8);
             objectNode.put(entry.getKey(), v);
         }
         objectNode.put(KEY_TOPIC, topic);
-        indexRequest.source(objectNode.toString(), XContentType.JSON);
+        indexRequest.source(MAPPER.writeValueAsBytes(objectNode), XContentType.JSON);
         return indexRequest;
     }
 
@@ -128,7 +127,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
         if (key == null || key.length == 0) {
             return null;
         }
-        return new String(key, StandardCharsets.UTF_8);
+        return new String(key, UTF_8);
     }
 
     @Override
