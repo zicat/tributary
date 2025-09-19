@@ -92,8 +92,8 @@ public class DefaultActionListener implements ActionListener<BulkResponse> {
      *
      * @return return true if done.
      */
-    public boolean isDone() {
-        return state.get() != null;
+    public boolean isRunning() {
+        return state.get() == null;
     }
 
     /**

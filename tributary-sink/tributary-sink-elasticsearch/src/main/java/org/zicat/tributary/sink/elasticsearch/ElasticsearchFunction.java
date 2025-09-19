@@ -84,18 +84,18 @@ public class ElasticsearchFunction extends AbstractFunction {
             foreachRecord(
                     records,
                     (key, value, headers) -> {
-                        if (!indexer.add(request, topic, key, value, headers)) {
-                            return;
+                        if (indexer.add(request, topic, key, value, headers)) {
+                            sendCount.incrementAndGet();
                         }
-                        if (request.numberOfActions() >= buckSize) {
-                            sendAsync(offset);
-                        }
-                        sendCount.incrementAndGet();
                     },
                     defaultSinkExtraHeaders());
         }
-        lastOffset = offset;
         sinkCounter.inc(sendCount.get());
+        lastOffset = offset;
+        // may the number of actions more than buckSize
+        if (request.numberOfActions() >= buckSize) {
+            sendAsync(offset);
+        }
     }
 
     @Override
@@ -178,15 +178,12 @@ public class ElasticsearchFunction extends AbstractFunction {
         }
     }
 
-    /**
-     * check and clear done listeners.
-     *
-     */
+    /** check and clear done listeners. */
     protected void checkAndClearDoneListeners() {
         DefaultActionListener listener;
         // quick remove all finished listeners orderly in queue
         while ((listener = listenerQueue.peek()) != null) {
-            if (!listener.isDone()) {
+            if (listener.isRunning()) {
                 break;
             }
             checkListenerException(listener);
@@ -214,7 +211,7 @@ public class ElasticsearchFunction extends AbstractFunction {
     /** checkFirstListenerStateIfDone. */
     protected void checkFirstListenerStateIfDone() {
         final DefaultActionListener listener = listenerQueue.peek();
-        if (listener == null || !listener.isDone()) {
+        if (listener == null || listener.isRunning()) {
             return;
         }
         checkListenerException(listener);
