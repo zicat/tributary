@@ -27,7 +27,7 @@ import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.sink.function.AbstractFunction;
+import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.handler.PartitionHandler;
 import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
 
@@ -87,8 +87,8 @@ public class SinkGroupManager implements Closeable {
      *
      * @return map
      */
-    public Map<Integer, List<AbstractFunction>> getFunctions() {
-        final Map<Integer, List<AbstractFunction>> result = new HashMap<>();
+    public Map<Integer, List<Function>> getFunctions() {
+        final Map<Integer, List<Function>> result = new HashMap<>();
         for (PartitionHandler handler : handlers) {
             result.put(handler.partitionId(), handler.getFunctions());
         }

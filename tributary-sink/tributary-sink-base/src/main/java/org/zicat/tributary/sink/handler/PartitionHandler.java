@@ -190,7 +190,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
      *
      * @return function list
      */
-    public abstract List<AbstractFunction> getFunctions();
+    public abstract List<Function> getFunctions();
 
     /**
      * create thread name.
@@ -251,15 +251,10 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
     /**
      * create function.
      *
-     * @return AbstractFunction
+     * @return Function
      */
-    protected final AbstractFunction createFunction(String id) {
+    protected final Function createFunction(String id) {
         final Function function = functionFactory.create();
-        if (!(function instanceof AbstractFunction)) {
-            throw new IllegalStateException(
-                    function.getClass() + " not extends " + AbstractFunction.class);
-        }
-        final AbstractFunction abstractFunction = (AbstractFunction) function;
         final ContextBuilder builder =
                 ContextBuilder.newBuilder()
                         .id(id == null ? getSinHandlerId() : id)
@@ -269,10 +264,10 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
                         .topic(channel.topic());
         builder.addAll(config);
         try {
-            abstractFunction.open(builder.build());
-            return abstractFunction;
+            function.open(builder.build());
+            return function;
         } catch (Exception e) {
-            IOUtils.closeQuietly(abstractFunction);
+            IOUtils.closeQuietly(function);
             throw new IllegalStateException("open function fail", e);
         }
     }

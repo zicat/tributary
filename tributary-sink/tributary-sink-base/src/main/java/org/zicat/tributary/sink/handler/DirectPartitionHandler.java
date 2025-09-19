@@ -22,7 +22,6 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ import java.util.List;
  */
 public class DirectPartitionHandler extends PartitionHandler {
 
-    private AbstractFunction function;
+    private Function function;
 
     public DirectPartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
@@ -66,7 +65,7 @@ public class DirectPartitionHandler extends PartitionHandler {
     }
 
     @Override
-    public List<AbstractFunction> getFunctions() {
+    public List<Function> getFunctions() {
         return Collections.singletonList(function);
     }
 

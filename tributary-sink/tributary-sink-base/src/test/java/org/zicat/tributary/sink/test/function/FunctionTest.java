@@ -54,10 +54,9 @@ public class FunctionTest {
             final Context context = builder.build();
             function.open(context);
             Assert.assertEquals(function.committableOffset(), offset);
-            Assert.assertEquals(context.groupId(), function.context().groupId());
-            Assert.assertEquals(context.partitionId(), function.context().partitionId());
-            Assert.assertEquals(context.topic(), function.context().topic());
-            Assert.assertEquals(context, function.context());
+            Assert.assertEquals(context.groupId(), function.groupId());
+            Assert.assertEquals(context.partitionId(), function.partitionId());
+            Assert.assertEquals(context.topic(), function.topic());
 
             final Offset newOffset = offset.skipNextSegmentHead();
             function.commit(newOffset);

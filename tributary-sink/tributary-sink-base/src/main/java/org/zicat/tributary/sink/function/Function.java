@@ -64,6 +64,10 @@ public interface Function extends Closeable, CheckpointedFunction {
      */
     Offset committableOffset();
 
+    /** default snapshot, subclass can override this function. */
+    @Override
+    default void snapshot() throws Exception {}
+
     /**
      * close function.
      *
@@ -72,4 +76,32 @@ public interface Function extends Closeable, CheckpointedFunction {
      * @throws IOException IOException
      */
     void close() throws IOException;
+
+    /**
+     * function id.
+     *
+     * @return string id
+     */
+    String functionId();
+
+    /**
+     * group id.
+     *
+     * @return group id
+     */
+    String groupId();
+
+    /**
+     * topic.
+     *
+     * @return topic
+     */
+    String topic();
+
+    /**
+     * partition id.
+     *
+     * @return partition id
+     */
+    int partitionId();
 }

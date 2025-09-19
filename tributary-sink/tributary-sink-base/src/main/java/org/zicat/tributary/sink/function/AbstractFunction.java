@@ -52,15 +52,6 @@ public abstract class AbstractFunction implements Function {
     }
 
     /**
-     * get context.
-     *
-     * @return context
-     */
-    public final Context context() {
-        return context;
-    }
-
-    /**
      * execute callback and persist offset.
      *
      * @param newCommittableOffset newCommittableOffset
@@ -79,23 +70,27 @@ public abstract class AbstractFunction implements Function {
      * @return child
      * @param <CHILD> CHILD
      */
-    protected <CHILD> CHILD labelHostId(SimpleCollector<CHILD> collector) {
-        return labelHostId(context, collector);
+    public  <CHILD> CHILD labelHostId(SimpleCollector<CHILD> collector) {
+        return collector.labels(metricsHost, context.id());
     }
 
-    /**
-     * label host group id topic.
-     *
-     * @param context context
-     * @param collector collector
-     * @return child
-     * @param <CHILD> CHILD
-     */
-    public static <CHILD> CHILD labelHostId(Context context, SimpleCollector<CHILD> collector) {
-        return collector.labels(context.get(OPTION_METRICS_HOST), context.id());
-    }
-
-    /** default snapshot, subclass can override this function. */
     @Override
-    public void snapshot() throws Exception {}
+    public String functionId() {
+        return context.id();
+    }
+
+    @Override
+    public String groupId() {
+        return context.groupId();
+    }
+
+    @Override
+    public String topic() {
+        return context.topic();
+    }
+
+    @Override
+    public int partitionId() {
+        return context.partitionId();
+    }
 }

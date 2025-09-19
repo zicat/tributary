@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.test.handler;
 
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
+import org.zicat.tributary.sink.function.Function;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_CHECKPOINT_INTERVAL;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_MAX_RETAIN_SIZE;
 import org.zicat.tributary.sink.handler.PartitionHandler;
@@ -33,7 +34,6 @@ import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
-import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 import org.zicat.tributary.sink.test.function.MockClock;
 
@@ -74,7 +74,7 @@ public class AbstractPartitionHandlerTest {
                         public void closeCallback() {}
 
                         @Override
-                        public List<AbstractFunction> getFunctions() {
+                        public List<Function> getFunctions() {
                             return null;
                         }
 
@@ -185,7 +185,7 @@ public class AbstractPartitionHandlerTest {
                         public void closeCallback() {}
 
                         @Override
-                        public List<AbstractFunction> getFunctions() {
+                        public List<Function> getFunctions() {
                             return null;
                         }
                     };
@@ -231,7 +231,7 @@ public class AbstractPartitionHandlerTest {
                         public void closeCallback() {}
 
                         @Override
-                        public List<AbstractFunction> getFunctions() {
+                        public List<Function> getFunctions() {
                             return null;
                         }
 

@@ -34,7 +34,6 @@ import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Function;
 
 import java.io.Closeable;
@@ -203,7 +202,7 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
     }
 
     @Override
-    public List<AbstractFunction> getFunctions() {
+    public List<Function> getFunctions() {
         return Arrays.stream(handlers).map(v -> v.function).collect(Collectors.toList());
     }
 
@@ -217,10 +216,10 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
     /** data handler. */
     public static class DataHandler implements WorkHandler<Block>, Closeable {
 
-        private final AbstractFunction function;
+        private final Function function;
         private final AtomicReference<Throwable> error;
 
-        public DataHandler(AbstractFunction function, AtomicReference<Throwable> error) {
+        public DataHandler(Function function, AtomicReference<Throwable> error) {
             this.function = function;
             this.error = error;
         }
@@ -250,7 +249,7 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
         }
 
         public String functionId() {
-            return function.context().id();
+            return function.functionId();
         }
     }
 

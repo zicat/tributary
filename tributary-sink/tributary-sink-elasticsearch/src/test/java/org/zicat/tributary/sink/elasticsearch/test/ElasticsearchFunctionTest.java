@@ -20,7 +20,6 @@ package org.zicat.tributary.sink.elasticsearch.test;
 
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.SINK_ELASTICSEARCH_DISCARD_COUNTER;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
-import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 
 import static java.lang.Long.parseLong;
 
@@ -118,7 +117,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
             function.process(Offset.ZERO, recordsList.iterator());
             Assert.assertEquals(2, function.sinkCount());
             Assert.assertEquals(
-                    1, (int) labelHostId(context, SINK_ELASTICSEARCH_DISCARD_COUNTER).get());
+                    1, (int) function.labelHostId(SINK_ELASTICSEARCH_DISCARD_COUNTER).get());
             function.sync();
             Assert.assertEquals(Offset.ZERO, function.committableOffset());
             Assert.assertTrue(function.isEmpty());

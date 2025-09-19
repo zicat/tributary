@@ -21,7 +21,6 @@ package org.zicat.tributary.sink.elasticsearch;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_INDEX;
-import static org.zicat.tributary.sink.function.AbstractFunction.labelHostId;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +32,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.xcontent.XContentType;
 import org.zicat.tributary.sink.function.Context;
+import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -56,7 +56,9 @@ public class DefaultRequestIndexer implements RequestIndexer {
     @Override
     public void open(Context context) {
         index = context.get(OPTION_INDEX);
-        sinkDiscardCounter = labelHostId(context, SINK_ELASTICSEARCH_DISCARD_COUNTER);
+        sinkDiscardCounter =
+                SINK_ELASTICSEARCH_DISCARD_COUNTER.labels(
+                        context.get(OPTION_METRICS_HOST), context.id());
     }
 
     @Override
