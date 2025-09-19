@@ -96,6 +96,7 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
+        checkErrorAndRethrow();
         final AtomicInteger counter = new AtomicInteger();
         final AtomicInteger discardCounter = new AtomicInteger();
         while (iterator.hasNext()) {

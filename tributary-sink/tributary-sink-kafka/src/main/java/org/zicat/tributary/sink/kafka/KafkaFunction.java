@@ -74,6 +74,7 @@ public class KafkaFunction extends AbstractFunction {
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
+        callback.checkState();
         int totalCount = 0;
         while (iterator.hasNext()) {
             totalCount += sendKafka(iterator.next());
