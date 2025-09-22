@@ -51,6 +51,9 @@ public abstract class AbstractSource implements Source {
 
     @Override
     public void append(int partition, Records records) throws IOException, InterruptedException {
+        if (records == null || records.count() == 0) {
+            return;
+        }
         final Map<String, byte[]> headers = records.headers();
         headers.put(HEADER_KEY_REC_TS, String.valueOf(System.currentTimeMillis()).getBytes());
         final ByteBuffer byteBuffer = records.toByteBuffer();

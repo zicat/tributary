@@ -18,24 +18,16 @@
 
 package org.zicat.tributary.source.logstash.beats;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-
-import org.zicat.tributary.common.records.DefaultRecord;
-import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 /** Message2ChannelListener. */
 public class Message2ChannelListener implements BatchMessageListener {
 
-    public static final ObjectMapper MAPPER =
-            new ObjectMapper().registerModule(new AfterburnerModule());
     private final Source source;
     private final int partition;
     private final MessageFilterFactory messageFilterFactory;
@@ -48,23 +40,14 @@ public class Message2ChannelListener implements BatchMessageListener {
     }
 
     @Override
-    public void consume(Iterator<Message<Object>> iterator)
-            throws InterruptedException, IOException {
-        final List<Record> recordList = new ArrayList<>();
-        while (iterator.hasNext()) {
-            final Message<Object> message = iterator.next();
-            if (message == null) {
-                continue;
-            }
-            if (!messageFilterFactory.getMessageFilter().filter(message)) {
-                continue;
-            }
-            final Record record = new DefaultRecord(MAPPER.writeValueAsBytes(message.getData()));
-            recordList.add(record);
-        }
-        if (recordList.isEmpty()) {
+    public void consume(Iterator<Message<Object>> iterator) throws Exception {
+        final Iterable<Records> recordsList =
+                messageFilterFactory.getMessageFilter().convert(source.topic(), iterator);
+        if (recordsList == null) {
             return;
         }
-        source.append(partition, new DefaultRecords(source.sourceId(), null, recordList));
+        for (Records records : recordsList) {
+            source.append(partition, records);
+        }
     }
 }

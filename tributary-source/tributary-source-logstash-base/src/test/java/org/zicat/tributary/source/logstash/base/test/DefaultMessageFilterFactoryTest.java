@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.source.logstash.base.DefaultMessageFilterFactory;
+import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 
 /** DefaultMessageFilterFactoryTest. */
@@ -32,7 +33,8 @@ public class DefaultMessageFilterFactoryTest {
         try (MessageFilterFactory messageFilterFactory =
                 MessageFilterFactory.findFactory(DefaultMessageFilterFactory.IDENTITY)) {
             messageFilterFactory.open(new DefaultReadableConfig());
-            Assert.assertTrue(messageFilterFactory.getMessageFilter().filter(null));
+            Assert.assertNotNull(
+                    messageFilterFactory.getMessageFilter().convert("", (Message<Object>) null));
         }
     }
 }

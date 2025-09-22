@@ -23,6 +23,7 @@ import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUP
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
 import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.logstash.base.DefaultMessageFilterFactory;
 import org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory;
 import static org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory.OPTION_LOCAL_FILE_PATH;
 import static org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder.OPTION_MESSAGE_FILTER_FACTORY_ID;
@@ -87,6 +88,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
         config.put(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE, "server.crt");
         config.put(OPTION_LOGSTASH_BEATS_SSL_KEY, "server.key");
         config.put(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES, caCertPath);
+        config.put(CONFIG_PREFIX + DefaultMessageFilterFactory.OPTION_TOPIC.key(), topic);
 
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 NettySource source = new NettySourceMock(config, topic, channel)) {
@@ -220,6 +222,8 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1); // set to sync for test
         final AtomicBoolean clientReceivedAck = new AtomicBoolean();
+        config.put(CONFIG_PREFIX + DefaultMessageFilterFactory.OPTION_TOPIC.key(), topic);
+
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 NettySource source = new NettySourceMock(config, topic, channel)) {
             final LogstashBeatsPipelineInitialization pipelineInitialization =

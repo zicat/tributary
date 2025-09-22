@@ -20,7 +20,8 @@ package org.zicat.tributary.sink.elasticsearch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_INDEX;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +41,18 @@ import java.util.Map.Entry;
 /** DefaultRequestIndexer. */
 public class DefaultRequestIndexer implements RequestIndexer {
 
+    public static final ConfigOption<Boolean> OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX =
+            ConfigOptions.key("request.indexer.default.topic_as_index")
+                    .booleanType()
+                    .description("Using topic as index.")
+                    .defaultValue(false);
+
+    public static final ConfigOption<String> OPTION_REQUEST_INDEXER_DEFAULT_INDEX =
+            ConfigOptions.key("request.indexer.default.index")
+                    .stringType()
+                    .description("Elasticsearch index for every record.")
+                    .defaultValue(null);
+
     public static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
             Counter.build()
                     .name("tributary_sink_elasticsearch_discard_counter")
@@ -51,11 +64,13 @@ public class DefaultRequestIndexer implements RequestIndexer {
     public static final String KEY_TOPIC = "_topic";
 
     private transient String index;
+    private transient boolean useTopicAsIndexIfNotNull;
     private transient Counter.Child sinkDiscardCounter;
 
     @Override
     public void open(Context context) {
-        index = context.get(OPTION_INDEX);
+        useTopicAsIndexIfNotNull = context.get(OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX);
+        index = context.get(OPTION_REQUEST_INDEXER_DEFAULT_INDEX);
         sinkDiscardCounter =
                 SINK_ELASTICSEARCH_DISCARD_COUNTER.labels(
                         context.get(OPTION_METRICS_HOST), context.id());
@@ -89,7 +104,11 @@ public class DefaultRequestIndexer implements RequestIndexer {
     protected IndexRequest indexRequest(
             String topic, byte[] key, byte[] value, Map<String, byte[]> headers)
             throws JsonProcessingException {
-        final IndexRequest indexRequest = new IndexRequest(index);
+        final String realIndex = useTopicAsIndexIfNotNull ? topic : index;
+        if (realIndex == null) {
+            return null;
+        }
+        final IndexRequest indexRequest = new IndexRequest(realIndex);
         indexRequest.id(id(topic, key, value, headers));
         final JsonNode jsonNode;
         try {
@@ -110,7 +129,9 @@ public class DefaultRequestIndexer implements RequestIndexer {
             final String v = new String(entry.getValue(), UTF_8);
             objectNode.put(entry.getKey(), v);
         }
-        objectNode.put(KEY_TOPIC, topic);
+        if (!useTopicAsIndexIfNotNull) {
+            objectNode.put(KEY_TOPIC, topic);
+        }
         indexRequest.source(MAPPER.writeValueAsBytes(objectNode), XContentType.JSON);
         return indexRequest;
     }

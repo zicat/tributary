@@ -20,7 +20,6 @@ package org.zicat.tributary.source.logstash.beats;
 
 import org.zicat.tributary.source.logstash.base.Message;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 /** BatchMessageListener. */
@@ -31,5 +30,5 @@ public interface BatchMessageListener {
      *
      * @param iterator iterator
      */
-    void consume(Iterator<Message<Object>> iterator) throws InterruptedException, IOException;
+    void consume(Iterator<Message<Object>> iterator) throws Exception;
 }

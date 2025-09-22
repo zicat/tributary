@@ -54,11 +54,6 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .booleanType()
                     .description("whether compression")
                     .defaultValue(false);
-    public static final ConfigOption<String> OPTION_INDEX =
-            ConfigOptions.key("index")
-                    .stringType()
-                    .description("Elasticsearch index for every record.")
-                    .noDefaultValue();
     public static final ConfigOption<String> OPTION_PASSWORD =
             ConfigOptions.key("password")
                     .stringType()

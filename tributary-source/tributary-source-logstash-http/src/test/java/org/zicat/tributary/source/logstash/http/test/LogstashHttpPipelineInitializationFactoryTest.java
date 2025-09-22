@@ -374,9 +374,9 @@ public class LogstashHttpPipelineInitializationFactoryTest {
                     records2,
                     (key, value, allHeaders) -> {
                         Map<String, Object> data = MAPPER.readValue(value, MAP_STRING_TYPE);
-                        Assert.assertEquals((Integer) 2, data.get("id"));
+                        Assert.assertEquals(2, data.get("id"));
                         Assert.assertEquals("_test_value", data.get("_test"));
-                        Assert.assertEquals((Integer) 123, data.get("test_test"));
+                        Assert.assertEquals(123, data.get("test_test"));
                         Assert.assertEquals(3, data.size());
                     });
         }

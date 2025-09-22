@@ -410,7 +410,6 @@ Note:
 ```properties
 sink.group_4.hosts=http://localhost:9200
 sink.group_4.path-prefix=
-sink.group_4.index=my_index
 sink.group_4.compression=true
 sink.group_4.username=
 sink.group_4.password=
@@ -418,6 +417,7 @@ sink.group_4.request.timeout=30s
 sink.group_4.connection.timeout=10s
 sink.group_4.socket.timeout=20s
 sink.group_4.request.indexer.identity=default
+sink.group_4.request.indexer.default.index=my_index
 sink.group_4.bulk.async.queue.size=1024
 sink.group_4.bulk.async.queue.await.timeout=30s
 bulk.response.action_listener.identity=default
@@ -427,7 +427,6 @@ bulk.response.action_listener.identity=default
 |----------------------------------------|---------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | hosts                                  |         | string   | the elasticsearch hosts, split by `;`                                                                                                                                                                        |
 | path-prefix                            | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                                                                      |
-| index                                  |         | string   | the elasticsearch index to sink                                                                                                                                                                              |
 | compression                            | true    | bool     | whether compress the index request, default true                                                                                                                                                             |
 | username                               | null    | string   | the username of elasticsearch, default null                                                                                                                                                                  |
 | password                               | null    | string   | the password of elasticsearch, default null                                                                                                                                                                  |
@@ -439,6 +438,8 @@ bulk.response.action_listener.identity=default
 | thread.max.per.routing                 | 5       | int      | the max thread count for per routing                                                                                                                                                                         |
 | bulk.async.queue.await.timeout         | 30s     | duration | throw exception if wait timeout to put instance to queue over this param                                                                                                                                     |
 | request.indexer                        | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java)                                                |
+| request.indexer.default.index          | null    | string   | the index if config `request.indexer` AS `default`                                                                                                                                                           |
+| request.indexer.default.topic_as_index | boolean | false    | whether using topic from `Records` as index, default false means use `request.indexer.default.index`.                                                                                                        |
 | bulk.response.action_listener.identity | default | string   | the spi identity of [BulkResponseActionListenerFactory](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/listener/BulkResponseActionListenerFactory.java) |
 Note:
 
@@ -448,7 +449,7 @@ Note:
 2. For the `default` of `request.indexer`, the headers of the record will also be stored in the elasticsearch. The header
    will be discarded if the key of header is contained in value json object keys.
 
-3. For the `default` of `request.indexer`, the topic value of the record will be stored in the elasticsearch by key
+3. For the `default` of `request.indexer` and `request.indexer.default.topic_as_index` is `false`, the topic value of the record will be stored in the elasticsearch by key
    `_topic`.
 
 4. For the `default` of `request.indexer`, the key value of the record will be store in the elasticsearch by id if the key
@@ -556,7 +557,7 @@ sink.group_4.partition.retain.max.bytes=100gb
 sink.group_4.function.id=elasticsearch
 sink.group_4.hosts=http://localhost:9200
 sink.group_4.path-prefix=
-sink.group_4.index=my_index
+
 sink.group_4.compression=true
 sink.group_4.username=
 sink.group_4.password=
@@ -564,6 +565,8 @@ sink.group_4.request.timeout=30s
 sink.group_4.connection.timeout=10s
 sink.group_4.socket.timeout=20s
 sink.group_4.request.indexer.identity=default
+sink.group_4.request.indexer.default.index=my_index
+sink.group_4.request.indexer.default.topic_as_index=false
 sink.group_4.bulk.async.queue.size=1024
 sink.group_4.bulk.async.queue.await.timeout=30s
 ```       

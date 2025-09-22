@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.elasticsearch.test;
 
+import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEXER_DEFAULT_INDEX;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.SINK_ELASTICSEARCH_DISCARD_COUNTER;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
 
@@ -80,7 +81,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
                         .startOffset(Offset.ZERO);
         builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
         builder.addCustomProperty(OPTION_ASYNC_BULK_QUEUE_SIZE, 2);
-        builder.addCustomProperty(OPTION_INDEX, topic);
+        builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, topic);
         builder.addCustomProperty(QUEUE_FULL_AWAIT_TIMEOUT, Duration.ofSeconds(3));
         final Context context = builder.build();
 

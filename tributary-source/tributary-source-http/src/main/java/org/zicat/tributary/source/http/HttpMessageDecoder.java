@@ -38,6 +38,7 @@ import org.zicat.tributary.source.base.netty.NettySource;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,16 +116,19 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
 
-        final Records records;
         try {
             final byte[] body = parseBody(msg);
-            records = parseRecords(ctx, topic, contentType, httpHeaders(msg), body);
-            if (records == null || records.count() == 0) {
+            final Map<String, String> headers = httpHeaders(msg);
+            final Iterable<Records> recordsIt =
+                    parseRecords(ctx, topic, contentType, headers, body);
+            if (recordsIt == null) {
                 okResponse(ctx);
                 return;
             }
             final int realPartition = realPartition(pathParams);
-            source.append(realPartition, records);
+            for (Records records : recordsIt) {
+                source.append(realPartition, records);
+            }
             okResponse(ctx);
         } catch (Exception e) {
             LOG.error("process http request error, path: {}, topic: {}", path, topic, e);
@@ -176,15 +180,16 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @return Records
      * @throws IOException IOException
      */
-    protected Records parseRecords(
+    protected Iterable<Records> parseRecords(
             ChannelHandlerContext ctx,
             String topic,
             String contentType,
             Map<String, String> httpHeaders,
             byte[] body)
-            throws IOException {
+            throws Exception {
         final List<Record> records = MAPPER.readValue(body, BODY_TYPE);
-        return new DefaultRecords(topic, recordsHeaders(httpHeaders), records);
+        return Collections.singletonList(
+                new DefaultRecords(topic, recordsHeaders(httpHeaders), records));
     }
 
     /**

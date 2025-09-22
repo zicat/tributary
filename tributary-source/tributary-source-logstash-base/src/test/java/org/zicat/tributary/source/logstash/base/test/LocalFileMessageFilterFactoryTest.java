@@ -73,8 +73,8 @@ public class LocalFileMessageFilterFactoryTest {
             final Map<String, Object> data = new HashMap<>();
             data.put("aa", "111");
             data.put("bb", "222");
-            Assert.assertTrue(
-                    messageFilterFactory.getMessageFilter().filter(new Message<>(1, data)));
+            Assert.assertNotNull(
+                    messageFilterFactory.getMessageFilter().convert("", new Message<>(1, data)));
             Assert.assertNull(data.get("aa"));
             Assert.assertEquals(1, data.size());
 
@@ -87,8 +87,8 @@ public class LocalFileMessageFilterFactoryTest {
             final Map<String, Object> data2 = new HashMap<>();
             data2.put("aa", "111");
             data2.put("bb", "222");
-            Assert.assertTrue(
-                    messageFilterFactory.getMessageFilter().filter(new Message<>(1, data2)));
+            Assert.assertNotNull(
+                    messageFilterFactory.getMessageFilter().convert("", new Message<>(1, data2)));
             Assert.assertNull(data2.get("bb"));
             Assert.assertEquals(1, data2.size());
 

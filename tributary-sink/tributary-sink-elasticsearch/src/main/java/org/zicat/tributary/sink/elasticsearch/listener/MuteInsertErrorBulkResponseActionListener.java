@@ -34,7 +34,7 @@ public class MuteInsertErrorBulkResponseActionListener extends AbstractActionLis
             Counter.build()
                     .name("tributary_sink_elasticsearch_bulk_requests_with_errors")
                     .help("tributary sink elasticsearch bulk requests with errors")
-                    .labelNames("topic", "instance")
+                    .labelNames("index", "instance")
                     .register();
 
     private final String instance;
@@ -54,9 +54,9 @@ public class MuteInsertErrorBulkResponseActionListener extends AbstractActionLis
             errorMap.computeIfAbsent(item.getIndex(), k -> new AtomicInteger(0)).incrementAndGet();
         }
         for (Map.Entry<String, AtomicInteger> entry : errorMap.entrySet()) {
-            String topic = entry.getKey();
+            String index = entry.getKey();
             int bulkErrorCnt = entry.getValue().get();
-            ERROR_COUNTER.labels(topic, instance).inc(bulkErrorCnt);
+            ERROR_COUNTER.labels(index, instance).inc(bulkErrorCnt);
         }
         return null;
     }

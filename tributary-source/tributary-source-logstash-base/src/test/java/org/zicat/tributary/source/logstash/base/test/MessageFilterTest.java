@@ -25,7 +25,6 @@ import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilter;
 import org.zicat.tributary.source.logstash.base.utils.CompileUtils;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +34,7 @@ import java.util.Objects;
 public class MessageFilterTest {
 
     @Test
-    public void test() throws IOException, InstantiationException, IllegalAccessException {
+    public void test() throws Exception {
         final byte[] code =
                 IOUtils.readFully(
                         Objects.requireNonNull(
@@ -55,7 +54,7 @@ public class MessageFilterTest {
         final Map<String, Object> data = new HashMap<>();
         data.put("aa", "111");
         data.put("bb", "222");
-        Assert.assertTrue(filter.filter(new Message<>(1, data)));
+        Assert.assertNotNull(filter.convert("", new Message<>(1, data)));
         Assert.assertNull(data.get("aa"));
 
         final Class<MessageFilter<Object>> filterClass2 =
@@ -65,9 +64,9 @@ public class MessageFilterTest {
         final Map<String, Object> data2 = new HashMap<>();
         data2.put("aa", "111");
         data2.put("bb", "222");
-        Assert.assertTrue(filter2.filter(new Message<>(1, data2)));
+        Assert.assertNotNull(filter2.convert("", new Message<>(1, data2)));
         Assert.assertNull(data2.get("bb"));
 
-        filter.filter(new Message<>(1, data2));
+        filter.convert("", new Message<>(1, data2));
     }
 }

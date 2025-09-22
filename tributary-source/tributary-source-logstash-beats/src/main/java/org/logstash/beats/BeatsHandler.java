@@ -27,8 +27,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, Batch batch)
-            throws IOException, InterruptedException {
+    public void channelRead0(ChannelHandlerContext ctx, Batch batch) throws Exception {
         logger.debug("Received a new payload");
         try {
             if (isQuietPeriod.get()) {
@@ -81,8 +80,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
         }
     }
 
-    private void processBatchAndSendAck(ChannelHandlerContext ctx, Batch batch)
-            throws IOException, InterruptedException {
+    private void processBatchAndSendAck(ChannelHandlerContext ctx, Batch batch) throws Exception {
         if (batch.isEmpty()) {
             logger.debug("Sending 0-seq ACK for empty batch");
             writeAck(ctx, batch.getProtocol(), 0);

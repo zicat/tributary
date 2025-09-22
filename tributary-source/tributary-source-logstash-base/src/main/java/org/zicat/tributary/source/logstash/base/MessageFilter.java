@@ -18,6 +18,11 @@
 
 package org.zicat.tributary.source.logstash.base;
 
+import org.zicat.tributary.common.records.Records;
+
+import java.util.Collections;
+import java.util.Iterator;
+
 /**
  * MessageFilter.
  *
@@ -28,8 +33,20 @@ public interface MessageFilter<PAYLOAD> {
     /**
      * filter message.
      *
-     * @param message message
-     * @return true means the message is valid, false means the message is invalid
+     * @param iterator iterator
+     * @return convert data to record, filter if null
      */
-    boolean filter(Message<PAYLOAD> message);
+    Iterable<Records> convert(String topic, Iterator<Message<PAYLOAD>> iterator) throws Exception;
+
+    /**
+     * filter single message.
+     *
+     * @param message message
+     * @return Records
+     * @throws Exception Exception
+     */
+    default Records convert(String topic, Message<PAYLOAD> message) throws Exception {
+        final Iterable<Records> recordsList = convert(topic, Collections.singleton(message).iterator());
+        return recordsList == null ? null : recordsList.iterator().next();
+    }
 }

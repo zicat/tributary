@@ -18,18 +18,34 @@
 
 package org.zicat.tributary.source.logstash.base.test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.zicat.tributary.common.records.DefaultRecord;
+import org.zicat.tributary.common.records.DefaultRecords;
+import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilter;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /** DefaultMessageFilter. */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class DefaultMessageFilter implements MessageFilter<Object> {
+
+    public static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Override
-    public boolean filter(Message<Object> message) {
-        final Map data = message.getData();
-        data.remove("aa");
-        return true;
+    public Collection convert(String topic, Iterator iterator) throws Exception {
+        List<Record> records = new ArrayList<>();
+        while (iterator.hasNext()) {
+            Map data = ((Message<Object>) iterator.next()).getData();
+            data.remove("aa");
+            records.add(new DefaultRecord(MAPPER.writeValueAsBytes(data)));
+        }
+        return Collections.singletonList(new DefaultRecords(topic, records));
     }
 }

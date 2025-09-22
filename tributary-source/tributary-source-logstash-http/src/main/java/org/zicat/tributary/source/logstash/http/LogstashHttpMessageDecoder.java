@@ -29,12 +29,11 @@ import org.zicat.tributary.source.http.HttpMessageDecoder;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -71,32 +70,38 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
     }
 
     @Override
-    protected Records parseRecords(
+    protected Iterable<Records> parseRecords(
             ChannelHandlerContext ctx,
             String topic,
             String contentType,
             Map<String, String> recordsHeader,
             byte[] body)
-            throws IOException {
+            throws Exception {
         final List<Map<String, Object>> dataList = findCodec(contentType).encode(body);
-        final List<Record> records = new ArrayList<>(dataList.size());
-        for (Map<String, Object> data : dataList) {
-            if (requestHeadersTargetField != null) {
-                data.put(requestHeadersTargetField, recordsHeader);
-            }
-            if (remoteHostTargetField != null) {
-                data.put(remoteHostTargetField, getRemoteHost(ctx));
-            }
-            if (tags != null && !tags.isEmpty()) {
-                data.put(KEY_TAGS, tags);
-            }
-            final Message<Object> message = new Message<>(offset++, data);
-            if (!messageFilterFactory.getMessageFilter().filter(message)) {
-                return null;
-            }
-            records.add(new DefaultRecord(MAPPER.writeValueAsBytes(data)));
-        }
-        return new DefaultRecords(topic, records);
+        final Iterator<Map<String, Object>> sourceIt = dataList.iterator();
+        final Iterator<Message<Object>> targetIt =
+                new Iterator<Message<Object>>() {
+                    @Override
+                    public boolean hasNext() {
+                        return sourceIt.hasNext();
+                    }
+
+                    @Override
+                    public Message<Object> next() {
+                        Map<String, Object> data = sourceIt.next();
+                        if (requestHeadersTargetField != null) {
+                            data.put(requestHeadersTargetField, recordsHeader);
+                        }
+                        if (remoteHostTargetField != null) {
+                            data.put(remoteHostTargetField, getRemoteHost(ctx));
+                        }
+                        if (tags != null && !tags.isEmpty()) {
+                            data.put(KEY_TAGS, tags);
+                        }
+                        return new Message<>(offset++, data);
+                    }
+                };
+        return messageFilterFactory.getMessageFilter().convert(topic, targetIt);
     }
 
     /**
@@ -146,7 +151,8 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
 
     @Override
     protected String topic(PathParams pathParams) {
-        return source.topic();
+        final String superTopic = super.topic(pathParams);
+        return superTopic == null ? source.topic() : superTopic;
     }
 
     @Override

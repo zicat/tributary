@@ -18,19 +18,50 @@
 
 package org.zicat.tributary.source.logstash.base;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.records.DefaultRecord;
+import org.zicat.tributary.common.records.DefaultRecords;
+import org.zicat.tributary.common.records.Record;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 /** DefaultMessageFilterFactory. */
 public class DefaultMessageFilterFactory implements MessageFilterFactory {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     public static final String IDENTITY = "default_message_filter";
+    public static final ConfigOption<String> OPTION_TOPIC =
+            ConfigOptions.key("index").stringType().defaultValue("default_index");
+    private String topic;
 
     @Override
-    public void open(ReadableConfig config) {}
+    public void open(ReadableConfig config) {
+        this.topic = config.get(OPTION_TOPIC);
+    }
 
     @Override
     public MessageFilter<Object> getMessageFilter() {
-        return message -> true;
+        return (topic, iterator) -> {
+            final Collection<Record> result = new ArrayList<>();
+            while (iterator.hasNext()) {
+                final Message<Object> message = iterator.next();
+                if (message == null) {
+                    continue;
+                }
+                final Map<String, Object> data = message.getData();
+                result.add(new DefaultRecord(MAPPER.writeValueAsBytes(data)));
+            }
+            return Collections.singletonList(
+                    new DefaultRecords(
+                            topic == null ? DefaultMessageFilterFactory.this.topic : topic,
+                            result));
+        };
     }
 
     @Override
