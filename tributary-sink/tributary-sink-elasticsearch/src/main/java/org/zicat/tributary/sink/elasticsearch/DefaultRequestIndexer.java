@@ -42,8 +42,8 @@ public class DefaultRequestIndexer implements RequestIndexer {
 
     public static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
             Counter.build()
-                    .name("sink_elasticsearch_discard_counter")
-                    .help("sink elasticsearch discard counter")
+                    .name("tributary_sink_elasticsearch_discard_counter")
+                    .help("tributary sink elasticsearch discard counter")
                     .labelNames("host", "id")
                     .register();
 

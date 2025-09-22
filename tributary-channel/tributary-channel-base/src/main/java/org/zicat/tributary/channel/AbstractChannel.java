@@ -46,22 +46,23 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private static final Logger LOG = LoggerFactory.getLogger(AbstractChannel.class);
 
     public static final GaugeKey KEY_WRITE_BYTES =
-            new GaugeKey("channel_write_bytes", "channel write bytes");
+            new GaugeKey("tributary_channel_write_bytes", "tributary channel write bytes");
     public static final GaugeKey KEY_READ_BYTES =
-            new GaugeKey("channel_read_bytes", "channel read bytes");
+            new GaugeKey("tributary_channel_read_bytes", "tributary channel read bytes");
     public static final GaugeKey KEY_BUFFER_USAGE =
-            new GaugeKey("channel_buffer_usage", "channel buffer usage");
+            new GaugeKey("tributary_channel_buffer_usage", "tributary channel buffer usage");
     public static final GaugeKey KEY_ACTIVE_SEGMENT =
-            new GaugeKey("channel_active_segment", "channel active segment");
+            new GaugeKey("tributary_channel_active_segment", "tributary channel active segment");
 
     public static final GaugeKey KEY_BLOCK_CACHE_QUERY_HIT_COUNT =
             new GaugeKey(
-                    "channel_block_cache_query_hit_count", "channel block cache query hit count");
+                    "tributary_channel_block_cache_query_hit_count",
+                    "tributary channel block cache query hit count");
 
     public static final GaugeKey KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT =
             new GaugeKey(
-                    "channel_block_cache_query_total_count",
-                    "channel block cache query total count");
+                    "tributary_channel_block_cache_query_total_count",
+                    "tributary channel block cache query total count");
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition newSegmentCondition = lock.newCondition();

@@ -60,8 +60,8 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
 
     private static final Gauge SINK_SNAPSHOT_COST =
             Gauge.build()
-                    .name("sink_snapshot_cost")
-                    .help("sink snapshot cost")
+                    .name("tributary_sink_snapshot_cost")
+                    .help("tributary sink snapshot cost")
                     .labelNames("host", "topic", "groupId", "partition_id")
                     .register();
 

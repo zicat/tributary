@@ -418,40 +418,44 @@ sink.group_4.request.timeout=30s
 sink.group_4.connection.timeout=10s
 sink.group_4.socket.timeout=20s
 sink.group_4.request.indexer.identity=default
-sink.group_4.async.bulk.queue.size=1024
-sink.group_4.async.bulk.queue.await.timeout=30s
+sink.group_4.bulk.async.queue.size=1024
+sink.group_4.bulk.async.queue.await.timeout=30s
+bulk.response.action_listener.identity=default
 ```
 
-| key                            | default | type     | describe                                                                                                                                                      |
-|--------------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| hosts                          |         | string   | the elasticsearch hosts, split by `;`                                                                                                                         |
-| path-prefix                    | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                       |
-| index                          |         | string   | the elasticsearch index to sink                                                                                                                               |
-| compression                    | true    | bool     | whether compress the index request, default true                                                                                                              |
-| username                       | null    | string   | the username of elasticsearch, default null                                                                                                                   |
-| password                       | null    | string   | the password of elasticsearch, default null                                                                                                                   |
-| request.timeout                | 30s     | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                              |
-| connection.timeout             | 10s     | duration | the timeout for establishing a connection, default 10s                                                                                                        |
-| socket.timeout                 | 20s     | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                           |
-| async.bulk.queue.size          | 1024    | int      | the size of the queue which contains async bulk insert listener callback instances                                                                            |
-| bulk.size                      | 1000    | int      | the buck size to async send.the request will be sent when buck size is triggered or checkpoint point triggered                                                |
-| thread.max.per.routing         | 5       | int      | the max thread count for per routing                                                                                                                          |
-| async.bulk.queue.await.timeout | 30s     | duration | throw exception if wait timeout to put instance to queue over this param                                                                                      |
-| request.indexer                | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java) |
-
+| key                                    | default | type     | describe                                                                                                                                                                                                     |
+|----------------------------------------|---------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| hosts                                  |         | string   | the elasticsearch hosts, split by `;`                                                                                                                                                                        |
+| path-prefix                            | null    | string   | the elasticsearch restful api path prefix, default null                                                                                                                                                      |
+| index                                  |         | string   | the elasticsearch index to sink                                                                                                                                                                              |
+| compression                            | true    | bool     | whether compress the index request, default true                                                                                                                                                             |
+| username                               | null    | string   | the username of elasticsearch, default null                                                                                                                                                                  |
+| password                               | null    | string   | the password of elasticsearch, default null                                                                                                                                                                  |
+| request.timeout                        | 30s     | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                                                                             |
+| connection.timeout                     | 10s     | duration | the timeout for establishing a connection, default 10s                                                                                                                                                       |
+| socket.timeout                         | 20s     | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                                                                          |
+| bulk.async.queue.size                  | 1024    | int      | the size of the queue which contains async bulk insert listener callback instances                                                                                                                           |
+| bulk.size                              | 1000    | int      | the buck size to async send.the request will be sent when buck size is triggered or checkpoint point triggered                                                                                               |
+| thread.max.per.routing                 | 5       | int      | the max thread count for per routing                                                                                                                                                                         |
+| bulk.async.queue.await.timeout         | 30s     | duration | throw exception if wait timeout to put instance to queue over this param                                                                                                                                     |
+| request.indexer                        | default | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java)                                                |
+| bulk.response.action_listener.identity | default | string   | the spi identity of [BulkResponseActionListenerFactory](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/listener/BulkResponseActionListenerFactory.java) |
 Note:
 
-1. For the default of request.indexer, the value of records must be a string object json. The records will be discarded
+1. For the `default` of `request.indexer`, the value of records must be a string object json. The records will be discarded
    if not, user can watch how many records are filtered by metrics key `sink_elasticsearch_discard_counter`.
 
-2. For the default of request.indexer, the headers of the record will also be stored in the elasticsearch. The header
+2. For the `default` of `request.indexer`, the headers of the record will also be stored in the elasticsearch. The header
    will be discarded if the key of header is contained in value json object keys.
 
-3. For the default of request.indexer, the topic value of the record will be stored in the elasticsearch by key
+3. For the `default` of `request.indexer`, the topic value of the record will be stored in the elasticsearch by key
    `_topic`.
 
-4. For the default of request.indexer, the key value of the record will be store in the elasticsearch by id if the key
+4. For the `default` of `request.indexer`, the key value of the record will be store in the elasticsearch by id if the key
    exists.
+
+5. For the `default` of `bulk.response.action_listener.identity`, the failed bulk request will be retried util success. For `mute_bulk_insert_error` of `bulk.response.action_listener.identity`, the failed bulk request will be ignored and add the metric key `tributary_sink_elasticsearch_bulk_requests_with_errors` to monitor the fail count.
+
 
 ## The complete demo config
 
@@ -560,6 +564,6 @@ sink.group_4.request.timeout=30s
 sink.group_4.connection.timeout=10s
 sink.group_4.socket.timeout=20s
 sink.group_4.request.indexer.identity=default
-sink.group_4.async.bulk.queue.size=1024
-sink.group_4.async.bulk.queue.await.timeout=30s
+sink.group_4.bulk.async.queue.size=1024
+sink.group_4.bulk.async.queue.await.timeout=30s
 ```       

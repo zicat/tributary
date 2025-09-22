@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.elasticsearch;
+package org.zicat.tributary.sink.elasticsearch.listener;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.zicat.tributary.channel.Offset;
 
@@ -27,8 +26,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** DefaultActionListener. */
-public class DefaultActionListener implements ActionListener<BulkResponse> {
+/** AbstractActionListener. */
+public abstract class AbstractActionListener implements ActionListener<BulkResponse> {
 
     protected static final Exception NO_EXCEPTION = new Exception();
 
@@ -36,7 +35,7 @@ public class DefaultActionListener implements ActionListener<BulkResponse> {
     protected final AtomicReference<Exception> state;
     protected final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    public DefaultActionListener(Offset offset) {
+    public AbstractActionListener(Offset offset) {
         this.offset = offset;
         this.state = new AtomicReference<>();
     }
@@ -57,15 +56,7 @@ public class DefaultActionListener implements ActionListener<BulkResponse> {
      * @param response response
      * @return string
      */
-    protected Exception checkResponseItems(BulkResponse response) {
-        for (BulkItemResponse item : response.getItems()) {
-            if (!item.isFailed()) {
-                continue;
-            }
-            return new Exception(item.getFailureMessage());
-        }
-        return null;
-    }
+    protected abstract Exception checkResponseItems(BulkResponse response);
 
     @Override
     public void onFailure(Exception e) {

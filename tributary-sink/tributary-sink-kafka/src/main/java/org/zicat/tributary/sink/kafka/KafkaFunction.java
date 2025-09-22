@@ -50,8 +50,8 @@ public class KafkaFunction extends AbstractFunction {
 
     private static final Counter SINK_KAFKA_COUNTER =
             Counter.build()
-                    .name("sink_kafka_counter")
-                    .help("sink kafka counter")
+                    .name("tributary_sink_kafka_counter")
+                    .help("tributary sink kafka counter")
                     .labelNames("host", "id")
                     .register();
 

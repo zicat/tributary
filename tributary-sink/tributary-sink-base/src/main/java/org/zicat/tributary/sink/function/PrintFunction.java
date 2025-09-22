@@ -38,8 +38,8 @@ public class PrintFunction extends AbstractFunction {
 
     private static final Counter SINK_PRINT_COUNTER =
             Counter.build()
-                    .name("sink_print_counter")
-                    .help("sink print counter")
+                    .name("tributary_sink_print_counter")
+                    .help("tributary sink print counter")
                     .labelNames("host", "id")
                     .register();
 

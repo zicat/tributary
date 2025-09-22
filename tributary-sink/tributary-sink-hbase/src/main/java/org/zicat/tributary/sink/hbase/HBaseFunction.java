@@ -56,14 +56,14 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
 
     private static final Counter SINK_HBASE_COUNTER =
             Counter.build()
-                    .name("sink_hbase_counter")
-                    .help("sink hbase counter")
+                    .name("tributary_sink_hbase_counter")
+                    .help("tributary sink hbase counter")
                     .labelNames("host", "id")
                     .register();
     private static final Counter SINK_HBASE_DISCARD_COUNTER =
             Counter.build()
-                    .name("sink_hbase_discard_counter")
-                    .help("sink hbase discard counter")
+                    .name("tributary_sink_hbase_discard_counter")
+                    .help("tributary sink hbase discard counter")
                     .labelNames("host", "id")
                     .register();
     protected transient Counter.Child sinkCounter;

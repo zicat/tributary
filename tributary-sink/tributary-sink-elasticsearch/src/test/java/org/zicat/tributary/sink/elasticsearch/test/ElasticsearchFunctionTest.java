@@ -47,7 +47,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.common.records.*;
-import org.zicat.tributary.sink.elasticsearch.DefaultActionListener;
+import org.zicat.tributary.sink.elasticsearch.listener.DefaultBulkResponseActionListener;
 import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunction;
 import org.zicat.tributary.sink.function.Context;
@@ -96,7 +96,9 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         recordHeader2.put("rhk2", "rhv2".getBytes());
         final Record record2 =
                 new DefaultRecord(
-                        recordHeader2, null, "{\"name\":\"中\", \"score\":20}".getBytes(StandardCharsets.UTF_8));
+                        recordHeader2,
+                        null,
+                        "{\"name\":\"中\", \"score\":20}".getBytes(StandardCharsets.UTF_8));
 
         final Map<String, byte[]> recordHeader3 = new HashMap<>();
         recordHeader3.put("rhk3", "rhv3".getBytes());
@@ -204,8 +206,8 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         }
 
         @Override
-        protected DefaultActionListener createDefaultActionListener(Offset offset) {
-            return new DefaultActionListener(offset) {
+        protected DefaultBulkResponseActionListener createAbstractActionListener(Offset offset) {
+            return new DefaultBulkResponseActionListener(offset) {
                 @Override
                 public void onResponse(BulkResponse response) {
                     bulkInsertCounter.incrementAndGet();

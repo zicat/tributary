@@ -38,14 +38,14 @@ public class HDFSFunction extends AbstractFunction {
 
     private static final Counter HDFS_SINK_COUNTER =
             Counter.build()
-                    .name("sink_hdfs_counter")
-                    .help("sink hdfs counter")
+                    .name("tributary_sink_hdfs_counter")
+                    .help("tributary sink hdfs counter")
                     .labelNames("host", "id")
                     .register();
     private static final Gauge HDFS_OPEN_FILES_GAUGE =
             Gauge.build()
-                    .name("hdfs_opened_files")
-                    .help("hdfs opened files")
+                    .name("tributary_sink_hdfs_opened_files")
+                    .help("tributary sink hdfs opened files")
                     .labelNames("host", "id")
                     .register();
 

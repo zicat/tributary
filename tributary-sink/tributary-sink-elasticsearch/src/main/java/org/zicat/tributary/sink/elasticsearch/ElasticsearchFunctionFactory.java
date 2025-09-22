@@ -92,13 +92,13 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description("The identity of request indexer to parse record.")
                     .defaultValue("default");
     public static final ConfigOption<Integer> OPTION_ASYNC_BULK_QUEUE_SIZE =
-            ConfigOptions.key("async.bulk.queue.size")
+            ConfigOptions.key("bulk.async.queue.size")
                     .integerType()
                     .description(
                             "bulk async queue size, if task over this value will throw exception")
                     .defaultValue(1024);
     public static final ConfigOption<Duration> QUEUE_FULL_AWAIT_TIMEOUT =
-            ConfigOptions.key("async.bulk.queue.await.timeout")
+            ConfigOptions.key("bulk.async.queue.await.timeout")
                     .durationType()
                     .description(
                             "await timeout when queue is full, default value is connection.request-timeout")
@@ -108,6 +108,12 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .integerType()
                     .description("bulk size")
                     .defaultValue(1000);
+    public static final ConfigOption<String> OPTION_BULK_RESPONSE_ACTION_LISTENER_IDENTITY =
+            ConfigOptions.key("bulk.response.action_listener.identity")
+                    .stringType()
+                    .description("The identity of request bulk response action listener.")
+                    .defaultValue("default");
+
     public static final ConfigOption<Integer> OPTION_THREAD_MAX_PER_ROUTING =
             ConfigOptions.key("thread.max.per.routing")
                     .integerType()

@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class SinkGroupManager implements Closeable {
 
-    public static final GaugeKey KEY_SINK_LAG = new GaugeKey("sink_lag", "sink lag");
+    public static final GaugeKey KEY_SINK_LAG = new GaugeKey("tributary_sink_lag", "sink lag");
     private static final Logger LOG = LoggerFactory.getLogger(SinkGroupManager.class);
 
     private final String groupId;

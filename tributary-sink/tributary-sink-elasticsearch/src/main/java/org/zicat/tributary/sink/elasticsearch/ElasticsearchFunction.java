@@ -33,6 +33,8 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.sink.elasticsearch.listener.AbstractActionListener;
+import org.zicat.tributary.sink.elasticsearch.listener.BulkResponseActionListenerFactory;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
@@ -48,15 +50,16 @@ public class ElasticsearchFunction extends AbstractFunction {
 
     private static final Counter SINK_ELASTICSEARCH_COUNTER =
             Counter.build()
-                    .name("sink_elasticsearch_counter")
-                    .help("sink elasticsearch counter")
+                    .name("tributary_sink_elasticsearch_counter")
+                    .help("tributary sink elasticsearch counter")
                     .labelNames("host", "id")
                     .register();
 
     protected transient RestHighLevelClient client;
     protected transient Counter.Child sinkCounter;
     protected transient RequestIndexer indexer;
-    protected transient BlockingQueue<DefaultActionListener> listenerQueue;
+    protected transient BulkResponseActionListenerFactory listenerFactory;
+    protected transient BlockingQueue<AbstractActionListener> listenerQueue;
     protected transient long awaitTimeout;
     protected transient volatile BulkRequest request = new BulkRequest();
     protected int buckSize;
@@ -72,6 +75,10 @@ public class ElasticsearchFunction extends AbstractFunction {
         awaitTimeout = context.get(QUEUE_FULL_AWAIT_TIMEOUT).toMillis();
         indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
         indexer.open(context);
+        listenerFactory =
+                findFactory(
+                        context.get(OPTION_BULK_RESPONSE_ACTION_LISTENER_IDENTITY),
+                        BulkResponseActionListenerFactory.class);
     }
 
     @Override
@@ -113,7 +120,7 @@ public class ElasticsearchFunction extends AbstractFunction {
         if (request.numberOfActions() == 0) {
             return;
         }
-        final DefaultActionListener listener = createDefaultActionListener(offset);
+        final AbstractActionListener listener = createAbstractActionListener(offset);
         if (!listenerQueue.offer(listener)) {
             awaitFirstListenerFinished();
             listenerQueue.add(listener);
@@ -123,13 +130,13 @@ public class ElasticsearchFunction extends AbstractFunction {
     }
 
     /**
-     * create default action listener.
+     * create AbstractActionListener.
      *
-     * @param offset offset
-     * @return DefaultActionListener
+     * @param offset offset.
+     * @return AbstractActionListener
      */
-    protected DefaultActionListener createDefaultActionListener(Offset offset) {
-        return new DefaultActionListener(offset);
+    protected AbstractActionListener createAbstractActionListener(Offset offset) {
+        return listenerFactory.create(context, request, offset);
     }
 
     /**
@@ -180,7 +187,7 @@ public class ElasticsearchFunction extends AbstractFunction {
 
     /** check and clear done listeners. */
     protected void checkAndClearDoneListeners() {
-        DefaultActionListener listener;
+        AbstractActionListener listener;
         // quick remove all finished listeners orderly in queue
         while ((listener = listenerQueue.peek()) != null) {
             if (listener.isRunning()) {
@@ -197,7 +204,7 @@ public class ElasticsearchFunction extends AbstractFunction {
      * @throws Exception Exception
      */
     protected void awaitFirstListenerFinished() throws Exception {
-        final DefaultActionListener listener = listenerQueue.poll();
+        final AbstractActionListener listener = listenerQueue.poll();
         if (listener == null) {
             return;
         }
@@ -210,7 +217,7 @@ public class ElasticsearchFunction extends AbstractFunction {
 
     /** checkFirstListenerStateIfDone. */
     protected void checkFirstListenerStateIfDone() {
-        final DefaultActionListener listener = listenerQueue.peek();
+        final AbstractActionListener listener = listenerQueue.peek();
         if (listener == null || listener.isRunning()) {
             return;
         }
@@ -223,7 +230,7 @@ public class ElasticsearchFunction extends AbstractFunction {
      *
      * @param listener listener
      */
-    private void checkListenerException(DefaultActionListener listener) {
+    private void checkListenerException(AbstractActionListener listener) {
         final Exception e = listener.exception();
         if (e != null) {
             listenerQueue.clear();

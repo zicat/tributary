@@ -74,8 +74,8 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
 
     private static final Counter REQUEST_COUNTER =
             Counter.build()
-                    .name("kafka_request_type")
-                    .help("kafka request type")
+                    .name("tributary_source_kafka_request_type")
+                    .help("tributary source kafka request type")
                     .labelNames("host", "port", "request_name")
                     .register();
 
