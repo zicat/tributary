@@ -19,6 +19,7 @@
 package org.zicat.tributary.source.http.test;
 
 import com.github.luben.zstd.Zstd;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 
 import org.xerial.snappy.Snappy;
@@ -316,7 +317,8 @@ public class HttpPipelineInitializationFactoryTest {
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
             Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
-            Assert.assertEquals(JsonParseException.class.getName(), readBody(reader));
+            final String body = readBody(reader);
+            Assert.assertEquals(JsonParseException.class.getName(), body);
         } finally {
             response.release();
         }
@@ -337,7 +339,7 @@ public class HttpPipelineInitializationFactoryTest {
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
-            Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
+            Assert.assertTrue(protocol.contains(BAD_REQUEST.toString()));
             Assert.assertEquals(RESPONSE_BAD_TOPIC_NOT_IN_PARAMS, readBody(reader));
         } finally {
             response.release();
@@ -353,7 +355,7 @@ public class HttpPipelineInitializationFactoryTest {
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
-            Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
+            Assert.assertTrue(protocol.contains(BAD_REQUEST.toString()));
             Assert.assertEquals(RESPONSE_BAD_CONTENT_TYPE, readBody(reader));
 
         } finally {
@@ -386,7 +388,7 @@ public class HttpPipelineInitializationFactoryTest {
         final ByteBuf response = embeddedChannel.readOutbound();
         try (final BufferedReader reader = parse(response)) {
             final String protocol = reader.readLine();
-            Assert.assertTrue(protocol.contains(INTERNAL_SERVER_ERROR.toString()));
+            Assert.assertTrue(protocol.contains(BAD_REQUEST.toString()));
             Assert.assertEquals(RESPONSE_BAD_METHOD, readBody(reader));
         } finally {
             response.release();

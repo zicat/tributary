@@ -20,16 +20,15 @@ package org.zicat.tributary.server;
 
 import static org.zicat.tributary.source.base.netty.NettySource.*;
 import static org.zicat.tributary.source.base.utils.HostUtils.realHostAddress;
-import static org.zicat.tributary.source.http.HttpMessageDecoder.addTextPlainUtf8Headers;
+import static org.zicat.tributary.source.http.HttpMessageDecoder.http1_1Response;
+import static org.zicat.tributary.source.http.HttpMessageDecoder.internalServerErrorResponse;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.notFoundResponse;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.util.CharsetUtil;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 
@@ -43,6 +42,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -132,18 +132,16 @@ public class MetricsHttpServer implements Closeable {
                 notFoundResponse(ctx, pathParams.path());
                 return;
             }
-
-            final FullHttpResponse response =
-                    new DefaultFullHttpResponse(
-                            HttpVersion.HTTP_1_1,
-                            HttpResponseStatus.OK,
-                            Unpooled.copiedBuffer(metrics(), CharsetUtil.UTF_8));
-            ctx.writeAndFlush(addTextPlainUtf8Headers(response));
+            http1_1Response(ctx, HttpResponseStatus.OK, metrics().getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            ctx.close();
+            LOG.error("unexpected exception", cause);
+            if (!ctx.channel().isActive()) {
+                return;
+            }
+            internalServerErrorResponse(ctx, cause.getClass().getName());
         }
 
         /**

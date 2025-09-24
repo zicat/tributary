@@ -36,7 +36,6 @@ import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.NettySource;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +64,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     public static final String RESPONSE_BAD_CONTENT_TYPE =
             "content-type only support " + HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8;
 
-    public static final String RESPONSE_BAD_METHOD = "only support post request";
+    public static final String RESPONSE_BAD_METHOD = "only support post or put request";
     private static final String HTTP_QUERY_KEY_TOPIC = "topic";
     private static final String HTTP_QUERY_KEY_PARTITION = "partition";
     public static final String RESPONSE_BAD_TOPIC_NOT_IN_PARAMS =
@@ -85,8 +84,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg)
-            throws URISyntaxException, IOException {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
 
         final String authHeader = msg.headers().get(HttpHeaderNames.AUTHORIZATION);
         if (authToken != null && !authToken.equals(authHeader)) {
@@ -94,10 +92,11 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
 
-        if (!HttpMethod.POST.equals(msg.method())) {
+        if (!(HttpMethod.POST.equals(msg.method()) || HttpMethod.PUT.equals(msg.method()))) {
             badRequestResponse(ctx, RESPONSE_BAD_METHOD);
             return;
         }
+
         final PathParams pathParams = new PathParams(msg.uri());
         final String path = pathParams.path();
         if (!pathMatch(path)) {
@@ -116,24 +115,19 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
 
-        try {
-            final byte[] body = parseBody(msg);
-            final Map<String, String> headers = httpHeaders(msg);
-            final Iterable<Records> recordsIt =
-                    parseRecords(ctx, topic, contentType, headers, body);
-            if (recordsIt == null) {
-                okResponse(ctx);
-                return;
-            }
-            final int realPartition = realPartition(pathParams);
-            for (Records records : recordsIt) {
-                source.append(realPartition, records);
-            }
+        final byte[] body = parseBody(msg);
+        final Map<String, String> headers = httpHeaders(msg);
+        final Iterable<Records> recordsIt = parseRecords(ctx, topic, contentType, headers, body);
+        if (recordsIt == null) {
             okResponse(ctx);
-        } catch (Exception e) {
-            LOG.error("process http request error, path: {}, topic: {}", path, topic, e);
-            badRequestResponse(ctx, e.getClass().getName());
+            return;
         }
+
+        final int realPartition = realPartition(pathParams);
+        for (Records records : recordsIt) {
+            source.append(realPartition, records);
+        }
+        okResponse(ctx);
     }
 
     /**
@@ -258,13 +252,12 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
-
-    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        ctx.close();
+        LOG.error("caught exception", cause);
+        if (!ctx.channel().isActive()) {
+            return;
+        }
+        internalServerErrorResponse(ctx, cause.getClass().getName());
     }
 
     /**
@@ -273,12 +266,18 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param ctx ctx
      */
     protected void okResponse(ChannelHandlerContext ctx) {
-        final byte[] content = EMPTY;
-        final ByteBuf byteBuf = ctx.alloc().buffer(content.length);
-        byteBuf.writeBytes(content);
-        final FullHttpResponse response =
-                new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, byteBuf);
-        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
+        http1_1Response(ctx, HttpResponseStatus.OK, EMPTY);
+    }
+
+    /**
+     * set internal server error response.
+     *
+     * @param ctx ctx
+     * @param message message
+     */
+    public static void internalServerErrorResponse(ChannelHandlerContext ctx, String message) {
+        final byte[] content = message.getBytes(StandardCharsets.UTF_8);
+        http1_1Response(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, content);
     }
 
     /**
@@ -287,14 +286,9 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param ctx ctx
      * @param message message
      */
-    private static void badRequestResponse(ChannelHandlerContext ctx, String message) {
+    public static void badRequestResponse(ChannelHandlerContext ctx, String message) {
         final byte[] content = message.getBytes(StandardCharsets.UTF_8);
-        final ByteBuf byteBuf = ctx.alloc().buffer(content.length);
-        byteBuf.writeBytes(content);
-        final FullHttpResponse response =
-                new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR, byteBuf);
-        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
+        http1_1Response(ctx, HttpResponseStatus.BAD_REQUEST, content);
     }
 
     /**
@@ -302,13 +296,8 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      *
      * @param ctx ctx
      */
-    private static void unauthorizedResponse(ChannelHandlerContext ctx) {
-        final ByteBuf byteBuf = ctx.alloc().buffer(UNAUTHORIZED.length);
-        byteBuf.writeBytes(UNAUTHORIZED);
-        final FullHttpResponse response =
-                new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED, byteBuf);
-        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
+    public static void unauthorizedResponse(ChannelHandlerContext ctx) {
+        http1_1Response(ctx, HttpResponseStatus.UNAUTHORIZED, UNAUTHORIZED);
     }
 
     /**
@@ -319,24 +308,54 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      */
     public static void notFoundResponse(ChannelHandlerContext ctx, String path) {
         final byte[] content = (path + " not found").getBytes(StandardCharsets.UTF_8);
-        final ByteBuf byteBuf = ctx.alloc().buffer(content.length);
-        byteBuf.writeBytes(content);
+        http1_1Response(ctx, HttpResponseStatus.NOT_FOUND, content);
+    }
+
+    /**
+     * http 1.1 response.
+     *
+     * @param ctx ctx
+     * @param status status
+     * @param headers headers
+     * @param message message
+     */
+    public static void http1_1Response(
+            ChannelHandlerContext ctx,
+            HttpResponseStatus status,
+            HttpHeaders headers,
+            byte[] message) {
+        final ByteBuf byteBuf = ctx.alloc().buffer(message.length);
+        byteBuf.writeBytes(message);
         final FullHttpResponse response =
-                new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND, byteBuf);
-        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
+                new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status, byteBuf);
+        if (headers != null) {
+            response.headers().add(headers);
+        }
+        ctx.writeAndFlush(response);
+    }
+
+    /**
+     * http 1.1 response.
+     *
+     * @param ctx ctx
+     * @param status status
+     * @param message message
+     */
+    public static void http1_1Response(
+            ChannelHandlerContext ctx, HttpResponseStatus status, byte[] message) {
+        http1_1Response(ctx, status, textPlainUtf8Headers(message.length), message);
     }
 
     /**
      * add text plain utf8 headers.
      *
-     * @param response response
+     * @param contentLength contentLength
      * @return response
      */
-    public static FullHttpResponse addTextPlainUtf8Headers(FullHttpResponse response) {
-        response.headers().add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8);
-        response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        response.headers().add(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
-        return response;
+    public static HttpHeaders textPlainUtf8Headers(int contentLength) {
+        return new DefaultHttpHeaders()
+                .add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8)
+                .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
+                .add(HttpHeaderNames.CONTENT_LENGTH, contentLength);
     }
 }

@@ -37,7 +37,7 @@ public class DefaultMessageFilterFactory implements MessageFilterFactory {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     public static final String IDENTITY = "default_message_filter";
     public static final ConfigOption<String> OPTION_TOPIC =
-            ConfigOptions.key("index").stringType().defaultValue("default_index");
+            ConfigOptions.key("topic").stringType().defaultValue("default_topic");
     private String topic;
 
     @Override
@@ -57,10 +57,8 @@ public class DefaultMessageFilterFactory implements MessageFilterFactory {
                 final Map<String, Object> data = message.getData();
                 result.add(new DefaultRecord(MAPPER.writeValueAsBytes(data)));
             }
-            return Collections.singletonList(
-                    new DefaultRecords(
-                            topic == null ? DefaultMessageFilterFactory.this.topic : topic,
-                            result));
+            final String realTopic = topic == null ? DefaultMessageFilterFactory.this.topic : topic;
+            return Collections.singletonList(new DefaultRecords(realTopic, result));
         };
     }
 

@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.source.logstash.http;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 
@@ -141,12 +140,7 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
 
     @Override
     protected void okResponse(ChannelHandlerContext ctx) {
-        final byte[] content = OK_RESPONSE;
-        final ByteBuf byteBuf = ctx.alloc().buffer(content.length);
-        byteBuf.writeBytes(content);
-        final FullHttpResponse response =
-                new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, byteBuf);
-        ctx.writeAndFlush(addTextPlainUtf8Headers(response));
+        http1_1Response(ctx, HttpResponseStatus.OK, OK_RESPONSE);
     }
 
     @Override
