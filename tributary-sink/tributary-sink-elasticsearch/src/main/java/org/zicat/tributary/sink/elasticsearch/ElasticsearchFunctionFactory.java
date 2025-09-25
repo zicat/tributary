@@ -98,11 +98,18 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description(
                             "await timeout when queue is full, default value is connection.request-timeout")
                     .defaultValue(Duration.ofSeconds(30));
-    public static final ConfigOption<Integer> OPTION_BUCK_SIZE =
-            ConfigOptions.key("bulk.size")
+    public static final ConfigOption<Integer> OPTION_BUCK_MAX_COUNT =
+            ConfigOptions.key("bulk.max.count")
                     .integerType()
-                    .description("bulk size")
+                    .description("bulk max count")
                     .defaultValue(1000);
+
+    public static final ConfigOption<Long> OPTION_BULK_MAX_BYTES =
+            ConfigOptions.key("bulk.max.bytes")
+                    .longType()
+                    .description("bulk max bytes")
+                    .defaultValue(2 * 1024 * 1024L);
+
     public static final ConfigOption<String> OPTION_BULK_RESPONSE_ACTION_LISTENER_IDENTITY =
             ConfigOptions.key("bulk.response.action_listener.identity")
                     .stringType()

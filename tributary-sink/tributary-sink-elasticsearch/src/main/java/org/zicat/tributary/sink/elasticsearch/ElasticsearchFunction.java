@@ -54,23 +54,33 @@ public class ElasticsearchFunction extends AbstractFunction {
                     .help("tributary sink elasticsearch counter")
                     .labelNames("host", "id")
                     .register();
+    private static final Counter SINK_ELASTICSEARCH_BULK_COUNTER =
+            Counter.build()
+                    .name("tributary_sink_elasticsearch_bulk_counter")
+                    .help("tributary sink elasticsearch bulk counter")
+                    .labelNames("host", "id")
+                    .register();
 
     protected transient RestHighLevelClient client;
     protected transient Counter.Child sinkCounter;
+    protected transient Counter.Child sinkBulkCounter;
     protected transient RequestIndexer indexer;
     protected transient BulkResponseActionListenerFactory listenerFactory;
     protected transient BlockingQueue<AbstractActionListener> listenerQueue;
     protected transient long awaitTimeout;
     protected transient volatile BulkRequest request = new BulkRequest();
-    protected int buckSize;
+    protected int buckMaxCount;
+    protected long buckMaxBytes;
     protected Offset lastOffset;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        buckSize = context.get(OPTION_BUCK_SIZE);
+        buckMaxCount = context.get(OPTION_BUCK_MAX_COUNT);
+        buckMaxBytes = context.get(OPTION_BULK_MAX_BYTES);
         client = createRestHighLevelClient(context);
         sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
+        sinkBulkCounter = labelHostId(SINK_ELASTICSEARCH_BULK_COUNTER);
         listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
         awaitTimeout = context.get(QUEUE_FULL_AWAIT_TIMEOUT).toMillis();
         indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
@@ -99,8 +109,8 @@ public class ElasticsearchFunction extends AbstractFunction {
         }
         sinkCounter.inc(sendCount.get());
         lastOffset = offset;
-        // may the number of actions more than buckSize
-        if (request.numberOfActions() >= buckSize) {
+        if (request.numberOfActions() >= buckMaxCount
+                || request.estimatedSizeInBytes() >= buckMaxBytes) {
             sendAsync(offset);
         }
     }
@@ -126,6 +136,7 @@ public class ElasticsearchFunction extends AbstractFunction {
             listenerQueue.add(listener);
         }
         bulkAsync(request, listener);
+        sinkBulkCounter.inc();
         request = new BulkRequest();
     }
 
