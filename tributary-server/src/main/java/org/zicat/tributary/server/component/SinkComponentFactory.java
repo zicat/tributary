@@ -160,12 +160,13 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
                 for (SinkGroupManager sinkGroupManager : sinkGroupManagers) {
                     final List<String> labelValues =
                             Arrays.asList(sinkGroupManager.id(), metricsHost);
-                    for (GaugeFamily gaugeFamily : sinkGroupManager.gaugeFamily().values()) {
-                        final String name = gaugeFamily.getName();
-                        final String desc = gaugeFamily.getDescription();
+                    for (Map.Entry<GaugeKey, Double> gaugeEntry :
+                            sinkGroupManager.gaugeFamily().entrySet()) {
+                        final String name = gaugeEntry.getKey().getName();
+                        final String desc = gaugeEntry.getKey().getDescription();
                         metricSamples.add(
                                 new GaugeMetricFamily(name, desc, labels)
-                                        .addMetric(labelValues, gaugeFamily.getValue()));
+                                        .addMetric(labelValues, gaugeEntry.getValue()));
                     }
                 }
             }

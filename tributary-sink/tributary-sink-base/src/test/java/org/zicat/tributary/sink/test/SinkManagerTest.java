@@ -100,8 +100,7 @@ public class SinkManagerTest {
             groupManagers.forEach(IOUtils::closeQuietly);
             groupManagers.forEach(
                     manager ->
-                            Assert.assertEquals(
-                                    0, manager.gaugeFamily().get(KEY_SINK_LAG).getValue(), 0.001));
+                            Assert.assertEquals(0, manager.gaugeFamily().get(KEY_SINK_LAG), 0.001));
         }
     }
 }

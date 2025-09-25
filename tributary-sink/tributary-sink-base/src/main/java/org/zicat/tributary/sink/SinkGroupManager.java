@@ -23,7 +23,6 @@ import static org.zicat.tributary.common.SpiFactory.findFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
@@ -74,11 +73,10 @@ public class SinkGroupManager implements Closeable {
         handlers.forEach(Thread::start);
     }
 
-    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
-        final Map<GaugeKey, GaugeFamily> families = new HashMap<>();
-        KEY_SINK_LAG
-                .value(handlers.stream().mapToLong(PartitionHandler::lag).sum())
-                .register(families);
+    public Map<GaugeKey, Double> gaugeFamily() {
+        final Map<GaugeKey, Double> families = new HashMap<>();
+        families.put(
+                KEY_SINK_LAG, (double) handlers.stream().mapToLong(PartitionHandler::lag).sum());
         return families;
     }
 

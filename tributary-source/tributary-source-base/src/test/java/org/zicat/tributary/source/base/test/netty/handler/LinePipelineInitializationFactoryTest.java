@@ -59,18 +59,14 @@ public class LinePipelineInitializationFactoryTest {
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel);
             final ByteBuf byteBuf = embeddedChannel.alloc().buffer();
-            try {
-                byteBuf.writeBytes("lynn".getBytes());
-                byteBuf.writeBytes(System.lineSeparator().getBytes());
-                byteBuf.writeBytes("zhangjun".getBytes());
-                byteBuf.writeBytes(System.lineSeparator().getBytes());
-                byteBuf.writeBytes("quit".getBytes());
-                byteBuf.writeBytes(System.lineSeparator().getBytes());
-                embeddedChannel.writeInbound(byteBuf);
-                channel.flush();
-            } finally {
-                byteBuf.release();
-            }
+            byteBuf.writeBytes("lynn".getBytes());
+            byteBuf.writeBytes(System.lineSeparator().getBytes());
+            byteBuf.writeBytes("zhangjun".getBytes());
+            byteBuf.writeBytes(System.lineSeparator().getBytes());
+            byteBuf.writeBytes("quit".getBytes());
+            byteBuf.writeBytes(System.lineSeparator().getBytes());
+            embeddedChannel.writeInbound(byteBuf);
+            channel.flush();
             final Offset offset = Offset.ZERO;
             final List<byte[]> data = readChannel(channel, 0, offset, 2).data;
 

@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.source.base;
 
-import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
 
 import java.io.Closeable;
@@ -32,7 +31,7 @@ public interface Source extends Closeable, SourceChannel {
      *
      * @return map metrics
      */
-    Map<GaugeKey, GaugeFamily> gaugeFamily();
+    Map<GaugeKey, Double> gaugeFamily();
 
     /**
      * get id.

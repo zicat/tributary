@@ -68,18 +68,11 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
         super(source);
         final ReadableConfig config = source.getConfig();
         this.sslHandlerProvider = createSslHandlerProvider(config);
+        this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
         this.kafkaHandlerExecutorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-kafkaHandler",
                         config.get(OPTION_KAFKA_WORKER_THREADS));
-        try {
-            this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
-        } catch (Exception e) {
-            if (kafkaHandlerExecutorGroup != null) {
-                kafkaHandlerExecutorGroup.shutdownGracefully();
-            }
-            throw e;
-        }
     }
 
     @Override

@@ -55,14 +55,4 @@ public class GaugeKey {
     public int hashCode() {
         return Objects.hash(name);
     }
-
-    /**
-     * create gauge family.
-     *
-     * @param value value
-     * @return GaugeFamily
-     */
-    public GaugeFamily value(double value) {
-        return new GaugeFamily(getName(), getDescription(), value);
-    }
 }

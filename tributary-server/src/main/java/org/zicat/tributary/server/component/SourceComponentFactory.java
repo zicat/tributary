@@ -101,12 +101,12 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
             for (Source source : elements.values()) {
                 final String id = source.sourceId();
                 final List<String> labelsValue = Arrays.asList(id, metricsHost);
-                for (GaugeFamily gaugeFamily : source.gaugeFamily().values()) {
-                    final String name = gaugeFamily.getName();
-                    final String desc = gaugeFamily.getDescription();
+                for (Map.Entry<GaugeKey, Double> entry : source.gaugeFamily().entrySet()) {
+                    final String name = entry.getKey().getName();
+                    final String desc = entry.getKey().getDescription();
                     metricSamples.add(
                             new GaugeMetricFamily(name, desc, labels)
-                                    .addMetric(labelsValue, gaugeFamily.getValue()));
+                                    .addMetric(labelsValue, entry.getValue()));
                 }
             }
             return metricSamples;

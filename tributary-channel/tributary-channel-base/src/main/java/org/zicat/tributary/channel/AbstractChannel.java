@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.channel.group.MemoryGroupManager;
-import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
@@ -194,15 +193,15 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public Map<GaugeKey, GaugeFamily> gaugeFamily() {
-        final Map<GaugeKey, GaugeFamily> families = new HashMap<>();
-        KEY_WRITE_BYTES.value(writeBytes.get() + latestSegment.writeBytes()).register(families);
-        KEY_READ_BYTES.value(readBytes.get()).register(families);
-        KEY_BUFFER_USAGE.value(latestSegment.cacheUsed()).register(families);
-        KEY_ACTIVE_SEGMENT.value(cache.size()).register(families);
+    public Map<GaugeKey, Double> gaugeFamily() {
+        final Map<GaugeKey, Double> families = new HashMap<>();
+        families.put(KEY_WRITE_BYTES, (double) (writeBytes.get() + latestSegment.writeBytes()));
+        families.put(KEY_READ_BYTES, (double) readBytes.get());
+        families.put(KEY_BUFFER_USAGE, (double) latestSegment.cacheUsed());
+        families.put(KEY_ACTIVE_SEGMENT, (double) cache.size());
         if (bCache != null) {
-            KEY_BLOCK_CACHE_QUERY_HIT_COUNT.value(bCache.matchCount()).register(families);
-            KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT.value(bCache.totalCount()).register(families);
+            families.put(KEY_BLOCK_CACHE_QUERY_HIT_COUNT, (double) bCache.matchCount());
+            families.put(KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT, (double) bCache.totalCount());
         }
         return families;
     }

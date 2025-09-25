@@ -84,12 +84,12 @@ public class ChannelComponentFactory implements SafeFactory<ChannelComponent> {
             for (Channel channel : elements.values()) {
                 final String topic = channel.topic();
                 final List<String> labelsValue = Arrays.asList(topic, metricsHost);
-                for (GaugeFamily gaugeFamily : channel.gaugeFamily().values()) {
-                    final String name = gaugeFamily.getName();
-                    final String desc = gaugeFamily.getDescription();
+                for (Map.Entry<GaugeKey, Double> entry : channel.gaugeFamily().entrySet()) {
+                    final String name = entry.getKey().getName();
+                    final String desc = entry.getKey().getDescription();
                     metricSamples.add(
                             new GaugeMetricFamily(name, desc, labels)
-                                    .addMetric(labelsValue, gaugeFamily.getValue()));
+                                    .addMetric(labelsValue, entry.getValue()));
                 }
             }
             return metricSamples;

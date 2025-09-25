@@ -53,21 +53,14 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
         super(source);
         final ReadableConfig conf = source.getConfig();
         this.sslHandlerProvider = createSslHandlerProvider(conf);
+        this.messageFilterFactory =
+                MessageFilterFactoryBuilder.newBuilder()
+                        .config(conf.filterAndRemovePrefixKey(CONFIG_PREFIX))
+                        .buildAndOpen();
         this.beatsHandlerExecutorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-logstashBeatsHandler",
                         conf.get(OPTION_LOGSTASH_BEATS_WORKER_THREADS));
-        try {
-            this.messageFilterFactory =
-                    MessageFilterFactoryBuilder.newBuilder()
-                            .config(conf.filterAndRemovePrefixKey(CONFIG_PREFIX))
-                            .buildAndOpen();
-        } catch (Exception e) {
-            if (beatsHandlerExecutorGroup != null) {
-                beatsHandlerExecutorGroup.shutdownGracefully();
-            }
-            throw e;
-        }
     }
 
     @Override

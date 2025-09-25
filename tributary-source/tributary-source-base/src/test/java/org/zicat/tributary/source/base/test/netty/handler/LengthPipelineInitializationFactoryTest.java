@@ -59,21 +59,17 @@ public class LengthPipelineInitializationFactoryTest {
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel);
             final ByteBuf byteBuf = embeddedChannel.alloc().buffer();
-            try {
-                final String s1 = "lynn";
-                byteBuf.writeInt(s1.getBytes().length);
-                byteBuf.writeBytes(s1.getBytes());
+            final String s1 = "lynn";
+            byteBuf.writeInt(s1.getBytes().length);
+            byteBuf.writeBytes(s1.getBytes());
 
-                final String s2 = "zhangjun";
-                byteBuf.writeInt(s2.getBytes().length);
-                byteBuf.writeBytes(s2.getBytes());
+            final String s2 = "zhangjun";
+            byteBuf.writeInt(s2.getBytes().length);
+            byteBuf.writeBytes(s2.getBytes());
 
-                embeddedChannel.writeInbound(byteBuf);
+            embeddedChannel.writeInbound(byteBuf);
 
-                channel.flush();
-            } finally {
-                byteBuf.release();
-            }
+            channel.flush();
             final Offset offset = Offset.ZERO;
             final List<byte[]> data = readChannel(channel, 0, offset, 2).data;
 

@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.channel;
 
-import org.zicat.tributary.common.GaugeFamily;
 import org.zicat.tributary.common.GaugeKey;
 
 import java.util.Map;
@@ -31,5 +30,5 @@ public interface ChannelMetric {
      *
      * @return map metrics
      */
-    Map<GaugeKey, GaugeFamily> gaugeFamily();
+    Map<GaugeKey, Double> gaugeFamily();
 }
