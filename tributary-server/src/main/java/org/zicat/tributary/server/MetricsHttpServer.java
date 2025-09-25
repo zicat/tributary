@@ -51,9 +51,9 @@ public class MetricsHttpServer implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(MetricsHttpServer.class);
     public static final int MAX_CONTENT_LENGTH = 10240;
     public static final ConfigOption<Integer> OPTION_PORT =
-            ConfigOptions.key("port").integerType().defaultValue(8765);
+            ConfigOptions.key("metrics.port").integerType().defaultValue(9090);
     public static final ConfigOption<Integer> OPTION_THREADS =
-            ConfigOptions.key("threads").integerType().defaultValue(5);
+            ConfigOptions.key("metrics.worker-threads").integerType().defaultValue(1);
     public static final ConfigOption<String> OPTION_METRICS_PATH =
             ConfigOptions.key("metrics.path").stringType().defaultValue("/metrics");
     public static final ConfigOption<String> OPTION_METRIC_HOST =

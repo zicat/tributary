@@ -3,7 +3,7 @@
 ## Common Completed Configuration
 
 ```properties
-server.port=8765
+server.metrics.port=9090
 source.s1.channel=c1
 source.s1.implement=netty
 source.s1.netty.port=8200

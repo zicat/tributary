@@ -54,7 +54,7 @@ which includes three subdirectories: "bin", "config", and "libs".
 Here, a simple config of application.properties in config dir is shown as follows:
 
 ```properties
-server.port=8765
+server.metrics.port=9090
 source.s1.channel=c1
 source.s1.implement=netty
 source.s1.netty.port=8200
@@ -64,7 +64,7 @@ channel.c1.groups=group_1
 sink.group_1.function.id=print
 ```
 
-Please note that the port configuration for server.port and source.s1.netty.port should not be
+Please note that the port configuration for server.metrics.port and source.s1.netty.port should not be
 duplicated and must not be occupied by other processes.
 
 Start the Tributary service by using this application.properties as follows
@@ -80,8 +80,8 @@ $ tail -f log/tributary.log
 [main] INFO  o.z.t.s.n.AbstractNettySource - >>> TcpServer started on ip *, port 8200
 [main] INFO  o.z.t.s.component.DynamicSource - create source success, sources [s1]
 [main] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
-[main] INFO  o.a.c.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8765"]
-[main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8765 (http) with context path ''
+[main] INFO  o.a.c.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9090"]
+[main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9090 (http) with context path ''
 [main] INFO  o.z.t.s.TributaryServiceApplication - Started TributaryServiceApplication in 3.83 seconds (JVM running for 4.672)
 ```
 
@@ -111,7 +111,7 @@ Attempt to send some records through telnet, and please note that the port in th
 match the configuration of source.s1.netty.port.
 
 ```shell
-$ curl -s "http://localhost:8765/metrics"|grep -v '#'
+$ curl -s "http://localhost:9090/metrics"|grep -v '#'
 tributary_sink_snapshot_cost{host="MAGIT03797.local",topic="c1",groupId="group_1",partition_id="0",} 0.0
 tributary_sink_lag{id="c1_group_1",host="MAGIT03797.local",} 0.0
 tributary_channel_read_bytes{topic="c1",host="MAGIT03797.local",} 95.0

@@ -49,7 +49,7 @@ public class StarterTest {
         final List<Record> collection = Collections.synchronizedList(new ArrayList<>());
         final List<Integer> availablePorts = availablePorts(2);
         final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put("server.port", availablePorts.get(0));
+        config.put("server.metrics.port", availablePorts.get(0));
         config.put("server.metrics.host-pattern", "127.0.0.1");
         config.put("source.s1.channel", "c1");
         config.put("source.s1.implement", "netty");

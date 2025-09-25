@@ -5,7 +5,7 @@ Tributary Configuration consists of four parts, including server, source, channe
 ## Server
 
 ```properties
-server.port=8765
+server.metrics.port=9090
 server.metrics.host-pattern=127.0.0.1
 ```
 
@@ -15,10 +15,10 @@ The parameter "server.metrics.host-pattern" is a regular expression that is used
 required hosts when there are multiple network cards in the machine, and assign the value to the
 host dimension in the metrics.
 
-Get tributary metrics as follows, ensure that the port matches the server.port configuration:
+Get tributary metrics as follows, ensure that the port matches the server.metrics.port configuration:
 
 ```shell
-$ curl -s http://localhost:8765/metrics|grep -v '#'
+$ curl -s http://localhost:9090/metrics|grep -v '#'
 sink_print_counter{host="127.0.0.1",id="c1_group_1_0",} 1.0
 channel_block_cache_query_hit_count{topic="c1",host="127.0.0.1",} 1.0
 channel_buffer_usage{topic="c1",host="127.0.0.1",} 0.0
@@ -29,11 +29,12 @@ channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
 sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
 ```
 
-| Key                         | default  | valid value | describe                                                                                                                                     |
-|-----------------------------|----------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| server.port                 |          | int(number) | the port to bind, range 1000-65535                                                                                                           |
-| server.metrics.host-pattern | null     | string      | the pattern to filter expected host as the metrics value of host dimension, select first if found multi hosts, default null meaning bind all |
-| server.metrics.path         | /metrics | string      | the metrics http path                                                                                                                        |
+| Key                           | default  | valid value | describe                                                                                                                                     |
+|-------------------------------|----------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| server.metrics.port           |          | int(number) | the port to bind, range 1000-65535                                                                                                           |
+| server.metrics.worker-threads | 1        | int(number) | the work thread to deal with request                                                                                                         |
+| server.metrics.host-pattern   | null     | string      | the pattern to filter expected host as the metrics value of host dimension, select first if found multi hosts, default null meaning bind all |
+| server.metrics.path           | /metrics | string      | the metrics http path                                                                                                                        |
 
 ## Source
 
@@ -463,7 +464,7 @@ Note:
 ## The complete demo config
 
 ```
-server.port=8765
+server.metrics.port=9090
 server.metrics.host-pattern=.*
 server.metrics.path=/metrics
 
