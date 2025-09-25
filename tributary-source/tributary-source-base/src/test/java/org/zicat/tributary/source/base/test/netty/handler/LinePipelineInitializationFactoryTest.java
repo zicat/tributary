@@ -28,10 +28,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
+import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.pipeline.LinePipelineInitializationFactory;
+import static org.zicat.tributary.source.base.netty.pipeline.LinePipelineInitializationFactory.OPTION_LINE_WORKER_THREADS;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 import org.zicat.tributary.source.base.test.netty.NettySourceMock;
@@ -49,8 +51,10 @@ public class LinePipelineInitializationFactoryTest {
                         PipelineInitializationFactory.class);
         final String groupId = "g1";
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put(OPTION_LINE_WORKER_THREADS, -1);
         try (Channel channel = memoryChannelFactory(groupId).createChannel("t1", null);
-                NettySource source = new NettySourceMock(channel)) {
+                NettySource source = new NettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel);

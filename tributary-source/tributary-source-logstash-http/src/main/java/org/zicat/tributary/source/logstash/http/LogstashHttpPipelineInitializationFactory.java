@@ -82,7 +82,7 @@ public class LogstashHttpPipelineInitializationFactory implements PipelineInitia
                     .description("set logstash http tags, default empty, split by ,")
                     .defaultValue(Collections.emptyList());
 
-    public static final String IDENTITY = "logstashHttpDecoder";
+    public static final String IDENTITY = "logstash-http";
 
     @Override
     public PipelineInitialization createPipelineInitialization(NettySource source)

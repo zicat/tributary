@@ -61,8 +61,8 @@ public class NettySourceFactory implements SourceFactory {
             ConfigOptions.key("netty.decoder")
                     .stringType()
                     .description(
-                            "set netty streaming decoder, values[lengthDecoder,lineDecoder,kafkaDecoder,httpDecoder]")
-                    .defaultValue("lengthDecoder");
+                            "set netty streaming decoder, values[length,line,kafka,http,logstash-http,logstash_beats]")
+                    .noDefaultValue();
 
     @Override
     public String identity() {

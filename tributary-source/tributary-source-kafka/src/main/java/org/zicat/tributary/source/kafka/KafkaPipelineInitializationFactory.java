@@ -122,7 +122,7 @@ public class KafkaPipelineInitializationFactory implements PipelineInitializatio
                     .description("The type of the keystore file, default JKS")
                     .defaultValue(KeystoreType.JKS);
 
-    public static final String IDENTITY = "kafkaDecoder";
+    public static final String IDENTITY = "kafka";
 
     @Override
     public String identity() {

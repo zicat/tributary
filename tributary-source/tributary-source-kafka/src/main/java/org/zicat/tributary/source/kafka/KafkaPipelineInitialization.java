@@ -48,7 +48,6 @@ import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.source.base.netty.handler.LengthDecoder;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -261,9 +260,11 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         try {
-            super.close();
+            if (kafkaHandlerExecutorGroup != null) {
+                kafkaHandlerExecutorGroup.shutdownGracefully();
+            }
         } finally {
             IOUtils.closeQuietly(kafkaMessageDecoder);
         }

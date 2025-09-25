@@ -126,7 +126,9 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
     @Override
     public void close() throws IOException {
         try {
-            super.close();
+            if (beatsHandlerExecutorGroup != null) {
+                beatsHandlerExecutorGroup.shutdownGracefully();
+            }
         } finally {
             IOUtils.closeQuietly(messageFilterFactory);
         }

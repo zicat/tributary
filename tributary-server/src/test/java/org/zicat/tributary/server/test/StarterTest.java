@@ -55,7 +55,7 @@ public class StarterTest {
         config.put("source.s1.implement", "netty");
         config.put("source.s1.netty.host", "127.0.0.1");
         config.put("source.s1.netty.port", availablePorts.get(1));
-        config.put("source.s1.netty.decoder", "lineDecoder");
+        config.put("source.s1.netty.decoder", "line");
         config.put("channel.c1.type", "memory");
         config.put("channel.c1.groups", "group_1");
         config.put("channel.c1.flush.period", "100ms");

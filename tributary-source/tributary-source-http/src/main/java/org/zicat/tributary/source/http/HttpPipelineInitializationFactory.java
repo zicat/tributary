@@ -60,7 +60,7 @@ public class HttpPipelineInitializationFactory implements PipelineInitialization
                     .description("set http basic auth password, default null not enable basic auth")
                     .defaultValue(null);
 
-    public static final String IDENTITY = "httpDecoder";
+    public static final String IDENTITY = "http";
 
     @Override
     public String identity() {

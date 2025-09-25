@@ -21,22 +21,31 @@ package org.zicat.tributary.source.base.netty.pipeline;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 
+import io.netty.util.concurrent.EventExecutorGroup;
 import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.handler.BytesChannelHandler.MuteBytesChannelHandler;
 import org.zicat.tributary.source.base.netty.handler.LineDecoder;
+import static org.zicat.tributary.source.base.netty.pipeline.LinePipelineInitializationFactory.OPTION_LINE_WORKER_THREADS;
+import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
 
 /** LinePipelineInitialization. */
 public class LinePipelineInitialization extends AbstractPipelineInitialization {
 
+    protected final EventExecutorGroup executorGroup;
+
     public LinePipelineInitialization(NettySource source) {
         super(source);
+        this.executorGroup =
+                createEventExecutorGroup(
+                        source.sourceId() + "-lineHandler",
+                        source.getConfig().get(OPTION_LINE_WORKER_THREADS));
     }
 
     @Override
     public void init(Channel channel) {
         final ChannelPipeline pipeline = channel.pipeline();
         idleClosedChannelPipeline(pipeline)
-                .addLast(new LineDecoder())
-                .addLast(new MuteBytesChannelHandler(source, selectPartition()));
+                .addLast(executorGroup, new LineDecoder())
+                .addLast(executorGroup, new MuteBytesChannelHandler(source, selectPartition()));
     }
 }

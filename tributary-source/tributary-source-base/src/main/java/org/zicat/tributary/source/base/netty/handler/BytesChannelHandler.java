@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.source.base.netty.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.createBytesRecords;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -33,6 +35,7 @@ import java.util.Collections;
 /** ChannelHandler. */
 public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(BytesChannelHandler.class);
     private final NettySource source;
     private final int partition;
 
@@ -48,6 +51,11 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
                 createBytesRecords(source.sourceId(), Collections.singletonList(packet));
         source.append(partition, records);
         ackSuccess(packet, ctx);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        LOG.error("channel caught exception", cause);
     }
 
     /**

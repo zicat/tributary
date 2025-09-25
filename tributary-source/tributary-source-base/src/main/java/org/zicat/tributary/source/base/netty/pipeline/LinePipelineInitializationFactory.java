@@ -18,12 +18,20 @@
 
 package org.zicat.tributary.source.base.netty.pipeline;
 
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.source.base.netty.NettySource;
 
 /** LinePipelineInitializationFactory. */
 public class LinePipelineInitializationFactory implements PipelineInitializationFactory {
 
-    public static final String IDENTITY = "lineDecoder";
+    public static final ConfigOption<Integer> OPTION_LINE_WORKER_THREADS =
+            ConfigOptions.key("netty.decoder.line.worker-threads")
+                    .integerType()
+                    .description("The number of worker threads for the line handler, default 10")
+                    .defaultValue(10);
+
+    public static final String IDENTITY = "line";
 
     @Override
     public String identity() {

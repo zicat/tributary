@@ -74,40 +74,40 @@ source.s1.netty.host=10\\.103\\.1\\..*,localhost
 source.s1.netty.port=8200
 source.s1.netty.threads.event-loop=10
 source.s1.netty.idle=60sec
-source.s1.netty.decoder=lineDecoder
+source.s1.netty.decoder=line
 ```
 
-| key                      | default       | type        | describe                                                                                                                                                                                                                         |
-|--------------------------|---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host               | null          | string      | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
-| netty.port               |               | int(number) | the port to bind, range 1000-65535                                                                                                                                                                                               |
-| netty.threads.event-loop | 10            | int(number) | the count of netty event loop threads                                                                                                                                                                                            |
-| netty.idle               | 120sec        | duration    | the idle time to close the socket                                                                                                                                                                                                |
-| netty.decoder            | lengthDecoder | enum        | the parser of network streaming                                                                                                                                                                                                  |
+| key                      | default | type                                                       | describe                                                                                                                                                                                                                         |
+|--------------------------|---------|------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.host               | null    | string                                                     | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
+| netty.port               |         | int(number)                                                | the port to bind, range 1000-65535                                                                                                                                                                                               |
+| netty.threads.event-loop | 10      | int(number)                                                | the count of netty event loop threads                                                                                                                                                                                            |
+| netty.idle               | 120sec  | duration                                                   | the idle time to close the socket                                                                                                                                                                                                |
+| netty.decoder            | N/A     | enum [length,line,kafka,http,logstash-http,logstash-beats] | the parser of network streaming                                                                                                                                                                                                  |
 
 ### Netty Decoder
 
 The `netty.decoder` configuration is used to parse the streaming records received by the Netty,
 Supported decoders are as follows:
 
-#### lineDecoder
+#### line
 
-The lineDecoder parses streaming records line by line, making it more suitable for scenarios
+The line decoder parses streaming records line by line, making it more suitable for scenarios
 where telnet is used for demonstrations.
 
-#### lengthDecoder
+#### length
 
-The lengthDecoder parses streaming records by length-value like below, making it more suitable
+The length decoder parses streaming records by length-value like below, making it more suitable
 for most scenarios.
 ![image](picture/line_decoder.png)
 
-Tributary provide the lengthDecoder java
+Tributary provide the length decoder java
 client [LengthDecoderClient](../sample-code/src/main/java/org/zicat/tributary/demo/client/LengthDecoderClient.java)
 for reference.
 
-#### [kafkaDecoder](#kafkaDecoder)
+#### kafka
 
-The kafkaDecoder parses streaming records
+The kafka decoder parses streaming records
 by [kafka-producer-protocol](https://kafka.apache.org/protocol#The_Messages_Produce). It supports
 more configuration as follows:
 
@@ -132,9 +132,9 @@ more configuration as follows:
 | netty.decoder.kafka.sasl.plain                     | false           | bool          | the security switch whether open sasl plain                                                                                                                                                                     |
 | netty.decoder.kafka.sasl.plain.usernames           | null            | string        | the plain users configuration, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                                              |
 
-#### [httpDecoder](#httpDecoder)
+#### http
 
-The httpDecoder parses streaming records by http protocol. It supports more configuration as
+The http decoder parses streaming records by http protocol. It supports more configuration as
 follows:
 
 | key                                   | default | type   | describe                                                                                                                   |
@@ -156,9 +156,9 @@ $ curl -X POST http://localhost:8200?topic=my_topic&partition=10 \
      -d '[{"key":"key1","value":"value1","headers":{"header1":"value1","header2":"value2"}}]' -i
 ```
 
-#### [logstashBeatsDecoder](#logstashBeatsDecoder)
+#### logstash-beats
 
-The logstashBeatsDecoder parses streaming records by logstash beats input protocal. It supports more configuration as
+The logstash beats decoder parses streaming records by logstash beats input protocal. It supports more configuration as
 follows:
 
 | key                                                          | default | type   | describe                                                                                                                                                                                                                                                              |
@@ -190,9 +190,9 @@ sadfasdfasdfads
 sadfasfasdfasdf
 ```
 
-#### [logstashHttpDecoder](#logstashBeatsDecoder)
+#### logstash-http
 
-The logstashHttpDecoder parses streaming records by logstash http input protocal. It supports more configuration as
+The logstash http decoder parses streaming records by logstash http input protocal. It supports more configuration as
 follows:
 
 | key                                                         | default | type          | describe                                                                                                                                                                                                                                                              |
@@ -403,7 +403,7 @@ Note:
    filtered by metrics key `sink_hbase_discard_counter`.
 
 2. The key-supported sources
-   include [kafkaDecoder](#kafkadecoder) and [httpDecoder](#httpDecoder).
+   include kafka decoder and http decoder.
 
 ### Sink ElasticSearch
 
@@ -476,7 +476,7 @@ source.s2.implement=netty
 source.s2.netty.port=8300
 source.s2.netty.threads.event-loop=5
 source.s2.netty.idle=120sec
-source.s2.netty.decoder=lineDecoder
+source.s2.netty.decoder=line
 
 source.s3.channel=c2
 source.s3.implement=netty
@@ -484,7 +484,7 @@ source.s3.netty.host=localhost
 source.s3.netty.port=9093
 source.s3.netty.idle=60sec
 source.s3.netty.threads.event-loop=10
-source.s3.netty.decoder=kafkaDecoder
+source.s3.netty.decoder=kafka
 source.s3.netty.decoder.kafka.worker-threads=10
 source.s3.netty.decoder.kafka.meta.ttl=10sec
 source.s3.netty.decoder.kafka.topic.partitions=60
@@ -499,7 +499,7 @@ source.s3.netty.decoder.kafka.sasl.plain.usernames=user1_16Ew658jjzvmxDqk,user2_
 source.s4.channel=c1
 source.s4.implement=netty
 source.s4.netty.port=5044
-source.s4.netty.decoder=logstashBeatsDecoder
+source.s4.netty.decoder=logstash-beats
 source.s4.netty.decoder.logstash-beats.worker-threads=10
 source.s4.netty.decoder.logstash-beats.ssl=true
 source.s4.netty.decoder.logstash-beats.ssl.certificate.authorities=ssl/ca.crt
