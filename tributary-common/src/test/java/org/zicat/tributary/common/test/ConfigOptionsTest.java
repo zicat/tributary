@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.PercentSize;
 
 /** ConfigOptionTest. */
 public class ConfigOptionsTest {
@@ -36,6 +37,51 @@ public class ConfigOptionsTest {
                 new String[] {"aa", "bb;", "cc"},
                 config.get(ConfigOptions.key("aa").listType(COMMA_SPLIT_HANDLER).noDefaultValue())
                         .toArray(new String[] {}));
+    }
+
+    @Test
+    public void testPercentType() {
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        config.put("aa", "10.1 % ");
+        config.put("bb", "20%");
+        Assert.assertEquals(
+                10.1,
+                config.get(ConfigOptions.key("aa").percentType().noDefaultValue()).getPercent(),
+                0.01);
+
+        Assert.assertEquals(
+                20,
+                config.get(ConfigOptions.key("bb").percentType().noDefaultValue()).getPercent(),
+                0);
+
+        try {
+            config.get(ConfigOptions.key("cc").percentType().noDefaultValue());
+            Assert.fail();
+        } catch (Exception ignore) {
+
+        }
+        Assert.assertEquals(
+                35,
+                config.get(ConfigOptions.key("dd").percentType().defaultValue(new PercentSize(35)))
+                        .getPercent(),
+                0);
+        Assert.assertEquals(
+                10.1,
+                config.get(ConfigOptions.key("aa").percentType().defaultValue(new PercentSize(35)))
+                        .getPercent(),
+                0.01);
+        try {
+            new PercentSize(101);
+            Assert.fail();
+        } catch (Exception ignore) {
+
+        }
+        try {
+            new PercentSize(-1);
+            Assert.fail();
+        } catch (Exception ignore) {
+
+        }
     }
 
     @Test

@@ -71,6 +71,15 @@ public class ConfigOptions {
                     s -> s instanceof MemorySize ? (MemorySize) s : MemorySize.parse(s.toString()));
         }
 
+        public final Builder<PercentSize> percentType() {
+            return new Builder<>(
+                    key,
+                    s ->
+                            s instanceof PercentSize
+                                    ? (PercentSize) s
+                                    : PercentSize.parse(s.toString()));
+        }
+
         public final <T extends Enum<T>> Builder<T> enumType(Class<T> enumClass) {
             return new Builder<>(key, s -> convertToEnum(s, enumClass));
         }
