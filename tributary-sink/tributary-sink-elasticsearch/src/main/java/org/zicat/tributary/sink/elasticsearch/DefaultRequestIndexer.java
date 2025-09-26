@@ -72,7 +72,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
                     .register();
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestIndexer.class);
-
+    private static final String ERROR_VALUE_FORMAT = "skip invalid message, index:{}, value: {}";
     private static final ObjectMapper MAPPER = new ObjectMapper();
     public static final String KEY_TOPIC = "_topic";
 
@@ -86,9 +86,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
         topicAsIndex = context.get(OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX);
         index = context.get(OPTION_REQUEST_INDEXER_DEFAULT_INDEX);
         recordSizeLimit =
-                context.get(
-                                OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT,
-                                context.get(OPTION_BULK_MAX_BYTES))
+                context.get(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, OPTION_BULK_MAX_BYTES)
                         .getBytes();
         sinkDiscardCounter =
                 SINK_ELASTICSEARCH_DISCARD_COUNTER.labels(
@@ -141,12 +139,13 @@ public class DefaultRequestIndexer implements RequestIndexer {
         try {
             jsonNode = MAPPER.readTree(value);
             if (!(jsonNode instanceof ObjectNode)) {
-                LOG.warn("skip invalid message, index:{}, value: {}", realIndex, new String(value, UTF_8));
+                LOG.warn(ERROR_VALUE_FORMAT, realIndex, new String(value, UTF_8));
                 sinkDiscardCounter.inc();
                 return null;
             }
-        } catch (Exception ignore) {
+        } catch (Exception e) {
             sinkDiscardCounter.inc();
+            LOG.warn(ERROR_VALUE_FORMAT, realIndex, new String(value, UTF_8), e);
             return null;
         }
         final ObjectNode objectNode = (ObjectNode) jsonNode;
@@ -173,7 +172,6 @@ public class DefaultRequestIndexer implements RequestIndexer {
      * @param headers headers
      * @return id
      */
-    @SuppressWarnings("unused")
     protected String id(String topic, byte[] key, byte[] value, Map<String, byte[]> headers) {
         if (key == null || key.length == 0) {
             return null;

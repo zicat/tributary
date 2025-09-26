@@ -65,18 +65,18 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .stringType()
                     .description("Username used to connect to Elasticsearch instance.")
                     .defaultValue(null);
-    public static final ConfigOption<Duration> REQUEST_TIMEOUT =
+    public static final ConfigOption<Duration> OPTION_REQUEST_TIMEOUT =
             ConfigOptions.key("request.timeout")
                     .durationType()
                     .description(
                             "The timeout for requesting a connection from the connection manager.")
                     .defaultValue(Duration.ofSeconds(30));
-    public static final ConfigOption<Duration> CONNECTION_TIMEOUT =
+    public static final ConfigOption<Duration> OPTION_CONNECTION_TIMEOUT =
             ConfigOptions.key("connection.timeout")
                     .durationType()
                     .description("The timeout for establishing a connection.")
                     .defaultValue(Duration.ofSeconds(10));
-    public static final ConfigOption<Duration> SOCKET_TIMEOUT =
+    public static final ConfigOption<Duration> OPTION_SOCKET_TIMEOUT =
             ConfigOptions.key("socket.timeout")
                     .durationType()
                     .description(
@@ -92,36 +92,33 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .integerType()
                     .description(
                             "bulk async queue size, if task over this value will throw exception")
-                    .defaultValue(1024);
-    public static final ConfigOption<Duration> QUEUE_FULL_AWAIT_TIMEOUT =
+                    .defaultValue(16);
+    public static final ConfigOption<Duration> OPTION_QUEUE_FULL_AWAIT_TIMEOUT =
             ConfigOptions.key("bulk.async.queue.await.timeout")
                     .durationType()
                     .description(
                             "await timeout when queue is full, default value is connection.request-timeout")
-                    .defaultValue(Duration.ofSeconds(30));
+                    .defaultValue(null);
     public static final ConfigOption<Integer> OPTION_BUCK_MAX_COUNT =
             ConfigOptions.key("bulk.max.count")
                     .integerType()
                     .description("bulk max count")
                     .defaultValue(1000);
-
     public static final ConfigOption<MemorySize> OPTION_BULK_MAX_BYTES =
             ConfigOptions.key("bulk.max.bytes")
                     .memoryType()
                     .description("bulk max bytes")
                     .defaultValue(MemorySize.parse("2mb"));
-
     public static final ConfigOption<String> OPTION_BULK_RESPONSE_ACTION_LISTENER_IDENTITY =
             ConfigOptions.key("bulk.response.action_listener.identity")
                     .stringType()
                     .description("The identity of request bulk response action listener.")
                     .defaultValue("default");
-
     public static final ConfigOption<Integer> OPTION_THREAD_MAX_PER_ROUTING =
             ConfigOptions.key("thread.max.per.routing")
                     .integerType()
                     .description("max thread per routing")
-                    .defaultValue(5);
+                    .defaultValue(2);
 
     public static final String IDENTITY = "elasticsearch";
 
@@ -173,9 +170,9 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                                     .setDefaultCredentialsProvider(credentialsProvider));
         }
 
-        final long requestTimeoutMs = config.get(REQUEST_TIMEOUT).toMillis();
-        final long connectionTimeoutMs = config.get(CONNECTION_TIMEOUT).toMillis();
-        final long socketTimeoutMs = config.get(SOCKET_TIMEOUT).toMillis();
+        final long requestTimeoutMs = config.get(OPTION_REQUEST_TIMEOUT).toMillis();
+        final long connectionTimeoutMs = config.get(OPTION_CONNECTION_TIMEOUT).toMillis();
+        final long socketTimeoutMs = config.get(OPTION_SOCKET_TIMEOUT).toMillis();
         builder.setRequestConfigCallback(
                 (requestConfigBuilder) ->
                         requestConfigBuilder

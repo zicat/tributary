@@ -82,7 +82,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
         builder.addCustomProperty(OPTION_ASYNC_BULK_QUEUE_SIZE, 2);
         builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, topic);
-        builder.addCustomProperty(QUEUE_FULL_AWAIT_TIMEOUT, Duration.ofSeconds(3));
+        builder.addCustomProperty(OPTION_QUEUE_FULL_AWAIT_TIMEOUT, Duration.ofSeconds(3));
         final Context context = builder.build();
 
         final Map<String, byte[]> recordHeader1 = new HashMap<>();

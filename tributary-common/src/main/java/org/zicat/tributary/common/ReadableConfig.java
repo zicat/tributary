@@ -78,6 +78,19 @@ public interface ReadableConfig {
     }
 
     /**
+     * get value by config option, if null return defaultValue.
+     *
+     * @param configOption configOption
+     * @param defaultValue defaultValue
+     * @return value
+     * @param <T> T
+     */
+    default <T> T get(ConfigOption<T> configOption, ConfigOption<T> defaultValue) {
+        final T t = get(configOption);
+        return t == null ? get(defaultValue) : t;
+    }
+
+    /**
      * filter and remove prefix key.
      *
      * @param prefixKey prefixKey

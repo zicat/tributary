@@ -82,7 +82,7 @@ public class ElasticsearchFunction extends AbstractFunction {
         sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
         sinkBulkCounter = labelHostId(SINK_ELASTICSEARCH_BULK_COUNTER);
         listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
-        awaitTimeout = context.get(QUEUE_FULL_AWAIT_TIMEOUT).toMillis();
+        awaitTimeout = context.get(OPTION_QUEUE_FULL_AWAIT_TIMEOUT, OPTION_REQUEST_TIMEOUT).toMillis();
         indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
         indexer.open(context);
         listenerFactory =
