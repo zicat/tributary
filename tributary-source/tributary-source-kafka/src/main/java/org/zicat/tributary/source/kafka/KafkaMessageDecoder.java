@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.BytesUtils;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -79,7 +79,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
                     .labelNames("host", "port", "request_name")
                     .register();
 
-    protected final NettySource source;
+    protected final Source source;
     protected final String clusterId;
     protected final int partitions;
     protected volatile List<Node> nodes;
@@ -90,7 +90,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
     protected final ScheduledExecutorService executor;
 
     public KafkaMessageDecoder(
-            NettySource source,
+            Source source,
             HostPort hostPort,
             String clusterId,
             int partitions,

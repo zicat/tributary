@@ -19,7 +19,7 @@
 package org.zicat.tributary.source.logstash.http;
 
 import static org.zicat.tributary.common.Strings.blank2Null;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 import static org.zicat.tributary.source.logstash.http.LogstashHttpPipelineInitializationFactory.*;
 
 import org.zicat.tributary.common.IOUtils;
@@ -42,9 +42,9 @@ public class LogstashHttpPipelineInitialization extends HttpPipelineInitializati
     protected final List<String> tags;
     protected final MessageFilterFactory messageFilterFactory;
 
-    public LogstashHttpPipelineInitialization(NettySource source) throws Exception {
+    public LogstashHttpPipelineInitialization(Source source) throws Exception {
         super(source);
-        final ReadableConfig conf = source.getConfig();
+        final ReadableConfig conf = source.config();
         this.codec = conf.get(OPTION_LOGSTASH_CODEC);
         this.remoteHostTargetField =
                 blank2Null(conf.get(OPTION_LOGSTASH_HTTP_REMOTE_HOST_TARGET_FIELD));
@@ -61,7 +61,6 @@ public class LogstashHttpPipelineInitialization extends HttpPipelineInitializati
     protected HttpMessageDecoder createHttpMessageDecoder() {
         return new LogstashHttpMessageDecoder(
                 source,
-                selectPartition(),
                 path,
                 authToken,
                 codec,

@@ -33,7 +33,7 @@ import org.zicat.tributary.common.PathParams;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -70,15 +70,12 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     public static final String RESPONSE_BAD_TOPIC_NOT_IN_PARAMS =
             HTTP_QUERY_KEY_TOPIC + " not found in params";
 
-    protected final NettySource source;
+    protected final Source source;
     protected final String path;
-    protected final int defaultPartition;
     protected final String authToken;
 
-    public HttpMessageDecoder(
-            NettySource source, int defaultPartition, String path, String authToken) {
+    public HttpMessageDecoder(Source source, String path, String authToken) {
         this.source = source;
-        this.defaultPartition = defaultPartition;
         this.path = path;
         this.authToken = authToken;
     }
@@ -123,9 +120,9 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
 
-        final int realPartition = realPartition(pathParams);
+        final Integer partition = partition(pathParams);
         for (Records records : recordsIt) {
-            source.append(realPartition, records);
+            source.append(partition, records);
         }
         okResponse(ctx);
     }
@@ -150,16 +147,16 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param pathParams pathParams
      * @return int value
      */
-    protected int realPartition(PathParams pathParams) {
+    protected Integer partition(PathParams pathParams) {
         final String dataPartition = pathParams.params().get(HTTP_QUERY_KEY_PARTITION);
         if (dataPartition == null) {
-            return defaultPartition;
+            return null;
         }
         try {
-            final int partition = Integer.parseInt(dataPartition);
-            return (partition & 0x7fffffff) % source.partition();
+            final long partition = Long.parseLong(dataPartition);
+            return (((int) partition) & 0x7fffffff) % source.partition();
         } catch (NumberFormatException ignore) {
-            return defaultPartition;
+            return null;
         }
     }
 

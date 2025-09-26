@@ -30,13 +30,10 @@ import java.util.*;
 public class Message2ChannelListener implements BatchMessageListener {
 
     private final Source source;
-    private final int partition;
     private final MessageFilterFactory messageFilterFactory;
 
-    public Message2ChannelListener(
-            Source source, int partition, MessageFilterFactory messageFilterFactory) {
+    public Message2ChannelListener(Source source, MessageFilterFactory messageFilterFactory) {
         this.source = source;
-        this.partition = partition;
         this.messageFilterFactory = messageFilterFactory;
     }
 
@@ -48,7 +45,7 @@ public class Message2ChannelListener implements BatchMessageListener {
             return;
         }
         for (Records records : recordsList) {
-            source.append(partition, records);
+            source.append(records);
         }
     }
 }

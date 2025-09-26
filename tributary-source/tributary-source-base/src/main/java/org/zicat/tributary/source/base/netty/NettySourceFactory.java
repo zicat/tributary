@@ -28,16 +28,8 @@ import org.zicat.tributary.source.base.SourceFactory;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
-import java.time.Duration;
-
 /** NettySourceFactory. */
 public class NettySourceFactory implements SourceFactory {
-
-    public static final ConfigOption<Duration> OPTION_NETTY_IDLE =
-            ConfigOptions.key("netty.idle")
-                    .durationType()
-                    .description("max wait to close when channel idle over this param")
-                    .defaultValue(Duration.ofSeconds(120));
 
     public static final ConfigOption<Integer> OPTION_NETTY_PORT =
             ConfigOptions.key("netty.port")
@@ -61,7 +53,7 @@ public class NettySourceFactory implements SourceFactory {
             ConfigOptions.key("netty.decoder")
                     .stringType()
                     .description(
-                            "set netty streaming decoder, values[length,line,kafka,http,logstash-http,logstash_beats]")
+                            "set netty streaming decoder, values[length,line,kafka,http,logstash-http,logstash-beats]")
                     .noDefaultValue();
 
     @Override
@@ -76,12 +68,11 @@ public class NettySourceFactory implements SourceFactory {
         final String host = config.get(OPTION_NETTY_HOST);
         final int port = config.get(OPTION_NETTY_PORT);
         final int eventLoopThreads = config.get(OPTION_NETTY_THREADS_EVENT_LOOP);
-        final long idle = config.get(OPTION_NETTY_IDLE).toMillis();
-        final String decode = config.get(OPTION_NETTY_DECODER);
+        final String decoder = config.get(OPTION_NETTY_DECODER);
         final PipelineInitializationFactory initializationFactory =
-                SpiFactory.findFactory(decode, PipelineInitializationFactory.class);
+                SpiFactory.findFactory(decoder, PipelineInitializationFactory.class);
 
-        return new NettySource(sourceId, config, channel, host, port, eventLoopThreads, idle) {
+        return new NettySource(sourceId, config, channel, host, port, eventLoopThreads) {
             @Override
             protected PipelineInitialization createPipelineInitialization() throws Exception {
                 return initializationFactory.createPipelineInitialization(this);

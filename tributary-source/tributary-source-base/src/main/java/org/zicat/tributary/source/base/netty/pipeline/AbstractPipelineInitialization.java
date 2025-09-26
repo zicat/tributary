@@ -19,38 +19,44 @@
 package org.zicat.tributary.source.base.netty.pipeline;
 
 import io.netty.channel.ChannelPipeline;
-import org.zicat.tributary.source.base.netty.NettySource;
+import io.netty.handler.timeout.IdleStateHandler;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** AbstractPipelineInitialization. */
 public abstract class AbstractPipelineInitialization implements PipelineInitialization {
 
+    public static final ConfigOption<Duration> OPTION_NETTY_IDLE =
+            ConfigOptions.key("netty.idle")
+                    .durationType()
+                    .description("max wait to close when channel idle over this param")
+                    .defaultValue(Duration.ofSeconds(120));
+
     protected final AtomicInteger count = new AtomicInteger();
-    protected final NettySource source;
+    protected final Source source;
+    protected final long idle;
 
-    public AbstractPipelineInitialization(NettySource source) {
+    public AbstractPipelineInitialization(Source source) {
         this.source = source;
-    }
-
-    /**
-     * select partition id.
-     *
-     * @return partition id
-     */
-    protected int selectPartition() {
-        return (count.getAndIncrement() & 0x7fffffff) % source.partition();
+        this.idle = source.config().get(OPTION_NETTY_IDLE).toMillis();
     }
 
     /**
      * idle closed channel pipeline.
+     *
      * @param pipeline pipeline
      * @return ChannelPipeline
      */
     protected ChannelPipeline idleClosedChannelPipeline(ChannelPipeline pipeline) {
-        return pipeline.addLast(source.idleStateHandler()).addLast(new IdleCloseHandler());
+        return pipeline.addLast(new IdleStateHandler(idle, idle, idle, TimeUnit.MILLISECONDS))
+                .addLast(new IdleCloseHandler());
     }
 
     @Override
