@@ -18,10 +18,9 @@
 
 package org.zicat.tributary.source.base.netty;
 
-import io.netty.handler.timeout.IdleStateHandler;
+import static org.zicat.tributary.common.HostUtils.getHostAddresses;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
-import static org.zicat.tributary.source.base.utils.HostUtils.realHostAddress;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -41,9 +40,7 @@ import org.zicat.tributary.source.base.AbstractSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** NettySource. */
@@ -52,10 +49,8 @@ public abstract class NettySource extends AbstractSource {
     private static final Logger LOG = LoggerFactory.getLogger(NettySource.class);
 
     protected final AtomicBoolean closed = new AtomicBoolean(false);
-    protected final String host;
     protected final int port;
     protected final int eventThreads;
-    protected final long idle;
     protected final EventLoopGroup bossGroup;
     protected final EventLoopGroup workGroup;
     protected final ServerBootstrap serverBootstrap;
@@ -67,17 +62,14 @@ public abstract class NettySource extends AbstractSource {
             String sourceId,
             ReadableConfig config,
             org.zicat.tributary.channel.Channel channel,
-            String host,
+            List<String> hosts,
             int port,
-            int eventThreads,
-            long idleTimeout)
+            int eventThreads)
             throws Exception {
         super(sourceId, config, channel);
-        this.host = host;
         this.port = port;
         this.eventThreads = eventThreads;
-        this.idle = idleTimeout;
-        this.hostNames = host == null ? Collections.emptyList() : realHostAddress(host);
+        this.hostNames = getHostAddresses(hosts);
         try {
             this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
             this.workGroup = createWorkGroup(eventThreads);
@@ -205,7 +197,9 @@ public abstract class NettySource extends AbstractSource {
     private void closeServerChannelsAndGroup() {
         if (channelList != null) {
             channelList.forEach(NettySource::closeChannelSync);
-            LOG.info("close netty source listen {}:{}", prettyHost(host), port);
+            for (String host : hostNames) {
+                LOG.info("close netty source listen {}:{}", prettyHost(host), port);
+            }
         }
         if (workGroup != null) {
             workGroup.shutdownGracefully();
@@ -213,15 +207,6 @@ public abstract class NettySource extends AbstractSource {
         if (bossGroup != null) {
             bossGroup.shutdownGracefully();
         }
-    }
-
-    /**
-     * idleStateHandler.
-     *
-     * @return ChannelHandler
-     */
-    public ChannelHandler idleStateHandler() {
-        return new IdleStateHandler(idle, idle, idle, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -241,15 +226,6 @@ public abstract class NettySource extends AbstractSource {
      */
     public int getPort() {
         return port;
-    }
-
-    /**
-     * get hosts.
-     *
-     * @return hosts
-     */
-    public String getHost() {
-        return host;
     }
 
     /**

@@ -16,36 +16,25 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.utils;
+package org.zicat.tributary.common;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.io.IOException;
 
-/** host utils. */
-public class HostUtils {
-
-    private static final String KEY_HOSTNAME = "HOSTNAME";
-    private static final String KEY_COMPUTERNAME = "COMPUTERNAME";
+/** Exceptions. */
+public class Exceptions {
 
     /**
-     * get host name.
+     * cast Throwable as io exception.
      *
-     * @return hostname
+     * @param e e
      */
-    public static String getHostName() {
-        String hostname = System.getenv(KEY_HOSTNAME);
-        if (hostname != null && !hostname.isEmpty()) {
-            return hostname;
+    public static IOException castAsIOException(Throwable e) {
+        if (e == null) {
+            return null;
         }
-
-        hostname = System.getenv(KEY_COMPUTERNAME);
-        if (hostname != null && !hostname.isEmpty()) {
-            return hostname;
+        if (e instanceof IOException) {
+            return (IOException) e;
         }
-        try {
-            return InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        return new IOException(e);
     }
 }

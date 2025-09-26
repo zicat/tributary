@@ -26,7 +26,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
-import io.prometheus.client.Counter;
 
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
@@ -46,7 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.BytesUtils;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -72,25 +71,16 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
     private static final AttributeKey<String> KEY_AUTHENTICATED_USER =
             AttributeKey.valueOf("authenticated_user");
 
-    private static final Counter REQUEST_COUNTER =
-            Counter.build()
-                    .name("tributary_source_kafka_request_type")
-                    .help("tributary source kafka request type")
-                    .labelNames("host", "port", "request_name")
-                    .register();
-
-    protected final NettySource source;
+    protected final Source source;
     protected final String clusterId;
     protected final int partitions;
     protected volatile List<Node> nodes;
     protected volatile Node currentNode;
-    protected final String host;
-    protected final String port;
     protected final SaslServer saslServer;
     protected final ScheduledExecutorService executor;
 
     public KafkaMessageDecoder(
-            NettySource source,
+            Source source,
             HostPort hostPort,
             String clusterId,
             int partitions,
@@ -99,8 +89,6 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
             ScheduledExecutorService executor)
             throws Exception {
         this.source = source;
-        this.host = hostPort.getHost();
-        this.port = String.valueOf(hostPort.getPort());
         this.clusterId = clusterId;
         this.partitions = partitions;
         this.saslServer = saslServer;
@@ -130,7 +118,6 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
         final Struct struct = header.apiKey().parseRequest(header.apiVersion(), requestBuffer);
         final AbstractRequest request =
                 AbstractRequest.parseRequest(header.apiKey(), header.apiVersion(), struct);
-        incRequestCount(request.api.name);
         if (request instanceof ApiVersionsRequest) {
             ctx.writeAndFlush(toByteBuf(DEFAULT_API_VERSIONS_RESPONSE, header));
             return;
@@ -199,15 +186,6 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
     }
 
     /**
-     * increase error request count.
-     *
-     * @param apiName apiName
-     */
-    private void incRequestCount(String apiName) {
-        REQUEST_COUNTER.labels(host, port, apiName).inc();
-    }
-
-    /**
      * find current node.
      *
      * @param nodes nodes
@@ -240,11 +218,10 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (!(cause.getMessage() != null && cause.getMessage().contains("Connection reset by peer"))
-                && !(cause instanceof SaslAuthenticationException)) {
-            LOG.error("channel error", cause);
+        LOG.error("channel error", cause);
+        if (ctx.channel().isActive()) {
+            ctx.close();
         }
-        ctx.close();
     }
 
     /**
@@ -285,7 +262,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
                     defaultRecords.addRecord(toRecord(record));
                 }
             }
-            source.append(tp.partition() % source.partition(), defaultRecords);
+            source.append((tp.partition() & 0x7fffffff) % source.partition(), defaultRecords);
         }
         ctx.writeAndFlush(toByteBuf(new ProduceResponse(partitionRes), header));
     }

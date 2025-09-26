@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.common;
 
 import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;

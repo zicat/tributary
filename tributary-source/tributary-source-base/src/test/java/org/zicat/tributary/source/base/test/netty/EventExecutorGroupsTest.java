@@ -16,25 +16,25 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base.test.netty.utils;
+package org.zicat.tributary.source.base.test.netty;
 
 import io.netty.util.concurrent.EventExecutorGroup;
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.source.base.utils.EventExecutorGroupUtil;
+import org.zicat.tributary.source.base.netty.EventExecutorGroups;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** EventExecutorGroupUtil. */
-public class EventExecutorGroupUtilTest {
+public class EventExecutorGroupsTest {
 
     @Test
     public void testCreateEventExecutorGroup() throws InterruptedException {
-        Assert.assertNull(EventExecutorGroupUtil.createEventExecutorGroup("aa", 0));
+        Assert.assertNull(EventExecutorGroups.createEventExecutorGroup("aa", 0));
 
         EventExecutorGroup eventExecutorGroup =
-                EventExecutorGroupUtil.createEventExecutorGroup("bb", 2);
+                EventExecutorGroups.createEventExecutorGroup("bb", 2);
 
         Assert.assertNotNull(eventExecutorGroup);
         final AtomicBoolean eventExecuted = new AtomicBoolean(false);

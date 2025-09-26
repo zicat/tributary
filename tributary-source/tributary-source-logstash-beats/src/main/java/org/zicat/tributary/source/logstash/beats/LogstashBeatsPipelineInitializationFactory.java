@@ -67,7 +67,7 @@ public class LogstashBeatsPipelineInitializationFactory implements PipelineIniti
                     .description("The timeout for the SSL handshake, default 10s.")
                     .defaultValue(Duration.ofSeconds(10));
 
-    public static final String IDENTITY = "logstash_beats";
+    public static final String IDENTITY = "logstash-beats";
 
     @Override
     public PipelineInitialization createPipelineInitialization(NettySource source)

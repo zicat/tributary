@@ -23,7 +23,7 @@ import io.netty.handler.codec.http.*;
 
 import org.zicat.tributary.common.PathParams;
 import org.zicat.tributary.common.records.*;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.http.HttpMessageDecoder;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
@@ -51,8 +51,7 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
     protected int offset;
 
     public LogstashHttpMessageDecoder(
-            NettySource source,
-            int defaultPartition,
+            Source source,
             String path,
             String authToken,
             Codec defaultCodec,
@@ -60,7 +59,7 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
             String requestHeadersTargetField,
             List<String> tags,
             MessageFilterFactory messageFilterFactory) {
-        super(source, defaultPartition, path, authToken);
+        super(source, path, authToken);
         this.defaultCodec = defaultCodec;
         this.remoteHostTargetField = remoteHostTargetField;
         this.requestHeadersTargetField = requestHeadersTargetField;

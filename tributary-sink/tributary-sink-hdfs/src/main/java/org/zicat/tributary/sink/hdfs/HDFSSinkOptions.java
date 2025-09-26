@@ -21,8 +21,8 @@ package org.zicat.tributary.sink.hdfs;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.MemorySize;
-import org.zicat.tributary.sink.function.Clock;
-import org.zicat.tributary.sink.function.SystemClock;
+import org.zicat.tributary.common.Clock;
+import org.zicat.tributary.common.SystemClock;
 
 import java.time.Duration;
 

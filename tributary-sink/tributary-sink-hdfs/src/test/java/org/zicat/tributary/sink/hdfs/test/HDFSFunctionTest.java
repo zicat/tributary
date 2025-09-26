@@ -49,7 +49,7 @@ import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.hdfs.HDFSFunction;
 import org.zicat.tributary.sink.hdfs.bucket.BucketGenerator;
 import org.zicat.tributary.sink.hdfs.bucket.ProcessTimeBucketGenerator;
-import org.zicat.tributary.sink.test.function.MockClock;
+import org.zicat.tributary.common.test.MockClock;
 
 import java.io.File;
 import java.io.IOException;

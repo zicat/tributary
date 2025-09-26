@@ -16,25 +16,27 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.utils;
+package org.zicat.tributary.common.test;
 
-import java.io.IOException;
+import org.junit.Assert;
+import org.junit.Test;
+import org.zicat.tributary.common.Collections;
 
-/** Exceptions. */
-public class Exceptions {
+import java.util.Arrays;
+import java.util.Iterator;
 
-    /**
-     * cast Throwable as io exception.
-     *
-     * @param e e
-     */
-    public static IOException castAsIOException(Throwable e) {
-        if (e == null) {
-            return null;
+/** CollectionsTest. */
+public class CollectionsTest {
+
+    @Test
+    public void testCopy() {
+        Assert.assertNull(Collections.copy(null));
+
+        final Iterator<String> it = Arrays.asList("a", "b").iterator();
+        final Iterator<String> copy = Collections.copy(it);
+        while (it.hasNext()) {
+            Assert.assertEquals(it.next(), copy.next());
         }
-        if (e instanceof IOException) {
-            return (IOException) e;
-        }
-        return new IOException(e);
+        Assert.assertNotSame(it, copy);
     }
 }

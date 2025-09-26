@@ -22,31 +22,30 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 
 import io.netty.util.concurrent.EventExecutorGroup;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.netty.handler.BytesChannelHandler.LengthResponseBytesChannelHandler;
 import org.zicat.tributary.source.base.netty.handler.LengthDecoder;
 import static org.zicat.tributary.source.base.netty.pipeline.LengthPipelineInitializationFactory.OPTION_LENGTH_WORKER_THREADS;
-import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+import static org.zicat.tributary.source.base.netty.EventExecutorGroups.createEventExecutorGroup;
 
 /** LengthPipelineInitialization. */
 public class LengthPipelineInitialization extends AbstractPipelineInitialization {
 
     protected final EventExecutorGroup executorGroup;
 
-    public LengthPipelineInitialization(NettySource source) {
+    public LengthPipelineInitialization(Source source) {
         super(source);
         this.executorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-lengthHandler",
-                        source.getConfig().get(OPTION_LENGTH_WORKER_THREADS));
+                        source.config().get(OPTION_LENGTH_WORKER_THREADS));
     }
 
     @Override
     public void init(Channel channel) {
         final ChannelPipeline pipeline = channel.pipeline();
-        final int partition = selectPartition();
         idleClosedChannelPipeline(pipeline)
                 .addLast(executorGroup, new LengthDecoder())
-                .addLast(executorGroup, new LengthResponseBytesChannelHandler(source, partition));
+                .addLast(executorGroup, new LengthResponseBytesChannelHandler(source));
     }
 }

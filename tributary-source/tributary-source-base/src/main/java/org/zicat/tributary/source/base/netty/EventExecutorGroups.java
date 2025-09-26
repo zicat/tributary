@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base.utils;
+package org.zicat.tributary.source.base.netty;
 
 import static org.zicat.tributary.common.Threads.createThreadFactoryByName;
 
@@ -27,9 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** EventExecutorGroupUtil. */
-public class EventExecutorGroupUtil {
+public class EventExecutorGroups {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EventExecutorGroupUtil.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EventExecutorGroups.class);
 
     /**
      * create event executor group.

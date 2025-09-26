@@ -22,23 +22,23 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 
 import io.netty.util.concurrent.EventExecutorGroup;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.netty.handler.BytesChannelHandler.MuteBytesChannelHandler;
 import org.zicat.tributary.source.base.netty.handler.LineDecoder;
 import static org.zicat.tributary.source.base.netty.pipeline.LinePipelineInitializationFactory.OPTION_LINE_WORKER_THREADS;
-import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+import static org.zicat.tributary.source.base.netty.EventExecutorGroups.createEventExecutorGroup;
 
 /** LinePipelineInitialization. */
 public class LinePipelineInitialization extends AbstractPipelineInitialization {
 
     protected final EventExecutorGroup executorGroup;
 
-    public LinePipelineInitialization(NettySource source) {
+    public LinePipelineInitialization(Source source) {
         super(source);
         this.executorGroup =
                 createEventExecutorGroup(
                         source.sourceId() + "-lineHandler",
-                        source.getConfig().get(OPTION_LINE_WORKER_THREADS));
+                        source.config().get(OPTION_LINE_WORKER_THREADS));
     }
 
     @Override
@@ -46,6 +46,6 @@ public class LinePipelineInitialization extends AbstractPipelineInitialization {
         final ChannelPipeline pipeline = channel.pipeline();
         idleClosedChannelPipeline(pipeline)
                 .addLast(executorGroup, new LineDecoder())
-                .addLast(executorGroup, new MuteBytesChannelHandler(source, selectPartition()));
+                .addLast(executorGroup, new MuteBytesChannelHandler(source));
     }
 }

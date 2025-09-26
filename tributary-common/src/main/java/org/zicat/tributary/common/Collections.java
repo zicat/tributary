@@ -16,27 +16,31 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.test.utils;
+package org.zicat.tributary.common;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.zicat.tributary.sink.utils.Collections;
-
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 
-/** CollectionsTest. */
-public class CollectionsTest {
+/** Collections. */
+public class Collections {
 
-    @Test
-    public void testCopy() {
-        Assert.assertNull(Collections.copy(null));
+    /**
+     * copy iterator to new iterator.
+     *
+     * @param iterator iterator
+     * @param <T> type
+     * @return new iterator
+     */
+    public static <T> Iterator<T> copy(Iterator<T> iterator) {
 
-        final Iterator<String> it = Arrays.asList("a", "b").iterator();
-        final Iterator<String> copy = Collections.copy(it);
-        while (it.hasNext()) {
-            Assert.assertEquals(it.next(), copy.next());
+        if (iterator == null) {
+            return null;
         }
-        Assert.assertNotSame(it, copy);
+        final Collection<T> copy = new LinkedList<>();
+        while (iterator.hasNext()) {
+            copy.add(iterator.next());
+        }
+        return copy.iterator();
     }
 }

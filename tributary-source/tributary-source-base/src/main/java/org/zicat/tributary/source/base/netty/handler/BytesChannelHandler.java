@@ -26,8 +26,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.source.base.netty.NettySource;
+import org.zicat.tributary.source.base.Source;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -36,20 +35,16 @@ import java.util.Collections;
 public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<byte[]> {
 
     private static final Logger LOG = LoggerFactory.getLogger(BytesChannelHandler.class);
-    private final NettySource source;
-    private final int partition;
+    private final Source source;
 
-    public BytesChannelHandler(NettySource source, int partition) {
+    public BytesChannelHandler(Source source) {
         this.source = source;
-        this.partition = partition;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, byte[] packet)
             throws IOException, InterruptedException {
-        final Records records =
-                createBytesRecords(source.sourceId(), Collections.singletonList(packet));
-        source.append(partition, records);
+        source.append(createBytesRecords(source.sourceId(), Collections.singletonList(packet)));
         ackSuccess(packet, ctx);
     }
 
@@ -69,8 +64,8 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
     /** MuteBytesChannelHandler. */
     public static class MuteBytesChannelHandler extends BytesChannelHandler {
 
-        public MuteBytesChannelHandler(NettySource source, int partition) {
-            super(source, partition);
+        public MuteBytesChannelHandler(Source source) {
+            super(source);
         }
 
         @Override
@@ -80,8 +75,8 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
     /** LengthResponseBytesChannelHandler. */
     public static class LengthResponseBytesChannelHandler extends BytesChannelHandler {
 
-        public LengthResponseBytesChannelHandler(NettySource source, int partition) {
-            super(source, partition);
+        public LengthResponseBytesChannelHandler(Source source) {
+            super(source);
         }
 
         @Override

@@ -19,8 +19,8 @@
 package org.zicat.tributary.source.logstash.beats;
 
 import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
-import org.zicat.tributary.source.base.netty.NettySource;
-import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+import org.zicat.tributary.source.base.Source;
+import static org.zicat.tributary.source.base.netty.EventExecutorGroups.createEventExecutorGroup;
 import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory.*;
 
 import io.netty.channel.Channel;
@@ -49,9 +49,9 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
     protected final EventExecutorGroup beatsHandlerExecutorGroup;
     protected final MessageFilterFactory messageFilterFactory;
 
-    public LogstashBeatsPipelineInitialization(NettySource source) throws Exception {
+    public LogstashBeatsPipelineInitialization(Source source) throws Exception {
         super(source);
-        final ReadableConfig conf = source.getConfig();
+        final ReadableConfig conf = source.config();
         this.sslHandlerProvider = createSslHandlerProvider(conf);
         this.messageFilterFactory =
                 MessageFilterFactoryBuilder.newBuilder()
@@ -70,7 +70,7 @@ public class LogstashBeatsPipelineInitialization extends AbstractPipelineInitial
             pipeline.addLast(SSL_HANDLER, sslHandlerProvider.sslHandlerForChannel(channel));
         }
         final BatchMessageListener listener =
-                new Message2ChannelListener(source, selectPartition(), messageFilterFactory);
+                new Message2ChannelListener(source, messageFilterFactory);
         idleClosedChannelPipeline(pipeline)
                 .addLast(BEATS_ACKER, new AckEncoder())
                 .addLast(CONNECTION_HANDLER, new ConnectionHandler())

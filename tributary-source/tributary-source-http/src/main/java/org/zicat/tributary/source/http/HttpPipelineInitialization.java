@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.source.http;
 
-import org.zicat.tributary.source.base.netty.NettySource;
-import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+import org.zicat.tributary.source.base.Source;
+import static org.zicat.tributary.source.base.netty.EventExecutorGroups.createEventExecutorGroup;
 import static org.zicat.tributary.source.http.HttpPipelineInitializationFactory.*;
 
 import io.netty.channel.Channel;
@@ -48,9 +48,9 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
     protected final EventExecutorGroup httpHandlerExecutorGroup;
     protected final String authToken;
 
-    public HttpPipelineInitialization(NettySource source) {
+    public HttpPipelineInitialization(Source source) {
         super(source);
-        final ReadableConfig conf = source.getConfig();
+        final ReadableConfig conf = source.config();
         this.path = formatPath(conf.get(OPTIONS_PATH));
         this.maxContentLength = maxContentLength(conf);
         this.authToken = authToken(conf, source.sourceId());
@@ -131,7 +131,7 @@ public class HttpPipelineInitialization extends AbstractPipelineInitialization {
      * @return HttpMessageDecoder
      */
     protected HttpMessageDecoder createHttpMessageDecoder() {
-        return new HttpMessageDecoder(source, selectPartition(), path, authToken);
+        return new HttpMessageDecoder(source, path, authToken);
     }
 
     /**

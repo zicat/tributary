@@ -19,6 +19,7 @@
 package org.zicat.tributary.source.base;
 
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.records.Records;
 
 import java.io.IOException;
@@ -36,7 +37,18 @@ public interface SourceChannel {
      * @param partition partition
      * @throws IOException IOException
      */
-    void append(int partition, Records records) throws IOException, InterruptedException;
+    void append(Integer partition, Records records) throws IOException, InterruptedException;
+
+    /**
+     * append records to one partition decided by source channel.
+     *
+     * @param records records
+     * @throws IOException IOException
+     * @throws InterruptedException InterruptedException
+     */
+    default void append(Records records) throws IOException, InterruptedException {
+        append(null, records);
+    }
 
     /** flush block data and page cache data to disk. */
     void flush() throws IOException;
@@ -54,4 +66,11 @@ public interface SourceChannel {
      * @return partition
      */
     int partition();
+
+    /**
+     * get config.
+     *
+     * @return config
+     */
+    ReadableConfig config();
 }

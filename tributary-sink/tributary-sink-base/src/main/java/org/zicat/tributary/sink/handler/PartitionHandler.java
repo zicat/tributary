@@ -19,6 +19,8 @@
 package org.zicat.tributary.sink.handler;
 
 import io.prometheus.client.Gauge;
+import org.zicat.tributary.common.Clock;
+import org.zicat.tributary.common.SystemClock;
 import static org.zicat.tributary.common.Threads.joinQuietly;
 import static org.zicat.tributary.common.Threads.sleepQuietly;
 import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
@@ -35,7 +37,7 @@ import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
-import org.zicat.tributary.sink.utils.HostUtils;
+import org.zicat.tributary.common.HostUtils;
 
 import java.io.Closeable;
 import java.io.IOException;

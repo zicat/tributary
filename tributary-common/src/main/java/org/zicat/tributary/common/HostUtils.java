@@ -16,56 +16,46 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base.utils;
-
-import org.zicat.tributary.common.TributaryRuntimeException;
+package org.zicat.tributary.common;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
+import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** HostUtils. */
+/** host utils. */
 public class HostUtils {
 
+    private static final String KEY_HOSTNAME = "HOSTNAME";
+    private static final String KEY_COMPUTERNAME = "COMPUTERNAME";
     private static final String ALL_IP_FILTER_PATTERN = ".*";
-    private static final String HOST_SPLIT = ",";
 
     /**
-     * read host address.
+     * get localhost string ip by pattern filter.
      *
-     * @param host host.
-     * @return list
+     * @param pattern pattern
+     * @return string host
      */
-    public static List<String> realHostAddress(String host) {
-        return realInetAddress(host).stream()
-                .map(InetAddress::getHostAddress)
-                .collect(Collectors.toList());
+    public static String geHostAddress(String pattern) {
+        return getInetAddress(pattern).getHostAddress();
     }
 
     /**
-     * parse host.
+     * get localhost string ip list by pattern filter.
      *
-     * @param host host
-     * @return list.
+     * @param patterns patterns
+     * @return list hosts
      */
-    public static List<InetAddress> realInetAddress(String host) {
-        final List<InetAddress> hostName = new ArrayList<>();
-        if (host == null || host.isEmpty()) {
-            return hostName;
+    public static List<String> getHostAddresses(List<String> patterns) {
+        if (patterns == null || patterns.isEmpty()) {
+            return Collections.emptyList();
         }
-        final String[] hosts = host.split(HOST_SPLIT);
-        for (String h : hosts) {
-            if (h != null && !h.trim().isEmpty()) {
-                final InetAddress address = getInetAddress(h);
-                hostName.add(address);
-            }
-        }
-        return hostName;
+        return patterns.stream().map(HostUtils::geHostAddress).collect(Collectors.toList());
     }
 
     /**
@@ -73,11 +63,11 @@ public class HostUtils {
      *
      * @return host
      */
-    public static InetAddress getInetAddress(String ipFilterPattern) {
-        if (ipFilterPattern == null) {
-            ipFilterPattern = ALL_IP_FILTER_PATTERN;
+    private static InetAddress getInetAddress(String pattern) {
+        if (pattern == null) {
+            pattern = ALL_IP_FILTER_PATTERN;
         }
-        if (ipFilterPattern.equals("localhost") || ipFilterPattern.equals("127.0.0.1")) {
+        if (pattern.equals("localhost") || pattern.equals("127.0.0.1")) {
             return InetAddress.getLoopbackAddress();
         }
         final Enumeration<NetworkInterface> it;
@@ -93,12 +83,33 @@ public class HostUtils {
                 final InetAddress inetAddress = addressIt.nextElement();
                 if (!inetAddress.isLoopbackAddress()
                         && inetAddress instanceof Inet4Address
-                        && inetAddress.getHostAddress().matches(ipFilterPattern)) {
+                        && inetAddress.getHostAddress().matches(pattern)) {
                     return inetAddress;
                 }
             }
         }
-        throw new TributaryRuntimeException(
-                "inet address not found by ip filter pattern " + ipFilterPattern);
+        throw new TributaryRuntimeException("inet address not found by ip pattern " + pattern);
+    }
+
+    /**
+     * get host name.
+     *
+     * @return hostname
+     */
+    public static String getHostName() {
+        String hostname = System.getenv(KEY_HOSTNAME);
+        if (hostname != null && !hostname.isEmpty()) {
+            return hostname;
+        }
+
+        hostname = System.getenv(KEY_COMPUTERNAME);
+        if (hostname != null && !hostname.isEmpty()) {
+            return hostname;
+        }
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

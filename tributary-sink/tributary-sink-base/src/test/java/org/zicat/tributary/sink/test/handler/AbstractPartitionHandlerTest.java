@@ -35,7 +35,7 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
-import org.zicat.tributary.sink.test.function.MockClock;
+import org.zicat.tributary.common.test.MockClock;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

@@ -19,17 +19,14 @@
 package org.zicat.tributary.source.base.test.netty;
 
 import org.zicat.tributary.source.base.netty.NettySource;
-import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NETTY_HOST;
-import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NETTY_IDLE;
 
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.ReadableConfig;
 import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NETTY_THREADS_EVENT_LOOP;
 import org.zicat.tributary.source.base.netty.pipeline.LengthPipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 
-import java.time.Duration;
+import java.util.Collections;
 
 /** NettySourceMock. */
 public class NettySourceMock extends NettySource {
@@ -40,53 +37,29 @@ public class NettySourceMock extends NettySource {
             String host,
             int port,
             int eventThreads,
-            Channel channel,
-            Duration idle)
+            Channel channel)
             throws Exception {
-        super(sourceId, config, channel, host, port, eventThreads, idle.toMillis());
-    }
-
-    public NettySourceMock(int port, Channel channel) throws Exception {
-        this(
-                "",
-                new DefaultReadableConfig(),
-                OPTION_NETTY_HOST.defaultValue(),
-                port,
-                OPTION_NETTY_THREADS_EVENT_LOOP.defaultValue(),
+        super(
+                sourceId,
+                config,
                 channel,
-                OPTION_NETTY_IDLE.defaultValue());
+                host == null ? Collections.emptyList() : Collections.singletonList(host),
+                port,
+                eventThreads);
     }
 
     public NettySourceMock(ReadableConfig config, Channel channel) throws Exception {
-        this(config, OPTION_NETTY_HOST.defaultValue(), 0, channel);
+        this(config, null, 0, channel);
     }
 
     public NettySourceMock(ReadableConfig config, String sourceId, Channel channel)
             throws Exception {
-        this(
-                sourceId,
-                config,
-                OPTION_NETTY_HOST.defaultValue(),
-                0,
-                OPTION_NETTY_THREADS_EVENT_LOOP.defaultValue(),
-                channel,
-                OPTION_NETTY_IDLE.defaultValue());
+        this(sourceId, config, null, 0, OPTION_NETTY_THREADS_EVENT_LOOP.defaultValue(), channel);
     }
 
     public NettySourceMock(ReadableConfig config, String host, int port, Channel channel)
             throws Exception {
-        this(
-                "",
-                config,
-                host,
-                port,
-                OPTION_NETTY_THREADS_EVENT_LOOP.defaultValue(),
-                channel,
-                OPTION_NETTY_IDLE.defaultValue());
-    }
-
-    public NettySourceMock(Channel channel) throws Exception {
-        this(0, channel);
+        this("", config, host, port, OPTION_NETTY_THREADS_EVENT_LOOP.defaultValue(), channel);
     }
 
     @Override

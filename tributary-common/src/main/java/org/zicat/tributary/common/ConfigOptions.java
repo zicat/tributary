@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class ConfigOptions {
 
     private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP =
-            Collections.unmodifiableMap(initMap());
+            java.util.Collections.unmodifiableMap(initMap());
 
     public static ConfigOptionTypeBuilder key(String key) {
         return new ConfigOptionTypeBuilder(key);

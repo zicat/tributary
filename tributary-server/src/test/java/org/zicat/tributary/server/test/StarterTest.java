@@ -50,10 +50,10 @@ public class StarterTest {
         final List<Integer> availablePorts = availablePorts(2);
         final DefaultReadableConfig config = new DefaultReadableConfig();
         config.put("server.metrics.port", availablePorts.get(0));
-        config.put("server.metrics.host-pattern", "127.0.0.1");
+        config.put("server.metrics.host-patterns", "127.0.0.1");
         config.put("source.s1.channel", "c1");
         config.put("source.s1.implement", "netty");
-        config.put("source.s1.netty.host", "127.0.0.1");
+        config.put("source.s1.netty.host-patterns", "127.0.0.1");
         config.put("source.s1.netty.port", availablePorts.get(1));
         config.put("source.s1.netty.decoder", "line");
         config.put("channel.c1.type", "memory");

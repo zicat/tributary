@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** AbstractSourceChannel. */
 public abstract class AbstractSource implements Source {
@@ -38,6 +39,7 @@ public abstract class AbstractSource implements Source {
     private static final Map<GaugeKey, Double> empty = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSource.class);
 
+    protected final AtomicInteger count = new AtomicInteger();
     protected final ReadableConfig config;
     protected final Channel channel;
     protected final String sourceId;
@@ -49,15 +51,20 @@ public abstract class AbstractSource implements Source {
     }
 
     @Override
-    public void append(int partition, Records records) throws IOException, InterruptedException {
+    public void append(Integer partition, Records records)
+            throws IOException, InterruptedException {
         if (records == null || records.count() == 0) {
             return;
         }
         final Map<String, byte[]> headers = records.headers();
         headers.put(HEADER_KEY_REC_TS, String.valueOf(System.currentTimeMillis()).getBytes());
         final ByteBuffer byteBuffer = records.toByteBuffer();
+        final int realPartition =
+                partition == null
+                        ? (count.getAndIncrement() & 0x7fffffff) % partition()
+                        : partition;
         try {
-            channel.append(partition, byteBuffer);
+            channel.append(realPartition, byteBuffer);
         } catch (IOException e) {
             LOG.error("append data error, close source", e);
             IOUtils.closeQuietly(this);
@@ -100,7 +107,7 @@ public abstract class AbstractSource implements Source {
      *
      * @return config
      */
-    public ReadableConfig getConfig() {
+    public ReadableConfig config() {
         return config;
     }
 }

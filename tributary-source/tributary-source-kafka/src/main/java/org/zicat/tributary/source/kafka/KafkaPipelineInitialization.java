@@ -25,7 +25,7 @@ import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder.SslCl
 import org.zicat.tributary.source.base.netty.ssl.KeystoreSslContextBuilder;
 import org.zicat.tributary.source.base.netty.ssl.KeystoreSslContextBuilder.KeystoreType;
 import org.zicat.tributary.source.base.netty.ssl.SslHandlerProvider;
-import static org.zicat.tributary.source.base.utils.EventExecutorGroupUtil.createEventExecutorGroup;
+import static org.zicat.tributary.source.base.netty.EventExecutorGroups.createEventExecutorGroup;
 import static org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory.*;
 
 import io.netty.channel.Channel;
@@ -66,7 +66,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
 
     public KafkaPipelineInitialization(NettySource source) throws Exception {
         super(source);
-        final ReadableConfig config = source.getConfig();
+        final ReadableConfig config = source.config();
         this.sslHandlerProvider = createSslHandlerProvider(config);
         this.kafkaMessageDecoder = createKafkaMessageDeCoder(source);
         this.kafkaHandlerExecutorGroup =
@@ -94,8 +94,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
      */
     private static KafkaMessageDecoder createKafkaMessageDeCoder(NettySource source)
             throws Exception {
-
-        final ReadableConfig config = source.getConfig();
+        final ReadableConfig config = source.config();
         final String clusterId =
                 config.get(OPTION_KAFKA_CLUSTER_ID) == null
                         ? source.sourceId()
@@ -247,7 +246,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
      */
     private static String oneHostName(List<String> hosts) {
         if (hosts.size() != 1) {
-            throw new RuntimeException("kafka only support one host");
+            throw new RuntimeException("kafka only support one host, but found " + hosts);
         }
         return hosts.get(0);
     }

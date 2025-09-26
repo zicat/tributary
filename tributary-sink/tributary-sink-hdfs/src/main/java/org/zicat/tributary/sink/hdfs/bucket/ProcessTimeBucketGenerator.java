@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.hdfs.bucket;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
 
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.sink.function.Clock;
+import org.zicat.tributary.common.Clock;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.hdfs.RecordsWriterManager;
 

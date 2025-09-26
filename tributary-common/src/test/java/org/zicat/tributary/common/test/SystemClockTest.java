@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.test.function;
+package org.zicat.tributary.common.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.sink.function.SystemClock;
+import org.zicat.tributary.common.SystemClock;
 
 /** SystemClockTest. */
 public class SystemClockTest {

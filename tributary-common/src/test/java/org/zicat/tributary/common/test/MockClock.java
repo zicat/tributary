@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.test.function;
+package org.zicat.tributary.common.test;
 
-import org.zicat.tributary.sink.function.Clock;
+import org.zicat.tributary.common.Clock;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

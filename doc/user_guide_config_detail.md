@@ -6,12 +6,12 @@ Tributary Configuration consists of four parts, including server, source, channe
 
 ```properties
 server.metrics.port=9090
-server.metrics.host-pattern=127.0.0.1
+server.metrics.host-patterns=127.0.0.1
 ```
 
 The Tributary service provides metrics indicators in the form of http restful api.
 
-The parameter "server.metrics.host-pattern" is a regular expression that is used to filter the
+The parameter "server.metrics.host-patterns" is a regular expression that is used to filter the
 required hosts when there are multiple network cards in the machine, and assign the value to the
 host dimension in the metrics.
 
@@ -29,12 +29,12 @@ channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
 sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
 ```
 
-| Key                           | default  | valid value | describe                                                                                                                                     |
-|-------------------------------|----------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| server.metrics.port           |          | int(number) | the port to bind, range 1000-65535                                                                                                           |
-| server.metrics.worker-threads | 1        | int(number) | the work thread to deal with request                                                                                                         |
-| server.metrics.host-pattern   | null     | string      | the pattern to filter expected host as the metrics value of host dimension, select first if found multi hosts, default null meaning bind all |
-| server.metrics.path           | /metrics | string      | the metrics http path                                                                                                                        |
+| Key                           | default  | valid value | describe                                                       |
+|-------------------------------|----------|-------------|----------------------------------------------------------------|
+| server.metrics.port           |          | int(number) | the port to bind, range 1000-65535                             |
+| server.metrics.worker-threads | 1        | int(number) | the work thread to deal with request                           |
+| server.metrics.host-patterns  | null     | string      | the pattern the config the output metrics value, default null  |
+| server.metrics.path           | /metrics | string      | the metrics http path                                          |
 
 ## Source
 
@@ -71,7 +71,7 @@ which supports receiving data from the network. The configuration parameters for
 follows :
 
 ```properties
-source.s1.netty.host=10\\.103\\.1\\..*,localhost
+source.s1.netty.host-patterns=10\\.103\\.1\\..*,localhost
 source.s1.netty.port=8200
 source.s1.netty.threads.event-loop=10
 source.s1.netty.idle=60sec
@@ -80,7 +80,7 @@ source.s1.netty.decoder=line
 
 | key                      | default | type                                                       | describe                                                                                                                                                                                                                         |
 |--------------------------|---------|------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host               | null    | string                                                     | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
+| netty.host-patterns      | null    | string                                                     | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
 | netty.port               |         | int(number)                                                | the port to bind, range 1000-65535                                                                                                                                                                                               |
 | netty.threads.event-loop | 10      | int(number)                                                | the count of netty event loop threads                                                                                                                                                                                            |
 | netty.idle               | 120sec  | duration                                                   | the idle time to close the socket                                                                                                                                                                                                |
@@ -466,7 +466,7 @@ Note:
 
 ```
 server.metrics.port=9090
-server.metrics.host-pattern=.*
+server.metrics.host-patterns=.*
 server.metrics.path=/metrics
 
 source.s1.channel=c1
@@ -484,7 +484,7 @@ source.s2.netty.decoder=line
 
 source.s3.channel=c2
 source.s3.implement=netty
-source.s3.netty.host=localhost
+source.s3.netty.host-patterns=localhost
 source.s3.netty.port=9093
 source.s3.netty.idle=60sec
 source.s3.netty.threads.event-loop=10

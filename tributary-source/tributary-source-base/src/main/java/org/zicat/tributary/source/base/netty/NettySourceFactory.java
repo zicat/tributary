@@ -21,6 +21,7 @@ package org.zicat.tributary.source.base.netty;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.source.base.Source;
@@ -28,16 +29,10 @@ import org.zicat.tributary.source.base.SourceFactory;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
 
-import java.time.Duration;
+import java.util.List;
 
 /** NettySourceFactory. */
 public class NettySourceFactory implements SourceFactory {
-
-    public static final ConfigOption<Duration> OPTION_NETTY_IDLE =
-            ConfigOptions.key("netty.idle")
-                    .durationType()
-                    .description("max wait to close when channel idle over this param")
-                    .defaultValue(Duration.ofSeconds(120));
 
     public static final ConfigOption<Integer> OPTION_NETTY_PORT =
             ConfigOptions.key("netty.port")
@@ -51,17 +46,17 @@ public class NettySourceFactory implements SourceFactory {
                     .description("netty event loop threads count")
                     .defaultValue(10);
 
-    public static final ConfigOption<String> OPTION_NETTY_HOST =
-            ConfigOptions.key("netty.host")
-                    .stringType()
-                    .description("netty host to register")
-                    .defaultValue("");
+    public static final ConfigOption<List<String>> OPTION_NETTY_HOSTS =
+            ConfigOptions.key("netty.host-patterns")
+                    .listType(COMMA_SPLIT_HANDLER)
+                    .description("netty host to register, split by ,")
+                    .defaultValue(null);
 
     public static final ConfigOption<String> OPTION_NETTY_DECODER =
             ConfigOptions.key("netty.decoder")
                     .stringType()
                     .description(
-                            "set netty streaming decoder, values[length,line,kafka,http,logstash-http,logstash_beats]")
+                            "set netty streaming decoder, values[length,line,kafka,http,logstash-http,logstash-beats]")
                     .noDefaultValue();
 
     @Override
@@ -73,15 +68,14 @@ public class NettySourceFactory implements SourceFactory {
     public Source createSource(String sourceId, Channel channel, ReadableConfig config)
             throws Exception {
 
-        final String host = config.get(OPTION_NETTY_HOST);
+        final List<String> hosts = config.get(OPTION_NETTY_HOSTS);
         final int port = config.get(OPTION_NETTY_PORT);
         final int eventLoopThreads = config.get(OPTION_NETTY_THREADS_EVENT_LOOP);
-        final long idle = config.get(OPTION_NETTY_IDLE).toMillis();
-        final String decode = config.get(OPTION_NETTY_DECODER);
+        final String decoder = config.get(OPTION_NETTY_DECODER);
         final PipelineInitializationFactory initializationFactory =
-                SpiFactory.findFactory(decode, PipelineInitializationFactory.class);
+                SpiFactory.findFactory(decoder, PipelineInitializationFactory.class);
 
-        return new NettySource(sourceId, config, channel, host, port, eventLoopThreads, idle) {
+        return new NettySource(sourceId, config, channel, hosts, port, eventLoopThreads) {
             @Override
             protected PipelineInitialization createPipelineInitialization() throws Exception {
                 return initializationFactory.createPipelineInitialization(this);

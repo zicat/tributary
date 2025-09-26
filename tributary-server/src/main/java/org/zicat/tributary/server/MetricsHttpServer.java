@@ -18,8 +18,9 @@
 
 package org.zicat.tributary.server;
 
+import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
+import static org.zicat.tributary.common.HostUtils.getHostAddresses;
 import static org.zicat.tributary.source.base.netty.NettySource.*;
-import static org.zicat.tributary.source.base.utils.HostUtils.realHostAddress;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.http1_1Response;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.internalServerErrorResponse;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.notFoundResponse;
@@ -56,8 +57,10 @@ public class MetricsHttpServer implements Closeable {
             ConfigOptions.key("metrics.worker-threads").integerType().defaultValue(1);
     public static final ConfigOption<String> OPTION_METRICS_PATH =
             ConfigOptions.key("metrics.path").stringType().defaultValue("/metrics");
-    public static final ConfigOption<String> OPTION_METRIC_HOST =
-            ConfigOptions.key("metrics.host-pattern").stringType().defaultValue(null);
+    public static final ConfigOption<List<String>> OPTION_METRIC_HOSTS =
+            ConfigOptions.key("metrics.host-patterns")
+                    .listType(COMMA_SPLIT_HANDLER)
+                    .defaultValue(null);
 
     private final int port;
     private final String metricsPath;
@@ -195,17 +198,11 @@ public class MetricsHttpServer implements Closeable {
      * @throws UnknownHostException UnknownHostException
      */
     private static String metricHost(ReadableConfig serverConfig) throws UnknownHostException {
-        final String hostPattern = serverConfig.get(OPTION_METRIC_HOST);
-        if (hostPattern == null) {
+        final List<String> hostPatterns = serverConfig.get(OPTION_METRIC_HOSTS);
+        if (hostPatterns == null) {
             return InetAddress.getLocalHost().getHostName();
         }
-        final List<String> hosts = realHostAddress(hostPattern);
-        if (hosts.isEmpty()) {
-            throw new IllegalStateException("Host not found by config " + hostPattern);
-        }
-        if (hosts.size() > 1) {
-            LOG.warn("Multiple hosts {}, use the first {}", hosts, hosts.get(0));
-        }
-        return hosts.get(0);
+        final List<String> hosts = getHostAddresses(hostPatterns);
+        return String.join(",", hosts);
     }
 }

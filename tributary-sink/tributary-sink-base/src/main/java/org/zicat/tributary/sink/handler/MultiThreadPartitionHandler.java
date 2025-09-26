@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.handler;
 
-import static org.zicat.tributary.sink.utils.Collections.copy;
+import static org.zicat.tributary.common.Collections.copy;
 
 import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WorkHandler;

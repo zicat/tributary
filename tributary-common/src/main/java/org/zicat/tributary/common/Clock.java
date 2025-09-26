@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.common;
 
 /** Clock. */
 public interface Clock {

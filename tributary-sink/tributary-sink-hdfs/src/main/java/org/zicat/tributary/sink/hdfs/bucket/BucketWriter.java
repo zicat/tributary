@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.zicat.tributary.common.Functions.runWithRetry;
 import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
-import static org.zicat.tributary.sink.utils.Exceptions.castAsIOException;
+import static org.zicat.tributary.common.Exceptions.castAsIOException;
 
 /** This class does file rolling and handles file formats and serialization. */
 public class BucketWriter extends BucketMeta implements RecordsWriter {
