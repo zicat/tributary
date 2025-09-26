@@ -28,6 +28,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.ConfigOptions.StringSplitHandler;
+import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.function.FunctionFactory;
@@ -104,11 +105,11 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description("bulk max count")
                     .defaultValue(1000);
 
-    public static final ConfigOption<Long> OPTION_BULK_MAX_BYTES =
+    public static final ConfigOption<MemorySize> OPTION_BULK_MAX_BYTES =
             ConfigOptions.key("bulk.max.bytes")
-                    .longType()
+                    .memoryType()
                     .description("bulk max bytes")
-                    .defaultValue(2 * 1024 * 1024L);
+                    .defaultValue(MemorySize.parse("2mb"));
 
     public static final ConfigOption<String> OPTION_BULK_RESPONSE_ACTION_LISTENER_IDENTITY =
             ConfigOptions.key("bulk.response.action_listener.identity")

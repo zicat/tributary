@@ -18,16 +18,42 @@
 
 package org.zicat.tributary.common.test;
 
-import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.ConfigOptions;
+import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.PercentSize;
 
-/** ConfigOptionTest. */
-public class ConfigOptionsTest {
+/** ReadableConfigTest. */
+public class ReadableConfigTest {
+
+    @Test
+    public void test() {
+        final DefaultReadableConfig config = new DefaultReadableConfig();
+        Assert.assertEquals(
+                "bb", config.get(ConfigOptions.key("aa").stringType().defaultValue(null), "bb"));
+        try {
+            config.get(ConfigOptions.key("aa").stringType().noDefaultValue(), "bb");
+            Assert.fail();
+        } catch (Exception ignore) {
+        }
+
+        try {
+            config.get(ConfigOptions.key("aa").stringType().noDefaultValue());
+            Assert.fail();
+        } catch (Exception ignore) {
+        }
+
+        config.put("aa", "bb");
+        Assert.assertEquals(
+                "bb", config.get(ConfigOptions.key("aa").stringType().noDefaultValue()));
+        Assert.assertEquals(
+                "bb", config.get(ConfigOptions.key("aa").stringType().defaultValue("hh")));
+
+        Assert.assertEquals(
+                "dd", config.get(ConfigOptions.key("cc").stringType().defaultValue("dd")));
+    }
 
     @Test
     public void testListType() {

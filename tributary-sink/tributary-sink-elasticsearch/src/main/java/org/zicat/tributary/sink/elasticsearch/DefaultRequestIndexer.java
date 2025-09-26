@@ -20,6 +20,8 @@ package org.zicat.tributary.sink.elasticsearch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 
@@ -32,6 +34,8 @@ import io.prometheus.client.Counter;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.xcontent.XContentType;
+import org.zicat.tributary.common.MemorySize;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_BULK_MAX_BYTES;
 import org.zicat.tributary.sink.function.Context;
 import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
@@ -41,6 +45,7 @@ import java.util.Map.Entry;
 /** DefaultRequestIndexer. */
 public class DefaultRequestIndexer implements RequestIndexer {
 
+    public static final String IDENTITY = "default";
     public static final ConfigOption<Boolean> OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX =
             ConfigOptions.key("request.indexer.default.topic_as_index")
                     .booleanType()
@@ -53,6 +58,12 @@ public class DefaultRequestIndexer implements RequestIndexer {
                     .description("Elasticsearch index for every record.")
                     .defaultValue(null);
 
+    public static final ConfigOption<MemorySize> OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT =
+            ConfigOptions.key("request.indexer.default.record_size_limit")
+                    .memoryType()
+                    .description("The max size of a record, default bulk.max.bytes")
+                    .defaultValue(null);
+
     public static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
             Counter.build()
                     .name("tributary_sink_elasticsearch_discard_counter")
@@ -60,17 +71,25 @@ public class DefaultRequestIndexer implements RequestIndexer {
                     .labelNames("host", "id")
                     .register();
 
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestIndexer.class);
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
     public static final String KEY_TOPIC = "_topic";
 
     private transient String index;
-    private transient boolean useTopicAsIndexIfNotNull;
+    private transient boolean topicAsIndex;
     private transient Counter.Child sinkDiscardCounter;
+    private transient long recordSizeLimit;
 
     @Override
     public void open(Context context) {
-        useTopicAsIndexIfNotNull = context.get(OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX);
+        topicAsIndex = context.get(OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX);
         index = context.get(OPTION_REQUEST_INDEXER_DEFAULT_INDEX);
+        recordSizeLimit =
+                context.get(
+                                OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT,
+                                context.get(OPTION_BULK_MAX_BYTES))
+                        .getBytes();
         sinkDiscardCounter =
                 SINK_ELASTICSEARCH_DISCARD_COUNTER.labels(
                         context.get(OPTION_METRICS_HOST), context.id());
@@ -104,8 +123,16 @@ public class DefaultRequestIndexer implements RequestIndexer {
     protected IndexRequest indexRequest(
             String topic, byte[] key, byte[] value, Map<String, byte[]> headers)
             throws JsonProcessingException {
-        final String realIndex = useTopicAsIndexIfNotNull ? topic : index;
+        final String realIndex = topicAsIndex ? topic : index;
         if (realIndex == null) {
+            sinkDiscardCounter.inc();
+            LOG.warn("skip invalid message, index is null");
+            return null;
+        }
+        final int valueLength = value == null ? 0 : value.length;
+        if (valueLength == 0 || valueLength >= recordSizeLimit) {
+            sinkDiscardCounter.inc();
+            LOG.warn("skip invalid message, index:{}, length: {}", realIndex, valueLength);
             return null;
         }
         final IndexRequest indexRequest = new IndexRequest(realIndex);
@@ -114,6 +141,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
         try {
             jsonNode = MAPPER.readTree(value);
             if (!(jsonNode instanceof ObjectNode)) {
+                LOG.warn("skip invalid message, index:{}, value: {}", realIndex, new String(value, UTF_8));
                 sinkDiscardCounter.inc();
                 return null;
             }
@@ -129,7 +157,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
             final String v = new String(entry.getValue(), UTF_8);
             objectNode.put(entry.getKey(), v);
         }
-        if (!useTopicAsIndexIfNotNull) {
+        if (!topicAsIndex) {
             objectNode.put(KEY_TOPIC, topic);
         }
         indexRequest.source(MAPPER.writeValueAsBytes(objectNode), XContentType.JSON);
@@ -155,7 +183,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
 
     @Override
     public String identity() {
-        return "default";
+        return IDENTITY;
     }
 
     @Override

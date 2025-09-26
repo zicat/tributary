@@ -77,7 +77,7 @@ public class ElasticsearchFunction extends AbstractFunction {
     public void open(Context context) throws Exception {
         super.open(context);
         buckMaxCount = context.get(OPTION_BUCK_MAX_COUNT);
-        buckMaxBytes = context.get(OPTION_BULK_MAX_BYTES);
+        buckMaxBytes = context.get(OPTION_BULK_MAX_BYTES).getBytes();
         client = createRestHighLevelClient(context);
         sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
         sinkBulkCounter = labelHostId(SINK_ELASTICSEARCH_BULK_COUNTER);
