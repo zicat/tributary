@@ -18,20 +18,58 @@
 
 package org.zicat.tributary.source.base;
 
+import org.zicat.tributary.common.MetricCollector;
 import org.zicat.tributary.common.MetricKey;
 
 import java.io.Closeable;
-import java.util.Map;
+import java.util.function.BiFunction;
 
 /** Source. */
-public interface Source extends Closeable, SourceChannel {
+public interface Source extends Closeable, SourceChannel, MetricCollector {
 
     /**
-     * get channel metrics.
+     * merge counter.
      *
-     * @return map metrics
+     * @param key key
+     * @param value value
+     * @param remappingFunction remappingFunction
      */
-    Map<MetricKey, Double> gaugeFamily();
+    void mergeCounter(
+            MetricKey key,
+            double value,
+            BiFunction<? super Double, ? super Double, ? extends Double> remappingFunction);
+
+    /**
+     * merge counter.
+     *
+     * @param key key
+     * @param value value
+     */
+    default void incrementCounter(MetricKey key, double value) {
+        mergeCounter(key, value, Double::sum);
+    }
+
+    /**
+     * merge gauge.
+     *
+     * @param key key
+     * @param value value
+     * @param remappingFunction remappingFunction
+     */
+    void mergeGauge(
+            MetricKey key,
+            double value,
+            BiFunction<? super Double, ? super Double, ? extends Double> remappingFunction);
+
+    /**
+     * merge gauge.
+     *
+     * @param key key
+     * @param value value
+     */
+    default void incrementGauge(MetricKey key, double value) {
+        mergeGauge(key, value, Double::sum);
+    }
 
     /**
      * get id.

@@ -21,33 +21,47 @@ package org.zicat.tributary.source.base;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.Clock;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.SystemClock;
 import org.zicat.tributary.common.records.Records;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
-/** AbstractSourceChannel. */
+/** AbstractSource. */
 public abstract class AbstractSource implements Source {
 
+    public static final ConfigOption<Clock> OPTION_SOURCE_CLOCK =
+            ConfigOptions.key("_source_clock").<Clock>objectType().defaultValue(new SystemClock());
+
+    public static final MetricKey APPEND_CHANNEL_RECORD_COUNTER =
+            new MetricKey("tributary_source_append_channel_record_counter");
+
     public static final String HEADER_KEY_REC_TS = "_rec_ts";
-    private static final Map<MetricKey, Double> empty = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSource.class);
 
     protected final AtomicInteger count = new AtomicInteger();
     protected final ReadableConfig config;
     protected final Channel channel;
     protected final String sourceId;
+    protected final Map<MetricKey, Double> gaugeFamily = new ConcurrentHashMap<>();
+    protected final Map<MetricKey, Double> counterFamily = new ConcurrentHashMap<>();
+    protected final Clock clock;
 
     public AbstractSource(String sourceId, ReadableConfig config, Channel channel) {
         this.sourceId = sourceId;
         this.config = config;
         this.channel = channel;
+        this.clock = config.get(OPTION_SOURCE_CLOCK);
     }
 
     @Override
@@ -56,8 +70,9 @@ public abstract class AbstractSource implements Source {
         if (records == null || records.count() == 0) {
             return;
         }
+        mergeCounter(APPEND_CHANNEL_RECORD_COUNTER, records.count(), Double::sum);
         final Map<String, byte[]> headers = records.headers();
-        headers.put(HEADER_KEY_REC_TS, String.valueOf(System.currentTimeMillis()).getBytes());
+        headers.put(HEADER_KEY_REC_TS, String.valueOf(clock.currentTimeMillis()).getBytes());
         final ByteBuffer byteBuffer = records.toByteBuffer();
         final int realPartition =
                 partition == null
@@ -70,6 +85,32 @@ public abstract class AbstractSource implements Source {
             IOUtils.closeQuietly(this);
             throw e;
         }
+    }
+
+    @Override
+    public void mergeGauge(
+            MetricKey key,
+            double value,
+            BiFunction<? super Double, ? super Double, ? extends Double> remappingFunction) {
+        gaugeFamily.merge(key, value, remappingFunction);
+    }
+
+    @Override
+    public Map<MetricKey, Double> gaugeFamily() {
+        return gaugeFamily;
+    }
+
+    @Override
+    public void mergeCounter(
+            MetricKey key,
+            double value,
+            BiFunction<? super Double, ? super Double, ? extends Double> remappingFunction) {
+        counterFamily.merge(key, value, remappingFunction);
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        return counterFamily;
     }
 
     @Override
@@ -90,11 +131,6 @@ public abstract class AbstractSource implements Source {
     @Override
     public String sourceId() {
         return sourceId;
-    }
-
-    @Override
-    public Map<MetricKey, Double> gaugeFamily() {
-        return empty;
     }
 
     @Override

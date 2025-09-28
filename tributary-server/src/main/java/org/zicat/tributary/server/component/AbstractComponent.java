@@ -81,6 +81,30 @@ public abstract class AbstractComponent<ID, ELEMENT extends Closeable> extends C
     }
 
     /**
+     * create gauge metric family.
+     *
+     * @param key key
+     * @param value value
+     * @return MetricFamilySamples
+     */
+    public static MetricFamilySamples createGaugeMetricFamily(MetricKey key, double value) {
+        return new GaugeMetricFamily(key.getName(), key.getDescription(), key.getLabelNames())
+                .addMetric(key.getLabelValue(), value);
+    }
+
+    /**
+     * create counter metric family.
+     *
+     * @param key key
+     * @param value value
+     * @return MetricFamilySamples
+     */
+    public static MetricFamilySamples createCounterMetricFamily(MetricKey key, double value) {
+        return new CounterMetricFamily(key.getName(), key.getDescription(), key.getLabelNames())
+                .addMetric(key.getLabelValue(), value);
+    }
+
+    /**
      * create counter metric family.
      *
      * @param key key

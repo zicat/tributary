@@ -18,13 +18,42 @@
 
 package org.zicat.tributary.server.component;
 
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.source.base.Source;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /** SourceComponent. */
-public abstract class SourceComponent extends AbstractComponent<String, Source> {
-    public SourceComponent(Map<String, Source> elements) {
+public class SourceComponent extends AbstractComponent<String, Source> {
+
+    private final String metricsHost;
+    private static final List<String> LABELS = Arrays.asList("id", "host");
+
+    public SourceComponent(Map<String, Source> elements, String metricsHost) {
         super(elements);
+        this.metricsHost = metricsHost;
+    }
+
+    @Override
+    public List<MetricFamilySamples> collect() {
+        final List<MetricFamilySamples> metricSamples = new ArrayList<>();
+        for (Map.Entry<String, Source> entry : elements.entrySet()) {
+            final Source source = entry.getValue();
+            final List<String> labelValues = Arrays.asList(source.sourceId(), metricsHost);
+            for (Map.Entry<MetricKey, Double> gaugeEntry : source.gaugeFamily().entrySet()) {
+                final MetricKey metricKey = gaugeEntry.getKey();
+                final double value = gaugeEntry.getValue();
+                metricSamples.add(createGaugeMetricFamily(metricKey, LABELS, labelValues, value));
+            }
+            for (Map.Entry<MetricKey, Double> counterEntry : source.counterFamily().entrySet()) {
+                final MetricKey metricKey = counterEntry.getKey();
+                final double value = counterEntry.getValue();
+                metricSamples.add(createCounterMetricFamily(metricKey, LABELS, labelValues, value));
+            }
+        }
+        return metricSamples;
     }
 }

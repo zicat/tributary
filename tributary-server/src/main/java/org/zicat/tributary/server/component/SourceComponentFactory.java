@@ -21,8 +21,6 @@ package org.zicat.tributary.server.component;
 import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 
-import io.prometheus.client.GaugeMetricFamily;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
@@ -77,39 +75,10 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
                 sources.put(sourceId, source);
             }
             LOG.info("create source success, sources {}", sources.keySet());
-            return new DefaultSourceComponent(sources, metricsHost);
+            return new SourceComponent(sources, metricsHost);
         } catch (Exception e) {
             sources.forEach((k, v) -> IOUtils.closeQuietly(v));
             throw new TributaryRuntimeException(e);
-        }
-    }
-
-    /** DefaultSourceComponent. */
-    private static class DefaultSourceComponent extends SourceComponent {
-
-        private final List<String> labels = Arrays.asList("id", "host");
-        private final String metricsHost;
-
-        private DefaultSourceComponent(Map<String, Source> sources, String metricsHost) {
-            super(sources);
-            this.metricsHost = metricsHost;
-        }
-
-        @Override
-        public List<MetricFamilySamples> collect() {
-            final List<MetricFamilySamples> metricSamples = new ArrayList<>();
-            for (Source source : elements.values()) {
-                final String id = source.sourceId();
-                final List<String> labelsValue = Arrays.asList(id, metricsHost);
-                for (Map.Entry<MetricKey, Double> entry : source.gaugeFamily().entrySet()) {
-                    final String name = entry.getKey().getName();
-                    final String desc = entry.getKey().getDescription();
-                    metricSamples.add(
-                            new GaugeMetricFamily(name, desc, labels)
-                                    .addMetric(labelsValue, entry.getValue()));
-                }
-            }
-            return metricSamples;
         }
     }
 }

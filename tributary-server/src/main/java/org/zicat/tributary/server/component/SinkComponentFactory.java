@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.*;
-import org.zicat.tributary.server.component.SinkComponent.DefaultSinkComponent;
 import org.zicat.tributary.server.component.SinkComponent.SinkGroupManagerList;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -74,7 +73,8 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
                 if (channels.isEmpty()) {
                     throw new TributaryRuntimeException("group " + group + " not found channel");
                 }
-                final SinkGroupManagerList managerList = new SinkGroupManagerList();
+                final SinkGroupManagerList managerList =
+                        new SinkGroupManagerList(group, metricsHost);
                 sinkGroupManagers.put(group, managerList);
                 for (Channel channel : channels) {
                     final SinkGroupConfig config = entry.getValue().build();
@@ -85,7 +85,7 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
                     managerList.add(sinkGroupManager);
                 }
             }
-            return new DefaultSinkComponent(sinkGroupManagers, metricsHost);
+            return new SinkComponent(sinkGroupManagers);
         } catch (Exception e) {
             sinkGroupManagers.forEach((k, v) -> IOUtils.closeQuietly(v));
             throw new TributaryRuntimeException(e);

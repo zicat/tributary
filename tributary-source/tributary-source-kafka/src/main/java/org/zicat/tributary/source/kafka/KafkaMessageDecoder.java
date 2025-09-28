@@ -43,6 +43,7 @@ import org.apache.kafka25.ProduceResponse.PartitionResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.BytesUtils;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.source.base.Source;
@@ -63,6 +64,10 @@ import javax.security.sasl.SaslServer;
 @Sharable
 public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<byte[]>
         implements Closeable {
+
+    private static final String LABEL_REQUEST_NAME = "requestName";
+    private static final MetricKey KAFKA_REQUEST_COUNTER =
+            new MetricKey("tributary_source_kafka_request_counter");
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaMessageDecoder.class);
     public static final List<String> SUPPORTED_MECHANISMS = Collections.singletonList("PLAIN");
@@ -118,6 +123,8 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
         final Struct struct = header.apiKey().parseRequest(header.apiVersion(), requestBuffer);
         final AbstractRequest request =
                 AbstractRequest.parseRequest(header.apiKey(), header.apiVersion(), struct);
+        source.incrementCounter(
+                KAFKA_REQUEST_COUNTER.addLabel(LABEL_REQUEST_NAME, header.apiKey().name), 1d);
         if (request instanceof ApiVersionsRequest) {
             ctx.writeAndFlush(toByteBuf(DEFAULT_API_VERSIONS_RESPONSE, header));
             return;
