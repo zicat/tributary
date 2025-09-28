@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.sink.elasticsearch.test;
 
+import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.DISCARD_COUNTER;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEXER_DEFAULT_INDEX;
-import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.SINK_ELASTICSEARCH_DISCARD_COUNTER;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
 
 import static java.lang.Long.parseLong;
@@ -53,7 +53,6 @@ import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunction;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -79,7 +78,6 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
                         .partitionId(0)
                         .topic("t1")
                         .startOffset(Offset.ZERO);
-        builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
         builder.addCustomProperty(OPTION_ASYNC_BULK_QUEUE_SIZE, 2);
         builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, topic);
         builder.addCustomProperty(OPTION_QUEUE_FULL_AWAIT_TIMEOUT, Duration.ofSeconds(3));
@@ -119,8 +117,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         try {
             function.process(Offset.ZERO, recordsList.iterator());
             Assert.assertEquals(2, function.sinkCount());
-            Assert.assertEquals(
-                    1, (int) function.labelHostId(SINK_ELASTICSEARCH_DISCARD_COUNTER).get());
+            Assert.assertEquals(1, (int) function.counterFamily().get(DISCARD_COUNTER).intValue());
             function.sync();
             Assert.assertEquals(Offset.ZERO, function.committableOffset());
             Assert.assertTrue(function.isEmpty());
@@ -225,8 +222,8 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
             };
         }
 
-        public int sinkCount() {
-            return (int) sinkCounter.get();
+        public long sinkCount() {
+            return sinkCounter;
         }
 
         public int bulkInsertCount() {

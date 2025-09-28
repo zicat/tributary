@@ -21,7 +21,7 @@ package org.zicat.tributary.source.base;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.GaugeKey;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.records.Records;
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractSource implements Source {
 
     public static final String HEADER_KEY_REC_TS = "_rec_ts";
-    private static final Map<GaugeKey, Double> empty = new HashMap<>();
+    private static final Map<MetricKey, Double> empty = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSource.class);
 
     protected final AtomicInteger count = new AtomicInteger();
@@ -93,7 +93,7 @@ public abstract class AbstractSource implements Source {
     }
 
     @Override
-    public Map<GaugeKey, Double> gaugeFamily() {
+    public Map<MetricKey, Double> gaugeFamily() {
         return empty;
     }
 

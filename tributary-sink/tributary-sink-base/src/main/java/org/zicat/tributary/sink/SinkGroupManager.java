@@ -18,12 +18,14 @@
 
 package org.zicat.tributary.sink;
 
+import static org.zicat.tributary.common.Collections.sumDouble;
+import org.zicat.tributary.common.MetricCollector;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.GaugeKey;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.sink.function.Function;
@@ -40,9 +42,8 @@ import java.util.Map;
  * One SinkGroupManager Instance maintain a group consumer one {@link Channel} with {@link
  * SinkGroupConfig}.
  */
-public class SinkGroupManager implements Closeable {
+public class SinkGroupManager implements Closeable, MetricCollector {
 
-    public static final GaugeKey KEY_SINK_LAG = new GaugeKey("tributary_sink_lag", "sink lag");
     private static final Logger LOG = LoggerFactory.getLogger(SinkGroupManager.class);
 
     private final String groupId;
@@ -73,11 +74,14 @@ public class SinkGroupManager implements Closeable {
         handlers.forEach(Thread::start);
     }
 
-    public Map<GaugeKey, Double> gaugeFamily() {
-        final Map<GaugeKey, Double> families = new HashMap<>();
-        families.put(
-                KEY_SINK_LAG, (double) handlers.stream().mapToLong(PartitionHandler::lag).sum());
-        return families;
+    @Override
+    public Map<MetricKey, Double> gaugeFamily() {
+        return sumDouble(handlers.stream().map(PartitionHandler::gaugeFamily));
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        return sumDouble(handlers.stream().map(PartitionHandler::counterFamily));
     }
 
     /**
@@ -101,6 +105,10 @@ public class SinkGroupManager implements Closeable {
 
     public String id() {
         return channel.topic() + "_" + groupId;
+    }
+
+    public String groupId() {
+        return groupId;
     }
 
     /**

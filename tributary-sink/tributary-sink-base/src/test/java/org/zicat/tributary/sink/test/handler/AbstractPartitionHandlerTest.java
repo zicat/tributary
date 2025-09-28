@@ -243,7 +243,7 @@ public class AbstractPartitionHandlerTest {
                         @Override
                         public void process(Offset offset, Iterator<byte[]> iterator) {
                             int id = counter.incrementAndGet();
-                            Assert.assertTrue(lag() > 0);
+                            Assert.assertTrue(gaugeFamily().get(KEY_SINK_LAG) > 0);
                             if (id == 1) {
                                 throw new RuntimeException("first");
                             }

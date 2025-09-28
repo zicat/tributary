@@ -18,30 +18,28 @@
 
 package org.zicat.tributary.sink.elasticsearch.listener;
 
-import io.prometheus.client.Counter;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.zicat.tributary.channel.Offset;
+import org.zicat.tributary.common.MetricKey;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** MuteInsertErrorBulkResponseActionListener. */
 public class MuteInsertErrorBulkResponseActionListener extends AbstractActionListener {
 
-    public static final Counter ERROR_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_elasticsearch_bulk_requests_with_errors")
-                    .help("tributary sink elasticsearch bulk requests with errors")
-                    .labelNames("index", "instance")
-                    .register();
+    public static final MetricKey ERROR_COUNTER =
+            new MetricKey("tributary_sink_elasticsearch_bulk_requests_with_errors");
+    public static final String LABEL_INDEX = "index";
 
-    private final String instance;
+    private final Map<String, AtomicLong> indexErrorMapCounters = new HashMap<>();
 
-    public MuteInsertErrorBulkResponseActionListener(Offset offset, String instance) {
+    public MuteInsertErrorBulkResponseActionListener(Offset offset) {
         super(offset);
-        this.instance = instance;
     }
 
     @Override
@@ -56,8 +54,21 @@ public class MuteInsertErrorBulkResponseActionListener extends AbstractActionLis
         for (Map.Entry<String, AtomicInteger> entry : errorMap.entrySet()) {
             String index = entry.getKey();
             int bulkErrorCnt = entry.getValue().get();
-            ERROR_COUNTER.labels(index, instance).inc(bulkErrorCnt);
+            indexErrorMapCounters
+                    .computeIfAbsent(index, k -> new AtomicLong(0L))
+                    .addAndGet(bulkErrorCnt);
         }
         return null;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.counterFamily());
+        for (Entry<String, AtomicLong> entry : indexErrorMapCounters.entrySet()) {
+            final String index = entry.getKey();
+            final double value = entry.getValue().doubleValue();
+            base.merge(ERROR_COUNTER.addLabel(LABEL_INDEX, index), value, Double::sum);
+        }
+        return base;
     }
 }

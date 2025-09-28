@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.sink.kafka.test;
 
-import io.prometheus.client.Counter;
-
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -34,7 +32,6 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.*;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.function.ContextBuilder;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 import org.zicat.tributary.sink.kafka.KafkaFunction;
 import org.zicat.tributary.sink.kafka.KafkaFunctionFactory;
 
@@ -83,7 +80,6 @@ public class KafkaFunctionTest {
                             .groupId(groupId)
                             .startOffset(new Offset(0, 0))
                             .topic(topic);
-            builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
             function.open(builder.build());
 
             final Offset groupOffset = new Offset(2, 0);
@@ -103,7 +99,7 @@ public class KafkaFunctionTest {
                 Assert.assertEquals(topic, r.topic());
             }
 
-            Assert.assertEquals(function.getCount().get(), 4, 0.1);
+            Assert.assertEquals(function.getCount(), 4, 0.1);
         }
     }
 
@@ -120,7 +116,6 @@ public class KafkaFunctionTest {
                             .groupId(groupId)
                             .startOffset(new Offset(0, 0))
                             .topic(topic);
-            builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
             builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC, "aa_${topic}");
             function.open(builder.build());
             final Offset groupOffset = new Offset(2, 0);
@@ -172,7 +167,7 @@ public class KafkaFunctionTest {
         @Override
         public void close() {}
 
-        public Counter.Child getCount() {
+        public long getCount() {
             return sinkCounter;
         }
     }

@@ -21,7 +21,6 @@ package org.zicat.tributary.sink.elasticsearch.listener;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.sink.function.Context;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 /** MuteInsertErrorBulkResponseActionListenerFactory. */
 public class MuteInsertErrorBulkResponseActionListenerFactory
@@ -31,8 +30,7 @@ public class MuteInsertErrorBulkResponseActionListenerFactory
 
     @Override
     public AbstractActionListener create(Context context, BulkRequest bulkRequest, Offset offset) {
-        return new MuteInsertErrorBulkResponseActionListener(
-                offset, context.get(OPTION_METRICS_HOST));
+        return new MuteInsertErrorBulkResponseActionListener(offset);
     }
 
     @Override

@@ -82,10 +82,10 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
-    public Map<GaugeKey, Double> gaugeFamily() {
-        final Map<GaugeKey, Double> result = new HashMap<>();
+    public Map<MetricKey, Double> gaugeFamily() {
+        final Map<MetricKey, Double> result = new HashMap<>();
         for (Channel c : channels) {
-            for (Map.Entry<GaugeKey, Double> entry : c.gaugeFamily().entrySet()) {
+            for (Map.Entry<MetricKey, Double> entry : c.gaugeFamily().entrySet()) {
                 result.merge(entry.getKey(), entry.getValue(), Double::sum);
             }
         }

@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.server.component;
 
-import io.prometheus.client.GaugeMetricFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.*;
+import org.zicat.tributary.server.component.SinkComponent.DefaultSinkComponent;
 import org.zicat.tributary.server.component.SinkComponent.SinkGroupManagerList;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
@@ -32,7 +32,6 @@ import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import java.util.*;
 
 import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 /** SinkComponentFactory. */
 public class SinkComponentFactory implements SafeFactory<SinkComponent> {
@@ -107,7 +106,6 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
         final String keyPrefix = groupId + ".";
         final ReadableConfig groupConfig = sinkConfig.filterAndRemovePrefixKey(keyPrefix);
         groupConfig.forEach(configBuilder::addCustomProperty);
-        configBuilder.addCustomProperty(OPTION_METRICS_HOST, metricsHost);
         return configBuilder;
     }
 
@@ -131,46 +129,5 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
             sinkGroupConfigs.put(groupId, createSinkGroupConfigBuilderByGroupId(groupId));
         }
         return sinkGroupConfigs;
-    }
-
-    /** DefaultSinkComponent. */
-    private static class DefaultSinkComponent extends SinkComponent {
-
-        private final List<String> labels = Arrays.asList("id", "host");
-        private final int size;
-        private final String metricsHost;
-
-        private DefaultSinkComponent(
-                Map<String, SinkGroupManagerList> sinkGroupManagers, String metricsHost) {
-            super(sinkGroupManagers);
-            this.metricsHost = metricsHost;
-            this.size = sinkGroupManagers.values().stream().mapToInt(List::size).sum();
-        }
-
-        @Override
-        public int size() {
-            return size;
-        }
-
-        @Override
-        public List<MetricFamilySamples> collect() {
-            final List<MetricFamilySamples> metricSamples = new ArrayList<>();
-            for (Map.Entry<String, SinkGroupManagerList> entry : elements.entrySet()) {
-                final SinkGroupManagerList sinkGroupManagers = entry.getValue();
-                for (SinkGroupManager sinkGroupManager : sinkGroupManagers) {
-                    final List<String> labelValues =
-                            Arrays.asList(sinkGroupManager.id(), metricsHost);
-                    for (Map.Entry<GaugeKey, Double> gaugeEntry :
-                            sinkGroupManager.gaugeFamily().entrySet()) {
-                        final String name = gaugeEntry.getKey().getName();
-                        final String desc = gaugeEntry.getKey().getDescription();
-                        metricSamples.add(
-                                new GaugeMetricFamily(name, desc, labels)
-                                        .addMetric(labelValues, gaugeEntry.getValue()));
-                    }
-                }
-            }
-            return metricSamples;
-        }
     }
 }

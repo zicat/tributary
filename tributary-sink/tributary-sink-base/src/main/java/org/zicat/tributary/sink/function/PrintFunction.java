@@ -18,9 +18,8 @@
 
 package org.zicat.tributary.sink.function;
 
+import org.zicat.tributary.common.MetricKey;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
-
-import io.prometheus.client.Counter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +27,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Records;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -35,20 +35,14 @@ import java.util.Map;
 public class PrintFunction extends AbstractFunction {
 
     protected static final Logger LOG = LoggerFactory.getLogger(PrintFunction.class);
+    private static final MetricKey KEY_SINK_PRINT_COUNTER =
+            new MetricKey("tributary_sink_print_counter");
 
-    private static final Counter SINK_PRINT_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_print_counter")
-                    .help("tributary sink print counter")
-                    .labelNames("host", "id")
-                    .register();
-
-    protected Counter.Child sinkCountChild;
+    protected long printCount;
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        this.sinkCountChild = labelHostId(SINK_PRINT_COUNTER);
     }
 
     @Override
@@ -82,9 +76,14 @@ public class PrintFunction extends AbstractFunction {
                         sb.append("]");
                         LOG.info(sb.toString());
                     });
-            sinkCountChild.inc(records.count());
+            printCount += records.count();
         }
         commit(offset);
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        return Collections.singletonMap(KEY_SINK_PRINT_COUNTER, (double) printCount);
     }
 
     @Override

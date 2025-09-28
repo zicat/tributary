@@ -20,11 +20,10 @@ package org.zicat.tributary.sink.kafka;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
+import org.zicat.tributary.common.MetricKey;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 import static org.zicat.tributary.sink.kafka.KafkaFunctionFactory.OPTION_TOPIC;
-
-import io.prometheus.client.Counter;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -48,17 +47,12 @@ public class KafkaFunction extends AbstractFunction {
     public static final String HEAD_KEY_ORIGIN_TOPIC = "_origin_topic";
     public static final String TOPIC_TEMPLATE = "${topic}";
 
-    private static final Counter SINK_KAFKA_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_kafka_counter")
-                    .help("tributary sink kafka counter")
-                    .labelNames("host", "id")
-                    .register();
+    private static final MetricKey SINK_COUNTER = new MetricKey("tributary_sink_kafka_counter");
 
     public static final String KAFKA_KEY_PREFIX = "kafka.";
 
     protected transient Producer<byte[], byte[]> producer;
-    protected transient Counter.Child sinkCounter;
+    protected transient long sinkCounter;
     protected transient TributaryKafkaCallback callback;
     protected transient String defaultTopic;
     protected transient Offset lastOffset;
@@ -66,7 +60,6 @@ public class KafkaFunction extends AbstractFunction {
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        sinkCounter = labelHostId(SINK_KAFKA_COUNTER);
         producer = createProducer(context);
         defaultTopic = context.get(OPTION_TOPIC);
         callback = new TributaryKafkaCallback();
@@ -75,12 +68,17 @@ public class KafkaFunction extends AbstractFunction {
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
         callback.checkState();
-        int totalCount = 0;
         while (iterator.hasNext()) {
-            totalCount += sendKafka(iterator.next());
+            sinkCounter += sendKafka(iterator.next());
         }
         lastOffset = offset;
-        sinkCounter.inc(totalCount);
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.counterFamily());
+        base.put(SINK_COUNTER, (double) sinkCounter);
+        return base;
     }
 
     @Override

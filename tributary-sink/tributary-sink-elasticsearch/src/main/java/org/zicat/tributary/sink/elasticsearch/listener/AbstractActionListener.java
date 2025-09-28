@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.sink.elasticsearch.listener;
 
-import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.zicat.tributary.channel.Offset;
 
@@ -27,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** AbstractActionListener. */
-public abstract class AbstractActionListener implements ActionListener<BulkResponse> {
+public abstract class AbstractActionListener implements TributaryActionListener<BulkResponse> {
 
     protected static final Exception NO_EXCEPTION = new Exception();
 

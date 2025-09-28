@@ -19,14 +19,17 @@
 package org.zicat.tributary.sink.elasticsearch;
 
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.zicat.tributary.common.MetricCollector;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Context;
 
 import java.io.Closeable;
+import java.util.Collections;
 import java.util.Map;
 
 /** RequestIndexer. */
-public interface RequestIndexer extends SpiFactory, Closeable {
+public interface RequestIndexer extends SpiFactory, Closeable, MetricCollector {
 
     /**
      * open .
@@ -51,4 +54,14 @@ public interface RequestIndexer extends SpiFactory, Closeable {
             byte[] value,
             Map<String, byte[]> headers)
             throws Exception;
+
+    @Override
+    default Map<MetricKey, Double> gaugeFamily() {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    default Map<MetricKey, Double> counterFamily() {
+        return Collections.emptyMap();
+    }
 }

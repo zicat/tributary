@@ -18,11 +18,9 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
-
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
@@ -31,26 +29,19 @@ import org.zicat.tributary.sink.hdfs.bucket.BucketGenerator.RefreshHandler;
 import org.zicat.tributary.sink.hdfs.bucket.ProcessTimeBucketGenerator;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /** HDFSFunction. */
 public class HDFSFunction extends AbstractFunction {
 
-    private static final Counter HDFS_SINK_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_hdfs_counter")
-                    .help("tributary sink hdfs counter")
-                    .labelNames("host", "id")
-                    .register();
-    private static final Gauge HDFS_OPEN_FILES_GAUGE =
-            Gauge.build()
-                    .name("tributary_sink_hdfs_opened_files")
-                    .help("tributary sink hdfs opened files")
-                    .labelNames("host", "id")
-                    .register();
+    private static final MetricKey SINK_COUNTER = new MetricKey("tributary_sink_hdfs_counter");
+    private static final MetricKey OPEN_FILES_GAUGE =
+            new MetricKey("tributary_sink_hdfs_opened_files");
 
-    protected transient Gauge.Child openFilesGauge;
-    protected transient Counter.Child sinkCounter;
+    protected transient long openFilesGauge;
+    protected transient long sinkCounter;
     protected transient Offset lastOffset;
     protected transient RecordsWriterManager recordsWriterManager;
     protected transient BucketGenerator bucketGenerator;
@@ -59,8 +50,6 @@ public class HDFSFunction extends AbstractFunction {
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        sinkCounter = labelHostId(HDFS_SINK_COUNTER);
-        openFilesGauge = labelHostId(HDFS_OPEN_FILES_GAUGE);
         recordsWriterManager = createRecordsWriterManager();
         recordsWriterManager.open(context);
         bucketGenerator = createBucketGenerator();
@@ -85,15 +74,27 @@ public class HDFSFunction extends AbstractFunction {
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
 
         refresh();
-        int totalCount = 0;
         while (iterator.hasNext()) {
             final Records records = iterator.next();
             final String bucket = bucketGenerator.getBucket(records);
-            totalCount += recordsWriterManager.getOrCreateRecordsWriter(bucket).append(records);
+            sinkCounter += recordsWriterManager.getOrCreateRecordsWriter(bucket).append(records);
         }
         lastOffset = offset;
-        sinkCounter.inc(totalCount);
-        openFilesGauge.set(recordsWriterManager.bucketsCount());
+        openFilesGauge = recordsWriterManager.bucketsCount();
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.counterFamily());
+        base.put(SINK_COUNTER, (double) sinkCounter);
+        return base;
+    }
+
+    @Override
+    public Map<MetricKey, Double> gaugeFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.gaugeFamily());
+        base.put(OPEN_FILES_GAUGE, (double) openFilesGauge);
+        return base;
     }
 
     @Override

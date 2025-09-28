@@ -18,41 +18,22 @@
 
 package org.zicat.tributary.common;
 
-import java.util.Objects;
+import java.util.Map;
 
-/** GaugeKey. */
-public class GaugeKey {
+/** MetricCollector. */
+public interface MetricCollector {
 
-    private final String name;
-    private final String description;
+    /**
+     * gauge family metric.
+     *
+     * @return map
+     */
+    Map<MetricKey, Double> gaugeFamily();
 
-    public GaugeKey(String name, String description) {
-        this.name = name;
-        this.description = description;
-    }
-
-    public final String getName() {
-        return name;
-    }
-
-    public final String getDescription() {
-        return description;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof GaugeKey)) {
-            return false;
-        }
-        GaugeKey that = (GaugeKey) o;
-        return Objects.equals(name, that.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
-    }
+    /**
+     * counter family metric.
+     *
+     * @return map
+     */
+    Map<MetricKey, Double> counterFamily();
 }

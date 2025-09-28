@@ -19,11 +19,10 @@
 package org.zicat.tributary.sink.hbase;
 
 import static org.zicat.tributary.common.IOUtils.getClasspathResource;
+import org.zicat.tributary.common.MetricKey;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
-
-import io.prometheus.client.Counter;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -43,10 +42,10 @@ import org.zicat.tributary.sink.function.Context;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** HBaseFunction. */
@@ -54,20 +53,12 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
 
     private static final Logger LOG = LoggerFactory.getLogger(HBaseFunction.class);
 
-    private static final Counter SINK_HBASE_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_hbase_counter")
-                    .help("tributary sink hbase counter")
-                    .labelNames("host", "id")
-                    .register();
-    private static final Counter SINK_HBASE_DISCARD_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_hbase_discard_counter")
-                    .help("tributary sink hbase discard counter")
-                    .labelNames("host", "id")
-                    .register();
-    protected transient Counter.Child sinkCounter;
-    protected transient Counter.Child sinkDiscardCounter;
+    private static final MetricKey HBASE_COUNTER = new MetricKey("tributary_sink_hbase_counter");
+    private static final MetricKey HBASE_DISCARD_COUNTER =
+            new MetricKey("tributary_sink_hbase_discard_counter");
+
+    protected transient long sinkCounter;
+    protected transient long sinkDiscardCounter;
     protected transient TableName tableName;
     protected transient byte[] family;
     protected transient byte[] valueColumn;
@@ -81,8 +72,6 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
-        sinkCounter = labelHostId(SINK_HBASE_COUNTER);
-        sinkDiscardCounter = labelHostId(SINK_HBASE_DISCARD_COUNTER);
         tableName = TableName.valueOf(context.get(OPTION_HBASE_TABLE_NAME));
         family = Bytes.toBytes(context.get(OPTION_HBASE_FAMILY));
         valueColumn = Bytes.toBytes(context.get(OPTION_HBASE_COLUMN_VALUE_NAME));
@@ -97,25 +86,21 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
         checkErrorAndRethrow();
-        final AtomicInteger counter = new AtomicInteger();
-        final AtomicInteger discardCounter = new AtomicInteger();
         while (iterator.hasNext()) {
             final Records records = iterator.next();
             foreachRecord(
                     records,
                     (key, value, allHeaders) -> {
                         if (key == null) {
-                            discardCounter.incrementAndGet();
+                            sinkDiscardCounter++;
                             return;
                         }
                         mutate(records.topic(), key, value, allHeaders);
-                        counter.incrementAndGet();
+                        sinkCounter++;
                     },
                     defaultSinkExtraHeaders());
         }
         lastOffset = offset;
-        sinkCounter.inc(counter.get());
-        sinkDiscardCounter.inc(discardCounter.get());
     }
 
     @Override
@@ -190,6 +175,14 @@ public class HBaseFunction extends AbstractFunction implements BufferedMutator.E
     public void onException(
             RetriesExhaustedWithDetailsException exception, BufferedMutator mutator) {
         failureThrowable.compareAndSet(null, exception);
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.counterFamily());
+        base.merge(HBASE_COUNTER, (double) sinkCounter, Double::sum);
+        base.merge(HBASE_DISCARD_COUNTER, (double) sinkDiscardCounter, Double::sum);
+        return base;
     }
 
     /**

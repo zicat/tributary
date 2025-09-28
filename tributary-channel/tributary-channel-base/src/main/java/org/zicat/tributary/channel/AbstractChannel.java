@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.channel.group.MemoryGroupManager;
-import org.zicat.tributary.common.GaugeKey;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
 
@@ -44,24 +44,18 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractChannel.class);
 
-    public static final GaugeKey KEY_WRITE_BYTES =
-            new GaugeKey("tributary_channel_write_bytes", "tributary channel write bytes");
-    public static final GaugeKey KEY_READ_BYTES =
-            new GaugeKey("tributary_channel_read_bytes", "tributary channel read bytes");
-    public static final GaugeKey KEY_BUFFER_USAGE =
-            new GaugeKey("tributary_channel_buffer_usage", "tributary channel buffer usage");
-    public static final GaugeKey KEY_ACTIVE_SEGMENT =
-            new GaugeKey("tributary_channel_active_segment", "tributary channel active segment");
+    public static final MetricKey KEY_WRITE_BYTES = new MetricKey("tributary_channel_write_bytes");
+    public static final MetricKey KEY_READ_BYTES = new MetricKey("tributary_channel_read_bytes");
+    public static final MetricKey KEY_BUFFER_USAGE =
+            new MetricKey("tributary_channel_buffer_usage");
+    public static final MetricKey KEY_ACTIVE_SEGMENT =
+            new MetricKey("tributary_channel_active_segment");
 
-    public static final GaugeKey KEY_BLOCK_CACHE_QUERY_HIT_COUNT =
-            new GaugeKey(
-                    "tributary_channel_block_cache_query_hit_count",
-                    "tributary channel block cache query hit count");
+    public static final MetricKey KEY_BLOCK_CACHE_QUERY_HIT_COUNT =
+            new MetricKey("tributary_channel_block_cache_query_hit_count");
 
-    public static final GaugeKey KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT =
-            new GaugeKey(
-                    "tributary_channel_block_cache_query_total_count",
-                    "tributary channel block cache query total count");
+    public static final MetricKey KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT =
+            new MetricKey("tributary_channel_block_cache_query_total_count");
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition newSegmentCondition = lock.newCondition();
@@ -193,8 +187,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     @Override
-    public Map<GaugeKey, Double> gaugeFamily() {
-        final Map<GaugeKey, Double> families = new HashMap<>();
+    public Map<MetricKey, Double> gaugeFamily() {
+        final Map<MetricKey, Double> families = new HashMap<>();
         families.put(KEY_WRITE_BYTES, (double) (writeBytes.get() + latestSegment.writeBytes()));
         families.put(KEY_READ_BYTES, (double) readBytes.get());
         families.put(KEY_BUFFER_USAGE, (double) latestSegment.cacheUsed());

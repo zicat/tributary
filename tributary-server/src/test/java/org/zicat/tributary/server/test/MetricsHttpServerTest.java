@@ -27,7 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.common.DefaultReadableConfig;
-import org.zicat.tributary.common.GaugeKey;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.server.MetricsHttpServer;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class MetricsHttpServerTest {
         new Collector() {
             @Override
             public List<MetricFamilySamples> collect() {
-                final GaugeKey key = AbstractChannel.KEY_READ_BYTES;
+                final MetricKey key = AbstractChannel.KEY_READ_BYTES;
                 final List<String> labels = Collections.singletonList("key");
                 return Collections.singletonList(
                         new GaugeMetricFamily(key.getName(), key.getName(), labels)

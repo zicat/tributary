@@ -28,10 +28,10 @@ import org.zicat.tributary.channel.Offset;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import org.zicat.tributary.sink.elasticsearch.listener.AbstractActionListener;
 import org.zicat.tributary.sink.elasticsearch.listener.BulkResponseActionListenerFactory;
-import org.zicat.tributary.sink.elasticsearch.listener.MuteInsertErrorBulkResponseActionListener;
+import static org.zicat.tributary.sink.elasticsearch.listener.MuteInsertErrorBulkResponseActionListener.ERROR_COUNTER;
+import static org.zicat.tributary.sink.elasticsearch.listener.MuteInsertErrorBulkResponseActionListener.LABEL_INDEX;
 import org.zicat.tributary.sink.elasticsearch.listener.MuteInsertErrorBulkResponseActionListenerFactory;
 import org.zicat.tributary.sink.function.ContextBuilder;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +48,6 @@ public class MuteInsertErrorBulkResponseActionListenerFactoryTest {
                         .topic("t1")
                         .partitionId(1)
                         .startOffset(Offset.ZERO);
-        builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
 
         BulkResponseActionListenerFactory factory =
                 findFactory(
@@ -81,7 +80,7 @@ public class MuteInsertErrorBulkResponseActionListenerFactoryTest {
 
         BulkItemResponse itemResponse =
                 BulkItemResponse.failure(
-                        1, OpType.INDEX, new Failure("index", "type", "id", runtimeException));
+                        1, OpType.INDEX, new Failure("index_1", "type", "id", runtimeException));
 
         final AbstractActionListener listener3 = factory.create(builder.build(), null, Offset.ZERO);
         new Thread(
@@ -93,12 +92,9 @@ public class MuteInsertErrorBulkResponseActionListenerFactoryTest {
         Assert.assertFalse(listener3.isRunning());
         Assert.assertEquals(Offset.ZERO, listener3.offset());
         Assert.assertNull(listener3.exception());
-
         Assert.assertEquals(
                 1d,
-                MuteInsertErrorBulkResponseActionListener.ERROR_COUNTER
-                        .labels("index", "localhost")
-                        .get(),
+                listener3.counterFamily().get(ERROR_COUNTER.addLabel(LABEL_INDEX, "index_1")),
                 0.001d);
     }
 }

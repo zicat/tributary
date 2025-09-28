@@ -18,12 +18,11 @@
 
 package org.zicat.tributary.sink.elasticsearch;
 
+import org.zicat.tributary.common.MetricKey;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
-
-import io.prometheus.client.Counter;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -38,32 +37,24 @@ import org.zicat.tributary.sink.elasticsearch.listener.BulkResponseActionListene
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** ElasticsearchFunction. */
 @SuppressWarnings("deprecation")
 public class ElasticsearchFunction extends AbstractFunction {
 
-    private static final Counter SINK_ELASTICSEARCH_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_elasticsearch_counter")
-                    .help("tributary sink elasticsearch counter")
-                    .labelNames("host", "id")
-                    .register();
-    private static final Counter SINK_ELASTICSEARCH_BULK_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_elasticsearch_bulk_counter")
-                    .help("tributary sink elasticsearch bulk counter")
-                    .labelNames("host", "id")
-                    .register();
+    private static final MetricKey COUNTER = new MetricKey("tributary_sink_elasticsearch_counter");
+    private static final MetricKey BULK_COUNTER =
+            new MetricKey("tributary_sink_elasticsearch_bulk_counter");
 
     protected transient RestHighLevelClient client;
-    protected transient Counter.Child sinkCounter;
-    protected transient Counter.Child sinkBulkCounter;
+    protected transient long sinkCounter;
+    protected transient long sinkBulkCounter;
     protected transient RequestIndexer indexer;
     protected transient BulkResponseActionListenerFactory listenerFactory;
     protected transient BlockingQueue<AbstractActionListener> listenerQueue;
@@ -72,6 +63,8 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected int buckMaxCount;
     protected long buckMaxBytes;
     protected Offset lastOffset;
+    protected Map<MetricKey, Double> listenerCounterMetrics = new HashMap<>();
+    protected Map<MetricKey, Double> listenerGaugeMetrics = new HashMap<>();
 
     @Override
     public void open(Context context) throws Exception {
@@ -79,10 +72,9 @@ public class ElasticsearchFunction extends AbstractFunction {
         buckMaxCount = context.get(OPTION_BUCK_MAX_COUNT);
         buckMaxBytes = context.get(OPTION_BULK_MAX_BYTES).getBytes();
         client = createRestHighLevelClient(context);
-        sinkCounter = labelHostId(SINK_ELASTICSEARCH_COUNTER);
-        sinkBulkCounter = labelHostId(SINK_ELASTICSEARCH_BULK_COUNTER);
         listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
-        awaitTimeout = context.get(OPTION_QUEUE_FULL_AWAIT_TIMEOUT, OPTION_REQUEST_TIMEOUT).toMillis();
+        awaitTimeout =
+                context.get(OPTION_QUEUE_FULL_AWAIT_TIMEOUT, OPTION_REQUEST_TIMEOUT).toMillis();
         indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
         indexer.open(context);
         listenerFactory =
@@ -94,7 +86,6 @@ public class ElasticsearchFunction extends AbstractFunction {
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
         checkFirstListenerStateIfDone();
-        final AtomicInteger sendCount = new AtomicInteger();
         while (iterator.hasNext()) {
             final Records records = iterator.next();
             final String topic = records.topic();
@@ -102,12 +93,11 @@ public class ElasticsearchFunction extends AbstractFunction {
                     records,
                     (key, value, headers) -> {
                         if (indexer.add(request, topic, key, value, headers)) {
-                            sendCount.incrementAndGet();
+                            sinkCounter++;
                         }
                     },
                     defaultSinkExtraHeaders());
         }
-        sinkCounter.inc(sendCount.get());
         lastOffset = offset;
         if (request.numberOfActions() >= buckMaxCount
                 || request.estimatedSizeInBytes() >= buckMaxBytes) {
@@ -119,6 +109,32 @@ public class ElasticsearchFunction extends AbstractFunction {
     public void snapshot() throws Exception {
         sendAsync(lastOffset);
         checkAndClearDoneListeners();
+    }
+
+    @Override
+    public Map<MetricKey, Double> gaugeFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.gaugeFamily());
+        for (Map.Entry<MetricKey, Double> entry : indexer.gaugeFamily().entrySet()) {
+            base.merge(entry.getKey(), entry.getValue(), Double::sum);
+        }
+        for (Map.Entry<MetricKey, Double> entry : listenerGaugeMetrics.entrySet()) {
+            base.merge(entry.getKey(), entry.getValue(), Double::sum);
+        }
+        return base;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.counterFamily());
+        base.merge(COUNTER, (double) sinkCounter, Double::sum);
+        base.merge(BULK_COUNTER, (double) sinkBulkCounter, Double::sum);
+        for (Map.Entry<MetricKey, Double> entry : indexer.counterFamily().entrySet()) {
+            base.merge(entry.getKey(), entry.getValue(), Double::sum);
+        }
+        for (Map.Entry<MetricKey, Double> entry : listenerCounterMetrics.entrySet()) {
+            base.merge(entry.getKey(), entry.getValue(), Double::sum);
+        }
+        return base;
     }
 
     /**
@@ -136,7 +152,7 @@ public class ElasticsearchFunction extends AbstractFunction {
             listenerQueue.add(listener);
         }
         bulkAsync(request, listener);
-        sinkBulkCounter.inc();
+        sinkBulkCounter++;
         request = new BulkRequest();
     }
 
@@ -205,7 +221,7 @@ public class ElasticsearchFunction extends AbstractFunction {
                 break;
             }
             checkListenerException(listener);
-            listenerQueue.poll();
+            addListenerMetrics(listenerQueue.poll());
         }
     }
 
@@ -224,6 +240,7 @@ public class ElasticsearchFunction extends AbstractFunction {
             throw new IllegalStateException("await listener timeout " + awaitTimeout + " ms");
         }
         checkListenerException(listener);
+        addListenerMetrics(listener);
     }
 
     /** checkFirstListenerStateIfDone. */
@@ -233,7 +250,7 @@ public class ElasticsearchFunction extends AbstractFunction {
             return;
         }
         checkListenerException(listener);
-        listenerQueue.poll();
+        addListenerMetrics(listenerQueue.poll());
     }
 
     /**
@@ -248,6 +265,23 @@ public class ElasticsearchFunction extends AbstractFunction {
             throw new RuntimeException(e);
         } else {
             commit(listener.offset());
+        }
+    }
+
+    /**
+     * addListenerMetrics.
+     *
+     * @param listener listener
+     */
+    private void addListenerMetrics(AbstractActionListener listener) {
+        if (listener == null) {
+            return;
+        }
+        for (Map.Entry<MetricKey, Double> entry : listener.counterFamily().entrySet()) {
+            listenerCounterMetrics.merge(entry.getKey(), entry.getValue(), Double::sum);
+        }
+        for (Map.Entry<MetricKey, Double> entry : listener.gaugeFamily().entrySet()) {
+            listenerGaugeMetrics.merge(entry.getKey(), entry.getValue(), Double::sum);
         }
     }
 }

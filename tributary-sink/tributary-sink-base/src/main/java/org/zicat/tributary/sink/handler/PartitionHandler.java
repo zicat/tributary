@@ -18,8 +18,9 @@
 
 package org.zicat.tributary.sink.handler;
 
-import io.prometheus.client.Gauge;
 import org.zicat.tributary.common.Clock;
+import org.zicat.tributary.common.MetricCollector;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.SystemClock;
 import static org.zicat.tributary.common.Threads.joinQuietly;
 import static org.zicat.tributary.common.Threads.sleepQuietly;
@@ -37,35 +38,30 @@ import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
-import org.zicat.tributary.common.HostUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** PartitionHandler. */
-public abstract class PartitionHandler extends Thread implements Closeable, CheckpointedFunction {
+public abstract class PartitionHandler extends Thread
+        implements Closeable, CheckpointedFunction, MetricCollector {
 
-    public static final ConfigOption<String> OPTION_METRICS_HOST =
-            ConfigOptions.key("metricsHost")
-                    .stringType()
-                    .description("the metric host")
-                    .defaultValue(HostUtils.getHostName());
+    public static final MetricKey KEY_SINK_LAG = new MetricKey("tributary_sink_lag");
 
     public static final ConfigOption<Clock> OPTION_PARTITION_HANDLER_CLOCK =
             ConfigOptions.key("_partition_handler_clock")
                     .<Clock>objectType()
                     .defaultValue(new SystemClock());
 
-    private static final Gauge SINK_SNAPSHOT_COST =
-            Gauge.build()
-                    .name("tributary_sink_snapshot_cost")
-                    .help("tributary sink snapshot cost")
-                    .labelNames("host", "topic", "groupId", "partition_id")
-                    .register();
+    private static final MetricKey SINK_SNAPSHOT_COAST =
+            new MetricKey("tributary_sink_snapshot_cost");
 
     protected static final Logger LOG = LoggerFactory.getLogger(PartitionHandler.class);
     protected static final long DEFAULT_WAIT_TIME_MILLIS = 500;
@@ -85,7 +81,8 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
     protected Offset fetchOffset;
     protected Offset committedOffset;
     protected long preSnapshotTime;
-    protected Gauge.Child sinkSnapshotCost;
+    protected long sinkSnapshotCost;
+    protected MetricKey partitionSinkSnapShortCountKey;
 
     public PartitionHandler(
             String groupId, Channel channel, int partitionId, SinkGroupConfig config) {
@@ -101,12 +98,8 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
         this.maxRetainSize = parseMaxRetainSize(config);
         this.committedOffset = startOffset;
         this.fetchOffset = startOffset;
-        this.sinkSnapshotCost =
-                SINK_SNAPSHOT_COST.labels(
-                        config.get(OPTION_METRICS_HOST),
-                        channel.topic(),
-                        groupId,
-                        String.valueOf(partitionId));
+        this.partitionSinkSnapShortCountKey =
+                SINK_SNAPSHOT_COAST.addLabel("partitionId", partitionId);
         setName(threadName());
     }
 
@@ -168,7 +161,7 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
         final long currentTime = clock.currentTimeMillis();
         if (currentTime - preSnapshotTime >= snapshotIntervalMills) {
             snapshot();
-            sinkSnapshotCost.set(clock.currentTimeMillis() - currentTime);
+            sinkSnapshotCost = clock.currentTimeMillis() - currentTime;
             preSnapshotTime = currentTime;
             updateAndCommitOffset();
         }
@@ -298,17 +291,8 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
      * @param offset offset
      * @return long lag
      */
-    public long lag(Offset offset) {
+    private long lag(Offset offset) {
         return channel.lag(partitionId, offset);
-    }
-
-    /**
-     * get partition lag.
-     *
-     * @return lag
-     */
-    public long lag() {
-        return lag(fetchOffset);
     }
 
     /**
@@ -356,5 +340,18 @@ public abstract class PartitionHandler extends Thread implements Closeable, Chec
 
         LOG.warn("lag over {}, committed {}, skip target = {}", maxRetainSize, offset, newOffset);
         return newOffset;
+    }
+
+    @Override
+    public Map<MetricKey, Double> gaugeFamily() {
+        final Map<MetricKey, Double> result = new HashMap<>();
+        result.put(partitionSinkSnapShortCountKey, (double) sinkSnapshotCost);
+        result.put(KEY_SINK_LAG, (double) lag(fetchOffset));
+        return result;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        return Collections.emptyMap();
     }
 }

@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.test;
 
-import static org.zicat.tributary.sink.SinkGroupManager.KEY_SINK_LAG;
+import static org.zicat.tributary.sink.handler.PartitionHandler.KEY_SINK_LAG;
 import static org.zicat.tributary.sink.test.function.AssertCountFunction.OPTION_ASSERT_COUNT;
 
 import org.junit.Assert;

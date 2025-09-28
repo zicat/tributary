@@ -28,7 +28,6 @@ import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTIO
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT;
 import org.zicat.tributary.sink.elasticsearch.RequestIndexer;
 import org.zicat.tributary.sink.function.ContextBuilder;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 import java.util.Collections;
 
@@ -50,7 +49,6 @@ public class DefaultRequestIndexerTest {
                             .id("id1")
                             .startOffset(Offset.ZERO);
             builder.addCustomProperty(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, "1K");
-            builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
             requestIndexer.open(builder.build());
 
             Assert.assertFalse(
@@ -79,7 +77,6 @@ public class DefaultRequestIndexerTest {
                             .id("id1")
                             .startOffset(Offset.ZERO);
             builder.addCustomProperty(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, "1K");
-            builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
             builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, "default_index");
             requestIndexer.open(builder.build());
 

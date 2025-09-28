@@ -16,27 +16,30 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.source.base;
+package org.zicat.tributary.sink.elasticsearch.listener;
 
+import org.elasticsearch.action.ActionListener;
+import org.zicat.tributary.common.MetricCollector;
 import org.zicat.tributary.common.MetricKey;
 
-import java.io.Closeable;
+import java.util.Collections;
 import java.util.Map;
 
-/** Source. */
-public interface Source extends Closeable, SourceChannel {
+/**
+ * TributaryActionListener.
+ *
+ * @param <RESPONSE> response
+ */
+public interface TributaryActionListener<RESPONSE>
+        extends ActionListener<RESPONSE>, MetricCollector {
 
-    /**
-     * get channel metrics.
-     *
-     * @return map metrics
-     */
-    Map<MetricKey, Double> gaugeFamily();
+    @Override
+    default Map<MetricKey, Double> gaugeFamily() {
+        return Collections.emptyMap();
+    }
 
-    /**
-     * get id.
-     *
-     * @return id
-     */
-    String sourceId();
+    @Override
+    default Map<MetricKey, Double> counterFamily() {
+        return Collections.emptyMap();
+    }
 }

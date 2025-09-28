@@ -18,9 +18,14 @@
 
 package org.zicat.tributary.common;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Collections. */
 public class Collections {
@@ -32,7 +37,7 @@ public class Collections {
      * @param <T> type
      * @return new iterator
      */
-    public static <T> Iterator<T> copy(Iterator<T> iterator) {
+    public static <T> Iterator<T> deepCopy(Iterator<T> iterator) {
 
         if (iterator == null) {
             return null;
@@ -42,5 +47,40 @@ public class Collections {
             copy.add(iterator.next());
         }
         return copy.iterator();
+    }
+
+    /**
+     * sum double map.
+     *
+     * @param stream stream
+     * @return merged map
+     * @param <K> KEY
+     */
+    public static <K> Map<K, Double> sumDouble(Stream<Map<K, Double>> stream) {
+        return stream.flatMap(m -> m.entrySet().stream())
+                .collect(
+                        Collectors.groupingBy(
+                                Map.Entry::getKey, Collectors.summingDouble(Map.Entry::getValue)));
+    }
+
+    /**
+     * concat two list.
+     *
+     * @param list1 list1
+     * @param list2 list2
+     * @return new list
+     * @param <T> T
+     */
+    public static <T> List<T> concat(List<T> list1, List<T> list2) {
+        if (list1 == null || list1.isEmpty()) {
+            return list2;
+        }
+        if (list2 == null || list2.isEmpty()) {
+            return list1;
+        }
+        final List<T> result = new ArrayList<>(list1.size() + list2.size());
+        result.addAll(list1);
+        result.addAll(list2);
+        return result;
     }
 }

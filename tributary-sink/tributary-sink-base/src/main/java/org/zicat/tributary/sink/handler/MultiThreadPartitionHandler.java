@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.handler;
 
-import static org.zicat.tributary.common.Collections.copy;
+import static org.zicat.tributary.common.Collections.deepCopy;
 
 import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WorkHandler;
@@ -31,6 +31,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -39,8 +40,10 @@ import org.zicat.tributary.sink.function.Function;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -147,7 +150,7 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
                      *  Put iterator to memory queue may cause data lost or exception,
                      *  because Consumer Thread may deal with the iterator later than next process.
                      */
-                    final Iterator<byte[]> copy = copy(iterator);
+                    final Iterator<byte[]> copy = deepCopy(iterator);
                     block.setIterator(copy);
                     block.setOffset(offset);
                 });
@@ -204,6 +207,28 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
     @Override
     public List<Function> getFunctions() {
         return Arrays.stream(handlers).map(v -> v.function).collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<MetricKey, Double> gaugeFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.gaugeFamily());
+        for (Function function : getFunctions()) {
+            for (Map.Entry<MetricKey, Double> entry : function.gaugeFamily().entrySet()) {
+                base.merge(entry.getKey(), entry.getValue(), Double::sum);
+            }
+        }
+        return base;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.counterFamily());
+        for (Function function : getFunctions()) {
+            for (Map.Entry<MetricKey, Double> entry : function.counterFamily().entrySet()) {
+                base.merge(entry.getKey(), entry.getValue(), Double::sum);
+            }
+        }
+        return base;
     }
 
     @Override

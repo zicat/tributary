@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.sink.hbase.test;
 
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
 
 import org.apache.hadoop.conf.Configuration;
@@ -85,7 +84,6 @@ public class HBaseFunctionTest {
                         .partitionId(0)
                         .topic("t1")
                         .startOffset(Offset.ZERO);
-        builder.addCustomProperty(OPTION_METRICS_HOST, "localhost");
         builder.addCustomProperty(OPTION_HBASE_SITE_XML_PATH, "test-hbase-site.xml");
         builder.addCustomProperty(OPTION_HBASE_FAMILY, "f1");
         builder.addCustomProperty(OPTION_HBASE_COLUMN_VALUE_NAME, "v1");

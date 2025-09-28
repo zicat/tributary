@@ -18,37 +18,23 @@
 
 package org.zicat.tributary.sink.function;
 
-import io.prometheus.client.SimpleCollector;
-
 import org.zicat.tributary.channel.Offset;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
 /** AbstractFunction. */
 public abstract class AbstractFunction implements Function {
 
     protected Context context;
     private Offset committableOffset;
-    private String metricsHost;
 
     @Override
     public void open(Context context) throws Exception {
         this.context = context;
         this.committableOffset = context.startOffset();
-        this.metricsHost = context.get(OPTION_METRICS_HOST);
     }
 
     @Override
     public final Offset committableOffset() {
         return committableOffset;
-    }
-
-    /**
-     * get metrics host.
-     *
-     * @return string
-     */
-    public final String metricsHost() {
-        return metricsHost;
     }
 
     /**
@@ -61,17 +47,6 @@ public abstract class AbstractFunction implements Function {
             return;
         }
         this.committableOffset = newCommittableOffset;
-    }
-
-    /**
-     * label host group id topic.
-     *
-     * @param collector collector
-     * @return child
-     * @param <CHILD> CHILD
-     */
-    public  <CHILD> CHILD labelHostId(SimpleCollector<CHILD> collector) {
-        return collector.labels(metricsHost, context.id());
     }
 
     @Override

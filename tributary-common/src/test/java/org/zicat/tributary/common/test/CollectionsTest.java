@@ -29,11 +29,11 @@ import java.util.Iterator;
 public class CollectionsTest {
 
     @Test
-    public void testCopy() {
-        Assert.assertNull(Collections.copy(null));
+    public void testDeepCopy() {
+        Assert.assertNull(Collections.deepCopy(null));
 
         final Iterator<String> it = Arrays.asList("a", "b").iterator();
-        final Iterator<String> copy = Collections.copy(it);
+        final Iterator<String> copy = Collections.deepCopy(it);
         while (it.hasNext()) {
             Assert.assertEquals(it.next(), copy.next());
         }

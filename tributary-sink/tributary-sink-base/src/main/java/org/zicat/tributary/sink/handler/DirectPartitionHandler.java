@@ -20,14 +20,17 @@ package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.Function;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * DirectPartitionHandler.
@@ -52,6 +55,24 @@ public class DirectPartitionHandler extends PartitionHandler {
     @Override
     public void process(Offset offset, Iterator<byte[]> iterator) throws Exception {
         function.process(offset, RecordsIterator.wrap(iterator));
+    }
+
+    @Override
+    public Map<MetricKey, Double> gaugeFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.gaugeFamily());
+        for (Map.Entry<MetricKey, Double> entry : function.gaugeFamily().entrySet()) {
+            base.merge(entry.getKey(), entry.getValue(), Double::sum);
+        }
+        return base;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> base = new HashMap<>(super.counterFamily());
+        for (Map.Entry<MetricKey, Double> entry : function.counterFamily().entrySet()) {
+            base.merge(entry.getKey(), entry.getValue(), Double::sum);
+        }
+        return base;
     }
 
     @Override

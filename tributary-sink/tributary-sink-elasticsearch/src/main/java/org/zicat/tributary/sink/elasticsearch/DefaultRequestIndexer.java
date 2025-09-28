@@ -29,16 +29,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.prometheus.client.Counter;
-
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.xcontent.XContentType;
 import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.MetricKey;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_BULK_MAX_BYTES;
 import org.zicat.tributary.sink.function.Context;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_METRICS_HOST;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -64,12 +63,8 @@ public class DefaultRequestIndexer implements RequestIndexer {
                     .description("The max size of a record, default bulk.max.bytes")
                     .defaultValue(null);
 
-    public static final Counter SINK_ELASTICSEARCH_DISCARD_COUNTER =
-            Counter.build()
-                    .name("tributary_sink_elasticsearch_discard_counter")
-                    .help("tributary sink elasticsearch discard counter")
-                    .labelNames("host", "id")
-                    .register();
+    public static final MetricKey DISCARD_COUNTER =
+            new MetricKey("tributary_sink_elasticsearch_discard_counter");
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestIndexer.class);
     private static final String ERROR_VALUE_FORMAT = "skip invalid message, index:{}, value: {}";
@@ -78,7 +73,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
 
     private transient String index;
     private transient boolean topicAsIndex;
-    private transient Counter.Child sinkDiscardCounter;
+    private transient long discardCounter;
     private transient long recordSizeLimit;
 
     @Override
@@ -88,9 +83,6 @@ public class DefaultRequestIndexer implements RequestIndexer {
         recordSizeLimit =
                 context.get(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, OPTION_BULK_MAX_BYTES)
                         .getBytes();
-        sinkDiscardCounter =
-                SINK_ELASTICSEARCH_DISCARD_COUNTER.labels(
-                        context.get(OPTION_METRICS_HOST), context.id());
     }
 
     @Override
@@ -123,13 +115,13 @@ public class DefaultRequestIndexer implements RequestIndexer {
             throws JsonProcessingException {
         final String realIndex = topicAsIndex ? topic : index;
         if (realIndex == null) {
-            sinkDiscardCounter.inc();
+            discardCounter++;
             LOG.warn("skip invalid message, index is null");
             return null;
         }
         final int valueLength = value == null ? 0 : value.length;
         if (valueLength == 0 || valueLength >= recordSizeLimit) {
-            sinkDiscardCounter.inc();
+            discardCounter++;
             LOG.warn("skip invalid message, index:{}, length: {}", realIndex, valueLength);
             return null;
         }
@@ -140,11 +132,11 @@ public class DefaultRequestIndexer implements RequestIndexer {
             jsonNode = MAPPER.readTree(value);
             if (!(jsonNode instanceof ObjectNode)) {
                 LOG.warn(ERROR_VALUE_FORMAT, realIndex, new String(value, UTF_8));
-                sinkDiscardCounter.inc();
+                discardCounter++;
                 return null;
             }
         } catch (Exception e) {
-            sinkDiscardCounter.inc();
+            discardCounter++;
             LOG.warn(ERROR_VALUE_FORMAT, realIndex, new String(value, UTF_8), e);
             return null;
         }
@@ -161,6 +153,11 @@ public class DefaultRequestIndexer implements RequestIndexer {
         }
         indexRequest.source(MAPPER.writeValueAsBytes(objectNode), XContentType.JSON);
         return indexRequest;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        return Collections.singletonMap(DISCARD_COUNTER, (double) discardCounter);
     }
 
     /**

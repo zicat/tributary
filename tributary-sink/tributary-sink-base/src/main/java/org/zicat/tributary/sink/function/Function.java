@@ -19,6 +19,8 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.Offset;
+import org.zicat.tributary.common.MetricCollector;
+import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
@@ -26,14 +28,16 @@ import org.zicat.tributary.sink.handler.PartitionHandler;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Function.
  *
  * <p>{@link PartitionHandler} create at least one Function and each Function only bind one thread.
  */
-public interface Function extends Closeable, CheckpointedFunction {
+public interface Function extends Closeable, CheckpointedFunction, MetricCollector {
 
     /**
      * open the function.
@@ -67,6 +71,26 @@ public interface Function extends Closeable, CheckpointedFunction {
     /** default snapshot, subclass can override this function. */
     @Override
     default void snapshot() throws Exception {}
+
+    /**
+     * gauge family metric.
+     *
+     * @return map
+     */
+    @Override
+    default Map<MetricKey, Double> gaugeFamily() {
+        return Collections.emptyMap();
+    }
+
+    /**
+     * count family metric.
+     *
+     * @return map
+     */
+    @Override
+    default Map<MetricKey, Double> counterFamily() {
+        return Collections.emptyMap();
+    }
 
     /**
      * close function.

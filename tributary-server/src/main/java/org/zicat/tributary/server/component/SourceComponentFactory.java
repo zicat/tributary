@@ -101,7 +101,7 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
             for (Source source : elements.values()) {
                 final String id = source.sourceId();
                 final List<String> labelsValue = Arrays.asList(id, metricsHost);
-                for (Map.Entry<GaugeKey, Double> entry : source.gaugeFamily().entrySet()) {
+                for (Map.Entry<MetricKey, Double> entry : source.gaugeFamily().entrySet()) {
                     final String name = entry.getKey().getName();
                     final String desc = entry.getKey().getDescription();
                     metricSamples.add(
