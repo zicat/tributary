@@ -33,11 +33,8 @@ public class ReadableConfigTest {
         final DefaultReadableConfig config = new DefaultReadableConfig();
         Assert.assertEquals(
                 "bb", config.get(ConfigOptions.key("aa").stringType().defaultValue(null), "bb"));
-        try {
-            config.get(ConfigOptions.key("aa").stringType().noDefaultValue(), "bb");
-            Assert.fail();
-        } catch (Exception ignore) {
-        }
+        Assert.assertEquals(
+                "bb", config.get(ConfigOptions.key("aa").stringType().noDefaultValue(), "bb"));
 
         try {
             config.get(ConfigOptions.key("aa").stringType().noDefaultValue());

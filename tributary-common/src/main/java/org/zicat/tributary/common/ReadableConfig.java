@@ -73,8 +73,12 @@ public interface ReadableConfig {
      * @param <T> T
      */
     default <T> T get(ConfigOption<T> configOption, T defaultValue) {
-        final T t = get(configOption);
-        return t == null ? defaultValue : t;
+        try {
+            final T t = get(configOption);
+            return t == null ? defaultValue : t;
+        } catch (Exception ignore) {
+            return defaultValue;
+        }
     }
 
     /**
@@ -86,8 +90,12 @@ public interface ReadableConfig {
      * @param <T> T
      */
     default <T> T get(ConfigOption<T> configOption, ConfigOption<T> defaultValue) {
-        final T t = get(configOption);
-        return t == null ? get(defaultValue) : t;
+        try {
+            final T t = get(configOption);
+            return t == null ? get(defaultValue) : t;
+        } catch (Exception e) {
+            return get(defaultValue);
+        }
     }
 
     /**

@@ -414,36 +414,34 @@ sink.group_4.path-prefix=
 sink.group_4.compression=true
 sink.group_4.username=
 sink.group_4.password=
+sink.group_4.thread.max.per.routing=2
 sink.group_4.request.timeout=30s
 sink.group_4.connection.timeout=10s
 sink.group_4.socket.timeout=20s
+sink.group_4.bulk.max.bytes=2mb
+sink.group_4.bulk.max.count=1000
+sink.group_4.bulk.response.action_listener.identity=default
 sink.group_4.request.indexer.identity=default
-sink.group_4.request.indexer.default.index=my_index
-sink.group_4.bulk.async.queue.size=16
-sink.group_4.bulk.async.queue.await.timeout=30s
-bulk.response.action_listener.identity=default
 ```
 
-| key                                       | default           | type     | describe                                                                                                                                                                                                     |
-|-------------------------------------------|-------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| hosts                                     |                   | string   | the elasticsearch hosts, split by `;`                                                                                                                                                                        |
-| path-prefix                               | null              | string   | the elasticsearch restful api path prefix, default null                                                                                                                                                      |
-| compression                               | true              | bool     | whether compress the index request, default true                                                                                                                                                             |
-| username                                  | null              | string   | the username of elasticsearch, default null                                                                                                                                                                  |
-| password                                  | null              | string   | the password of elasticsearch, default null                                                                                                                                                                  |
-| thread.max.per.routing                    | 2                 | int      | the max thread count for per routing                                                                                                                                                                         |
-| request.timeout                           | 30s               | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                                                                             |
-| connection.timeout                        | 10s               | duration | the timeout for establishing a connection, default 10s                                                                                                                                                       |
-| socket.timeout                            | 20s               | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                                                                          |
-| bulk.async.queue.size                     | 16                | int      | the size of the queue which contains async bulk insert listener callback instances                                                                                                                           |
-| bulk.async.queue.await.timeout            | `request.timeout` | duration | throw exception if wait timeout to put instance to queue over this param                                                                                                                                     |
-| bulk.max.bytes                            | 2mb               | bytes    | the max index request bytes in bulk to async send, the request will be sent when `bulk.max.count` trigger or `bulk.max.bytes` trigger or checkpoint trigger                                                  |
-| bulk.max.count                            | 1000              | int      | the max index request count in bulk to async send. the request will be sent when `bulk.max.count` trigger or `bulk.max.bytes` trigger or checkpoint trigger                                                  |
-| bulk.response.action_listener.identity    | default           | string   | the spi identity of [BulkResponseActionListenerFactory](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/listener/BulkResponseActionListenerFactory.java) |
-| request.indexer                           | default           | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java)                                                |
-| request.indexer.default.index             | null              | string   | the index if config `request.indexer` AS `default`                                                                                                                                                           |
-| request.indexer.default.topic_as_index    | boolean           | false    | whether using topic from `Records` as index, default false means use `request.indexer.default.index`.                                                                                                        |
-| request.indexer.default.record_size_limit | `bulk.max.bytes`  | bytes    | the max record size limit, if the record size over this value, the record will be discarded, default equal `bulk.max.bytes`                                                                                  |
+| key                                       | default          | type     | describe                                                                                                                                                                                                     |
+|-------------------------------------------|------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| hosts                                     |                  | string   | the elasticsearch hosts, split by `;`                                                                                                                                                                        |
+| path-prefix                               | null             | string   | the elasticsearch restful api path prefix, default null                                                                                                                                                      |
+| compression                               | true             | bool     | whether compress the index request, default true                                                                                                                                                             |
+| username                                  | null             | string   | the username of elasticsearch, default null                                                                                                                                                                  |
+| password                                  | null             | string   | the password of elasticsearch, default null                                                                                                                                                                  |
+| thread.max.per.routing                    | 2                | int      | the max thread count for per routing                                                                                                                                                                         |
+| request.timeout                           | 30s              | duration | the timeout for requesting a connection from the connection manager, default 30s                                                                                                                             |
+| connection.timeout                        | 10s              | duration | the timeout for establishing a connection, default 10s                                                                                                                                                       |
+| socket.timeout                            | 20s              | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                                                                          |
+| bulk.max.bytes                            | 2mb              | bytes    | the max index request bytes in bulk to async send, the request will be sent when `bulk.max.count` trigger or `bulk.max.bytes` trigger or checkpoint trigger                                                  |
+| bulk.max.count                            | 1000             | int      | the max index request count in bulk to async send. the request will be sent when `bulk.max.count` trigger or `bulk.max.bytes` trigger or checkpoint trigger                                                  |
+| bulk.response.action_listener.identity    | default          | string   | the spi identity of [BulkResponseActionListenerFactory](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/listener/BulkResponseActionListenerFactory.java) |
+| request.indexer.identity                  | default          | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java)                                                |
+| request.indexer.default.index             | null             | string   | the index if config `request.indexer` AS `default`                                                                                                                                                           |
+| request.indexer.default.topic_as_index    | boolean          | false    | whether using topic from `Records` as index, default false means use `request.indexer.default.index`.                                                                                                        |
+| request.indexer.default.record_size_limit | `bulk.max.bytes` | bytes    | the max record size limit, if the record size over this value, the record will be discarded, default equal `bulk.max.bytes`                                                                                  |
 
 Note:
 
@@ -571,6 +569,4 @@ sink.group_4.socket.timeout=20s
 sink.group_4.request.indexer.identity=default
 sink.group_4.request.indexer.default.index=my_index
 sink.group_4.request.indexer.default.topic_as_index=false
-sink.group_4.bulk.async.queue.size=16
-sink.group_4.bulk.async.queue.await.timeout=30s
 ```       

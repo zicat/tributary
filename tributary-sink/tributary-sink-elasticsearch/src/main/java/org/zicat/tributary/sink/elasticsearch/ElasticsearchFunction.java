@@ -37,8 +37,10 @@ import org.zicat.tributary.sink.elasticsearch.listener.BulkResponseActionListene
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -71,16 +73,15 @@ public class ElasticsearchFunction extends AbstractFunction {
         super.open(context);
         buckMaxCount = context.get(OPTION_BUCK_MAX_COUNT);
         buckMaxBytes = context.get(OPTION_BULK_MAX_BYTES).getBytes();
+        awaitTimeout = context.get(OPTION_REQUEST_TIMEOUT).toMillis();
+        listenerQueue = new ArrayBlockingQueue<>(calculateQueueSize(context));
         client = createRestHighLevelClient(context);
-        listenerQueue = new ArrayBlockingQueue<>(context.get(OPTION_ASYNC_BULK_QUEUE_SIZE));
-        awaitTimeout =
-                context.get(OPTION_QUEUE_FULL_AWAIT_TIMEOUT, OPTION_REQUEST_TIMEOUT).toMillis();
-        indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
-        indexer.open(context);
         listenerFactory =
                 findFactory(
                         context.get(OPTION_BULK_RESPONSE_ACTION_LISTENER_IDENTITY),
                         BulkResponseActionListenerFactory.class);
+        indexer = findFactory(context.get(OPTION_REQUEST_INDEXER_IDENTITY), RequestIndexer.class);
+        indexer.open(context);
     }
 
     @Override
@@ -203,7 +204,7 @@ public class ElasticsearchFunction extends AbstractFunction {
      */
     public void sync() throws Exception {
         sendAsync(lastOffset);
-        if (listenerQueue == null) {
+        if (listenerQueue == null || listenerQueue.isEmpty()) {
             return;
         }
         while (!listenerQueue.isEmpty()) {
@@ -250,6 +251,18 @@ public class ElasticsearchFunction extends AbstractFunction {
         }
         checkListenerException(listener);
         addListenerMetrics(listenerQueue.poll());
+    }
+
+    /**
+     * calculate queue size.
+     *
+     * @param context context
+     * @return queue size
+     */
+    protected int calculateQueueSize(Context context) {
+        final int threadMaxPerRouting = context.get(OPTION_THREAD_MAX_PER_ROUTING);
+        final List<String> hosts = context.get(OPTION_HOSTS, Collections.emptyList());
+        return Math.max(threadMaxPerRouting * hosts.size() * 2, 2);
     }
 
     /**

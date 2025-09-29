@@ -20,7 +20,6 @@ package org.zicat.tributary.sink.elasticsearch.test;
 
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.DISCARD_COUNTER;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEXER_DEFAULT_INDEX;
-import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
 
 import static java.lang.Long.parseLong;
 
@@ -48,6 +47,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.Threads;
 import org.zicat.tributary.common.records.*;
+import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_REQUEST_TIMEOUT;
 import org.zicat.tributary.sink.elasticsearch.listener.DefaultBulkResponseActionListener;
 import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunction;
@@ -78,9 +78,8 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
                         .partitionId(0)
                         .topic("t1")
                         .startOffset(Offset.ZERO);
-        builder.addCustomProperty(OPTION_ASYNC_BULK_QUEUE_SIZE, 2);
         builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, topic);
-        builder.addCustomProperty(OPTION_QUEUE_FULL_AWAIT_TIMEOUT, Duration.ofSeconds(3));
+        builder.addCustomProperty(OPTION_REQUEST_TIMEOUT, Duration.ofSeconds(3));
         final Context context = builder.build();
 
         final Map<String, byte[]> recordHeader1 = new HashMap<>();
