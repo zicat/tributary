@@ -74,10 +74,7 @@ public abstract class AbstractSource implements Source {
         final Map<String, byte[]> headers = records.headers();
         headers.put(HEADER_KEY_REC_TS, String.valueOf(clock.currentTimeMillis()).getBytes());
         final ByteBuffer byteBuffer = records.toByteBuffer();
-        final int realPartition =
-                partition == null
-                        ? (count.getAndIncrement() & 0x7fffffff) % partition()
-                        : partition;
+        final int realPartition = partition == null ? defaultPartition() : partition;
         try {
             channel.append(realPartition, byteBuffer);
         } catch (IOException e) {
@@ -85,6 +82,15 @@ public abstract class AbstractSource implements Source {
             IOUtils.closeQuietly(this);
             throw e;
         }
+    }
+
+    /**
+     * default partition.
+     *
+     * @return int
+     */
+    protected int defaultPartition() {
+        return (count.getAndIncrement() & 0x7fffffff) % partition();
     }
 
     @Override
