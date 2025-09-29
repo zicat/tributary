@@ -46,6 +46,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     public static final MetricKey KEY_WRITE_BYTES = new MetricKey("tributary_channel_write_bytes");
     public static final MetricKey KEY_READ_BYTES = new MetricKey("tributary_channel_read_bytes");
+    public static final MetricKey KEY_APPEND_COUNTER =
+            new MetricKey("tributary_channel_append_counter");
     public static final MetricKey KEY_BUFFER_USAGE =
             new MetricKey("tributary_channel_buffer_usage");
     public static final MetricKey KEY_ACTIVE_SEGMENT =
@@ -63,6 +65,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicLong writeBytes = new AtomicLong();
     private final AtomicLong readBytes = new AtomicLong();
+    private final AtomicLong appendCounter = new AtomicLong();
     private final MemoryGroupManagerFactory groupManagerFactory;
     private final MemoryGroupManager groupManager;
     private final String topic;
@@ -107,6 +110,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public void append(ByteBuffer byteBuffer) throws IOException, InterruptedException {
         innerAppend(byteBuffer);
+        appendCounter.incrementAndGet();
     }
 
     /**
@@ -198,6 +202,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             families.put(KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT, (double) bCache.totalCount());
         }
         return families;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        return Collections.singletonMap(KEY_APPEND_COUNTER, (double) appendCounter.get());
     }
 
     @Override

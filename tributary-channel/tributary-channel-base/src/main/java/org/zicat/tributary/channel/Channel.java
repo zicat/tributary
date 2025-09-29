@@ -19,6 +19,7 @@
 package org.zicat.tributary.channel;
 
 import org.zicat.tributary.channel.group.GroupManager;
+import org.zicat.tributary.common.MetricCollector;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>All methods in Channel are @ThreadSafe.
  */
-public interface Channel extends Closeable, ChannelMetric, GroupManager {
+public interface Channel extends Closeable, MetricCollector, GroupManager {
 
     /**
      * append record to channel.

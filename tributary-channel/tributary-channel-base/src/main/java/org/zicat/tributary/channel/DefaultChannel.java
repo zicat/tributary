@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** DefaultChannel. */
 public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
+    public static final String LABEL_PARTITION = "partition";
     protected final AbstractChannelArrayFactory<C> factory;
     protected final C[] channels;
     protected final AtomicBoolean closed = new AtomicBoolean(false);
@@ -84,9 +85,24 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     @Override
     public Map<MetricKey, Double> gaugeFamily() {
         final Map<MetricKey, Double> result = new HashMap<>();
-        for (Channel c : channels) {
+        for (int i = 0; i < channels.length; i++) {
+            final Channel c = channels[i];
             for (Map.Entry<MetricKey, Double> entry : c.gaugeFamily().entrySet()) {
-                result.merge(entry.getKey(), entry.getValue(), Double::sum);
+                final MetricKey newKey = entry.getKey().addLabel(LABEL_PARTITION, i);
+                result.merge(newKey, entry.getValue(), Double::sum);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Map<MetricKey, Double> counterFamily() {
+        final Map<MetricKey, Double> result = new HashMap<>();
+        for (int i = 0; i < channels.length; i++) {
+            final Channel c = channels[i];
+            for (Map.Entry<MetricKey, Double> entry : c.counterFamily().entrySet()) {
+                final MetricKey newKey = entry.getKey().addLabel(LABEL_PARTITION, i);
+                result.merge(newKey, entry.getValue(), Double::sum);
             }
         }
         return result;

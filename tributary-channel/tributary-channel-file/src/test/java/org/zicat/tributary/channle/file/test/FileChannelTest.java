@@ -157,7 +157,11 @@ public class FileChannelTest {
             channel.append(0, new byte[20]);
             channel.flush();
 
-            Assert.assertEquals(2, channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).intValue());
+            Assert.assertEquals(
+                    2,
+                    channel.gaugeFamily()
+                            .get(KEY_ACTIVE_SEGMENT.addLabel(DefaultChannel.LABEL_PARTITION, 0))
+                            .intValue());
             RecordsResultSet recordsResultSet =
                     channel.poll(0, channel.committedOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
             channel.commit(0, groupId, recordsResultSet.nexOffset());
@@ -170,10 +174,18 @@ public class FileChannelTest {
             Assert.assertNotNull(files);
             Assert.assertEquals(1, files.length);
             Assert.assertEquals(topic + "_segment_1.log", files[0].getName());
-            Assert.assertEquals(1, channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).intValue());
+            Assert.assertEquals(
+                    1,
+                    channel.gaugeFamily()
+                            .get(KEY_ACTIVE_SEGMENT.addLabel(DefaultChannel.LABEL_PARTITION, 0))
+                            .intValue());
 
             channel.commit(0, groupId, recordsResultSet.nexOffset().skipNextSegmentHead());
-            Assert.assertEquals(1, channel.gaugeFamily().get(KEY_ACTIVE_SEGMENT).intValue());
+            Assert.assertEquals(
+                    1,
+                    channel.gaugeFamily()
+                            .get(KEY_ACTIVE_SEGMENT.addLabel(DefaultChannel.LABEL_PARTITION, 0))
+                            .intValue());
         }
     }
 
@@ -214,9 +226,19 @@ public class FileChannelTest {
             channel.commit(0, groupId, resultSet.nexOffset());
 
             Assert.assertEquals(
-                    3d, channel.gaugeFamily().get(KEY_BLOCK_CACHE_QUERY_HIT_COUNT), 0.01);
+                    3d,
+                    channel.gaugeFamily()
+                            .get(
+                                    KEY_BLOCK_CACHE_QUERY_HIT_COUNT.addLabel(
+                                            DefaultChannel.LABEL_PARTITION, 0)),
+                    0.01);
             Assert.assertEquals(
-                    3d, channel.gaugeFamily().get(KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT), 0.01);
+                    3d,
+                    channel.gaugeFamily()
+                            .get(
+                                    KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT.addLabel(
+                                            DefaultChannel.LABEL_PARTITION, 0)),
+                    0.01);
         }
     }
 

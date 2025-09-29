@@ -18,26 +18,60 @@
 
 package org.zicat.tributary.server.component;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 /** ChannelComponent. */
-public abstract class ChannelComponent extends AbstractComponent<String, Channel> {
+public class ChannelComponent extends AbstractComponent<String, Channel> {
 
-    public ChannelComponent(Map<String, Channel> elements) {
+    private static final Logger LOG = LoggerFactory.getLogger(ChannelComponent.class);
+    private static final List<String> LABELS = Arrays.asList("topic", "host");
+    private final String metricsHost;
+
+    public ChannelComponent(Map<String, Channel> elements, String metricsHost) {
         super(elements);
+        this.metricsHost = metricsHost;
     }
 
-    /** flush all channel. */
-    public abstract void flush();
+    @Override
+    public List<MetricFamilySamples> collect() {
+        return collect(
+                new ElementHandler<Channel>() {
+                    @Override
+                    public List<String> additionalLabels(Channel channel) {
+                        return LABELS;
+                    }
 
-    /**
-     * find channel by group id.
-     *
-     * @param groupId group id
-     * @return channel set
-     */
-    public abstract List<Channel> findChannels(String groupId);
+                    @Override
+                    public List<String> additionalLabelValues(Channel channel) {
+                        return Arrays.asList(channel.topic(), metricsHost);
+                    }
+                });
+    }
+
+    public void flush() {
+        for (Map.Entry<String, Channel> entry : elements.entrySet()) {
+            try {
+                entry.getValue().flush();
+            } catch (Exception e) {
+                LOG.warn("flush error", e);
+            }
+        }
+    }
+
+    public List<Channel> findChannels(String groupId) {
+        final List<Channel> result = new ArrayList<>();
+        for (Channel channel : elements.values()) {
+            if (channel.groups().contains(groupId)) {
+                result.add(channel);
+            }
+        }
+        return result;
+    }
 }

@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.server.component;
 
-import io.prometheus.client.GaugeMetricFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
@@ -61,60 +60,10 @@ public class ChannelComponentFactory implements SafeFactory<ChannelComponent> {
                 channels.put(topic, factory.createChannel(topic, topicConfig));
             }
             LOG.info("create channel success, topics {}", topics);
-            return new DefaultChannelComponent(channels, metricsHost);
+            return new ChannelComponent(channels, metricsHost);
         } catch (Exception e) {
             channels.forEach((k, v) -> IOUtils.closeQuietly(v));
             throw new TributaryRuntimeException(e);
-        }
-    }
-
-    /** DefaultChannelComponent. */
-    private static class DefaultChannelComponent extends ChannelComponent {
-        private final List<String> labels = Arrays.asList("topic", "host");
-        private final String metricsHost;
-
-        private DefaultChannelComponent(Map<String, Channel> channels, String metricsHost) {
-            super(channels);
-            this.metricsHost = metricsHost;
-        }
-
-        @Override
-        public List<MetricFamilySamples> collect() {
-            final List<MetricFamilySamples> metricSamples = new ArrayList<>();
-            for (Channel channel : elements.values()) {
-                final String topic = channel.topic();
-                final List<String> labelsValue = Arrays.asList(topic, metricsHost);
-                for (Map.Entry<MetricKey, Double> entry : channel.gaugeFamily().entrySet()) {
-                    final String name = entry.getKey().getName();
-                    final String desc = entry.getKey().getDescription();
-                    metricSamples.add(
-                            new GaugeMetricFamily(name, desc, labels)
-                                    .addMetric(labelsValue, entry.getValue()));
-                }
-            }
-            return metricSamples;
-        }
-
-        @Override
-        public void flush() {
-            for (Map.Entry<String, Channel> entry : elements.entrySet()) {
-                try {
-                    entry.getValue().flush();
-                } catch (Exception e) {
-                    LOG.warn("flush error", e);
-                }
-            }
-        }
-
-        @Override
-        public List<Channel> findChannels(String groupId) {
-            final List<Channel> result = new ArrayList<>();
-            for (Channel channel : elements.values()) {
-                if (channel.groups().contains(groupId)) {
-                    result.add(channel);
-                }
-            }
-            return result;
         }
     }
 }

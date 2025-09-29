@@ -24,17 +24,19 @@ import io.prometheus.client.CounterMetricFamily;
 import io.prometheus.client.GaugeMetricFamily;
 import static org.zicat.tributary.common.Collections.concat;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.MetricCollector;
 import org.zicat.tributary.common.MetricKey;
 
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** AbstractComponent. */
-public abstract class AbstractComponent<ID, ELEMENT extends Closeable> extends Collector
-        implements Component<ID, ELEMENT> {
+public abstract class AbstractComponent<ID, ELEMENT extends Closeable & MetricCollector>
+        extends Collector implements Component<ID, ELEMENT> {
 
     protected final AtomicBoolean close = new AtomicBoolean(false);
     protected final Map<ID, ELEMENT> elements;
@@ -60,6 +62,64 @@ public abstract class AbstractComponent<ID, ELEMENT extends Closeable> extends C
         }
     }
 
+    @Override
+    public List<MetricFamilySamples> collect() {
+        return collect(new ElementHandler<ELEMENT>() {});
+    }
+
+    /**
+     * collect metric family samples.
+     *
+     * @return list
+     */
+    protected List<MetricFamilySamples> collect(ElementHandler<ELEMENT> elementHandler) {
+        final List<MetricFamilySamples> metricSamples = new ArrayList<>();
+        for (Map.Entry<ID, ELEMENT> entry : elements.entrySet()) {
+            final ELEMENT element = entry.getValue();
+            final List<String> labels = elementHandler.additionalLabels(element);
+            final List<String> labelValues = elementHandler.additionalLabelValues(element);
+            for (Map.Entry<MetricKey, Double> gaugeEntry : element.gaugeFamily().entrySet()) {
+                final MetricKey metricKey = gaugeEntry.getKey();
+                final double value = gaugeEntry.getValue();
+                metricSamples.add(createGaugeMetricFamily(metricKey, labels, labelValues, value));
+            }
+            for (Map.Entry<MetricKey, Double> counterEntry : element.counterFamily().entrySet()) {
+                final MetricKey metricKey = counterEntry.getKey();
+                final double value = counterEntry.getValue();
+                metricSamples.add(createCounterMetricFamily(metricKey, labels, labelValues, value));
+            }
+        }
+        return metricSamples;
+    }
+
+    /**
+     * ElementHandler.
+     *
+     * @param <ELEMENT> element type
+     */
+    public interface ElementHandler<ELEMENT> {
+
+        /**
+         * additionalLabels.
+         *
+         * @param element element
+         * @return additionalLabels
+         */
+        default List<String> additionalLabels(ELEMENT element) {
+            return Collections.emptyList();
+        }
+
+        /**
+         * additionalLabelValues.
+         *
+         * @param element element
+         * @return values
+         */
+        default List<String> additionalLabelValues(ELEMENT element) {
+            return Collections.emptyList();
+        }
+    }
+
     /**
      * create gauge metric family.
      *
@@ -78,30 +138,6 @@ public abstract class AbstractComponent<ID, ELEMENT extends Closeable> extends C
         final List<String> labelValues = concat(key.getLabelValue(), additionalLabelValues);
         return new GaugeMetricFamily(key.getName(), key.getDescription(), labels)
                 .addMetric(labelValues, value);
-    }
-
-    /**
-     * create gauge metric family.
-     *
-     * @param key key
-     * @param value value
-     * @return MetricFamilySamples
-     */
-    public static MetricFamilySamples createGaugeMetricFamily(MetricKey key, double value) {
-        return new GaugeMetricFamily(key.getName(), key.getDescription(), key.getLabelNames())
-                .addMetric(key.getLabelValue(), value);
-    }
-
-    /**
-     * create counter metric family.
-     *
-     * @param key key
-     * @param value value
-     * @return MetricFamilySamples
-     */
-    public static MetricFamilySamples createCounterMetricFamily(MetricKey key, double value) {
-        return new CounterMetricFamily(key.getName(), key.getDescription(), key.getLabelNames())
-                .addMetric(key.getLabelValue(), value);
     }
 
     /**

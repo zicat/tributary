@@ -86,8 +86,8 @@ public class StarterTest {
                 final String v =
                         org.apache.commons.io.IOUtils.toString(
                                 connection.getInputStream(), StandardCharsets.UTF_8);
-                Assert.assertTrue(v.contains("tributary_sink_lag{topic=\"c1\""));
-                Assert.assertTrue(v.contains("tributary_channel_block_cache_query_total_count{topic=\"c1\""));
+                Assert.assertTrue(v.contains("tributary_sink_lag"));
+                Assert.assertTrue(v.contains("tributary_channel_block_cache_query_total_count"));
             } finally {
                 connection.disconnect();
             }

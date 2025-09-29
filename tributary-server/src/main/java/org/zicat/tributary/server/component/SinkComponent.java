@@ -48,27 +48,6 @@ public class SinkComponent extends AbstractComponent<String, SinkGroupManagerLis
         return size;
     }
 
-    @Override
-    public List<MetricFamilySamples> collect() {
-        final List<MetricFamilySamples> metricSamples = new ArrayList<>();
-        for (Map.Entry<String, SinkGroupManagerList> entry : elements.entrySet()) {
-            final SinkGroupManagerList sinkGroupManagers = entry.getValue();
-            for (Map.Entry<MetricKey, Double> gaugeEntry :
-                    sinkGroupManagers.gaugeFamily().entrySet()) {
-                final MetricKey metricKey = gaugeEntry.getKey();
-                final double value = gaugeEntry.getValue();
-                metricSamples.add(createGaugeMetricFamily(metricKey, value));
-            }
-            for (Map.Entry<MetricKey, Double> counterEntry :
-                    sinkGroupManagers.counterFamily().entrySet()) {
-                final MetricKey metricKey = counterEntry.getKey();
-                final double value = counterEntry.getValue();
-                metricSamples.add(createCounterMetricFamily(metricKey, value));
-            }
-        }
-        return metricSamples;
-    }
-
     /** SinkGroupManagerList. */
     public static class SinkGroupManagerList extends ArrayList<SinkGroupManager>
             implements Closeable, MetricCollector {
