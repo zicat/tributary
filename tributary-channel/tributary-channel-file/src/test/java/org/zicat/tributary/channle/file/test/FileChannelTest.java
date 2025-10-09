@@ -142,7 +142,7 @@ public class FileChannelTest {
         final long segmentSize = 56;
         final String groupId = "group_1";
         final String topic = "topic_21";
-        try (Channel channel =
+        try (DefaultChannel<?> channel =
                 createChannel(
                         topic,
                         Collections.singleton(groupId),
@@ -151,6 +151,10 @@ public class FileChannelTest {
                         segmentSize,
                         blockSize,
                         CompressionType.NONE)) {
+
+            Assert.assertTrue(channel.getCleanupExpiredSegmentThread().isAlive());
+            Assert.assertTrue(channel.getFlushSegmentThread().isAlive());
+
             channel.append(0, new byte[20]);
             channel.append(0, new byte[20]);
             channel.append(0, new byte[20]);
@@ -165,6 +169,7 @@ public class FileChannelTest {
             RecordsResultSet recordsResultSet =
                     channel.poll(0, channel.committedOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
             channel.commit(0, groupId, recordsResultSet.nexOffset());
+            channel.cleanUpExpiredSegmentsQuietly();
             final File[] files =
                     new File(dir + "0")
                             .listFiles(

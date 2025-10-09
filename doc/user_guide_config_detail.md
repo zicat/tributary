@@ -29,12 +29,12 @@ channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
 sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
 ```
 
-| Key                           | default  | valid value | describe                                                       |
-|-------------------------------|----------|-------------|----------------------------------------------------------------|
-| server.metrics.port           |          | int(number) | the port to bind, range 1000-65535                             |
-| server.metrics.worker-threads | 1        | int(number) | the work thread to deal with request                           |
-| server.metrics.host-patterns  | null     | string      | the pattern the config the output metrics value, default null  |
-| server.metrics.path           | /metrics | string      | the metrics http path                                          |
+| Key                           | default  | valid value | describe                                                      |
+|-------------------------------|----------|-------------|---------------------------------------------------------------|
+| server.metrics.port           |          | int(number) | the port to bind, range 1000-65535                            |
+| server.metrics.worker-threads | 1        | int(number) | the work thread to deal with request                          |
+| server.metrics.host-patterns  | null     | string      | the pattern the config the output metrics value, default null |
+| server.metrics.path           | /metrics | string      | the metrics http path                                         |
 
 ## Source
 
@@ -263,6 +263,7 @@ channel.c2.block.cache.per.partition.size=1024
 | block.size                     | 32kb         | bytes                  | the block size to store records in memory                                                                                                                                                      |
 | compression                    | none         | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
 | segment.size                   | 4gb          | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
+| segment.expired.cleanup.period | 10s          | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                               |
 | partitions                     |              | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                        |
 | flush.period                   | 500ms        | duration               | the period time to async flush page cache to disk                                                                                                                                              |
 | groups.persist.period          | 30s          | duration               | the period time to async persist the committed group offset to disk                                                                                                                            |     
@@ -276,7 +277,8 @@ channel.c2.block.cache.per.partition.size=1024
 |--------------------------------|---------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                      |
 | compression                    | none    | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
-| segment.size                   | 4gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
+| segment.size                   | 1gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
+| segment.expired.cleanup.period | 10s     | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                               |
 | partitions                     | 1       | int(number)            | the number of partitions                                                                                                                                                                       |
 | block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
 
@@ -445,20 +447,25 @@ sink.group_4.request.indexer.identity=default
 
 Note:
 
-1. For the `default` of `request.indexer`, the value of records must be a string object json. The records will be discarded
+1. For the `default` of `request.indexer`, the value of records must be a string object json. The records will be
+   discarded
    if not, user can watch how many records are filtered by metrics key `sink_elasticsearch_discard_counter`.
 
-2. For the `default` of `request.indexer`, the headers of the record will also be stored in the elasticsearch. The header
+2. For the `default` of `request.indexer`, the headers of the record will also be stored in the elasticsearch. The
+   header
    will be discarded if the key of header is contained in value json object keys.
 
-3. For the `default` of `request.indexer` and `request.indexer.default.topic_as_index` is `false`, the topic value of the record will be stored in the elasticsearch by key
+3. For the `default` of `request.indexer` and `request.indexer.default.topic_as_index` is `false`, the topic value of
+   the record will be stored in the elasticsearch by key
    `_topic`.
 
-4. For the `default` of `request.indexer`, the key value of the record will be store in the elasticsearch by id if the key
+4. For the `default` of `request.indexer`, the key value of the record will be store in the elasticsearch by id if the
+   key
    exists.
 
-5. For the `default` of `bulk.response.action_listener.identity`, the failed bulk request will be retried util success. For `mute_bulk_insert_error` of `bulk.response.action_listener.identity`, the failed bulk request will be ignored and add the metric key `tributary_sink_elasticsearch_bulk_requests_with_errors` to monitor the fail count.
-
+5. For the `default` of `bulk.response.action_listener.identity`, the failed bulk request will be retried util success.
+   For `mute_bulk_insert_error` of `bulk.response.action_listener.identity`, the failed bulk request will be ignored and
+   add the metric key `tributary_sink_elasticsearch_bulk_requests_with_errors` to monitor the fail count.
 
 ## The complete demo config
 

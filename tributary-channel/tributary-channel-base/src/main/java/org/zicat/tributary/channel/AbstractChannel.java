@@ -231,7 +231,6 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             return;
         }
         groupManager.commit(groupId, offset);
-        cleanUpExpiredSegments();
     }
 
     @Override
@@ -240,7 +239,6 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             return;
         }
         groupManager.commit(offset);
-        cleanUpExpiredSegments();
     }
 
     /**
@@ -353,7 +351,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     /** clean up old segment. */
-    protected void cleanUpExpiredSegments() {
+    public void cleanUpExpiredSegmentsQuietly() {
         final Offset minOffset = groupManager.getMinOffset();
         if (minOffset.isUninitialized()) {
             return;
@@ -362,18 +360,14 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         final List<S> expiredSegments = new ArrayList<>();
         for (Map.Entry<Long, S> entry : cache.entrySet()) {
             final S segment = entry.getValue();
-            if (segment.segmentId() < minSegmentId
-                    && segment.segmentId() < latestSegment.segmentId()) {
+            if (segment.segmentId() < minSegmentId) {
                 expiredSegments.add(segment);
             }
         }
         for (S segment : expiredSegments) {
             final S segmentInCache = cache.remove(segment.segmentId());
-            if (segmentInCache == null) {
-                continue;
-            }
             IOUtils.closeQuietly(segmentInCache);
-            segmentInCache.recycle();
+            Segment.recycleQuietly(segmentInCache);
         }
     }
 
@@ -396,22 +390,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         return cache.size();
     }
 
-    /**
-     * flush quietly.
-     *
-     * @return true if flush success
-     */
-    public boolean flushQuietly() {
+    /** flush quietly. */
+    public void flushQuietly() {
         try {
             flush();
-            return true;
         } catch (Throwable ignore) {
-            return false;
         }
-    }
-
-    @Override
-    public long flushIdleMillis() {
-        return latestSegment.flushIdleMillis();
     }
 }

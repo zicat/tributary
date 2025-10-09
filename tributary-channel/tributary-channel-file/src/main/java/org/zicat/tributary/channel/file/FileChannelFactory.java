@@ -52,6 +52,8 @@ public class FileChannelFactory implements ChannelFactory {
         final long blockSize = config.get(OPTION_BLOCK_SIZE).getBytes();
         final long segmentSize = config.get(OPTION_SEGMENT_SIZE).getBytes();
         final Duration flushPeriod = config.get(OPTION_FLUSH_PERIOD);
+        final Duration cleanupExpiredSegmentPeriod =
+                config.get(OPTION_CLEANUP_EXPIRED_SEGMENT_PERIOD);
         final CompressionType compression = config.get(OPTION_COMPRESSION);
         final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD).getSeconds();
         final int blockCacheCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
@@ -62,6 +64,7 @@ public class FileChannelFactory implements ChannelFactory {
                 FileChannelBuilder.newBuilder()
                         .dirs(createDir(dirs))
                         .flushPeriodMills(flushPeriod.toMillis())
+                        .cleanupExpiredSegmentPeriodMills(cleanupExpiredSegmentPeriod.toMillis())
                         .groupPersistPeriodSecond(groupPersist)
                         .blockCacheCount(blockCacheCount);
         return builder.blockSize((int) blockSize)

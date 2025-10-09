@@ -95,7 +95,6 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
 
     protected volatile InBlockAppendResult inBlockResult = new InBlockAppendResult(1);
     protected long cacheUsed = 0;
-    protected long preFreshTime = System.currentTimeMillis();
 
     public Segment(
             long id,
@@ -426,19 +425,9 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             }
             persist(force);
             cacheUsed = 0;
-            preFreshTime = System.currentTimeMillis();
         } finally {
             lock.unlock();
         }
-    }
-
-    /**
-     * get flush idle milli.
-     *
-     * @return idle time
-     */
-    public long flushIdleMillis() {
-        return System.currentTimeMillis() - preFreshTime;
     }
 
     /**
@@ -488,6 +477,21 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     public void recycle() {
         if (!closed.get()) {
             throw new IllegalStateException("segment is not closed before recycle");
+        }
+    }
+
+    /**
+     * recycle segment quietly.
+     *
+     * @param segment segment
+     */
+    public static void recycleQuietly(Segment segment) {
+        if (segment != null) {
+            try {
+                segment.recycle();
+            } catch (Exception e) {
+                LOG.warn("recycle segment error", e);
+            }
         }
     }
 

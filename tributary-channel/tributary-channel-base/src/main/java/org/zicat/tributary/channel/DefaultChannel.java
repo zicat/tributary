@@ -19,6 +19,7 @@
 package org.zicat.tributary.channel;
 
 import org.zicat.tributary.common.*;
+import static org.zicat.tributary.common.Threads.interruptQuietly;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -32,13 +33,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** DefaultChannel. */
 public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
+    private static final String THREAD_NAME_SEGMENT_FLUSH = "segment_flush_thread";
+    private static final String THREAD_NAME_CLEANUP_EXPIRED_SEGMENT =
+            "cleanup_expired_segment_thread";
     public static final String LABEL_PARTITION = "partition";
-    protected final AbstractChannelArrayFactory<C> factory;
+    protected final ChannelArrayFactory<C> factory;
     protected final C[] channels;
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread flushSegmentThread;
+    private final Thread cleanupExpiredSegmentThread;
 
-    public DefaultChannel(AbstractChannelArrayFactory<C> factory, long flushPeriodMills)
+    public DefaultChannel(
+            ChannelArrayFactory<C> factory,
+            long flushPeriodMills,
+            long cleanupExpiredSegmentPeriodMills)
             throws IOException {
         final C[] channels = factory.create();
         if (channels == null || channels.length == 0) {
@@ -49,35 +57,30 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
         }
         this.factory = factory;
         this.channels = channels;
-        this.flushSegmentThread = startFlushSegmentThread(channels, closed, flushPeriodMills);
+        this.flushSegmentThread =
+                startLoopRunningThread(
+                        closed, THREAD_NAME_SEGMENT_FLUSH, this::flushQuietly, flushPeriodMills);
+        this.cleanupExpiredSegmentThread =
+                startLoopRunningThread(
+                        closed,
+                        THREAD_NAME_CLEANUP_EXPIRED_SEGMENT,
+                        this::cleanUpExpiredSegmentsQuietly,
+                        cleanupExpiredSegmentPeriodMills);
     }
 
     /**
-     * start flush segment thread.
+     * start loop running thread.
      *
-     * @param channels channels
      * @param closed closed
-     * @param flushPeriodMillis flushPeriodMillis
-     * @param <C> channel
+     * @param name name
+     * @param runnable runnable
+     * @param period period
      * @return Thread
      */
-    private static <C extends AbstractChannel<?>> Thread startFlushSegmentThread(
-            C[] channels, AtomicBoolean closed, long flushPeriodMillis) {
-        final Runnable task =
-                () ->
-                        Functions.loopCloseableFunction(
-                                t -> {
-                                    boolean success = true;
-                                    for (C channel : channels) {
-                                        if (channel.flushIdleMillis() >= flushPeriodMillis) {
-                                            success = success && channel.flushQuietly();
-                                        }
-                                    }
-                                    return success;
-                                },
-                                flushPeriodMillis,
-                                closed);
-        final Thread thread = new Thread(task, "segment_flush_thread");
+    private static Thread startLoopRunningThread(
+            AtomicBoolean closed, String name, Runnable runnable, long period) {
+        final Runnable task = () -> Functions.loopCloseableFunction(runnable, period, closed);
+        final Thread thread = new Thread(task, name);
         thread.start();
         return thread;
     }
@@ -163,9 +166,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
             try {
                 factory.destroy(channels);
             } finally {
-                if (flushSegmentThread != null) {
-                    flushSegmentThread.interrupt();
-                }
+                interruptQuietly(flushSegmentThread, cleanupExpiredSegmentThread);
             }
         }
     }
@@ -189,12 +190,11 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     /**
-     * AbstractChannelArrayFactory.
+     * ChannelArrayFactory.
      *
      * @param <C> type channel
      */
-    public interface AbstractChannelArrayFactory<C extends AbstractChannel<?>>
-            extends Factory<C[]> {
+    public interface ChannelArrayFactory<C extends AbstractChannel<?>> extends Factory<C[]> {
 
         /**
          * return topic.
@@ -209,10 +209,68 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
          * @return group set
          */
         Set<String> groups();
+    }
+
+    /**
+     * AbstractChannelArrayFactory.
+     *
+     * @param <C> C
+     */
+    public abstract static class AbstractChannelArrayFactory<C extends AbstractChannel<?>>
+            implements ChannelArrayFactory<C> {
+        private final String topic;
+        private final Set<String> groups;
+
+        public AbstractChannelArrayFactory(String topic, Set<String> groups) {
+            this.topic = topic;
+            this.groups = groups;
+        }
 
         @Override
-        default void destroy(C[] cs) {
+        public Set<String> groups() {
+            return groups;
+        }
+
+        @Override
+        public String topic() {
+            return topic;
+        }
+
+        @Override
+        public void destroy(C[] cs) {
             IOUtils.concurrentCloseQuietly(cs);
         }
+    }
+
+    /** clean up expired segments quietly for test. */
+    public void cleanUpExpiredSegmentsQuietly() {
+        for (C channel : channels) {
+            channel.cleanUpExpiredSegmentsQuietly();
+        }
+    }
+
+    /** flush segment quietly. */
+    public void flushQuietly() {
+        for (C channel : channels) {
+            channel.flushQuietly();
+        }
+    }
+
+    /**
+     * get flush segment thread for test.
+     *
+     * @return thread
+     */
+    public Thread getFlushSegmentThread() {
+        return flushSegmentThread;
+    }
+
+    /**
+     * get cleanup expired segment thread for test.
+     *
+     * @return thread
+     */
+    public Thread getCleanupExpiredSegmentThread() {
+        return cleanupExpiredSegmentThread;
     }
 }

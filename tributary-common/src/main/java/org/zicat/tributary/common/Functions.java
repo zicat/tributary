@@ -118,6 +118,40 @@ public class Functions {
     }
 
     /**
+     * loopCloseableFunction.
+     *
+     * @param runnable runnable
+     * @param period period
+     */
+    public static void loopCloseableFunction(
+            java.lang.Runnable runnable, long period, AtomicBoolean closed) {
+        loopCloseableFunction(runnable, period, closed, false);
+    }
+
+    /**
+     * loop closeable function.
+     *
+     * @param runnable runnable
+     * @param period period
+     * @param closed closed
+     * @param breakIfInterrupted breakIfInterrupted
+     */
+    public static void loopCloseableFunction(
+            java.lang.Runnable runnable,
+            long period,
+            AtomicBoolean closed,
+            boolean breakIfInterrupted) {
+        loopCloseableFunction(
+                o -> {
+                    runnable.run();
+                    return null;
+                },
+                period,
+                closed,
+                breakIfInterrupted);
+    }
+
+    /**
      * sleep ignore interrupted.
      *
      * @param period period

@@ -102,4 +102,17 @@ public class Threads {
             LOG.info("sleep interrupted", e);
         }
     }
+
+    public static void interruptQuietly(Thread... ts) {
+        if (ts == null) {
+            return;
+        }
+        for (Thread t : ts) {
+            try {
+                t.interrupt();
+            } catch (SecurityException e) {
+                LOG.warn("interrupt thread {} error", t.getName(), e);
+            }
+        }
+    }
 }

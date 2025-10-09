@@ -19,6 +19,7 @@
 package org.zicat.tributary.channel.memory.test;
 
 import org.zicat.tributary.channel.*;
+import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.common.ReadableConfig;
 
@@ -111,17 +112,7 @@ public class MemoryChannelTestUtils {
             throws IOException {
         final Set<String> groups = new HashSet<>(Arrays.asList(groupIds));
         return new DefaultChannel<>(
-                new DefaultChannel.AbstractChannelArrayFactory<AbstractChannel<?>>() {
-                    @Override
-                    public String topic() {
-                        return topic;
-                    }
-
-                    @Override
-                    public Set<String> groups() {
-                        return groups;
-                    }
-
+                new AbstractChannelArrayFactory<AbstractChannel<?>>(topic, groups) {
                     @Override
                     public AbstractChannel<?>[] create() {
                         return MemoryChannelFactory.createChannels(
@@ -133,7 +124,8 @@ public class MemoryChannelTestUtils {
                                 compressionType);
                     }
                 },
-                500);
+                500,
+                10000);
     }
 
     /**

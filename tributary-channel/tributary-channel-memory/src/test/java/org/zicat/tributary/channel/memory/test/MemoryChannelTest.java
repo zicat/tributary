@@ -153,6 +153,7 @@ public class MemoryChannelTest {
                 Assert.assertArrayEquals(result.get(i), dataOffset.data.get(i));
             }
             channel.commit(groupId, dataOffset.offset);
+            channel.cleanUpExpiredSegmentsQuietly();
             Assert.assertEquals(1, channel.activeSegment());
         }
     }

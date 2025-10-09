@@ -63,8 +63,14 @@ public class ChannelConfigOption {
     public static final ConfigOption<Duration> OPTION_FLUSH_PERIOD =
             ConfigOptions.key("flush.period")
                     .durationType()
-                    .description("async flush page cache to disk period millis, default 500ms")
+                    .description("async flush page cache to disk period, default 500ms")
                     .defaultValue(Duration.ofMillis(500));
+
+    public static final ConfigOption<Duration> OPTION_CLEANUP_EXPIRED_SEGMENT_PERIOD =
+            ConfigOptions.key("segment.expired.cleanup.period")
+                    .durationType()
+                    .description("cleanup expired segment period, default 10s")
+                    .defaultValue(Duration.ofSeconds(10));
 
     public static final ConfigOption<Integer> OPTION_BLOCK_CACHE_PER_PARTITION_SIZE =
             ConfigOptions.key("block.cache.per.partition.size")

@@ -149,6 +149,6 @@ public class FileChannel extends AbstractChannel<FileSegment> {
             }
         }
         initLastSegment(createSegment(maxSegment.segmentId() + 1));
-        cleanUpExpiredSegments();
+        cleanUpExpiredSegmentsQuietly();
     }
 }
