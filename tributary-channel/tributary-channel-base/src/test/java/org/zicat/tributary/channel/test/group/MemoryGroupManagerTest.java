@@ -36,9 +36,9 @@ public class MemoryGroupManagerTest {
         groupOffsets.put("g1", UNINITIALIZED_OFFSET);
         groupOffsets.put("g2", UNINITIALIZED_OFFSET);
         final MemoryGroupManager manager = new MemoryGroupManager(groupOffsets);
-        Assert.assertTrue(manager.getMinOffset().isUninitialized());
+        Assert.assertTrue(manager.getMinOffset().uninitialized());
         manager.commit("g1", new Offset(1, 1));
-        Assert.assertTrue(manager.getMinOffset().isUninitialized());
+        Assert.assertTrue(manager.getMinOffset().uninitialized());
         manager.commit("g2", new Offset(2, 2));
         Assert.assertEquals(new Offset(1, 1), manager.getMinOffset());
         manager.close();

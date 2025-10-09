@@ -252,7 +252,10 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     /** flush segment quietly. */
     public void flushQuietly() {
         for (C channel : channels) {
-            channel.flushQuietly();
+            try {
+                channel.flush();
+            } catch (Throwable ignore) {
+            }
         }
     }
 

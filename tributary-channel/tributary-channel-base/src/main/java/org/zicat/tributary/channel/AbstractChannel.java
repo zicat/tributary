@@ -135,8 +135,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             final S newSegment = createSegment(newSegmentId);
             final AppendResult newResult = append2Segment(newSegment, byteBuffer);
             if (!newResult.appended()) {
-                throw new IllegalStateException(
-                        "write data to new segment failed, segmentId: " + newSegmentId);
+                throw new IOException("write new segment failed, segmentId: " + newSegmentId);
             }
             writeBytes.addAndGet(latestSegment.position());
             addSegment(newSegment);
@@ -191,7 +190,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public Map<MetricKey, Double> gaugeFamily() {
         final Map<MetricKey, Double> families = new HashMap<>();
-        families.put(KEY_WRITE_BYTES, (double) (writeBytes.get() + latestSegment.writeBytes()));
+        families.put(KEY_WRITE_BYTES, (double) (writeBytes.get() + latestSegment.position()));
         families.put(KEY_READ_BYTES, (double) readBytes.get());
         families.put(KEY_BUFFER_USAGE, (double) latestSegment.cacheUsed());
         families.put(KEY_ACTIVE_SEGMENT, (double) cache.size());
@@ -218,11 +217,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public Offset committedOffset(String groupId) {
         final Offset offset = groupManager.committedOffset(groupId);
-        if (!offset.isUninitialized()) {
+        if (!offset.uninitialized()) {
             return offset;
         }
         final Offset minOffset = groupManager.getMinOffset();
-        return minOffset.isUninitialized() ? new Offset(latestSegment.segmentId()) : minOffset;
+        return minOffset.uninitialized() ? new Offset(latestSegment.segmentId()) : minOffset;
     }
 
     @Override
@@ -272,24 +271,33 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
         BlockReaderOffset offset = cast(originalOffset);
         S segment = latestSegment.match(offset) ? latestSegment : cache.get(offset.segmentId());
-        if (segment == null) {
-            final Offset latestOffset = this.latestSegment.latestOffset();
-            LOG.warn("{} not found, consume from latest offset {}", offset, latestOffset);
-            segment = latestSegment;
-            offset = offset.skip2Target(latestOffset);
+        if (Segment.isClosed(segment)) {
+            segment = selectMinReadableSegment();
+            segment = Segment.isClosed(segment) ? latestSegment : segment;
+            offset = offset.skip2TargetHead(segment.segmentId());
+            LOG.warn("{} not found or closed, consume from new offset {}", originalOffset, offset);
         }
 
-        // try read it first
-        final RecordsResultSet resultSet = segment.readBlock(offset, time, unit).toResultSet();
-        if (!segment.isReadonly() || !resultSet.isEmpty()) {
-            return resultSet;
+        try {
+            // try read it first
+            final RecordsResultSet resultSet = segment.readBlock(offset, time, unit).toResultSet();
+            if (!segment.isReadonly() || !resultSet.isEmpty()) {
+                return resultSet;
+            }
+        } catch (Exception e) {
+            // the segment may close by other thread because of capacity check thread
+            if (Segment.isClosed(segment)) {
+                LOG.info("segment {} is closed, skip to next", segment.segmentId());
+                return read(offset.skipNextSegmentHead(), time, unit);
+            }
+            throw e;
         }
 
-        // searchSegment is full
+        // search segment is readonly and read offset at end of segment
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            // searchSegment point to currentSegment, await new segment
+            // search segment point to latest segment, await new segment append
             if (segment == this.latestSegment) {
                 if (time == 0) {
                     newSegmentCondition.await();
@@ -304,6 +312,32 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     }
 
     /**
+     * select min readable segment.
+     *
+     * @return segment
+     */
+    private S selectMinReadableSegment() {
+        final Offset minOffset = groupManager.getMinOffset();
+        final S segment = cache.get(minOffset.segmentId());
+        if (!Segment.isClosed(segment)) {
+            return segment;
+        }
+        final int totalSegmentCount = cache.size();
+        final long segmentOffset = latestSegment.segmentId() - totalSegmentCount + 1;
+        for (int i = 0; i < totalSegmentCount; i++) {
+            final long segmentId = segmentOffset + i;
+            if (segmentId < minOffset.segmentId()) {
+                continue;
+            }
+            final S segmentInCache = cache.get(segmentId);
+            if (!Segment.isClosed(segmentInCache)) {
+                return segmentInCache;
+            }
+        }
+        return null;
+    }
+
+    /**
      * read from last segment if null or over lastSegment.
      *
      * @param offset offset
@@ -315,7 +349,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
             return newRecordOffset;
         }
         final Offset minOffset = groupManager.getMinOffset();
-        return minOffset.isUninitialized()
+        return minOffset.uninitialized()
                 ? newRecordOffset.skip2TargetHead(latestSegment.segmentId())
                 : newRecordOffset.skip2TargetHead(minOffset.segmentId);
     }
@@ -327,10 +361,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @return legal offset
      */
     private boolean legalOffset(Offset offset) {
-        Offset minOffset = groupManager.getMinOffset();
-        if (minOffset.isUninitialized()) {
-            minOffset = Offset.ZERO;
-        }
+        final Offset minOffset = groupManager.getMinOffset();
         return offset.compareTo(minOffset) >= 0
                 || offset.compareTo(latestSegment.latestOffset()) <= 0;
     }
@@ -348,27 +379,6 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public void flush() throws IOException {
         latestSegment.flush();
-    }
-
-    /** clean up old segment. */
-    public void cleanUpExpiredSegmentsQuietly() {
-        final Offset minOffset = groupManager.getMinOffset();
-        if (minOffset.isUninitialized()) {
-            return;
-        }
-        final long minSegmentId = minOffset.segmentId();
-        final List<S> expiredSegments = new ArrayList<>();
-        for (Map.Entry<Long, S> entry : cache.entrySet()) {
-            final S segment = entry.getValue();
-            if (segment.segmentId() < minSegmentId) {
-                expiredSegments.add(segment);
-            }
-        }
-        for (S segment : expiredSegments) {
-            final S segmentInCache = cache.remove(segment.segmentId());
-            IOUtils.closeQuietly(segmentInCache);
-            Segment.recycleQuietly(segmentInCache);
-        }
     }
 
     @Override
@@ -390,11 +400,24 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         return cache.size();
     }
 
-    /** flush quietly. */
-    public void flushQuietly() {
-        try {
-            flush();
-        } catch (Throwable ignore) {
+    /** close and cleanup expired segments. */
+    public void cleanUpExpiredSegmentsQuietly() {
+        final Offset minOffset = groupManager.getMinOffset();
+        if (minOffset.uninitialized()) {
+            return;
+        }
+        final long minSegmentId = minOffset.segmentId();
+        final List<S> expiredSegments = new ArrayList<>();
+        for (Map.Entry<Long, S> entry : cache.entrySet()) {
+            final S segment = entry.getValue();
+            if (segment.segmentId() < minSegmentId) {
+                expiredSegments.add(segment);
+            }
+        }
+        for (S segment : expiredSegments) {
+            final S segmentInCache = cache.remove(segment.segmentId());
+            IOUtils.closeQuietly(segmentInCache);
+            Segment.recycleQuietly(segmentInCache);
         }
     }
 }

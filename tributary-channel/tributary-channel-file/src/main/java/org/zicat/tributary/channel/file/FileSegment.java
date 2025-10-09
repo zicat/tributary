@@ -79,12 +79,7 @@ public class FileSegment extends Segment {
     public void recycle() {
         super.recycle();
         if (recycled.compareAndSet(false, true)) {
-            final boolean deleted = file.delete();
-            if (deleted) {
-                LOG.info("expired file {} deleted success", file.getPath());
-            } else {
-                LOG.warn("expired file {} deleted fail", file.getPath());
-            }
+            LOG.info("deleted {} {}", file.getPath(), file.delete() ? "success" : "fail");
         }
     }
 
@@ -272,10 +267,5 @@ public class FileSegment extends Segment {
                     channel,
                     bCache);
         }
-    }
-
-    @Override
-    public long writeBytes() {
-        return position.get() - FILE_SEGMENT_HEAD_SIZE;
     }
 }

@@ -54,11 +54,11 @@ public class FileGroupManagerTest {
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds)) {
 
             Offset minOffset = manager.getMinOffset();
-            Assert.assertTrue(minOffset.isUninitialized());
+            Assert.assertTrue(minOffset.uninitialized());
 
             for (String group : groupIds) {
                 Offset groupOffset = manager.committedOffset(group);
-                Assert.assertTrue(groupOffset.isUninitialized());
+                Assert.assertTrue(groupOffset.uninitialized());
                 final Offset newOffset = new Offset(random.nextInt(10) + 1, random.nextInt(100));
                 manager.commit(group, newOffset);
                 Assert.assertEquals(newOffset, manager.committedOffset(group));
@@ -73,7 +73,7 @@ public class FileGroupManagerTest {
         try (FileGroupManager manager2 =
                 new FileGroupManager(new File(DIR, createFileName(topic)), groupIds2)) {
             Offset minOffset = manager2.getMinOffset();
-            Assert.assertTrue(minOffset.isUninitialized());
+            Assert.assertTrue(minOffset.uninitialized());
 
             for (String group : groupIds2) {
                 Offset offset = manager2.committedOffset(group);
@@ -123,7 +123,7 @@ public class FileGroupManagerTest {
         try (FileGroupManager manager4 =
                 new FileGroupManager(new File(DIR, createFileName(topic + "_new")), groupIds)) {
             Offset minOffset = manager4.getMinOffset();
-            Assert.assertTrue(minOffset.isUninitialized());
+            Assert.assertTrue(minOffset.uninitialized());
 
             for (String group : groupIds) {
                 Offset offset = manager4.committedOffset(group);

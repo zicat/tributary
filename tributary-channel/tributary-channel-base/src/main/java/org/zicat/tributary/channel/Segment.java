@@ -480,21 +480,6 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         }
     }
 
-    /**
-     * recycle segment quietly.
-     *
-     * @param segment segment
-     */
-    public static void recycleQuietly(Segment segment) {
-        if (segment != null) {
-            try {
-                segment.recycle();
-            } catch (Exception e) {
-                LOG.warn("recycle segment error", e);
-            }
-        }
-    }
-
     @Override
     public int compareTo(Segment o) {
         return Long.compare(this.segmentId(), o.segmentId());
@@ -543,15 +528,6 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     }
 
     /**
-     * get write bytes of a segment, not include head.
-     *
-     * @return write bytes.
-     */
-    public long writeBytes() {
-        return position.get();
-    }
-
-    /**
      * blockSize.
      *
      * @return int size
@@ -572,5 +548,31 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             BlockReaderOffset blockReaderOffset, long newOffset, ByteBuffer reusedBuf) {
         blockReaderOffset.blockReader().reset().reusedBuf(reusedBuf);
         return blockReaderOffset.skip2TargetOffset(newOffset);
+    }
+
+    /**
+     * check segment is closed, note if segment is null return true.
+     *
+     * @param segment segment
+     * @return boolean
+     */
+    public static boolean isClosed(Segment segment) {
+        return segment == null || segment.closed.get();
+    }
+
+
+    /**
+     * recycle segment quietly.
+     *
+     * @param segment segment
+     */
+    public static void recycleQuietly(Segment segment) {
+        if (segment != null) {
+            try {
+                segment.recycle();
+            } catch (Exception e) {
+                LOG.warn("recycle segment error", e);
+            }
+        }
     }
 }

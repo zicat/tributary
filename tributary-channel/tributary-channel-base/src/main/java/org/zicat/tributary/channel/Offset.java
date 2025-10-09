@@ -26,7 +26,7 @@ import java.util.Objects;
 /** Offset. */
 public class Offset implements Comparable<Offset> {
 
-    public static final Offset UNINITIALIZED_OFFSET = new Offset(-1, -1);
+    public static final Offset UNINITIALIZED_OFFSET = new Offset(-1, 0);
     public static final Offset ZERO = new Offset(0, 0);
 
     @JsonProperty protected final long segmentId;
@@ -158,12 +158,12 @@ public class Offset implements Comparable<Offset> {
     }
 
     @JsonIgnore
-    public boolean isZero() {
+    public boolean zero() {
         return compareTo(ZERO) == 0;
     }
 
     @JsonIgnore
-    public boolean isUninitialized() {
+    public boolean uninitialized() {
         return compareTo(UNINITIALIZED_OFFSET) == 0;
     }
 
