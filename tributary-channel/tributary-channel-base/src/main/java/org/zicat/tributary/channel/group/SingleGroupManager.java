@@ -47,8 +47,21 @@ public interface SingleGroupManager extends GroupManager {
      */
     void commit(String groupId, Offset offset) throws IOException;
 
+    /**
+     * commit all group offset without partition.
+     *
+     * @param offset offset
+     * @throws IOException IOException
+     */
+    void commit(Offset offset) throws IOException;
+
     @Override
     default void commit(int partition, String groupId, Offset offset) throws IOException {
         commit(groupId, offset);
+    }
+
+    @Override
+    default void commit(int partition, Offset offset) throws IOException {
+        commit(offset);
     }
 }

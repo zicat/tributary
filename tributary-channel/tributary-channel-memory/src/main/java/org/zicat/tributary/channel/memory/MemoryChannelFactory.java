@@ -19,6 +19,7 @@
 package org.zicat.tributary.channel.memory;
 
 import org.zicat.tributary.channel.*;
+import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.GroupManager.uninitializedOffset;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
 
 /** MemoryChannelFactory. */
@@ -99,7 +99,7 @@ public class MemoryChannelFactory implements ChannelFactory {
         final MemoryChannel[] channels = new MemoryChannel[partitionCount];
         final Map<String, Offset> groupOffsets = new HashMap<>();
         for (String group : groups) {
-            groupOffsets.put(group, uninitializedOffset());
+            groupOffsets.put(group, UNINITIALIZED_OFFSET);
         }
         final AbstractChannel.MemoryGroupManagerFactory factory =
                 createMemoryGroupManagerFactory(groupOffsets);

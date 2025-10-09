@@ -21,14 +21,28 @@ package org.zicat.tributary.channel.test.group;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Offset;
+import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import org.zicat.tributary.channel.group.MemoryGroupManager;
-import org.zicat.tributary.channel.group.MemoryGroupManager.GroupOffset;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /** OnePartitionMemoryGroupManagerTest. */
 public class MemoryGroupManagerTest {
+
+    @Test
+    public void testMinGroupOffset() {
+        final Map<String, Offset> groupOffsets = new HashMap<>();
+        groupOffsets.put("g1", UNINITIALIZED_OFFSET);
+        groupOffsets.put("g2", UNINITIALIZED_OFFSET);
+        final MemoryGroupManager manager = new MemoryGroupManager(groupOffsets);
+        Assert.assertTrue(manager.getMinOffset().isUninitialized());
+        manager.commit("g1", new Offset(1, 1));
+        Assert.assertTrue(manager.getMinOffset().isUninitialized());
+        manager.commit("g2", new Offset(2, 2));
+        Assert.assertEquals(new Offset(1, 1), manager.getMinOffset());
+        manager.close();
+    }
 
     @Test
     public void testCommit() {
@@ -47,16 +61,25 @@ public class MemoryGroupManagerTest {
         }
         Assert.assertEquals(new Offset(2, 100), manager.committedOffset("g1"));
         Assert.assertEquals(new Offset(3, 75), manager.committedOffset("g2"));
-        Assert.assertEquals(new GroupOffset("g1", new Offset(2, 100)), manager.getMinGroupOffset());
+        Assert.assertEquals(new Offset(2, 100), manager.getMinOffset());
 
         manager.commit("g1", new Offset(3, 25));
-        Assert.assertEquals(new GroupOffset("g1", new Offset(3, 25)), manager.getMinGroupOffset());
+        Assert.assertEquals(new Offset(3, 25), manager.getMinOffset());
 
         manager.commit("g1", new Offset(3, 80));
-        Assert.assertEquals(new GroupOffset("g2", new Offset(3, 75)), manager.getMinGroupOffset());
+        Assert.assertEquals(new Offset(3, 75), manager.getMinOffset());
 
         manager.commit("g2", new Offset(3, 90));
-        Assert.assertEquals(new GroupOffset("g1", new Offset(3, 80)), manager.getMinGroupOffset());
+        Assert.assertEquals(new Offset(3, 80), manager.getMinOffset());
+        // g1 -> Offset{segmentId=3, offset=80}
+        // g2 -> Offset{segmentId=3, offset=90}
+
+        manager.commit(new Offset(3, 85));
+        // g1 -> Offset{segmentId=3, offset=85}
+        // g2 -> Offset{segmentId=3, offset=90}
+        Assert.assertEquals(new Offset(3, 85), manager.getMinOffset());
+        Assert.assertEquals(new Offset(3, 85), manager.committedOffset("g1"));
+        Assert.assertEquals(new Offset(3, 90), manager.committedOffset("g2"));
 
         Assert.assertEquals(2, manager.groups().size());
         manager.close();

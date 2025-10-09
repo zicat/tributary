@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Offset;
+import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import org.zicat.tributary.common.*;
 
 import java.io.*;
@@ -172,7 +173,7 @@ public class FileGroupManager extends MemoryGroupManager {
         final Map<String, Offset> result = new HashMap<>(existsGroups);
         // AllGroups only contains new groups after call method parseExistsGroups.
         // Add new group with default offset to result ensure all groupIds has one offset.
-        allGroups.forEach(groupId -> result.put(groupId, GroupManager.uninitializedOffset()));
+        allGroups.forEach(groupId -> result.put(groupId, UNINITIALIZED_OFFSET));
         if (result.size() != cacheExpectedSize) {
             throw new TributaryRuntimeException(
                     "cache size must equal groupIds size, expected size = "

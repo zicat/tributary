@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.channel;
 
-import static org.zicat.tributary.channel.group.GroupManager.uninitializedOffset;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
@@ -220,19 +218,41 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public Offset committedOffset(String groupId) {
         final Offset offset = groupManager.committedOffset(groupId);
-        return uninitializedOffset().equals(offset)
+        return offset.isUninitialized()
                 ? new Offset(latestSegment.segmentId(), latestSegment.position())
                 : offset;
     }
 
     @Override
     public void commit(String groupId, Offset offset) {
-        if (latestSegment.segmentId() < offset.segmentId()) {
-            LOG.warn("commit group offset {} over latest segment", offset);
+        if (checkOffsetOver(offset)) {
             return;
         }
         groupManager.commit(groupId, offset);
         cleanUpExpiredSegments();
+    }
+
+    @Override
+    public void commit(Offset offset) throws IOException {
+        if (checkOffsetOver(offset)) {
+            return;
+        }
+        groupManager.commit(offset);
+        cleanUpExpiredSegments();
+    }
+
+    /**
+     * check offset over latest segment.
+     *
+     * @param offset offset
+     * @return checkOffsetOver
+     */
+    private boolean checkOffsetOver(Offset offset) {
+        final boolean result = latestSegment.segmentId() < offset.segmentId();
+        if (result) {
+            LOG.warn("commit group offset {} over latest segment", offset);
+        }
+        return result;
     }
 
     /**
@@ -291,9 +311,13 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      */
     protected BlockReaderOffset cast(Offset offset) {
         final BlockReaderOffset newRecordOffset = BlockReaderOffset.cast(offset);
-        return legalOffset(newRecordOffset)
-                ? newRecordOffset
-                : newRecordOffset.skip2Target(latestSegment.segmentId(), latestSegment.position());
+        if (legalOffset(newRecordOffset)) {
+            return newRecordOffset;
+        }
+        final Offset minOffset = groupManager.getMinOffset();
+        return minOffset.isUninitialized()
+                ? newRecordOffset.skip2TargetHead(latestSegment.segmentId())
+                : newRecordOffset.skip2TargetHead(minOffset.segmentId);
     }
 
     /**
@@ -303,7 +327,10 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @return legal offset
      */
     private boolean legalOffset(Offset offset) {
-        final Offset minOffset = groupManager.getMinGroupOffset();
+        Offset minOffset = groupManager.getMinOffset();
+        if (minOffset.isUninitialized()) {
+            minOffset = Offset.ZERO;
+        }
         return offset.compareTo(minOffset) >= 0
                 || offset.compareTo(latestSegment.latestOffset()) <= 0;
     }
@@ -325,7 +352,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     /** clean up old segment. */
     protected void cleanUpExpiredSegments() {
-        final long minSegmentId = groupManager.getMinGroupOffset().segmentId();
+        final Offset minOffset = groupManager.getMinOffset();
+        if (minOffset.isUninitialized()) {
+            return;
+        }
+        final long minSegmentId = minOffset.segmentId();
         final List<S> expiredSegments = new ArrayList<>();
         for (Map.Entry<Long, S> entry : cache.entrySet()) {
             final S segment = entry.getValue();

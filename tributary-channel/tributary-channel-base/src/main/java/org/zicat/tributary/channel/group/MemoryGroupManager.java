@@ -20,6 +20,7 @@ package org.zicat.tributary.channel.group;
 
 import org.zicat.tributary.channel.AbstractChannel;
 import org.zicat.tributary.channel.Offset;
+import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -39,14 +40,14 @@ public class MemoryGroupManager implements SingleGroupManager {
     private final Map<String, Offset> cache = new ConcurrentHashMap<>();
     private final Set<String> groups = new HashSet<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private GroupOffset minGroupOffset;
+    private Offset minOffset;
 
     public MemoryGroupManager(Map<String, Offset> groupOffsets) {
         for (Map.Entry<String, Offset> entry : groupOffsets.entrySet()) {
             this.cache.put(entry.getKey(), entry.getValue());
             this.groups.add(entry.getKey());
         }
-        minGroupOffset = minOffset(cache);
+        minOffset = minOffset(cache);
     }
 
     /**
@@ -73,7 +74,14 @@ public class MemoryGroupManager implements SingleGroupManager {
             return;
         }
         cache.put(groupId, offset);
-        minGroupOffset = minOffset(cache);
+        minOffset = minOffset(cache);
+    }
+
+    @Override
+    public void commit(Offset offset) {
+        for (String groupId : groups) {
+            commit(groupId, offset);
+        }
     }
 
     @Override
@@ -93,24 +101,19 @@ public class MemoryGroupManager implements SingleGroupManager {
      * @param cache cache
      * @return GroupOffset
      */
-    private static GroupOffset minOffset(Map<String, Offset> cache) {
-        GroupOffset min = null;
+    private static Offset minOffset(Map<String, Offset> cache) {
+        Offset min = null;
         for (Map.Entry<String, Offset> entry : cache.entrySet()) {
             final Offset offset = entry.getValue();
             if (min == null || min.compareTo(offset) > 0) {
-                min = new GroupOffset(entry.getKey(), entry.getValue());
+                min = entry.getValue();
             }
         }
-        return min;
+        return min == null ? UNINITIALIZED_OFFSET : min;
     }
 
-    /**
-     * get min group offset.
-     *
-     * @return GroupOffset
-     */
-    public GroupOffset getMinGroupOffset() {
-        return minGroupOffset;
+    public Offset getMinOffset() {
+        return minOffset;
     }
 
     /** check whether closed. */

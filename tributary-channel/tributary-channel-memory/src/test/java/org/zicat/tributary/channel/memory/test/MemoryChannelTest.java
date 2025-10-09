@@ -19,7 +19,7 @@
 package org.zicat.tributary.channel.memory.test;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.GroupManager.uninitializedOffset;
+import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
 import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.readChannel;
@@ -124,7 +124,7 @@ public class MemoryChannelTest {
 
         final String groupId = "g1";
         final Map<String, Offset> groupOffsets = new HashMap<>();
-        groupOffsets.put(groupId, uninitializedOffset());
+        groupOffsets.put(groupId, UNINITIALIZED_OFFSET);
         try (MemoryChannel channel =
                 createMemoryChannel(
                         "t1",

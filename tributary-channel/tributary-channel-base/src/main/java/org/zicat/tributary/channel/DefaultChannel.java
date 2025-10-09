@@ -138,6 +138,11 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     }
 
     @Override
+    public void commit(int partition, Offset offset) throws IOException {
+        getPartitionChannel(partition).commit(offset);
+    }
+
+    @Override
     public String topic() {
         return factory.topic();
     }
