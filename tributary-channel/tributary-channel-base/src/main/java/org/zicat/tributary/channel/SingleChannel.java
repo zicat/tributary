@@ -29,7 +29,7 @@ public interface SingleChannel extends Channel, SingleGroupManager {
 
     @Override
     default int partition() {
-        return 1;
+        return 0;
     }
 
     @Override
@@ -105,15 +105,6 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      */
     RecordsResultSet poll(Offset offset, long time, TimeUnit unit)
             throws IOException, InterruptedException;
-
-    /**
-     * get committed group offset without partition. if group id is new, return the latest offset in
-     * channel
-     *
-     * @param groupId groupId
-     * @return GroupOffset
-     */
-    Offset committedOffset(String groupId);
 
     @Override
     default Offset committedOffset(String groupId, int partition) {

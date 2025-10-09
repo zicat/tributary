@@ -118,14 +118,6 @@ public interface Channel extends Closeable, MetricCollector, GroupManager {
     void flush() throws IOException;
 
     /**
-     * get group offset without partition. if group id is new, return the latest offset in channel
-     *
-     * @param groupId groupId
-     * @return GroupOffset
-     */
-    Offset committedOffset(String groupId, int partition);
-
-    /**
      * estimate the lag between group offset and write position in one partition.
      *
      * @param partition partition

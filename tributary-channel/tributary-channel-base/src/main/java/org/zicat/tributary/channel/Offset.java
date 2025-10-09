@@ -41,6 +41,10 @@ public class Offset implements Comparable<Offset> {
         this.offset = offset;
     }
 
+    public Offset(long segmentId) {
+        this(segmentId, 0L);
+    }
+
     /**
      * get segment id.
      *

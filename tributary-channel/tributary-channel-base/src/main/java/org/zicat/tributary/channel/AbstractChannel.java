@@ -218,9 +218,11 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public Offset committedOffset(String groupId) {
         final Offset offset = groupManager.committedOffset(groupId);
-        return offset.isUninitialized()
-                ? new Offset(latestSegment.segmentId(), latestSegment.position())
-                : offset;
+        if (!offset.isUninitialized()) {
+            return offset;
+        }
+        final Offset minOffset = groupManager.getMinOffset();
+        return minOffset.isUninitialized() ? new Offset(latestSegment.segmentId()) : minOffset;
     }
 
     @Override

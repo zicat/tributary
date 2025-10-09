@@ -204,7 +204,7 @@ public class FileChannelTest {
             channel.flush();
             Offset offset = channel.committedOffset(groupId, 0);
             RecordsResultSet resultSet = channel.poll(0, offset, 1, TimeUnit.MILLISECONDS);
-            Assert.assertTrue(resultSet.isEmpty());
+            Assert.assertFalse(resultSet.isEmpty());
 
             resultSet = channel.take(0, Offset.ZERO);
             Assert.assertTrue(resultSet.hasNext());
@@ -226,14 +226,14 @@ public class FileChannelTest {
             channel.commit(0, groupId, resultSet.nexOffset());
 
             Assert.assertEquals(
-                    3d,
+                    4d,
                     channel.gaugeFamily()
                             .get(
                                     KEY_BLOCK_CACHE_QUERY_HIT_COUNT.addLabel(
                                             DefaultChannel.LABEL_PARTITION, 0)),
                     0.01);
             Assert.assertEquals(
-                    3d,
+                    4d,
                     channel.gaugeFamily()
                             .get(
                                     KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT.addLabel(
