@@ -18,27 +18,33 @@
 
 package org.zicat.tributary.sink;
 
+import org.zicat.tributary.common.DefaultReadableConfig;
+
 import java.util.Map;
 
 /** SinkGroupConfig. */
-public class SinkGroupConfig extends Config {
+public class SinkGroupConfig extends DefaultReadableConfig {
 
     private final String handlerIdentity;
     private final String functionIdentity;
 
     SinkGroupConfig(
             String handlerIdentity, String functionIdentity, Map<String, Object> customConfig) {
-        super(customConfig);
+        putAll(customConfig);
         this.handlerIdentity = handlerIdentity;
         this.functionIdentity = functionIdentity;
     }
 
-    /** @return handler identity */
+    /**
+     * @return handler identity
+     */
     public final String handlerIdentity() {
         return handlerIdentity;
     }
 
-    /** @return function identity */
+    /**
+     * @return function identity
+     */
     public final String functionIdentity() {
         return functionIdentity;
     }

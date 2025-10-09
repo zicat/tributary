@@ -123,7 +123,8 @@ public class KafkaFunction extends AbstractFunction {
      * @return producer
      */
     protected Producer<byte[], byte[]> createProducer(Context context) {
-        final Properties properties = context.filterPropertyByPrefix(KAFKA_KEY_PREFIX);
+        final Properties properties =
+                context.filterAndRemovePrefixKey(KAFKA_KEY_PREFIX).toProperties();
         properties.put(KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         properties.put(VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         return new KafkaProducer<>(properties);

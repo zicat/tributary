@@ -284,7 +284,9 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
     private static DefaultRecords createRecords(ChannelHandlerContext ctx, TopicPartition tp) {
         final String user = ctx.channel().attr(KEY_AUTHENTICATED_USER).get();
         final Map<String, byte[]> headers = new HashMap<>();
-        headers.put(HEADER_KEY_AUTH_USER, user.getBytes(StandardCharsets.UTF_8));
+        if (user != null) {
+            headers.put(HEADER_KEY_AUTH_USER, user.getBytes(StandardCharsets.UTF_8));
+        }
         return new DefaultRecords(tp.topic(), headers);
     }
 

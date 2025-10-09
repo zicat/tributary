@@ -19,12 +19,12 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.sink.Config;
+import org.zicat.tributary.common.DefaultReadableConfig;
 
 import java.util.Map;
 
 /** Context. */
-public class Context extends Config {
+public class Context extends DefaultReadableConfig {
 
     private final String id;
     private final String topic;
@@ -39,7 +39,7 @@ public class Context extends Config {
             int partitionId,
             final String groupId,
             Offset startOffset) {
-        super(customConfig);
+        putAll(customConfig);
         this.id = id;
         this.topic = topic;
         this.partitionId = partitionId;

@@ -54,7 +54,8 @@ public class SinkGroupConfigTest {
         Assert.assertEquals("bb", sinkGroupConfig.get("aa"));
         Assert.assertEquals("dd", sinkGroupConfig.get("cc"));
         Assert.assertNull(sinkGroupConfig.get("ee"));
-        final Properties properties = sinkGroupConfig.filterPropertyByPrefix("kafka.");
+        final Properties properties =
+                sinkGroupConfig.filterAndRemovePrefixKey("kafka.").toProperties();
         Assert.assertEquals("hh", properties.getProperty("aa"));
         Assert.assertEquals("jj", properties.getProperty("bb"));
 

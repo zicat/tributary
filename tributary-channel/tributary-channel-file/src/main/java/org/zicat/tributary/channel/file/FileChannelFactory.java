@@ -49,31 +49,28 @@ public class FileChannelFactory implements ChannelFactory {
 
         final List<String> dirs = config.get(OPTION_PARTITION_PATHS);
         final Set<String> groupSet = groupSet(config);
-        final int blockSize = (int) config.get(OPTION_BLOCK_SIZE).getBytes();
+        final long blockSize = config.get(OPTION_BLOCK_SIZE).getBytes();
         final long segmentSize = config.get(OPTION_SEGMENT_SIZE).getBytes();
-        final long flushPeriodMills = config.get(OPTION_FLUSH_PERIOD).toMillis();
+        final Duration flushPeriod = config.get(OPTION_FLUSH_PERIOD);
         final CompressionType compression = config.get(OPTION_COMPRESSION);
         final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD).getSeconds();
         final int blockCacheCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
         final boolean appendSyncWait = config.get(OPTION_APPEND_SYNC_AWAIT);
-        final Duration appendSyncWaitTimeoutDuration = config.get(OPTION_APPEND_SYNC_AWAIT_TIMEOUT);
-        final long appendSyncWaitTimeoutMs =
-                appendSyncWaitTimeoutDuration == null
-                        ? flushPeriodMills
-                        : appendSyncWaitTimeoutDuration.toMillis();
+        final Duration appendSyncWaitTimeout =
+                config.get(OPTION_APPEND_SYNC_AWAIT_TIMEOUT, OPTION_FLUSH_PERIOD);
         final FileChannelBuilder builder =
                 FileChannelBuilder.newBuilder()
                         .dirs(createDir(dirs))
-                        .flushPeriodMills(flushPeriodMills)
+                        .flushPeriodMills(flushPeriod.toMillis())
                         .groupPersistPeriodSecond(groupPersist)
                         .blockCacheCount(blockCacheCount);
-        return builder.blockSize(blockSize)
+        return builder.blockSize((int) blockSize)
                 .segmentSize(segmentSize)
                 .compressionType(compression)
                 .topic(topic)
                 .consumerGroups(groupSet)
                 .appendSyncWait(appendSyncWait)
-                .appendSyncWaitTimeoutMs(appendSyncWaitTimeoutMs)
+                .appendSyncWaitTimeoutMs(appendSyncWaitTimeout.toMillis())
                 .build();
     }
 
