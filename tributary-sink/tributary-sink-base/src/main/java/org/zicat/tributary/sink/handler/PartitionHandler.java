@@ -25,7 +25,6 @@ import org.zicat.tributary.common.SystemClock;
 import static org.zicat.tributary.common.Threads.joinQuietly;
 import static org.zicat.tributary.common.Threads.sleepQuietly;
 import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
-import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.parseMaxRetainSize;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.snapshotIntervalMills;
 
 import org.slf4j.Logger;
@@ -73,7 +72,6 @@ public abstract class PartitionHandler extends Thread
     protected final FunctionFactory functionFactory;
     protected final SinkGroupConfig config;
     protected final Offset startOffset;
-    protected final Long maxRetainSize;
     protected final AtomicBoolean closed = new AtomicBoolean();
     protected final long snapshotIntervalMills;
     protected final Clock clock;
@@ -95,7 +93,6 @@ public abstract class PartitionHandler extends Thread
         this.preSnapshotTime = clock.currentTimeMillis();
         this.functionFactory = findFunctionFactory(config.functionIdentity());
         this.startOffset = channel.committedOffset(groupId, partitionId);
-        this.maxRetainSize = parseMaxRetainSize(config);
         this.committedOffset = startOffset;
         this.fetchOffset = startOffset;
         this.partitionSinkSnapShortCountKey =
@@ -105,32 +102,38 @@ public abstract class PartitionHandler extends Thread
 
     @Override
     public void run() {
-
         while (true) {
-            try {
-                final RecordsResultSet result = poll(fetchOffset);
-                if (closed.get() && result.isEmpty()) {
-                    break;
-                }
-                if (!result.isEmpty()) {
-                    process(result.nexOffset(), result);
-                }
-                checkTriggerCheckpoint();
-                fetchOffset = nextFetchOffset(result.nexOffset());
-            } catch (InterruptedException interruptedException) {
-                if (closed.get()) {
-                    return;
-                }
-            } catch (Throwable e) {
-                LOG.error("poll data failed.", e);
-                if (closed.get()) {
-                    break;
-                }
-                updateAndCommitOffset();
-                fetchOffset = nextFetchOffset(null);
-                sleepWhenException();
+            if (runOneBatch()) {
+                return;
             }
         }
+    }
+
+    public boolean runOneBatch() {
+        try {
+            final RecordsResultSet result = poll(fetchOffset);
+            if (closed.get() && result.isEmpty()) {
+                return true;
+            }
+            if (!result.isEmpty()) {
+                process(result.nexOffset(), result);
+            }
+            checkTriggerCheckpoint();
+            fetchOffset = nextFetchOffset(result.nexOffset());
+        } catch (InterruptedException interruptedException) {
+            if (closed.get()) {
+                return true;
+            }
+        } catch (Throwable e) {
+            LOG.error("poll data failed.", e);
+            if (closed.get()) {
+                return true;
+            }
+            updateAndCommitOffset();
+            fetchOffset = nextFetchOffset(null);
+            sleepWhenException();
+        }
+        return false;
     }
 
     /**
@@ -307,39 +310,10 @@ public abstract class PartitionHandler extends Thread
     /** update commit offset watermark. */
     protected void updateAndCommitOffset() {
         final Offset committedOffset = committedOffset();
-        final Offset newCommittedOffset =
-                skipGroupOffsetByMaxRetainSize(Offset.max(committableOffset(), committedOffset));
-        if (newCommittedOffset.compareTo(committedOffset) > 0) {
-            commit(newCommittedOffset);
+        final Offset committableOffset = committableOffset();
+        if (committableOffset != null && committableOffset.compareTo(committedOffset) > 0) {
+            commit(committableOffset);
         }
-    }
-
-    /** skip commit offset watermark by max retain size. */
-    protected Offset skipGroupOffsetByMaxRetainSize(final Offset offset) {
-        if (maxRetainSize == null) {
-            return offset;
-        }
-        Offset newOffset = offset;
-        Offset preOffset = offset;
-        while (true) {
-            final long lag = lag(newOffset);
-            if (lag > maxRetainSize) {
-                preOffset = newOffset;
-                newOffset = newOffset.skipNextSegmentHead();
-                continue;
-            }
-            if (lag <= 0) {
-                newOffset = preOffset;
-            }
-            break;
-        }
-
-        if (preOffset == offset) {
-            return offset;
-        }
-
-        LOG.warn("lag over {}, committed {}, skip target = {}", maxRetainSize, offset, newOffset);
-        return newOffset;
     }
 
     @Override
@@ -353,5 +327,14 @@ public abstract class PartitionHandler extends Thread
     @Override
     public Map<MetricKey, Double> counterFamily() {
         return Collections.emptyMap();
+    }
+
+    /**
+     * fetch offset for test.
+     *
+     * @return offset
+     */
+    public Offset fetchOffset() {
+        return fetchOffset;
     }
 }

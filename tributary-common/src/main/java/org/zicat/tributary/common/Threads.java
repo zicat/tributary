@@ -76,15 +76,18 @@ public class Threads {
     /**
      * join quietly.
      *
-     * @param t thread
+     * @param ts threads
      */
-    public static void joinQuietly(Thread t) {
-        try {
-            if (t != null) {
+    public static void joinQuietly(Thread... ts) {
+        if (ts == null) {
+            return;
+        }
+        for (Thread t : ts) {
+            try {
                 t.join();
+            } catch (InterruptedException e) {
+                LOG.warn("join interrupted", e);
             }
-        } catch (InterruptedException e) {
-            LOG.warn("join interrupted", e);
         }
     }
 

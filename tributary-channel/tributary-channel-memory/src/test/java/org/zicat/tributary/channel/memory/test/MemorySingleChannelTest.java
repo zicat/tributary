@@ -18,10 +18,12 @@
 
 package org.zicat.tributary.channel.memory.test;
 
+import org.zicat.tributary.channel.AbstractSingleChannel.SingleGroupManagerFactory;
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
-import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemoryChannel;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createSingleGroupManagerFactory;
+import static org.zicat.tributary.channel.memory.MemoryChannelFactory.createMemorySingleChannel;
+import org.zicat.tributary.channel.memory.MemorySegment;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.readChannel;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
 
@@ -31,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.Segment.AppendResult;
-import org.zicat.tributary.channel.memory.MemoryChannel;
+import org.zicat.tributary.channel.memory.MemorySingleChannel;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
@@ -48,11 +50,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-/** OnePartitionMemoryChannelTest. */
-@SuppressWarnings("LoggingSimilarMessage")
-public class MemoryChannelTest {
+/** MemorySingleChannelTest. */
+public class MemorySingleChannelTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MemoryChannelTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MemorySingleChannelTest.class);
     private static final String LOG_FORMAT =
             "write spend:{},write count:{},read spend:{},read count:{}.";
 
@@ -66,13 +67,77 @@ public class MemoryChannelTest {
     }
 
     @Test
+    public void testCheckCapacityAndCloseSegments() throws IOException, InterruptedException {
+        final Map<String, Offset> groupOffsets = new HashMap<>();
+        final SingleGroupManagerFactory factory =
+                createSingleGroupManagerFactory(groupOffsets);
+        try (MemorySingleChannelMock channel =
+                new MemorySingleChannelMock("t1", factory, 10, 50L, CompressionType.NONE, 0)) {
+            for (int i = 0; i < 100; i++) {
+                channel.append(0, "aabbc".getBytes());
+            }
+            Assert.assertEquals(15, channel.activeSegment());
+            channel.checkCapacityAndCloseEarliestSegments(290L);
+            Assert.assertEquals(5, channel.activeSegment());
+            List<Segment> segments = new ArrayList<>(channel.segments().values());
+            segments.sort(Comparator.comparingLong(Segment::segmentId));
+            long offset = 10;
+            long size = 0;
+            for (Segment segment : segments) {
+                Assert.assertEquals(offset, segment.segmentId());
+                offset++;
+                size += segment.position();
+            }
+            Assert.assertTrue(size <= 290 && size >= (290 - 50));
+
+            // more segments close
+            channel.checkCapacityAndCloseEarliestSegments(290L);
+            Assert.assertEquals(5, channel.activeSegment());
+            segments = new ArrayList<>(channel.segments().values());
+            segments.sort(Comparator.comparingLong(Segment::segmentId));
+            offset = 10;
+            size = 0;
+            for (Segment segment : segments) {
+                Assert.assertEquals(offset, segment.segmentId());
+                offset++;
+                size += segment.position();
+            }
+            Assert.assertTrue(size <= 290 && size >= (290 - 50));
+        }
+    }
+
+    /** MemoryChannelMock. */
+    private static class MemorySingleChannelMock extends MemorySingleChannel {
+
+        public MemorySingleChannelMock(
+                String topic,
+                SingleGroupManagerFactory singleGroupManagerFactory,
+                int blockSize,
+                Long segmentSize,
+                CompressionType compressionType,
+                int blockCacheCount) {
+            super(
+                    topic,
+                    singleGroupManagerFactory,
+                    blockSize,
+                    segmentSize,
+                    compressionType,
+                    blockCacheCount);
+        }
+
+        public Map<Long, MemorySegment> segments() {
+            return cache;
+        }
+    }
+
+    @Test
     public void testSyncAwait() throws IOException, InterruptedException {
         final Map<String, Offset> groupOffsets = new HashMap<>();
-        final AbstractChannel.MemoryGroupManagerFactory factory =
-                createMemoryGroupManagerFactory(groupOffsets);
+        final SingleGroupManagerFactory factory =
+                createSingleGroupManagerFactory(groupOffsets);
         final AtomicBoolean finished = new AtomicBoolean();
         try (Channel channel =
-                new MemoryChannel("t1", factory, 10240, 10240L, CompressionType.NONE, 10) {
+                new MemorySingleChannel("t1", factory, 10240, 10240L, CompressionType.NONE, 10) {
                     @Override
                     public void append(ByteBuffer byteBuffer) throws IOException {
                         final AppendResult appendResult = innerAppend(byteBuffer);
@@ -125,10 +190,10 @@ public class MemoryChannelTest {
         final String groupId = "g1";
         final Map<String, Offset> groupOffsets = new HashMap<>();
         groupOffsets.put(groupId, UNINITIALIZED_OFFSET);
-        try (MemoryChannel channel =
-                createMemoryChannel(
+        try (MemorySingleChannel channel =
+                createMemorySingleChannel(
                         "t1",
-                        createMemoryGroupManagerFactory(groupOffsets),
+                        createSingleGroupManagerFactory(groupOffsets),
                         1024 * 4,
                         102400L,
                         CompressionType.NONE,
@@ -178,10 +243,10 @@ public class MemoryChannelTest {
                 consumerGroup.add(groupId);
                 consumerGroupOffset.put(groupId, Offset.ZERO);
             }
-            try (MemoryChannel channel =
-                    createMemoryChannel(
+            try (MemorySingleChannel channel =
+                    createMemorySingleChannel(
                             topic,
-                            createMemoryGroupManagerFactory(consumerGroupOffset),
+                            createSingleGroupManagerFactory(consumerGroupOffset),
                             blockSize,
                             segmentSize,
                             CompressionType.NONE,
@@ -312,10 +377,10 @@ public class MemoryChannelTest {
             consumerGroups.add(groupId);
             groupOffsets.put(groupId, Offset.ZERO);
         }
-        try (MemoryChannel channel =
-                createMemoryChannel(
+        try (MemorySingleChannel channel =
+                createMemorySingleChannel(
                         "t1",
-                        createMemoryGroupManagerFactory(groupOffsets),
+                        createSingleGroupManagerFactory(groupOffsets),
                         blockSize,
                         segmentSize,
                         CompressionType.NONE,
@@ -394,10 +459,10 @@ public class MemoryChannelTest {
             final int writeThread = 15;
             SinkGroup sinkGroup;
             SinkGroup sinkGroup2;
-            try (MemoryChannel channel =
-                    createMemoryChannel(
+            try (MemorySingleChannel channel =
+                    createMemorySingleChannel(
                             "t1",
-                            createMemoryGroupManagerFactory(groupOffsets),
+                            createSingleGroupManagerFactory(groupOffsets),
                             blockSize,
                             segmentSize,
                             CompressionType.NONE,

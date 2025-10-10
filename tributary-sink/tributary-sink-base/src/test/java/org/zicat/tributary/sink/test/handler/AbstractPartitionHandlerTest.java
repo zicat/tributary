@@ -18,12 +18,11 @@
 
 package org.zicat.tributary.sink.test.handler;
 
+import org.zicat.tributary.channel.DefaultChannel;
+import org.zicat.tributary.channel.memory.MemorySingleChannel;
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
 import org.zicat.tributary.sink.function.Function;
-import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_CHECKPOINT_INTERVAL;
-import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_MAX_RETAIN_SIZE;
 import org.zicat.tributary.sink.handler.PartitionHandler;
-import static org.zicat.tributary.sink.handler.PartitionHandler.OPTION_PARTITION_HANDLER_CLOCK;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,14 +34,12 @@ import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
-import org.zicat.tributary.common.test.MockClock;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** AbstractSinkHandlerTest. */
@@ -52,156 +49,81 @@ public class AbstractPartitionHandlerTest {
 
     @Test
     public void testIllegalCommittableOffset() throws IOException, InterruptedException {
-        final SinkGroupConfigBuilder builder =
+        final SinkGroupConfig sinkGroupConfig =
                 SinkGroupConfigBuilder.newBuilder()
-                        .functionIdentity(AssertFunctionFactory.IDENTITY);
-        // configuration maxRetainSize = 80 to skip segment
-        builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE, 80L);
-        final SinkGroupConfig sinkGroupConfig = builder.build();
+                        .functionIdentity(AssertFunctionFactory.IDENTITY)
+                        .build();
 
         PartitionHandler handler;
-        try (Channel channel =
+        final List<String> dataList = new ArrayList<>();
+        final Long[] capacityPerPartition = {80L};
+        final DefaultChannel<MemorySingleChannel> channel =
                 MemoryChannelTestUtils.createChannel(
-                        "t1", 2, 50, 50, CompressionType.NONE, groupId)) {
-            final int partitionId = 0;
-            handler =
-                    new PartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
+                        "t1", 1, 50, 50, CompressionType.NONE, capacityPerPartition, groupId);
+        final int partitionId = 0;
+        handler =
+                new PartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
 
-                        @Override
-                        public void snapshot() {}
+                    @Override
+                    public void snapshot() {}
 
-                        @Override
-                        public void closeCallback() {}
+                    @Override
+                    public void closeCallback() {}
 
-                        @Override
-                        public List<Function> getFunctions() {
-                            return null;
+                    @Override
+                    public List<Function> getFunctions() {
+                        return null;
+                    }
+
+                    @Override
+                    public void open() {}
+
+                    @Override
+                    public void process(Offset offset, Iterator<byte[]> iterator) {
+                        while (iterator.hasNext()) {
+                            dataList.add(new String(iterator.next(), StandardCharsets.UTF_8));
                         }
+                    }
 
-                        @Override
-                        public void open() {}
-
-                        @Override
-                        public void process(Offset offset, Iterator<byte[]> iterator) {}
-
-                        @Override
-                        public Offset committableOffset() {
-                            return Offset.ZERO;
-                        }
-                    };
-            try {
-                handler.start();
-                final List<String> testData =
-                        Arrays.asList(
-                                createStringByLength(55),
-                                createStringByLength(66),
-                                createStringByLength(77),
-                                createStringByLength(77),
-                                createStringByLength(77),
-                                createStringByLength(77));
-                for (String data : testData) {
-                    channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
-                    channel.flush();
-                }
-            } finally {
-                IOUtils.closeQuietly(handler);
-            }
-        }
-        Assert.assertEquals(5, handler.committedOffset().segmentId());
-    }
-
-    @Test
-    public void testMaxRetainPerPartition() throws IOException, InterruptedException {
-
-        final AtomicBoolean skip = new AtomicBoolean(false);
-        final MockClock clock = new MockClock().setCurrentTimeMillis(System.currentTimeMillis());
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
-        PartitionHandler handler;
-        try (Channel channel =
-                MemoryChannelTestUtils.createChannel(
-                        "t1", 1, 50, 50L, CompressionType.NONE, groupId)) {
-            final SinkGroupConfigBuilder builder =
-                    SinkGroupConfigBuilder.newBuilder()
-                            .functionIdentity(AssertFunctionFactory.IDENTITY);
-            // configuration maxRetainSize = 80 to skip segment
-            builder.addCustomProperty(OPTION_MAX_RETAIN_SIZE, 80L);
-            builder.addCustomProperty(OPTION_CHECKPOINT_INTERVAL, 100000);
-            builder.addCustomProperty(OPTION_PARTITION_HANDLER_CLOCK, clock);
-
-            final SinkGroupConfig sinkGroupConfig = builder.build();
-
+                    @Override
+                    public Offset committableOffset() {
+                        return Offset.ZERO;
+                    }
+                };
+        try {
             final List<String> testData =
                     Arrays.asList(
                             createStringByLength(55),
                             createStringByLength(66),
                             createStringByLength(77),
-                            createStringByLength(77),
-                            createStringByLength(77),
-                            createStringByLength(77));
-            final List<String> consumerData =
-                    Collections.synchronizedList(new ArrayList<>(testData));
-
-            final int partitionId = 0;
-            handler =
-                    new PartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
-
-                        @Override
-                        public void snapshot() {}
-
-                        private int count = 0;
-
-                        @Override
-                        public void open() {}
-
-                        @Override
-                        public void process(Offset offset, Iterator<byte[]> iterator) {
-                            while (iterator.hasNext()) {
-                                Assert.assertTrue(
-                                        consumerData.remove(
-                                                new String(
-                                                        iterator.next(), StandardCharsets.UTF_8)));
-                            }
-                            count++;
-                            if (count == testData.size()) {
-                                // trigger snapshot
-                                ((MockClock) clock).addMillis(100000);
-                            }
-                        }
-
-                        @Override
-                        public Offset committableOffset() {
-                            return Offset.ZERO;
-                        }
-
-                        @Override
-                        public Offset skipGroupOffsetByMaxRetainSize(Offset offset) {
-                            final Offset offset2 = super.skipGroupOffsetByMaxRetainSize(offset);
-                            skip.set(!offset.equals(offset2));
-                            countDownLatch.countDown();
-                            return offset2;
-                        }
-
-                        @Override
-                        public void closeCallback() {}
-
-                        @Override
-                        public List<Function> getFunctions() {
-                            return null;
-                        }
-                    };
-            try {
-                handler.start();
-                for (String data : testData) {
-                    channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
+                            createStringByLength(78),
+                            createStringByLength(79),
+                            createStringByLength(80));
+            for (int i = 0; i < testData.size(); i++) {
+                String data = testData.get(i);
+                channel.append(partitionId, data.getBytes(StandardCharsets.UTF_8));
+                if (i == 0) {
+                    Assert.assertFalse(handler.runOneBatch());
                 }
                 channel.flush();
-                countDownLatch.await();
-                Assert.assertTrue(skip.get());
-            } finally {
-                IOUtils.closeQuietly(handler);
             }
+            channel.cleanUpExpiredSegmentsQuietly();
+            for (int i = 0; i < testData.size(); i++) {
+                handler.runOneBatch();
+            }
+        } finally {
+            IOUtils.closeQuietly(handler);
         }
+        Assert.assertTrue(channel.getCleanupExpiredSegmentThread().isAlive());
+        Assert.assertTrue(channel.getFlushSegmentThread().isAlive());
+
+        IOUtils.closeQuietly(channel);
+        Assert.assertEquals(2, dataList.size());
+        Assert.assertEquals(createStringByLength(55), dataList.get(0));
+        Assert.assertEquals(createStringByLength(80), dataList.get(1));
         Assert.assertEquals(5, handler.committedOffset().segmentId());
+        Assert.assertFalse(channel.getCleanupExpiredSegmentThread().isAlive());
+        Assert.assertFalse(channel.getFlushSegmentThread().isAlive());
     }
 
     @Test

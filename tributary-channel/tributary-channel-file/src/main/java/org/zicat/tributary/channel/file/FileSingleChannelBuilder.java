@@ -18,15 +18,18 @@
 
 package org.zicat.tributary.channel.file;
 
-import org.zicat.tributary.channel.AbstractChannel;
+import org.zicat.tributary.channel.AbstractSingleChannel.SingleGroupManagerFactory;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.DefaultChannel;
 import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
+import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_CAPACITY_PROTECTED_PERCENT;
 import org.zicat.tributary.channel.group.FileGroupManager;
 import org.zicat.tributary.common.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Set;
 
@@ -35,7 +38,7 @@ import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PE
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
 
 /** FileChannelBuilder. */
-public class FileChannelBuilder {
+public class FileSingleChannelBuilder {
 
     private List<File> dirs;
     private long groupPersistPeriodSecond = OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds();
@@ -46,6 +49,8 @@ public class FileChannelBuilder {
     protected Set<String> consumerGroups;
     protected long flushPeriodMills = 1000;
     protected long cleanupExpiredSegmentPeriodMills = 10000;
+    protected Double capacityProtectedPercent =
+            OPTION_CAPACITY_PROTECTED_PERCENT.defaultValue().getPercent();
 
     protected boolean appendSyncWait = false;
     protected long appendSyncWaitTimeoutMs = 0;
@@ -57,8 +62,13 @@ public class FileChannelBuilder {
      * @param flushPeriodMills flushPeriodMills
      * @return this
      */
-    public FileChannelBuilder flushPeriodMills(long flushPeriodMills) {
+    public FileSingleChannelBuilder flushPeriodMills(long flushPeriodMills) {
         this.flushPeriodMills = flushPeriodMills;
+        return this;
+    }
+
+    public FileSingleChannelBuilder capacityProtectedPercent(Double capacityProtectedPercent) {
+        this.capacityProtectedPercent = capacityProtectedPercent;
         return this;
     }
 
@@ -68,13 +78,13 @@ public class FileChannelBuilder {
      * @param cleanupExpiredSegmentPeriodMills cleanupExpiredSegmentPeriodMills
      * @return this
      */
-    public FileChannelBuilder cleanupExpiredSegmentPeriodMills(
+    public FileSingleChannelBuilder cleanupExpiredSegmentPeriodMills(
             long cleanupExpiredSegmentPeriodMills) {
         this.cleanupExpiredSegmentPeriodMills = cleanupExpiredSegmentPeriodMills;
         return this;
     }
 
-    public FileChannelBuilder blockSize(int blockSize) {
+    public FileSingleChannelBuilder blockSize(int blockSize) {
         this.blockSize = blockSize;
         return this;
     }
@@ -85,7 +95,7 @@ public class FileChannelBuilder {
      * @param dirs dirs.
      * @return this
      */
-    public FileChannelBuilder dirs(List<File> dirs) {
+    public FileSingleChannelBuilder dirs(List<File> dirs) {
         this.dirs = dirs;
         return this;
     }
@@ -96,7 +106,7 @@ public class FileChannelBuilder {
      * @param groupPersistPeriodSecond groupPersistPeriodSecond.
      * @return this
      */
-    public FileChannelBuilder groupPersistPeriodSecond(long groupPersistPeriodSecond) {
+    public FileSingleChannelBuilder groupPersistPeriodSecond(long groupPersistPeriodSecond) {
         this.groupPersistPeriodSecond = groupPersistPeriodSecond;
         return this;
     }
@@ -107,7 +117,7 @@ public class FileChannelBuilder {
      * @param compressionType compressionType
      * @return this
      */
-    public FileChannelBuilder compressionType(CompressionType compressionType) {
+    public FileSingleChannelBuilder compressionType(CompressionType compressionType) {
         if (compressionType != null) {
             this.compressionType = compressionType;
         }
@@ -120,7 +130,7 @@ public class FileChannelBuilder {
      * @param segmentSize segmentSize
      * @return this
      */
-    public FileChannelBuilder segmentSize(Long segmentSize) {
+    public FileSingleChannelBuilder segmentSize(Long segmentSize) {
         this.segmentSize = segmentSize;
         return this;
     }
@@ -131,7 +141,7 @@ public class FileChannelBuilder {
      * @param blockCacheCount blockCacheCount
      * @return this
      */
-    public FileChannelBuilder blockCacheCount(Integer blockCacheCount) {
+    public FileSingleChannelBuilder blockCacheCount(Integer blockCacheCount) {
         this.blockCacheCount = blockCacheCount;
         return this;
     }
@@ -142,7 +152,7 @@ public class FileChannelBuilder {
      * @param topic topic
      * @return this
      */
-    public FileChannelBuilder topic(String topic) {
+    public FileSingleChannelBuilder topic(String topic) {
         this.topic = topic;
         return this;
     }
@@ -153,7 +163,7 @@ public class FileChannelBuilder {
      * @param consumerGroups consumerGroups
      * @return this
      */
-    public FileChannelBuilder consumerGroups(Set<String> consumerGroups) {
+    public FileSingleChannelBuilder consumerGroups(Set<String> consumerGroups) {
         this.consumerGroups = consumerGroups;
         return this;
     }
@@ -164,7 +174,7 @@ public class FileChannelBuilder {
      * @param appendSyncWait appendSyncWait
      * @return this
      */
-    public FileChannelBuilder appendSyncWait(boolean appendSyncWait) {
+    public FileSingleChannelBuilder appendSyncWait(boolean appendSyncWait) {
         this.appendSyncWait = appendSyncWait;
         return this;
     }
@@ -175,7 +185,7 @@ public class FileChannelBuilder {
      * @param appendSyncWaitTimeoutMs appendSyncWaitTimeoutMs
      * @return this
      */
-    public FileChannelBuilder appendSyncWaitTimeoutMs(long appendSyncWaitTimeoutMs) {
+    public FileSingleChannelBuilder appendSyncWaitTimeoutMs(long appendSyncWaitTimeoutMs) {
         this.appendSyncWaitTimeoutMs = appendSyncWaitTimeoutMs;
         return this;
     }
@@ -185,34 +195,40 @@ public class FileChannelBuilder {
      *
      * @return PartitionFileChannel
      */
-    public DefaultChannel<FileChannel> build() throws IOException {
+    public DefaultChannel<FileSingleChannel> build() throws IOException {
         if (dirs == null || dirs.isEmpty()) {
             throw new IllegalStateException("dir list is null or empty");
         }
         if (consumerGroups == null || consumerGroups.isEmpty()) {
             throw new IllegalStateException("file channel must has at least one consumer group");
         }
-        for (File file : dirs) {
+        final Long[] capacityProtectedList = new Long[dirs.size()];
+        for (int i = 0; i < dirs.size(); i++) {
+            final File file = dirs.get(i);
             final File dir = file.getCanonicalFile();
             if (!dir.exists() && !IOUtils.makeDir(dir)) {
                 throw new IllegalStateException("try to create fail " + dir.getPath());
             }
+            final FileStore fileStore = Files.getFileStore(dir.toPath());
+            capacityProtectedList[i] =
+                    (long) (fileStore.getTotalSpace() * capacityProtectedPercent);
         }
         return new DefaultChannel<>(
-                new AbstractChannelArrayFactory<FileChannel>(topic, consumerGroups) {
+                new AbstractChannelArrayFactory<FileSingleChannel>(topic, consumerGroups) {
                     @SuppressWarnings("resource")
                     @Override
-                    public FileChannel[] create() throws IOException {
-                        final FileChannel[] fileChannels = new FileChannel[dirs.size()];
+                    public FileSingleChannel[] create() throws IOException {
+                        final FileSingleChannel[] fileChannels = new FileSingleChannel[dirs.size()];
                         for (int i = 0; i < dirs.size(); i++) {
                             final File dir = dirs.get(i).getCanonicalFile();
-                            fileChannels[i] = createFileChannel(dir);
+                            fileChannels[i] = createFileSingleChannel(dir);
                         }
                         return fileChannels;
                     }
                 },
                 flushPeriodMills,
-                cleanupExpiredSegmentPeriodMills);
+                cleanupExpiredSegmentPeriodMills,
+                capacityProtectedList);
     }
 
     /**
@@ -224,7 +240,7 @@ public class FileChannelBuilder {
      * @param groupPersistPeriodSecond groupPersistPeriodSecond
      * @return SingleGroupManager
      */
-    private static AbstractChannel.MemoryGroupManagerFactory groupManagerFactory(
+    private static SingleGroupManagerFactory createSingleGroupManagerFactory(
             File dir, String topic, Set<String> consumerGroups, long groupPersistPeriodSecond) {
         return () ->
                 new FileGroupManager(
@@ -239,10 +255,13 @@ public class FileChannelBuilder {
      * @param dir dir
      * @return FileChannel
      */
-    private FileChannel createFileChannel(File dir) {
-        return new FileChannel(
+    private FileSingleChannel createFileSingleChannel(File dir) {
+        final SingleGroupManagerFactory factory =
+                createSingleGroupManagerFactory(
+                        dir, topic, consumerGroups, groupPersistPeriodSecond);
+        return new FileSingleChannel(
                 topic,
-                groupManagerFactory(dir, topic, consumerGroups, groupPersistPeriodSecond),
+                factory,
                 blockSize,
                 segmentSize,
                 compressionType,
@@ -257,7 +276,7 @@ public class FileChannelBuilder {
      *
      * @return PartitionFileChannelBuilder
      */
-    public static FileChannelBuilder newBuilder() {
-        return new FileChannelBuilder();
+    public static FileSingleChannelBuilder newBuilder() {
+        return new FileSingleChannelBuilder();
     }
 }

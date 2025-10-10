@@ -18,14 +18,13 @@
 
 package org.zicat.tributary.channel.group;
 
-import org.zicat.tributary.channel.AbstractChannel;
+import org.zicat.tributary.channel.AbstractSingleChannel.SingleGroupManagerFactory;
 import org.zicat.tributary.channel.Offset;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -112,6 +111,7 @@ public class MemoryGroupManager implements SingleGroupManager {
         return min == null ? UNINITIALIZED_OFFSET : min;
     }
 
+    @Override
     public Offset getMinOffset() {
         return minOffset;
     }
@@ -152,49 +152,10 @@ public class MemoryGroupManager implements SingleGroupManager {
      * create not persist memory group manager.
      *
      * @param groupOffsets groupOffsets
-     * @return MemoryOnePartitionGroupManager
+     * @return SingleGroupManagerFactory
      */
-    public static AbstractChannel.MemoryGroupManagerFactory createMemoryGroupManagerFactory(
+    public static SingleGroupManagerFactory createSingleGroupManagerFactory(
             Map<String, Offset> groupOffsets) {
         return () -> new MemoryGroupManager(groupOffsets);
-    }
-
-    /** GroupOffset. */
-    public static class GroupOffset extends Offset {
-
-        private final String groupId;
-
-        public GroupOffset(String groupId, long segmentId, long offset) {
-            super(segmentId, offset);
-            this.groupId = groupId;
-        }
-
-        public GroupOffset(String groupId, Offset offset) {
-            this(groupId, offset.segmentId(), offset.offset());
-        }
-
-        public String groupId() {
-            return groupId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof GroupOffset)) {
-                return false;
-            }
-            if (!super.equals(o)) {
-                return false;
-            }
-            GroupOffset that = (GroupOffset) o;
-            return Objects.equals(groupId, that.groupId);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), groupId);
-        }
     }
 }

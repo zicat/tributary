@@ -49,9 +49,9 @@ public class CustomConfigBuilder {
      * @param <T> T
      */
     public final <T> CustomConfigBuilder addCustomProperty(ConfigOption<T> option, Object value) {
-        return addCustomProperty(
-                option.key(),
-                option.hasDefaultValue() && value == null ? option.defaultValue() : value);
+        final Object realValue =
+                option.hasDefaultValue() && value == null ? option.defaultValue() : value;
+        return addCustomProperty(option.key(), realValue);
     }
 
     /**

@@ -51,9 +51,8 @@ public interface SingleGroupManager extends GroupManager {
      * commit all group offset without partition.
      *
      * @param offset offset
-     * @throws IOException IOException
      */
-    void commit(Offset offset) throws IOException;
+    void commit(Offset offset);
 
     @Override
     default void commit(int partition, String groupId, Offset offset) throws IOException {
@@ -64,4 +63,10 @@ public interface SingleGroupManager extends GroupManager {
     default void commit(int partition, Offset offset) throws IOException {
         commit(offset);
     }
+
+    /**
+     * get min offset of all groups.
+     * @return offset
+     */
+    Offset getMinOffset();
 }

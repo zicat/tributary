@@ -27,14 +27,11 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.handler.PartitionHandler;
 import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,11 +47,13 @@ public class SinkGroupManager implements Closeable, MetricCollector {
     private final Channel channel;
     private final SinkGroupConfig sinkGroupConfig;
     private final List<PartitionHandler> handlers = new ArrayList<>();
+    private final String id;
 
     public SinkGroupManager(String groupId, Channel channel, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
         this.channel = channel;
         this.sinkGroupConfig = sinkGroupConfig;
+        this.id = channel.topic() + "_" + groupId;
     }
 
     /** create sink handler. */
@@ -62,13 +61,10 @@ public class SinkGroupManager implements Closeable, MetricCollector {
         if (handlers.size() == channel.partition()) {
             return;
         }
-        final PartitionHandlerFactory partitionHandlerFactory =
+        final PartitionHandlerFactory factory =
                 findFactory(sinkGroupConfig.handlerIdentity(), PartitionHandlerFactory.class);
         for (int partitionId = 0; partitionId < channel.partition(); partitionId++) {
-            final PartitionHandler sinkHandler =
-                    partitionHandlerFactory.createHandler(
-                            groupId, channel, partitionId, sinkGroupConfig);
-            handlers.add(sinkHandler);
+            handlers.add(factory.createHandler(groupId, channel, partitionId, sinkGroupConfig));
         }
         handlers.forEach(PartitionHandler::open);
         handlers.forEach(Thread::start);
@@ -84,19 +80,6 @@ public class SinkGroupManager implements Closeable, MetricCollector {
         return sumDouble(handlers.stream().map(PartitionHandler::counterFamily));
     }
 
-    /**
-     * get functions.
-     *
-     * @return map
-     */
-    public Map<Integer, List<Function>> getFunctions() {
-        final Map<Integer, List<Function>> result = new HashMap<>();
-        for (PartitionHandler handler : handlers) {
-            result.put(handler.partitionId(), handler.getFunctions());
-        }
-        return result;
-    }
-
     @Override
     public void close() {
         IOUtils.concurrentCloseQuietly(handlers);
@@ -104,7 +87,7 @@ public class SinkGroupManager implements Closeable, MetricCollector {
     }
 
     public String id() {
-        return channel.topic() + "_" + groupId;
+        return id;
     }
 
     public String groupId() {
@@ -118,14 +101,5 @@ public class SinkGroupManager implements Closeable, MetricCollector {
      */
     public final String topic() {
         return channel.topic();
-    }
-
-    /**
-     * get sink group config.
-     *
-     * @return ReadableConfig
-     */
-    public final ReadableConfig sinkGroupConfig() {
-        return sinkGroupConfig;
     }
 }

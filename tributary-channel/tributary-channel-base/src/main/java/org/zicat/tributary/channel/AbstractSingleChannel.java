@@ -18,10 +18,11 @@
 
 package org.zicat.tributary.channel;
 
+import static java.lang.Math.min;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
-import org.zicat.tributary.channel.group.MemoryGroupManager;
+import org.zicat.tributary.channel.group.SingleGroupManager;
 import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.SafeFactory;
@@ -37,10 +38,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-/** AbstractChannel. */
-public abstract class AbstractChannel<S extends Segment> implements SingleChannel, Closeable {
+/** AbstractSingleChannel. */
+public abstract class AbstractSingleChannel<S extends Segment> implements SingleChannel, Closeable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractChannel.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractSingleChannel.class);
 
     public static final MetricKey KEY_WRITE_BYTES = new MetricKey("tributary_channel_write_bytes");
     public static final MetricKey KEY_READ_BYTES = new MetricKey("tributary_channel_read_bytes");
@@ -59,23 +60,25 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition newSegmentCondition = lock.newCondition();
-    private final Map<Long, S> cache = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicLong writeBytes = new AtomicLong();
     private final AtomicLong readBytes = new AtomicLong();
     private final AtomicLong appendCounter = new AtomicLong();
-    private final MemoryGroupManagerFactory groupManagerFactory;
-    private final MemoryGroupManager groupManager;
+    private final SingleGroupManagerFactory singleGroupManagerFactory;
+    private final SingleGroupManager singleGroupManager;
     private final String topic;
+    protected final Map<Long, S> cache = new ConcurrentHashMap<>();
     protected final ChannelBlockCache bCache;
     protected volatile S latestSegment;
 
-    protected AbstractChannel(
-            String topic, int blockCacheCount, MemoryGroupManagerFactory groupManagerFactory) {
+    protected AbstractSingleChannel(
+            String topic,
+            int blockCacheCount,
+            SingleGroupManagerFactory singleGroupManagerFactory) {
         this.topic = topic;
         this.bCache = blockCacheCount <= 0 ? null : new ChannelBlockCache(blockCacheCount);
-        this.groupManagerFactory = groupManagerFactory;
-        this.groupManager = groupManagerFactory.create();
+        this.singleGroupManagerFactory = singleGroupManagerFactory;
+        this.singleGroupManager = singleGroupManagerFactory.create();
     }
 
     /**
@@ -88,8 +91,8 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         addSegment(lastSegment);
     }
 
-    /** MemoryGroupManagerFactory. */
-    public interface MemoryGroupManagerFactory extends SafeFactory<MemoryGroupManager> {}
+    /** SingleGroupManagerFactory. */
+    public interface SingleGroupManagerFactory extends SafeFactory<SingleGroupManager> {}
 
     /**
      * create segment by id.
@@ -170,11 +173,9 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     @Override
     public long lag(Offset offset) {
-
         if (offset == null) {
             return 0L;
         }
-
         final long latestSegmentId = latestSegment.segmentId();
         long totalLag = 0;
         for (long segmentId = offset.segmentId; segmentId <= latestSegmentId; segmentId++) {
@@ -216,28 +217,33 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     @Override
     public Offset committedOffset(String groupId) {
-        final Offset offset = groupManager.committedOffset(groupId);
+        final Offset offset = singleGroupManager.committedOffset(groupId);
         if (!offset.uninitialized()) {
             return offset;
         }
-        final Offset minOffset = groupManager.getMinOffset();
+        final Offset minOffset = singleGroupManager.getMinOffset();
         return minOffset.uninitialized() ? new Offset(latestSegment.segmentId()) : minOffset;
     }
 
     @Override
-    public void commit(String groupId, Offset offset) {
+    public void commit(String groupId, Offset offset) throws IOException {
         if (checkOffsetOver(offset)) {
             return;
         }
-        groupManager.commit(groupId, offset);
+        singleGroupManager.commit(groupId, offset);
     }
 
     @Override
-    public void commit(Offset offset) throws IOException {
+    public void commit(Offset offset) {
         if (checkOffsetOver(offset)) {
             return;
         }
-        groupManager.commit(offset);
+        singleGroupManager.commit(offset);
+    }
+
+    @Override
+    public Offset getMinOffset() {
+        return singleGroupManager.getMinOffset();
     }
 
     /**
@@ -317,7 +323,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @return segment
      */
     private S selectMinReadableSegment() {
-        final Offset minOffset = groupManager.getMinOffset();
+        final Offset minOffset = singleGroupManager.getMinOffset();
         final S segment = cache.get(minOffset.segmentId());
         if (!Segment.isClosed(segment)) {
             return segment;
@@ -348,7 +354,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
         if (legalOffset(newRecordOffset)) {
             return newRecordOffset;
         }
-        final Offset minOffset = groupManager.getMinOffset();
+        final Offset minOffset = singleGroupManager.getMinOffset();
         return minOffset.uninitialized()
                 ? newRecordOffset.skip2TargetHead(latestSegment.segmentId())
                 : newRecordOffset.skip2TargetHead(minOffset.segmentId);
@@ -361,7 +367,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
      * @return legal offset
      */
     private boolean legalOffset(Offset offset) {
-        final Offset minOffset = groupManager.getMinOffset();
+        final Offset minOffset = singleGroupManager.getMinOffset();
         return offset.compareTo(minOffset) >= 0
                 || offset.compareTo(latestSegment.latestOffset()) <= 0;
     }
@@ -369,7 +375,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            groupManagerFactory.destroy(groupManager);
+            singleGroupManagerFactory.destroy(singleGroupManager);
             cache.forEach((k, v) -> IOUtils.closeQuietly(v));
             cache.clear();
             LOG.info("close channel topic = {}", topic);
@@ -388,7 +394,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     @Override
     public Set<String> groups() {
-        return groupManager.groups();
+        return singleGroupManager.groups();
     }
 
     /**
@@ -402,7 +408,7 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
 
     /** close and cleanup expired segments. */
     public void cleanUpExpiredSegmentsQuietly() {
-        final Offset minOffset = groupManager.getMinOffset();
+        final Offset minOffset = singleGroupManager.getMinOffset();
         if (minOffset.uninitialized()) {
             return;
         }
@@ -414,10 +420,45 @@ public abstract class AbstractChannel<S extends Segment> implements SingleChanne
                 expiredSegments.add(segment);
             }
         }
+        final Segment latestSegment = this.latestSegment;
         for (S segment : expiredSegments) {
+            if (segment.segmentId() >= latestSegment.segmentId()) {
+                continue;
+            }
             final S segmentInCache = cache.remove(segment.segmentId());
             IOUtils.closeQuietly(segmentInCache);
             Segment.recycleQuietly(segmentInCache);
+        }
+    }
+
+    public void checkCapacityAndCloseEarliestSegments(long capacity) {
+        final List<S> segments = new ArrayList<>(cache.values());
+        segments.sort(Comparator.reverseOrder()); // sort by segment id desc
+        int offset = 0;
+        long size = 0;
+        for (; offset < segments.size(); offset++) {
+            size += segments.get(offset).position();
+            if (size > capacity) {
+                break;
+            }
+        }
+        if (size <= capacity) {
+            return;
+        }
+        final long latestSegmentId = this.latestSegment.segmentId();
+        final long committableId = min(segments.get(offset).segmentId() + 1L, latestSegmentId);
+        singleGroupManager.commit(new Offset(committableId));
+        for (; offset < segments.size(); offset++) {
+            final long segmentId = segments.get(offset).segmentId();
+            if (segmentId >= committableId) {
+                continue;
+            }
+            final S segmentInCache = cache.remove(segmentId);
+            if (segmentInCache != null) {
+                LOG.warn("close and recycle segment {} for capacity", segmentId);
+                IOUtils.closeQuietly(segmentInCache);
+                Segment.recycleQuietly(segmentInCache);
+            }
         }
     }
 }

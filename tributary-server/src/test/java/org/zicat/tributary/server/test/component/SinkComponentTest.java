@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.server.test.component;
 
-import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.parseMaxRetainSize;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.ReadableConfig;
@@ -33,7 +31,6 @@ import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 
 /** SinkComponentTest. */
@@ -73,19 +70,6 @@ public class SinkComponentTest {
             Assert.assertTrue(
                     (g21.topic().equals("c1") && g22.topic().equals("c2"))
                             || (g21.topic().equals("c2") && g22.topic().equals("c1")));
-
-            Assert.assertEquals(
-                    107374182400L,
-                    Objects.requireNonNull(parseMaxRetainSize(g1.sinkGroupConfig())).longValue());
-            Assert.assertEquals(
-                    107374182400L,
-                    Objects.requireNonNull(parseMaxRetainSize(g21.sinkGroupConfig())).longValue());
-            Assert.assertEquals(
-                    107374182400L,
-                    Objects.requireNonNull(parseMaxRetainSize(g22.sinkGroupConfig())).longValue());
-            Assert.assertEquals(
-                    107374182400L,
-                    Objects.requireNonNull(parseMaxRetainSize(g3.sinkGroupConfig())).longValue());
         }
     }
 }

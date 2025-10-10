@@ -19,19 +19,22 @@
 package org.zicat.tributary.channel.memory;
 
 import org.zicat.tributary.channel.*;
+import org.zicat.tributary.channel.AbstractSingleChannel.SingleGroupManagerFactory;
 import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
+import static org.zicat.tributary.channel.memory.MemoryChannelConfigOption.OPTION_CAPACITY_PROTECTED_PERCENT;
 import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.MemoryGroupManager.createMemoryGroupManagerFactory;
+import static org.zicat.tributary.channel.group.MemoryGroupManager.createSingleGroupManagerFactory;
 
 /** MemoryChannelFactory. */
 public class MemoryChannelFactory implements ChannelFactory {
@@ -54,10 +57,15 @@ public class MemoryChannelFactory implements ChannelFactory {
         final Duration flushPeriod = config.get(OPTION_FLUSH_PERIOD);
         final Duration cleanupExpiredSegmentPeriod =
                 config.get(OPTION_CLEANUP_EXPIRED_SEGMENT_PERIOD);
+        final double capacityPercent = config.get(OPTION_CAPACITY_PROTECTED_PERCENT).getPercent();
+        final long capacity = (long) (Runtime.getRuntime().maxMemory() * capacityPercent);
+        final Long[] capacityProtectedList = new Long[partitionCounts];
+        Arrays.fill(capacityProtectedList, capacity);
+
         return new DefaultChannel<>(
-                new AbstractChannelArrayFactory<AbstractChannel<?>>(topic, groupSet) {
+                new AbstractChannelArrayFactory<AbstractSingleChannel<?>>(topic, groupSet) {
                     @Override
-                    public AbstractChannel<?>[] create() {
+                    public AbstractSingleChannel<?>[] create() {
                         return createChannels(
                                 topic,
                                 partitionCounts,
@@ -69,7 +77,8 @@ public class MemoryChannelFactory implements ChannelFactory {
                     }
                 },
                 flushPeriod.toMillis(),
-                cleanupExpiredSegmentPeriod.toMillis());
+                cleanupExpiredSegmentPeriod.toMillis(),
+                capacityProtectedList);
     }
 
     /**
@@ -84,7 +93,7 @@ public class MemoryChannelFactory implements ChannelFactory {
      * @return MemoryChannel arrays
      */
     @SuppressWarnings("resource")
-    public static MemoryChannel[] createChannels(
+    public static MemorySingleChannel[] createChannels(
             String topic,
             int partitionCount,
             Set<String> groups,
@@ -92,16 +101,15 @@ public class MemoryChannelFactory implements ChannelFactory {
             Long segmentSize,
             CompressionType compressionType,
             int blockCount) {
-        final MemoryChannel[] channels = new MemoryChannel[partitionCount];
+        final MemorySingleChannel[] channels = new MemorySingleChannel[partitionCount];
         final Map<String, Offset> groupOffsets = new HashMap<>();
         for (String group : groups) {
             groupOffsets.put(group, UNINITIALIZED_OFFSET);
         }
-        final AbstractChannel.MemoryGroupManagerFactory factory =
-                createMemoryGroupManagerFactory(groupOffsets);
+        final SingleGroupManagerFactory factory = createSingleGroupManagerFactory(groupOffsets);
         for (int i = 0; i < partitionCount; i++) {
             channels[i] =
-                    createMemoryChannel(
+                    createMemorySingleChannel(
                             topic, factory, blockSize, segmentSize, compressionType, blockCount);
         }
         return channels;
@@ -118,7 +126,7 @@ public class MemoryChannelFactory implements ChannelFactory {
      * @param compressionType compressionType
      * @return MemoryChannel arrays
      */
-    public static MemoryChannel[] createChannels(
+    public static MemorySingleChannel[] createChannels(
             String topic,
             int partitionCount,
             Set<String> groups,
@@ -146,14 +154,14 @@ public class MemoryChannelFactory implements ChannelFactory {
      * @param blockCount blockCount
      * @return MemoryChannel
      */
-    public static MemoryChannel createMemoryChannel(
+    public static MemorySingleChannel createMemorySingleChannel(
             String topic,
-            AbstractChannel.MemoryGroupManagerFactory factory,
+            SingleGroupManagerFactory factory,
             int blockSize,
             long segmentSize,
             CompressionType compressionType,
             int blockCount) {
-        return new MemoryChannel(
+        return new MemorySingleChannel(
                 topic, factory, blockSize, segmentSize, compressionType, blockCount);
     }
 }

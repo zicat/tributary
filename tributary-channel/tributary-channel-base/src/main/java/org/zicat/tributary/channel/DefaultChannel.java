@@ -20,6 +20,7 @@ package org.zicat.tributary.channel;
 
 import org.zicat.tributary.common.*;
 import static org.zicat.tributary.common.Threads.interruptQuietly;
+import static org.zicat.tributary.common.Threads.joinQuietly;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** DefaultChannel. */
-public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
+public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Channel {
 
     private static final String THREAD_NAME_SEGMENT_FLUSH = "segment_flush_thread";
     private static final String THREAD_NAME_CLEANUP_EXPIRED_SEGMENT =
@@ -42,11 +43,13 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread flushSegmentThread;
     private final Thread cleanupExpiredSegmentThread;
+    private final Long[] capacityProtectedList;
 
     public DefaultChannel(
             ChannelArrayFactory<C> factory,
             long flushPeriodMills,
-            long cleanupExpiredSegmentPeriodMills)
+            long cleanupExpiredSegmentPeriodMills,
+            Long[] capacityProtectedList)
             throws IOException {
         final C[] channels = factory.create();
         if (channels == null || channels.length == 0) {
@@ -55,8 +58,12 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
         if (flushPeriodMills <= 0) {
             throw new IllegalArgumentException("flush period is less than 0");
         }
+        if (capacityProtectedList.length != channels.length) {
+            throw new IllegalArgumentException("capacity size not equal partition size");
+        }
         this.factory = factory;
         this.channels = channels;
+        this.capacityProtectedList = capacityProtectedList;
         this.flushSegmentThread =
                 startLoopRunningThread(
                         closed, THREAD_NAME_SEGMENT_FLUSH, this::flushQuietly, flushPeriodMills);
@@ -167,6 +174,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
                 factory.destroy(channels);
             } finally {
                 interruptQuietly(flushSegmentThread, cleanupExpiredSegmentThread);
+                joinQuietly(flushSegmentThread, cleanupExpiredSegmentThread);
             }
         }
     }
@@ -194,7 +202,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
      *
      * @param <C> type channel
      */
-    public interface ChannelArrayFactory<C extends AbstractChannel<?>> extends Factory<C[]> {
+    public interface ChannelArrayFactory<C extends AbstractSingleChannel<?>> extends Factory<C[]> {
 
         /**
          * return topic.
@@ -216,7 +224,7 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
      *
      * @param <C> C
      */
-    public abstract static class AbstractChannelArrayFactory<C extends AbstractChannel<?>>
+    public abstract static class AbstractChannelArrayFactory<C extends AbstractSingleChannel<?>>
             implements ChannelArrayFactory<C> {
         private final String topic;
         private final Set<String> groups;
@@ -244,8 +252,13 @@ public class DefaultChannel<C extends AbstractChannel<?>> implements Channel {
 
     /** clean up expired segments quietly for test. */
     public void cleanUpExpiredSegmentsQuietly() {
-        for (C channel : channels) {
+        for (int i = 0; i < channels.length; i++) {
+            final C channel = channels[i];
             channel.cleanUpExpiredSegmentsQuietly();
+            final Long capacity = capacityProtectedList[i];
+            if (capacity != null) {
+                channel.checkCapacityAndCloseEarliestSegments(capacity);
+            }
         }
     }
 

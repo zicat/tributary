@@ -23,6 +23,7 @@ import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
 import org.zicat.tributary.channel.ChannelConfigOption;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.PercentSize;
 
 import java.time.Duration;
 import java.util.List;
@@ -47,4 +48,10 @@ public class FileChannelConfigOption extends ChannelConfigOption {
                     .durationType()
                     .description("append sync await timeout")
                     .defaultValue(null);
+
+    public static final ConfigOption<PercentSize> OPTION_CAPACITY_PROTECTED_PERCENT =
+            ConfigOptions.key("capacity.protected.percent")
+                    .percentType()
+                    .description("the capacity protected percent")
+                    .defaultValue(PercentSize.parse("85%"));
 }

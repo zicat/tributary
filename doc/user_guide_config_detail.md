@@ -258,29 +258,31 @@ channel.c2.block.cache.per.partition.size=1024
 
 ### File Config
 
-| key                            | default      | type                   | describe                                                                                                                                                                                       |
-|--------------------------------|--------------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block.size                     | 32kb         | bytes                  | the block size to store records in memory                                                                                                                                                      |
-| compression                    | none         | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
-| segment.size                   | 4gb          | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
-| segment.expired.cleanup.period | 10s          | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                               |
-| partitions                     |              | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                        |
-| flush.period                   | 500ms        | duration               | the period time to async flush page cache to disk                                                                                                                                              |
-| groups.persist.period          | 30s          | duration               | the period time to async persist the committed group offset to disk                                                                                                                            |     
-| block.cache.per.partition.size | 1024         | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
-| append.sync.await              | false        | bool                   | the switch whether wait the append function put data to page cache successfully, default false means return directly only the append function  put data to block successfully                  |
-| append.sync.await.timeout      | flush.period | duration               | the timeout if append sync await is open, the default equal flush.period                                                                                                                       |
+| key                            | default        | type                   | describe                                                                                                                                                                                                                                                                         |
+|--------------------------------|----------------|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block.size                     | 32kb           | bytes                  | the block size to store records in memory                                                                                                                                                                                                                                        |
+| compression                    | none           | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                                                                                                                 |
+| segment.size                   | 4gb            | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                                                                                                             |
+| segment.expired.cleanup.period | 30s            | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                                                                                                                 |
+| partitions                     |                | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                                                                                                          |
+| flush.period                   | 500ms          | duration               | the period time to async flush page cache to disk                                                                                                                                                                                                                                |
+| groups.persist.period          | 30s            | duration               | the period time to async persist the committed group offset to disk                                                                                                                                                                                                              |     
+| block.cache.per.partition.size | 1024           | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                   | 
+| append.sync.await              | false          | bool                   | the switch whether wait the append function put data to page cache successfully, default false means return directly only the append function  put data to block successfully                                                                                                    |
+| append.sync.await.timeout      | `flush.period` | duration               | the timeout if append sync await is open, the default equal flush.period                                                                                                                                                                                                         |
+| capacity.protected.percent     | 85%            | percent                | the max disk capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the disk usage percent over the param, those sink groups will skip offset to next segment to consume |
 
 ### Memory Config
 
-| key                            | default | type                   | describe                                                                                                                                                                                       |
-|--------------------------------|---------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                      |
-| compression                    | none    | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                               |
-| segment.size                   | 1gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                           |
-| segment.expired.cleanup.period | 10s     | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                               |
-| partitions                     | 1       | int(number)            | the number of partitions                                                                                                                                                                       |
-| block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on | 
+| key                            | default | type                   | describe                                                                                                                                                                                                                                                                             |
+|--------------------------------|---------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                                                                                                            |
+| compression                    | none    | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                                                                                                                     |
+| segment.size                   | 1gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                                                                                                                 |
+| segment.expired.cleanup.period | 30s     | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                                                                                                                     |
+| partitions                     | 1       | int(number)            | the number of partitions                                                                                                                                                                                                                                                             |
+| block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                       | 
+| capacity.protected.percent     | 75%     | percent                | the max memory capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the memory usage percent over the param, those sink groups will skip offset to next segment to consume |
 
 Note:
 
@@ -302,14 +304,10 @@ started by `sink.{group_id}.*`. The {group_id} must be used in `channel.{channel
 
 ```properties
 sink.group_1.function.id=hdfs
-sink.group_1.partition.retain.max.bytes=100gb
 sink.group_2.function.id=kafka
-sink.group_2.partition.retain.max.bytes=100gb
 sink.group_2.partition.concurrent=3
 sink.group_3.function.id=hbase
-sink.group_3.partition.retain.max.bytes=100gb
 sink.group_4.function.id=elasticsearch
-sink.group_4.partition.retain.max.bytes=100gb
 ``` 
 
 ### Common Config
@@ -317,7 +315,6 @@ sink.group_4.partition.retain.max.bytes=100gb
 | key                           | default | type                                       | describe                                                                                                                                                                                                                                 |
 |-------------------------------|---------|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | function.id                   |         | enum[print,kafka,hdfs,hbase,elasticsearch] | the function identity that configure how to consume records, user can customize functions by  implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)   |
-| partition.retain.max.bytes    |         | bytes                                      | the max retain bytes of each partition. When the sink lag is over, the oldest segment will be deleted, the param may cause data lost, be careful                                                                                         |
 | partition.concurrent          | 1       | int(number)                                | the threads to consume one partition data from channel, multi threads will cause data disorder in one partition, be careful                                                                                                              |  
 | partition.checkpoint.interval | 1min    | duration                                   | the interval to callback [CheckpointedFunction.snapshot()](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/CheckpointedFunction.java), each type of sink has different checkpoint implementations. |
 
@@ -531,7 +528,6 @@ channel.c2.block.size=32kb
 channel.c2.segment.size=4gb
 channel.c2.flush.period=1sec
 
-sink.group_1.partition.retain.max.bytes=100gb
 sink.group_1.function.id=hdfs
 sink.group_1.sink.path=/tmp/test/cache
 sink.group_1.roll.size=10mb
@@ -543,7 +539,6 @@ sink.group_1.principle=
 sink.group_1.writer.identity=parquet
 sink.group_1.writer.parquet.compression.codec=snappy
 
-sink.group_2.partition.retain.max.bytes=100gb
 sink.group_2.partition.concurrent=3
 sink.group_2.function.id=kafka
 sink.group_2.kafka.bootstrap.servers=127.0.0.1:9092
@@ -553,7 +548,6 @@ sink.group_2.kafka.linger.ms=1000
 sink.group_2.kafka.batch.size=524288
 sink.group_2.kafka.compression.type=snappy
 
-sink.group_3.partition.retain.max.bytes=100gb
 sink.group_3.function.id=hbase
 sink.group_3.hbase-site-xml.path=/tmp/hbase-site.xml
 sink.group_3.table.name=table_test
@@ -562,7 +556,6 @@ sink.group_3.table.column.value.name=value
 sink.group_3.table.column.topic.name=topic
 sink.group_3.table.column.head.name.prefix=head_
 
-sink.group_4.partition.retain.max.bytes=100gb
 sink.group_4.function.id=elasticsearch
 sink.group_4.hosts=http://localhost:9200
 sink.group_4.path-prefix=

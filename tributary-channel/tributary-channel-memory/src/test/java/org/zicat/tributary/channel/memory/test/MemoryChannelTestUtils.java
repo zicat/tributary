@@ -21,6 +21,7 @@ package org.zicat.tributary.channel.memory.test;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
+import org.zicat.tributary.channel.memory.MemorySingleChannel;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
@@ -102,7 +103,7 @@ public class MemoryChannelTestUtils {
      * @return channel
      * @throws IOException IOException
      */
-    public static Channel createChannel(
+    public static DefaultChannel<MemorySingleChannel> createChannel(
             String topic,
             int partitionCount,
             int blockSize,
@@ -110,11 +111,32 @@ public class MemoryChannelTestUtils {
             CompressionType compressionType,
             String... groupIds)
             throws IOException {
+        final Long[] capacityProtectedList = new Long[partitionCount];
+        Arrays.fill(capacityProtectedList, Runtime.getRuntime().maxMemory());
+        return createChannel(
+                topic,
+                partitionCount,
+                blockSize,
+                segmentSize,
+                compressionType,
+                capacityProtectedList,
+                groupIds);
+    }
+
+    public static DefaultChannel<MemorySingleChannel> createChannel(
+            String topic,
+            int partitionCount,
+            int blockSize,
+            long segmentSize,
+            CompressionType compressionType,
+            Long[] capacityProtectedList,
+            String... groupIds)
+            throws IOException {
         final Set<String> groups = new HashSet<>(Arrays.asList(groupIds));
         return new DefaultChannel<>(
-                new AbstractChannelArrayFactory<AbstractChannel<?>>(topic, groups) {
+                new AbstractChannelArrayFactory<MemorySingleChannel>(topic, groups) {
                     @Override
-                    public AbstractChannel<?>[] create() {
+                    public MemorySingleChannel[] create() {
                         return MemoryChannelFactory.createChannels(
                                 topic,
                                 partitionCount,
@@ -125,7 +147,8 @@ public class MemoryChannelTestUtils {
                     }
                 },
                 500,
-                10000);
+                10000,
+                capacityProtectedList);
     }
 
     /**

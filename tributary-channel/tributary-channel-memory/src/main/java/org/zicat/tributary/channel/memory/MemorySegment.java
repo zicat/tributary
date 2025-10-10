@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel.memory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.ChannelBlockCache;
 import org.zicat.tributary.channel.CompressionType;
@@ -30,6 +32,7 @@ import java.util.List;
 /** MemorySegment. */
 public class MemorySegment extends Segment {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MemorySegment.class);
     private final List<ByteBuffer> chunkChain = new ArrayList<>();
     private static final int CHUNK_SIZE = 16 * 1024;
     private volatile ByteBuffer currentChunk;
@@ -125,5 +128,6 @@ public class MemorySegment extends Segment {
         super.recycle();
         chunkChain.clear();
         currentChunk = null;
+        LOG.info("recycled memory segment: {}", segmentId());
     }
 }

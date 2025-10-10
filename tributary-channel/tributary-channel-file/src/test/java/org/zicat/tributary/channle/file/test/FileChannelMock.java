@@ -41,7 +41,7 @@ public class FileChannelMock extends FileChannel {
     }
 
     @Override
-    public int read(ByteBuffer dst, long position) throws IOException {
+    public int read(ByteBuffer dst, long position) {
         if (data == null || position >= data.length) {
             return -1;
         }

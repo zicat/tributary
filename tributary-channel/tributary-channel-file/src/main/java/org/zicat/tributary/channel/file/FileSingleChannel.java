@@ -41,9 +41,9 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
  * <p>All public methods in FileChannel are @ThreadSafe.
  *
  * <p>FileChannel ignore partition params and append/pull all records in the {@link
- * FileChannel#dir}. {@link Channel} support multi partitions operations.
+ * FileSingleChannel#dir}. {@link Channel} support multi partitions operations.
  *
- * <p>Data files {@link FileSegment} name start with {@link FileChannel#topic()}
+ * <p>Data files {@link FileSegment} name start with {@link FileSingleChannel#topic()}
  *
  * <p>Only one {@link FileSegment} is writeable and support multi threads write it, multi threads
  * can read writable segment or other segments tagged as finished(not writable).
@@ -51,9 +51,9 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
  * <p>FileChannel support commit groupOffset and support clean up expired segments(all group ids has
  * commit the offset over those segments) async}
  */
-public class FileChannel extends AbstractChannel<FileSegment> {
+public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileChannel.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileSingleChannel.class);
 
     private final File dir;
     private final Long segmentSize;
@@ -63,9 +63,9 @@ public class FileChannel extends AbstractChannel<FileSegment> {
     private final boolean appendSyncWait;
     private final long appendSyncWaitTimeoutMs;
 
-    protected FileChannel(
+    protected FileSingleChannel(
             String topic,
-            MemoryGroupManagerFactory factory,
+            SingleGroupManagerFactory factory,
             int blockSize,
             Long segmentSize,
             CompressionType compressionType,

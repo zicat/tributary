@@ -25,6 +25,7 @@ import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PE
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.common.PercentSize;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.File;
@@ -60,12 +61,14 @@ public class FileChannelFactory implements ChannelFactory {
         final boolean appendSyncWait = config.get(OPTION_APPEND_SYNC_AWAIT);
         final Duration appendSyncWaitTimeout =
                 config.get(OPTION_APPEND_SYNC_AWAIT_TIMEOUT, OPTION_FLUSH_PERIOD);
-        final FileChannelBuilder builder =
-                FileChannelBuilder.newBuilder()
+        final PercentSize capacityProtectedPercent = config.get(OPTION_CAPACITY_PROTECTED_PERCENT);
+        final FileSingleChannelBuilder builder =
+                FileSingleChannelBuilder.newBuilder()
                         .dirs(createDir(dirs))
                         .flushPeriodMills(flushPeriod.toMillis())
                         .cleanupExpiredSegmentPeriodMills(cleanupExpiredSegmentPeriod.toMillis())
                         .groupPersistPeriodSecond(groupPersist)
+                        .capacityProtectedPercent(capacityProtectedPercent.getPercent())
                         .blockCacheCount(blockCacheCount);
         return builder.blockSize((int) blockSize)
                 .segmentSize(segmentSize)

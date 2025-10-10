@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.channle.file.test;
 
-import static org.zicat.tributary.channel.AbstractChannel.*;
+import static org.zicat.tributary.channel.AbstractSingleChannel.*;
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_GROUPS;
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_PARTITION_PATHS;
 import static org.zicat.tributary.channel.test.ChannelBaseTest.testChannelCorrect;
@@ -30,8 +30,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
-import org.zicat.tributary.channel.file.FileChannel;
-import org.zicat.tributary.channel.file.FileChannelBuilder;
+import org.zicat.tributary.channel.file.FileSingleChannel;
+import org.zicat.tributary.channel.file.FileSingleChannelBuilder;
 import org.zicat.tributary.channel.file.FileChannelFactory;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.common.DefaultReadableConfig;
@@ -46,9 +46,9 @@ import java.util.concurrent.TimeUnit;
 
 /** FileChannelTest. */
 @SuppressWarnings("EmptyTryBlock")
-public class FileChannelTest {
+public class FileSingleChannelTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileChannelTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileSingleChannelTest.class);
     private static final File PARENT_DIR = FileUtils.createTmpDir("file_channel_test");
 
     @Test
@@ -265,7 +265,7 @@ public class FileChannelTest {
                 CompressionType.SNAPPY);
     }
 
-    public static DefaultChannel<FileChannel> createChannel(
+    public static DefaultChannel<FileSingleChannel> createChannel(
             String topic,
             Set<String> consumerGroup,
             int partitionCount,
@@ -278,7 +278,7 @@ public class FileChannelTest {
         for (int i = 0; i < partitionCount; i++) {
             dirs.add(new File(dir + i));
         }
-        final FileChannelBuilder builder = FileChannelBuilder.newBuilder().flushPeriodMills(500);
+        final FileSingleChannelBuilder builder = FileSingleChannelBuilder.newBuilder().flushPeriodMills(500);
         builder.segmentSize(segmentSize)
                 .blockSize(blockSize)
                 .consumerGroups(consumerGroup)

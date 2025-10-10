@@ -20,26 +20,26 @@ package org.zicat.tributary.channel.memory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.channel.AbstractChannel;
+import org.zicat.tributary.channel.AbstractSingleChannel;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
 
-/** MemoryChannel. */
-public class MemoryChannel extends AbstractChannel<MemorySegment> {
+/** MemorySingleChannel. */
+public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MemoryChannel.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MemorySingleChannel.class);
     private final Long segmentSize;
     private final CompressionType compressionType;
     private final BlockWriter blockWriter;
 
-    protected MemoryChannel(
+    protected MemorySingleChannel(
             String topic,
-            MemoryGroupManagerFactory groupManagerFactory,
+            SingleGroupManagerFactory singleGroupManagerFactory,
             int blockSize,
             Long segmentSize,
             CompressionType compressionType,
             int blockCacheCount) {
-        super(topic, blockCacheCount, groupManagerFactory);
+        super(topic, blockCacheCount, singleGroupManagerFactory);
         this.blockWriter = new BlockWriter(blockSize);
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;

@@ -21,6 +21,7 @@ package org.zicat.tributary.channel.memory;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
 import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.PercentSize;
 
 /** MemoryChannelConfigOption. */
 public class MemoryChannelConfigOption {
@@ -30,4 +31,10 @@ public class MemoryChannelConfigOption {
                     .memoryType()
                     .description("segment size, default 1G")
                     .defaultValue(new MemorySize(1024L * 1024L * 1024L));
+
+    public static final ConfigOption<PercentSize> OPTION_CAPACITY_PROTECTED_PERCENT =
+            ConfigOptions.key("capacity.protected.percent")
+                    .percentType()
+                    .description("the capacity protected percent")
+                    .defaultValue(PercentSize.parse("75%"));
 }
