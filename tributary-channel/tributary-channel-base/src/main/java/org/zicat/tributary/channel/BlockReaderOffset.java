@@ -54,7 +54,7 @@ public class BlockReaderOffset extends Offset {
      * create block by segment id.
      *
      * @param segmentId segmentId
-     * @return BlockGroupOffset
+     * @return BlockReaderOffset
      */
     public static BlockReaderOffset cast(long segmentId) {
         return cast(segmentId, 0);
@@ -65,17 +65,17 @@ public class BlockReaderOffset extends Offset {
      *
      * @param segmentId segmentId
      * @param offset offset
-     * @return BlockGroupOffset
+     * @return BlockReaderOffset
      */
     public static BlockReaderOffset cast(long segmentId, long offset) {
         return new BlockReaderOffset(segmentId, offset);
     }
 
     /**
-     * cast GroupOffset as BlockGroupOffset.
+     * cast offset as BlockReaderOffset.
      *
      * @param offset offset
-     * @return BlockGroupOffset
+     * @return BlockReaderOffset
      */
     public static BlockReaderOffset cast(Offset offset) {
         if (offset instanceof BlockReaderOffset) {
@@ -87,7 +87,7 @@ public class BlockReaderOffset extends Offset {
     /**
      * reset block.
      *
-     * @return BlockGroupOffset
+     * @return BlockReaderOffset
      */
     public final BlockReaderOffset reset() {
         blockReader.reset();
@@ -99,7 +99,7 @@ public class BlockReaderOffset extends Offset {
      *
      * @param offset offset
      * @param blockReader blockReader
-     * @return BlockGroupOffset
+     * @return BlockReaderOffset
      */
     public BlockReaderOffset newOffsetReader(long offset, BlockReader blockReader) {
         return new BlockReaderOffset(segmentId, offset, blockReader);

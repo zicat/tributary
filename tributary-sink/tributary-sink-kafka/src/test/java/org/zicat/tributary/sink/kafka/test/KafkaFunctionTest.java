@@ -82,18 +82,18 @@ public class KafkaFunctionTest {
                             .topic(topic);
             function.open(builder.build());
 
-            final Offset groupOffset = new Offset(2, 0);
-            function.process(groupOffset, recordsList.iterator());
+            final Offset offset = new Offset(2, 0);
+            function.process(offset, recordsList.iterator());
             assertData(record1, mockProducer.history().get(0), recordsHeader);
             assertData(record2, mockProducer.history().get(1), recordsHeader);
             function.snapshot();
-            Assert.assertEquals(groupOffset, function.committableOffset());
+            Assert.assertEquals(offset, function.committableOffset());
 
-            function.process(groupOffset.skipNextSegmentHead(), recordsList.iterator());
+            function.process(offset.skipNextSegmentHead(), recordsList.iterator());
             assertData(record1, mockProducer.history().get(0), recordsHeader);
             assertData(record2, mockProducer.history().get(1), recordsHeader);
             function.snapshot();
-            Assert.assertEquals(groupOffset.skipNextSegmentHead(), function.committableOffset());
+            Assert.assertEquals(offset.skipNextSegmentHead(), function.committableOffset());
 
             for (ProducerRecord<byte[], byte[]> r : mockProducer.history()) {
                 Assert.assertEquals(topic, r.topic());
@@ -118,8 +118,8 @@ public class KafkaFunctionTest {
                             .topic(topic);
             builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC, "aa_${topic}");
             function.open(builder.build());
-            final Offset groupOffset = new Offset(2, 0);
-            function.process(groupOffset, recordsList.iterator());
+            final Offset offset = new Offset(2, 0);
+            function.process(offset, recordsList.iterator());
             assertData(record1, mockProducer.history().get(0), recordsHeader);
             assertData(record2, mockProducer.history().get(1), recordsHeader);
             for (ProducerRecord<byte[], byte[]> r : mockProducer.history()) {

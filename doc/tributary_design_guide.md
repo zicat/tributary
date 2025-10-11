@@ -24,7 +24,7 @@ In fault scenarios, it is necessary to temporarily store a large amount of uncon
 Implementing this based on memory may result in serious GC issues, which could affect sinks and even
 cause program crashes.
 
-To support multi-sinks scenarios, each sink needs to maintain its own GroupOffset. In case of
+To support multi-sinks scenarios, each sink needs to maintain its own Offset. In case of
 failures, each sink can be designed with different fault-tolerance strategies without affecting
 other sinks, sources, or channels.
 
@@ -109,7 +109,7 @@ details.
 #### About FileChannel
 
 The main responsibilities of the file channel include segment lifecycle management, flush strategy,
-and management of GroupOffset.
+and management of Offset.
 
 1. segment lifecycle management
 
@@ -134,7 +134,7 @@ and management of GroupOffset.
 
 3. consumption group management and persistence
 
-   Responsible for making the GroupOffset submitted by sinks, and calculating the minimum segment ID
+   Responsible for making the offset submitted by sinks, and calculating the minimum segment ID
    to allow the clean-up thread to delete expired segments.
 
 Go to the source code of

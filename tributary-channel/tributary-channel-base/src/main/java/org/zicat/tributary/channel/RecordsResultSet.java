@@ -35,9 +35,9 @@ import java.util.concurrent.TimeUnit;
 public interface RecordsResultSet extends Iterator<byte[]> {
 
     /**
-     * next group offset.
+     * next offset.
      *
-     * @return GroupOffset
+     * @return Offset
      */
     Offset nexOffset();
 

@@ -347,7 +347,7 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
      * read from last segment if null or over lastSegment.
      *
      * @param offset offset
-     * @return BlockGroupOffset
+     * @return BlockReaderOffset
      */
     protected BlockReaderOffset cast(Offset offset) {
         final BlockReaderOffset newRecordOffset = BlockReaderOffset.cast(offset);

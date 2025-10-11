@@ -17,8 +17,8 @@ multi sinks.
 
 When the record is sent to the Tributary service, the source is responsible for writing the data to
 the channel and ack the client. The sinks pull the records from the channel based on their
-respective GroupOffsets. When the external system successfully stores these records, it submits the
-GroupOffset, which is the end-to-end reliability flow design of Tributary.
+respective offsets. When the external system successfully stores these records, it submits the
+Offset, which is the end-to-end reliability flow design of Tributary.
 
 ### Recoverability
 
@@ -28,7 +28,7 @@ responsible for maintaining the health of all Tributary instances and making nec
 in case of malfunctions.
 
 If there is an external system failure for the sink, it will roll back to the previously committed
-GroupOffset and re-consume to ensure at-least-one successful consumption. Partial sink failures will
+offset and re-consume to ensure at-least-one successful consumption. Partial sink failures will
 not affect other sinks.
 
 ## Setting up a tributary service

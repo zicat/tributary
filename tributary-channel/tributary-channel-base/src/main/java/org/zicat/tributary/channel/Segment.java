@@ -271,7 +271,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
      * blocking read data from SegmentStorage.
      *
      * <p>if Segment is closed OR read position is over {@link Segment#position} and readonly,
-     * return empty blockGroupOffset
+     * return empty blockReaderOffset
      *
      * <p>if read position is over {@link Segment#position} and not readonly, block wait for writing
      * thread wake up.
@@ -313,7 +313,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     /**
      * read from block offset.
      *
-     * @param blockReaderOffset blockGroupOffset
+     * @param blockReaderOffset BlockReaderOffset
      * @param limitOffset limitOffset
      * @throws IOException IOException
      */
@@ -539,10 +539,10 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     /**
      * skip to target offset with empty block.
      *
-     * @param blockReaderOffset blockGroupOffset
+     * @param blockReaderOffset blockReaderOffset
      * @param newOffset newOffset
      * @param reusedBuf reusedBuf
-     * @return BlockGroupOffset
+     * @return BlockReaderOffset
      */
     private static BlockReaderOffset skip2TargetOffset(
             BlockReaderOffset blockReaderOffset, long newOffset, ByteBuffer reusedBuf) {

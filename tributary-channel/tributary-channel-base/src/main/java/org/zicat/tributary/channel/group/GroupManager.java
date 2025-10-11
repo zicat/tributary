@@ -39,7 +39,7 @@ public interface GroupManager extends Closeable {
      *
      * @param groupId groupId
      * @param partition partition
-     * @return GroupOffset
+     * @return Offset offset
      */
     Offset committedOffset(String groupId, int partition);
 

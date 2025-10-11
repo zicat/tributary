@@ -90,14 +90,14 @@ public interface Channel extends Closeable, MetricCollector, GroupManager {
      * poll records.
      *
      * @param partition partition
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @param time time
      * @param unit unit
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    RecordsResultSet poll(int partition, Offset groupOffset, long time, TimeUnit unit)
+    RecordsResultSet poll(int partition, Offset offset, long time, TimeUnit unit)
             throws IOException, InterruptedException;
 
     /**

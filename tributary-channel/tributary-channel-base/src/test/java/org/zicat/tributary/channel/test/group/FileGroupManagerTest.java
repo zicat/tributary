@@ -57,8 +57,8 @@ public class FileGroupManagerTest {
             Assert.assertTrue(minOffset.uninitialized());
 
             for (String group : groupIds) {
-                Offset groupOffset = manager.committedOffset(group);
-                Assert.assertTrue(groupOffset.uninitialized());
+                Offset offset = manager.committedOffset(group);
+                Assert.assertTrue(offset.uninitialized());
                 final Offset newOffset = new Offset(random.nextInt(10) + 1, random.nextInt(100));
                 manager.commit(group, newOffset);
                 Assert.assertEquals(newOffset, manager.committedOffset(group));

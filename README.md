@@ -19,7 +19,7 @@ records. It has a simple and flexible architecture based on streaming records fl
 
     Specifically, the received data is stored in multiple channels, and each sink consumes a separate channel.
 
-    Tributary adopts a read amplification to address isolation issues and supports multiple sinks consuming the same channel based on GroupOffset.
+    Tributary adopts a read amplification to address isolation issues and supports multiple sinks consuming the same channel based on Offset.
 
     The benefits of reading amplification not only ensure fault isolation, but also greatly reduce the overhead, especially when the data volume and number of sinks increase.
 

@@ -117,8 +117,8 @@ public class HDFSFunctionTest {
 
             function.open(builder.build());
 
-            final Offset groupOffset = new Offset(1, 0);
-            function.process(groupOffset, Collections.singletonList(records).iterator());
+            final Offset offset = new Offset(1, 0);
+            function.process(offset, Collections.singletonList(records).iterator());
             String currentBucketPath = currentBucketPath(generator);
 
             Assert.assertTrue(
@@ -137,7 +137,7 @@ public class HDFSFunctionTest {
                                                             pathname.getName()
                                                                     .endsWith(".parquet"))));
             Assert.assertEquals(1, parquetFiles.size());
-            Assert.assertEquals(groupOffset, function.committableOffset());
+            Assert.assertEquals(offset, function.committableOffset());
 
             final File parquetFile = parquetFiles.get(0);
             Assert.assertTrue(parquetFile.getParent().endsWith("/" + topic));
@@ -174,9 +174,9 @@ public class HDFSFunctionTest {
                         record2.value(), toBytes((ByteBuffer) record.get(FIELD_VALUE)));
             }
 
-            final Offset groupOffset2 = new Offset(2, 0);
+            final Offset offset2 = new Offset(2, 0);
             function.process(
-                    groupOffset2,
+                    offset2,
                     Collections.singletonList(createStringRecords(topic, "aa", "bb")).iterator());
 
             currentBucketPath = currentBucketPath(generator);
@@ -196,7 +196,7 @@ public class HDFSFunctionTest {
             Assert.assertEquals(1, parquetFiles.size());
 
             // because clock not set new current time over 1 min, committable offset not changed
-            Assert.assertEquals(groupOffset2, function.committableOffset());
+            Assert.assertEquals(offset2, function.committableOffset());
         }
     }
 

@@ -88,10 +88,10 @@ public class FileSegmentTest {
         result.add(createStringByLength(20));
         int i = 0;
 
-        final BlockReaderOffset bufferGroupOffset = BlockReaderOffset.cast(fileId);
+        final BlockReaderOffset blockReaderOffset = BlockReaderOffset.cast(fileId);
 
         RecordsResultSet resultSet =
-                segment.readBlock(bufferGroupOffset, 1, TimeUnit.MILLISECONDS).toResultSet();
+                segment.readBlock(blockReaderOffset, 1, TimeUnit.MILLISECONDS).toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         while (resultSet.hasNext()) {
             byte[] bs = resultSet.next();

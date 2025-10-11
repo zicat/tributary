@@ -98,7 +98,7 @@ public class MemoryGroupManager implements SingleGroupManager {
      * get min group offset.
      *
      * @param cache cache
-     * @return GroupOffset
+     * @return Offset
      */
     private static Offset minOffset(Map<String, Offset> cache) {
         Offset min = null;

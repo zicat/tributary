@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * FileGroupManager.
  *
- * <p>Store GroupOffset in local {@link FileGroupManager#groupIndexFile}.
+ * <p>Store Group id and Offset in local {@link FileGroupManager#groupIndexFile}.
  *
  * <p>File name example: {myTopic}_group_id.index
  *

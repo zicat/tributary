@@ -31,7 +31,7 @@ import java.util.List;
 import static org.zicat.tributary.common.VIntUtil.putVInt;
 import static org.zicat.tributary.common.VIntUtil.vIntEncodeLength;
 
-/** BlockGroupOffsetTest. */
+/** BlockReaderOffsetTest. */
 public class BlockReaderOffsetTest {
 
     @Test
@@ -41,15 +41,15 @@ public class BlockReaderOffsetTest {
         testData.add(new byte[] {1, 2, 3, 4, 5});
         testData.add(new byte[] {1, 2, 3});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BlockReaderOffset groupOffset = new BlockReaderOffsetMock(resultBuf);
-        final RecordsResultSet resultSet = groupOffset.toResultSet();
+        final BlockReaderOffset blockReaderOffset = new BlockReaderOffsetMock(resultBuf);
+        final RecordsResultSet resultSet = blockReaderOffset.toResultSet();
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertArrayEquals(testData.get(0), resultSet.next());
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertArrayEquals(testData.get(1), resultSet.next());
         Assert.assertTrue(resultSet.hasNext());
         Assert.assertArrayEquals(testData.get(2), resultSet.next());
-        Assert.assertSame(groupOffset, resultSet.nexOffset());
+        Assert.assertSame(blockReaderOffset, resultSet.nexOffset());
         Assert.assertFalse(resultSet.isEmpty());
     }
 
@@ -58,10 +58,10 @@ public class BlockReaderOffsetTest {
         final List<byte[]> testData = new ArrayList<>();
         testData.add(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BlockReaderOffset groupOffset = new BlockReaderOffsetMock(resultBuf);
-        Assert.assertTrue(groupOffset.toResultSet().hasNext());
-        Assert.assertFalse(groupOffset.reset().toResultSet().hasNext());
-        Assert.assertTrue(groupOffset.reset().toResultSet().isEmpty());
+        final BlockReaderOffset blockReaderOffset = new BlockReaderOffsetMock(resultBuf);
+        Assert.assertTrue(blockReaderOffset.toResultSet().hasNext());
+        Assert.assertFalse(blockReaderOffset.reset().toResultSet().hasNext());
+        Assert.assertTrue(blockReaderOffset.reset().toResultSet().isEmpty());
     }
 
     @Test
@@ -69,18 +69,20 @@ public class BlockReaderOffsetTest {
         final List<byte[]> testData = new ArrayList<>();
         testData.add(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         final ByteBuffer resultBuf = toBuffer(testData);
-        final BlockReaderOffset groupOffset = new BlockReaderOffsetMock(resultBuf);
-        final BlockReaderOffset groupOffset2 = groupOffset.skip2Target(2, 0);
+        final BlockReaderOffset blockReaderOffset = new BlockReaderOffsetMock(resultBuf);
+        final BlockReaderOffset blockReaderOffset2 = blockReaderOffset.skip2Target(2, 0);
         Assert.assertSame(
-                groupOffset.blockReader().resultBuf(), groupOffset2.blockReader().resultBuf());
+                blockReaderOffset.blockReader().resultBuf(),
+                blockReaderOffset2.blockReader().resultBuf());
         Assert.assertSame(
-                groupOffset.blockReader().resultBuf(), groupOffset2.blockReader().resultBuf());
+                blockReaderOffset.blockReader().resultBuf(),
+                blockReaderOffset2.blockReader().resultBuf());
 
-        Assert.assertTrue(groupOffset.toResultSet().hasNext());
-        Assert.assertFalse(groupOffset2.toResultSet().hasNext());
+        Assert.assertTrue(blockReaderOffset.toResultSet().hasNext());
+        Assert.assertFalse(blockReaderOffset2.toResultSet().hasNext());
     }
 
-    /** BlockGroupOffsetMock. */
+    /** BlockReaderOffsetMock. */
     public static class BlockReaderOffsetMock extends BlockReaderOffset {
 
         public BlockReaderOffsetMock(ByteBuffer resultBuf) {

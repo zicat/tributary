@@ -29,7 +29,7 @@ public interface SingleGroupManager extends GroupManager {
      * get committed group offset without partition. return (-1, -1) if first consume
      *
      * @param groupId groupId
-     * @return GroupOffset
+     * @return Offset offset
      */
     Offset committedOffset(String groupId);
 

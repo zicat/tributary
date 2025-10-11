@@ -140,7 +140,7 @@ public abstract class PartitionHandler extends Thread
      * next fetch offset.
      *
      * @param nextOffset nextOffset
-     * @return GroupOffset
+     * @return Offset
      */
     private Offset nextFetchOffset(Offset nextOffset) {
         if (nextOffset == null || nextOffset.compareTo(committedOffset()) < 0) {
@@ -176,7 +176,7 @@ public abstract class PartitionHandler extends Thread
     /**
      * committableOffset.
      *
-     * @return GroupOffset
+     * @return Offset
      */
     public abstract Offset committableOffset();
 
@@ -227,14 +227,13 @@ public abstract class PartitionHandler extends Thread
     /**
      * default poll data, subclass can override this function.
      *
-     * @param groupOffset groupOffset
+     * @param offset offset
      * @return RecordsResultSet
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    protected RecordsResultSet poll(Offset groupOffset) throws IOException, InterruptedException {
-        return channel.poll(
-                partitionId, groupOffset, DEFAULT_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS);
+    protected RecordsResultSet poll(Offset offset) throws IOException, InterruptedException {
+        return channel.poll(partitionId, offset, DEFAULT_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -301,7 +300,7 @@ public abstract class PartitionHandler extends Thread
     /**
      * get commit offset watermark. for unit test visitable.
      *
-     * @return GroupOffset
+     * @return Offset offset
      */
     public Offset committedOffset() {
         return committedOffset;

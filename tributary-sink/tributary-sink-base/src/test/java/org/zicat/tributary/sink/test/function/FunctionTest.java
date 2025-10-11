@@ -78,11 +78,11 @@ public class FunctionTest {
             final Context context = builder.build();
             function.open(context);
 
-            final Offset newGroupOffset = offset.skip2TargetHead(2);
+            final Offset newOffset = offset.skip2TargetHead(2);
             function.process(
                     offset.skip2TargetHead(2),
                     Collections.singletonList(createStringRecords("t1", "data")).iterator());
-            Assert.assertEquals(function.committableOffset(), newGroupOffset);
+            Assert.assertEquals(function.committableOffset(), newOffset);
         }
     }
 }

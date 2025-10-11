@@ -31,7 +31,7 @@ import java.util.Map;
 public class MemoryGroupManagerTest {
 
     @Test
-    public void testMinGroupOffset() {
+    public void testMinOffset() {
         final Map<String, Offset> groupOffsets = new HashMap<>();
         groupOffsets.put("g1", UNINITIALIZED_OFFSET);
         groupOffsets.put("g2", UNINITIALIZED_OFFSET);
