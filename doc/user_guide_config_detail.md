@@ -438,8 +438,7 @@ sink.group_4.request.indexer.identity=default
 | bulk.max.count                            | 1000             | int      | the max index request count in bulk to async send. the request will be sent when `bulk.max.count` trigger or `bulk.max.bytes` trigger or checkpoint trigger                                                  |
 | bulk.response.action_listener.identity    | default          | string   | the spi identity of [BulkResponseActionListenerFactory](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/listener/BulkResponseActionListenerFactory.java) |
 | request.indexer.identity                  | default          | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java)                                                |
-| request.indexer.default.index             | null             | string   | the index if config `request.indexer` AS `default`                                                                                                                                                           |
-| request.indexer.default.topic_as_index    | boolean          | false    | whether using topic from `Records` as index, default false means use `request.indexer.default.index`.                                                                                                        |
+| request.indexer.default.index             | null             | string   | the index if config `request.indexer` AS `default`, if null means using record topic as index                                                                                                                |
 | request.indexer.default.record_size_limit | `bulk.max.bytes` | bytes    | the max record size limit, if the record size over this value, the record will be discarded, default equal `bulk.max.bytes`                                                                                  |
 
 Note:
@@ -452,7 +451,7 @@ Note:
    header
    will be discarded if the key of header is contained in value json object keys.
 
-3. For the `default` of `request.indexer` and `request.indexer.default.topic_as_index` is `false`, the topic value of
+3. For the `default` of `request.indexer` and `request.indexer.default.index` is not null, the topic value of
    the record will be stored in the elasticsearch by key
    `_topic`.
 
@@ -568,5 +567,4 @@ sink.group_4.connection.timeout=10s
 sink.group_4.socket.timeout=20s
 sink.group_4.request.indexer.identity=default
 sink.group_4.request.indexer.default.index=my_index
-sink.group_4.request.indexer.default.topic_as_index=false
 ```       

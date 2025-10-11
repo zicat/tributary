@@ -45,12 +45,6 @@ import java.util.Map.Entry;
 public class DefaultRequestIndexer implements RequestIndexer {
 
     public static final String IDENTITY = "default";
-    public static final ConfigOption<Boolean> OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX =
-            ConfigOptions.key("request.indexer.default.topic_as_index")
-                    .booleanType()
-                    .description("Using topic as index.")
-                    .defaultValue(false);
-
     public static final ConfigOption<String> OPTION_REQUEST_INDEXER_DEFAULT_INDEX =
             ConfigOptions.key("request.indexer.default.index")
                     .stringType()
@@ -72,13 +66,11 @@ public class DefaultRequestIndexer implements RequestIndexer {
     public static final String KEY_TOPIC = "_topic";
 
     private transient String index;
-    private transient boolean topicAsIndex;
     private transient long discardCounter;
     private transient long recordSizeLimit;
 
     @Override
     public void open(Context context) {
-        topicAsIndex = context.get(OPTION_REQUEST_INDEXER_DEFAULT_USING_TOPIC_AS_INDEX);
         index = context.get(OPTION_REQUEST_INDEXER_DEFAULT_INDEX);
         recordSizeLimit =
                 context.get(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, OPTION_BULK_MAX_BYTES)
@@ -113,7 +105,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
     protected IndexRequest indexRequest(
             String topic, byte[] key, byte[] value, Map<String, byte[]> headers)
             throws JsonProcessingException {
-        final String realIndex = topicAsIndex ? topic : index;
+        final String realIndex = index == null ? topic : index;
         if (realIndex == null) {
             discardCounter++;
             LOG.warn("skip invalid message, index is null");
@@ -148,7 +140,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
             final String v = new String(entry.getValue(), UTF_8);
             objectNode.put(entry.getKey(), v);
         }
-        if (!topicAsIndex) {
+        if (index != null) {
             objectNode.put(KEY_TOPIC, topic);
         }
         indexRequest.source(MAPPER.writeValueAsBytes(objectNode), XContentType.JSON);
