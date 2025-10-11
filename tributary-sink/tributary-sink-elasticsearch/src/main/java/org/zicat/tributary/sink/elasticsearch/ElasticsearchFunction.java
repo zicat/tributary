@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.elasticsearch;
 
 import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.SimpleLRUCache;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
@@ -65,8 +66,8 @@ public class ElasticsearchFunction extends AbstractFunction {
     protected int buckMaxCount;
     protected long buckMaxBytes;
     protected Offset lastOffset;
-    protected Map<MetricKey, Double> listenerCounterMetrics = new HashMap<>();
-    protected Map<MetricKey, Double> listenerGaugeMetrics = new HashMap<>();
+    protected Map<MetricKey, Double> listenerCounterMetrics = SimpleLRUCache.create(1024);
+    protected Map<MetricKey, Double> listenerGaugeMetrics = SimpleLRUCache.create(1024);
 
     @Override
     public void open(Context context) throws Exception {
