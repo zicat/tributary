@@ -21,7 +21,6 @@ package org.zicat.tributary.sink.kafka;
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 import org.zicat.tributary.common.MetricKey;
-import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 import static org.zicat.tributary.sink.kafka.KafkaFunctionFactory.OPTION_TOPIC;
 
@@ -100,7 +99,7 @@ public class KafkaFunction extends AbstractFunction {
         foreachRecord(
                 records,
                 (key, value, allHeaders) -> sendRecord(targetTopic, key, value, allHeaders),
-                extraHeaders);
+                defaultSinkExtraHeaders(extraHeaders));
         return records.count();
     }
 

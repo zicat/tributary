@@ -21,7 +21,6 @@ package org.zicat.tributary.sink.elasticsearch;
 import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.SimpleLRUCache;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
-import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.*;
 

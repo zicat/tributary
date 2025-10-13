@@ -29,13 +29,16 @@ import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.HadoopOutputFile;
+import org.zicat.tributary.common.Clock;
 import org.zicat.tributary.common.IOUtils;
 import org.zicat.tributary.common.records.Records;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
+import static org.zicat.tributary.common.records.RecordsUtils.sinkExtraHeaders;
 
 /** ParquetHDFSRecordsWriter. */
 public class ParquetHDFSRecordsWriter implements HDFSRecordsWriter {
@@ -72,9 +75,11 @@ public class ParquetHDFSRecordsWriter implements HDFSRecordsWriter {
     protected transient ParquetWriter<GenericRecord> writer;
 
     protected final CompressionCodecName compressionCodecName;
+    protected final Clock clock;
 
-    public ParquetHDFSRecordsWriter(CompressionCodecName compressionCodecName) {
+    public ParquetHDFSRecordsWriter(CompressionCodecName compressionCodecName, Clock clock) {
         this.compressionCodecName = compressionCodecName;
+        this.clock = clock;
     }
 
     @Override
@@ -90,6 +95,8 @@ public class ParquetHDFSRecordsWriter implements HDFSRecordsWriter {
 
     @Override
     public int append(Records records) throws Exception {
+        final Map<String, byte[]> extraHeaders = new HashMap<>();
+        sinkExtraHeaders(clock, extraHeaders);
         foreachRecord(
                 records,
                 (key, value, allHeaders) -> {
@@ -100,7 +107,7 @@ public class ParquetHDFSRecordsWriter implements HDFSRecordsWriter {
                     record.put(FIELD_VALUE, value);
                     writer.write(record);
                 },
-                defaultSinkExtraHeaders());
+                extraHeaders);
         return records.count();
     }
 

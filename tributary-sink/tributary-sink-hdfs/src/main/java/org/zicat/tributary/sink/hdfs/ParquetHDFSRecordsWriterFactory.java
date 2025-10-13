@@ -21,6 +21,7 @@ package org.zicat.tributary.sink.hdfs;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.zicat.tributary.common.ConfigOption;
 import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;
 
 /** ParquetHDFSRecordsWriterFactory. */
@@ -39,7 +40,8 @@ public class ParquetHDFSRecordsWriterFactory implements HDFSRecordsWriterFactory
 
     @Override
     public HDFSRecordsWriter create(Context context) {
-        return new ParquetHDFSRecordsWriter(compressionCodecName(context));
+        return new ParquetHDFSRecordsWriter(
+                compressionCodecName(context), context.get(AbstractFunction.OPTION_SINK_CLOCK));
     }
 
     @Override

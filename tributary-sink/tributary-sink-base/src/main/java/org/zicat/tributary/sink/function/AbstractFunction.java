@@ -19,17 +19,30 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.Offset;
+import org.zicat.tributary.common.Clock;
+import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.SystemClock;
+import static org.zicat.tributary.common.records.RecordsUtils.sinkExtraHeaders;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /** AbstractFunction. */
 public abstract class AbstractFunction implements Function {
 
+    public static final ConfigOption<Clock> OPTION_SINK_CLOCK =
+            ConfigOptions.key("_sink_clock").<Clock>objectType().defaultValue(new SystemClock());
+
     protected Context context;
+    protected Clock clock;
     private Offset committableOffset;
 
     @Override
     public void open(Context context) throws Exception {
         this.context = context;
         this.committableOffset = context.startOffset();
+        this.clock = context.get(OPTION_SINK_CLOCK);
     }
 
     @Override
@@ -67,5 +80,21 @@ public abstract class AbstractFunction implements Function {
     @Override
     public int partitionId() {
         return context.partitionId();
+    }
+
+    /**
+     * default sink extra headers.
+     *
+     * @return headers
+     */
+    public Map<String, byte[]> defaultSinkExtraHeaders() {
+        final Map<String, byte[]> result = new HashMap<>();
+        sinkExtraHeaders(clock, result);
+        return result;
+    }
+
+    public Map<String, byte[]> defaultSinkExtraHeaders(Map<String, byte[]> result) {
+        sinkExtraHeaders(clock, result);
+        return result;
     }
 }

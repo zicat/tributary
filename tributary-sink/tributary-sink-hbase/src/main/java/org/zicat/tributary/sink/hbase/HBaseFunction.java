@@ -20,7 +20,6 @@ package org.zicat.tributary.sink.hbase;
 
 import static org.zicat.tributary.common.IOUtils.getClasspathResource;
 import org.zicat.tributary.common.MetricKey;
-import static org.zicat.tributary.common.records.RecordsUtils.defaultSinkExtraHeaders;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
 

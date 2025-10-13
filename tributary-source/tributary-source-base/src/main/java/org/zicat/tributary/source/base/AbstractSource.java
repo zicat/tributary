@@ -29,6 +29,7 @@ import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.ReadableConfig;
 import org.zicat.tributary.common.SystemClock;
 import org.zicat.tributary.common.records.Records;
+import static org.zicat.tributary.common.records.RecordsUtils.appendRecTs;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -46,7 +47,6 @@ public abstract class AbstractSource implements Source {
     public static final MetricKey APPEND_CHANNEL_RECORD_COUNTER =
             new MetricKey("tributary_source_append_channel_record_counter");
 
-    public static final String HEADER_KEY_REC_TS = "_rec_ts";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSource.class);
 
     protected final AtomicInteger count = new AtomicInteger();
@@ -71,8 +71,7 @@ public abstract class AbstractSource implements Source {
             return;
         }
         mergeCounter(APPEND_CHANNEL_RECORD_COUNTER, records.count(), Double::sum);
-        final Map<String, byte[]> headers = records.headers();
-        headers.put(HEADER_KEY_REC_TS, String.valueOf(clock.currentTimeMillis()).getBytes());
+        appendRecTs(clock, records.headers());
         final ByteBuffer byteBuffer = records.toByteBuffer();
         final int realPartition = partition == null ? defaultPartition() : partition;
         try {
