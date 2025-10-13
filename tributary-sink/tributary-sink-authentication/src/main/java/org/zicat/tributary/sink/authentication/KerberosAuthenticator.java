@@ -216,21 +216,17 @@ public class KerberosAuthenticator implements TributaryAuthenticator {
     @Override
     public void startCredentialRefresher() {
         final int checkTGTInterval = 10; // minute
+        final String user = ugi.getUserName();
         final ScheduledExecutorService scheduler =
                 new ScheduledThreadPoolExecutor(
-                        1,
-                        Threads.createThreadFactoryByName(
-                                "author_" + ugi.getUserName() + "_", true));
+                        1, Threads.createThreadFactoryByName("author_" + user + "_", true));
         scheduler.scheduleWithFixedDelay(
                 () -> {
                     try {
-                        LOG.info("start to relogin keytab for user {}", ugi.getUserName());
+                        LOG.info("start to relogin keytab for user {}", user);
                         ugi.checkTGTAndReloginFromKeytab();
                     } catch (Throwable e) {
-                        LOG.warn(
-                                "Error during checkTGTAndReloginFromKeytab() for user {}",
-                                ugi.getUserName(),
-                                e);
+                        LOG.warn("checkTGTAndReloginFromKeytab error for user {}", user, e);
                     }
                 },
                 checkTGTInterval,

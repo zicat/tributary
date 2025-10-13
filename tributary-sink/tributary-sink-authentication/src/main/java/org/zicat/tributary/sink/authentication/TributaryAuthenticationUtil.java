@@ -27,7 +27,7 @@ public class TributaryAuthenticationUtil {
 
     private TributaryAuthenticationUtil() {}
 
-    private static KerberosAuthenticator kerbAuthenticator;
+    private static volatile KerberosAuthenticator kerbAuthenticator;
 
     /**
      * If principal and keytab are null, this method returns a SimpleAuthenticator which executes

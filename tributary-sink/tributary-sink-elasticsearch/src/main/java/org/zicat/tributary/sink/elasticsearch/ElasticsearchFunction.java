@@ -95,12 +95,13 @@ public class ElasticsearchFunction extends AbstractFunction {
                     (key, value, headers) -> {
                         if (indexer.add(request, topic, key, value, headers)) {
                             sinkCounter++;
-                            if (shouldSend()) {
-                                sendAsync(offset);
-                            }
                         }
                     },
                     defaultSinkExtraHeaders());
+        }
+        if (request.numberOfActions() >= buckMaxCount
+                || request.estimatedSizeInBytes() >= buckMaxBytes) {
+            sendAsync(offset);
         }
         lastOffset = offset;
     }
@@ -295,15 +296,5 @@ public class ElasticsearchFunction extends AbstractFunction {
         for (Map.Entry<MetricKey, Double> entry : listener.gaugeFamily().entrySet()) {
             listenerGaugeMetrics.merge(entry.getKey(), entry.getValue(), Double::sum);
         }
-    }
-
-    /**
-     * should send.
-     *
-     * @return true if match send
-     */
-    private boolean shouldSend() {
-        return request.numberOfActions() >= buckMaxCount
-                || request.estimatedSizeInBytes() >= buckMaxBytes;
     }
 }

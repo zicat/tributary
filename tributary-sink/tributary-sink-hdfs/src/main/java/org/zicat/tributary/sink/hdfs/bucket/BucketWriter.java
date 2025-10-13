@@ -93,7 +93,7 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
                             fullFileName = createNewFullFileName();
                             targetPath = bucketPath + "/" + fullFileName;
                             tmpWritePath = targetPath + inUseSuffix();
-                            LOG.info("Creating " + tmpWritePath);
+                            LOG.info("Creating {}", tmpWritePath);
                             final Path path = new Path(tmpWritePath);
                             fileSystem = getFileSystem(path, config);
                             writer.open(fileSystem, path);
