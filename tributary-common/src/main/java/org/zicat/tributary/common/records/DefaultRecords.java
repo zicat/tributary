@@ -18,11 +18,12 @@
 
 package org.zicat.tributary.common.records;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /** DefaultRecords. */
-@SuppressWarnings("NullableProblems")
 public class DefaultRecords implements Records {
 
     private final String topic;
@@ -66,6 +67,7 @@ public class DefaultRecords implements Records {
     }
 
     @Override
+    @NotNull
     public Iterator<Record> iterator() {
         return records.iterator();
     }

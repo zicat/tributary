@@ -20,13 +20,15 @@
         <module>sample-code</module>
     </modules>
     <properties>
+        <prometheus-version>0.5.0</prometheus-version>
         <hadoop-veriosn>3.3.2</hadoop-veriosn>
         <hbase-version>2.2.5</hbase-version>
         <kafka-version>2.5.0</kafka-version>
-        <prometheus-version>0.5.0</prometheus-version>
-        <netty-version>4.1.65.Final</netty-version>
         <elasticsearch-client-version>7.17.23</elasticsearch-client-version>
-        <snappy-java>1.1.8.4</snappy-java>
+        <netty-version>4.1.65.Final</netty-version>
+        <snappy-java-version>1.1.8.4</snappy-java-version>
+        <zstd-jni-version>1.5.2-5</zstd-jni-version>
+        <jackson-version>2.13.0</jackson-version>
     </properties>
     <scm>
         <url>https://github.com/zicat/tributary</url>

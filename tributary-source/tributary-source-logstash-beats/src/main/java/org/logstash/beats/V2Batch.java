@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.source.logstash.base.Message;
@@ -49,7 +50,7 @@ public class V2Batch implements Batch {
         return Protocol.VERSION_2;
     }
 
-    @SuppressWarnings("NullableProblems")
+    @NotNull
     public Iterator<Message<Object>> iterator() {
         internalBuffer.resetReaderIndex();
         return new Iterator<Message<Object>>() {

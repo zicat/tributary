@@ -1,5 +1,6 @@
 package org.logstash.beats;
 
+import org.jetbrains.annotations.NotNull;
 import org.zicat.tributary.source.logstash.base.Message;
 
 import java.util.ArrayList;
@@ -35,8 +36,8 @@ public class V1Batch implements Batch {
         }
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
+    @NotNull
     public Iterator<Message<Object>> iterator() {
         return messages.iterator();
     }

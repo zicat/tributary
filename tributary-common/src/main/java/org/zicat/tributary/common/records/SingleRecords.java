@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.common.records;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 /** SingleRecords. */
@@ -55,8 +57,8 @@ public class SingleRecords implements Records {
         return 1;
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
+    @NotNull
     public Iterator<Record> iterator() {
         return new Iterator<Record>() {
             Record offset = record;

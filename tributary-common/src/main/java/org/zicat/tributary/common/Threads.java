@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.common;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** ThreadPoolUtils. */
-@SuppressWarnings("NullableProblems")
 public class Threads {
 
     private static final Logger LOG = LoggerFactory.getLogger(Threads.class);
@@ -55,7 +55,7 @@ public class Threads {
             private final AtomicInteger count = new AtomicInteger();
 
             @Override
-            public Thread newThread(Runnable r) {
+            public Thread newThread(@NotNull Runnable r) {
                 final Thread t = new Thread(threadGroup, r, prefixName + count.incrementAndGet());
                 t.setDaemon(daemon);
                 return t;
