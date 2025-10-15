@@ -137,7 +137,7 @@ public class MemorySingleChannelTest {
                 createSingleGroupManagerFactory(groupOffsets);
         final AtomicBoolean finished = new AtomicBoolean();
         try (Channel channel =
-                new MemorySingleChannel("t1", factory, 10240, 10240L, CompressionType.NONE, 10) {
+                new MemorySingleChannel("t1", factory, 10240, 102400L, CompressionType.NONE, 10) {
                     @Override
                     public void append(ByteBuffer byteBuffer) throws IOException {
                         final AppendResult appendResult = innerAppend(byteBuffer);

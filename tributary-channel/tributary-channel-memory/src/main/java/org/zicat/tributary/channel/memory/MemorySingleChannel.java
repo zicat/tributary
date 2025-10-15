@@ -40,6 +40,9 @@ public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {
             CompressionType compressionType,
             int blockCacheCount) {
         super(topic, blockCacheCount, singleGroupManagerFactory);
+        if (blockSize >= segmentSize) {
+            throw new IllegalArgumentException("block size must less than segment size");
+        }
         this.blockWriter = new BlockWriter(blockSize);
         this.segmentSize = segmentSize;
         this.compressionType = compressionType;

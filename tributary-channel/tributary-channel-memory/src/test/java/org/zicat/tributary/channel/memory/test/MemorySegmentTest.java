@@ -107,9 +107,9 @@ public class MemorySegmentTest {
                     new Thread(
                             () -> {
                                 try {
-                                    Assert.assertTrue(segment.append("").appended());
+                                    Assert.assertTrue(segment.append("".getBytes()).appended());
                                     for (String s : result) {
-                                        segment.append(s);
+                                        segment.append(s.getBytes());
                                     }
                                 } catch (IOException ioException) {
                                     throw new RuntimeException(ioException);

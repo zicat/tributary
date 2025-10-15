@@ -48,8 +48,8 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
  * <p>Only one {@link FileSegment} is writeable and support multi threads write it, multi threads
  * can read writable segment or other segments tagged as finished(not writable).
  *
- * <p>FileChannel support commit group offset and support clean up expired segments(all group ids has
- * commit the offset over those segments) async}
+ * <p>FileChannel support commit group offset and support clean up expired segments(all group ids
+ * has commit the offset over those segments) async}
  */
 public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
 
@@ -74,6 +74,9 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
             boolean appendSyncWait,
             long appendSyncWaitTimeoutMs) {
         super(topic, blockCacheCount, factory);
+        if (blockSize >= segmentSize) {
+            throw new IllegalArgumentException("block size must less than segment size");
+        }
         this.blockWriter = new BlockWriter(blockSize);
         this.flushPageCacheSize = blockSize * 10L;
         this.segmentSize = segmentSize;

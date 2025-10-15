@@ -34,7 +34,6 @@ public class MemorySegment extends Segment {
 
     private static final Logger LOG = LoggerFactory.getLogger(MemorySegment.class);
     private final List<ByteBuffer> chunkChain = new ArrayList<>();
-    private static final int CHUNK_SIZE = 16 * 1024;
     private volatile ByteBuffer currentChunk;
     private final int chunkSize;
 
@@ -45,7 +44,7 @@ public class MemorySegment extends Segment {
             long segmentSize,
             ChannelBlockCache bCache) {
         super(id, writer, compressionType, segmentSize, 0, bCache);
-        this.chunkSize = (int) Math.min(CHUNK_SIZE, segmentSize);
+        this.chunkSize = writer.capacity();
         newChunk();
     }
 

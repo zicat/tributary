@@ -59,7 +59,7 @@ public class AbstractPartitionHandlerTest {
         final Long[] capacityPerPartition = {80L};
         final DefaultChannel<MemorySingleChannel> channel =
                 MemoryChannelTestUtils.createChannel(
-                        "t1", 1, 50, 50, CompressionType.NONE, capacityPerPartition, groupId);
+                        "t1", 1, 30, 50, CompressionType.NONE, capacityPerPartition, groupId);
         final int partitionId = 0;
         handler =
                 new PartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {

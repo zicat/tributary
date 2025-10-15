@@ -29,8 +29,8 @@ public class MemoryChannelConfigOption {
     public static final ConfigOption<MemorySize> OPTION_SEGMENT_SIZE =
             ConfigOptions.key("segment.size")
                     .memoryType()
-                    .description("segment size, default 1G")
-                    .defaultValue(new MemorySize(1024L * 1024L * 1024L));
+                    .description("segment size, default 512mb")
+                    .defaultValue(new MemorySize(1024L * 1024L * 512L));
 
     public static final ConfigOption<PercentSize> OPTION_CAPACITY_PROTECTED_PERCENT =
             ConfigOptions.key("capacity.protected.percent")
