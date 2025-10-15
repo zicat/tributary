@@ -348,6 +348,9 @@ sink.group_1.writer.parquet.compression.codec=snappy
 
 [more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
+Note:
+   1. The default checkpoint implement of HDFS function is to check the bucket whether rolled over by time, if it should be rolled over, the current file will be closed and offset will be commited.
+
 ### Sink Kafka
 
 ```properties
@@ -368,10 +371,12 @@ Tributary support all kafka producer params,
 
 Note:
 
-1. The value of keys `key.serializer` and `value.serializer` is always
+1. The default checkpoint implement of Kafka function is to flush buffer and commit offset.
+
+2. The value of keys `key.serializer` and `value.serializer` is always
    `org.apache.kafka.common.serialization.ByteArraySerializer`. Setting value to others is ignored.
 
-2. The value of param `topic` support var `${topic}` like dispatcher_proxy_sink_${topic} to sink data to different topic
+3. The value of param `topic` support var `${topic}` like dispatcher_proxy_sink_${topic} to sink data to different topic
    depend on the record's topic.
 
 ### Sink HBase
@@ -396,13 +401,15 @@ sink.group_3.table.column.head.name.prefix=head_
 
 Note:
 
-1. HbaseSink
+1. The default checkpoint implement of Hbase function is to flush buffer and commit offset.
+
+2. HbaseSink
    require [Record](../tributary-common/src/main/java/org/zicat/tributary/common/records/Record.java) has key.
 
    The record without key will be filtered. User can watch how many records are
    filtered by metrics key `sink_hbase_discard_counter`.
 
-2. The key-supported sources
+3. The key-supported sources
    include kafka decoder and http decoder.
 
 ### Sink ElasticSearch
@@ -443,23 +450,25 @@ sink.group_4.request.indexer.identity=default
 
 Note:
 
-1. For the `default` of `request.indexer`, the value of records must be a string object json. The records will be
+1. The default checkpoint implement of Elasticsearch function is to flush buffer and wait all async bulk request to finished and commit offset.
+
+2. For the `default` of `request.indexer`, the value of records must be a string object json. The records will be
    discarded
    if not, user can watch how many records are filtered by metrics key `sink_elasticsearch_discard_counter`.
 
-2. For the `default` of `request.indexer`, the headers of the record will also be stored in the elasticsearch. The
+3. For the `default` of `request.indexer`, the headers of the record will also be stored in the elasticsearch. The
    header
    will be discarded if the key of header is contained in value json object keys.
 
-3. For the `default` of `request.indexer` and `request.indexer.default.index` is not null, the topic value of
+4. For the `default` of `request.indexer` and `request.indexer.default.index` is not null, the topic value of
    the record will be stored in the elasticsearch by key
    `_topic`.
 
-4. For the `default` of `request.indexer`, the key value of the record will be store in the elasticsearch by id if the
+5. For the `default` of `request.indexer`, the key value of the record will be store in the elasticsearch by id if the
    key
    exists.
 
-5. For the `default` of `bulk.response.action_listener.identity`, the failed bulk request will be retried util success.
+6. For the `default` of `bulk.response.action_listener.identity`, the failed bulk request will be retried util success.
    For `mute_bulk_insert_error` of `bulk.response.action_listener.identity`, the failed bulk request will be ignored and
    add the metric key `tributary_sink_elasticsearch_bulk_requests_with_errors` to monitor the fail count.
 
