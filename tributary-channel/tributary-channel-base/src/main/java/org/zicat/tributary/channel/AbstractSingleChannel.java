@@ -18,13 +18,13 @@
 
 package org.zicat.tributary.channel;
 
-import static java.lang.Math.min;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.channel.group.SingleGroupManager;
 import org.zicat.tributary.common.MetricKey;
 import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.PercentSize;
 import org.zicat.tributary.common.SafeFactory;
 
 import java.io.Closeable;
@@ -431,34 +431,32 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
         }
     }
 
-    public void checkCapacityAndCloseEarliestSegments(long capacity) {
-        final List<S> segments = new ArrayList<>(cache.values());
-        segments.sort(Comparator.reverseOrder()); // sort by segment id desc
-        int offset = 0;
-        long size = 0;
-        for (; offset < segments.size(); offset++) {
-            size += segments.get(offset).position();
-            if (size > capacity) {
-                break;
-            }
+    /**
+     * check capacity exceed.
+     *
+     * @param capacityPercent capacityPercent
+     * @return boolean
+     */
+    public abstract boolean checkCapacityExceed(PercentSize capacityPercent) throws IOException;
+
+    /** clean up earliest segment. */
+    public boolean cleanUpEarliestSegment() {
+        final List<Segment> segments = new ArrayList<>(cache.values());
+        if (segments.size() <= 1) {
+            return false;
         }
-        if (size <= capacity) {
-            return;
+        segments.sort(Comparator.naturalOrder());
+        final Segment min = segments.get(0);
+        if (min.segmentId() == latestSegment.segmentId()) {
+            return false;
         }
-        final long latestSegmentId = this.latestSegment.segmentId();
-        final long committableId = min(segments.get(offset).segmentId() + 1L, latestSegmentId);
-        singleGroupManager.commit(new Offset(committableId));
-        for (; offset < segments.size(); offset++) {
-            final long segmentId = segments.get(offset).segmentId();
-            if (segmentId >= committableId) {
-                continue;
-            }
-            final S segmentInCache = cache.remove(segmentId);
-            if (segmentInCache != null) {
-                LOG.warn("close and recycle segment {} for capacity", segmentId);
-                IOUtils.closeQuietly(segmentInCache);
-                Segment.recycleQuietly(segmentInCache);
-            }
+        final Segment segment = cache.remove(min.segmentId());
+        if (segment != null) {
+            LOG.warn("close and recycle segment {} for capacity", segment);
+            IOUtils.closeQuietly(segment);
+            Segment.recycleQuietly(segment);
+            singleGroupManager.commit(new Offset(segment.segmentId() + 1));
         }
+        return segment != null;
     }
 }

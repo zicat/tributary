@@ -36,12 +36,13 @@ import java.util.Set;
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_BLOCK_CACHE_PER_PARTITION_SIZE;
 import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
+import org.zicat.tributary.common.PercentSize;
 
 /** FileChannelBuilder. */
 public class FileSingleChannelBuilder {
 
-    private List<File> dirs;
-    private long groupPersistPeriodSecond = OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds();
+    protected List<File> dirs;
+    protected long groupPeriodSecond = OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds();
     protected String topic;
     protected Long segmentSize;
     protected Integer blockSize;
@@ -49,8 +50,8 @@ public class FileSingleChannelBuilder {
     protected Set<String> consumerGroups;
     protected long flushPeriodMills = 1000;
     protected long cleanupExpiredSegmentPeriodMills = 10000;
-    protected Double capacityProtectedPercent =
-            OPTION_CAPACITY_PROTECTED_PERCENT.defaultValue().getPercent();
+    protected PercentSize capacityProtectedPercent =
+            OPTION_CAPACITY_PROTECTED_PERCENT.defaultValue();
 
     protected boolean appendSyncWait = false;
     protected long appendSyncWaitTimeoutMs = 0;
@@ -67,7 +68,7 @@ public class FileSingleChannelBuilder {
         return this;
     }
 
-    public FileSingleChannelBuilder capacityProtectedPercent(Double capacityProtectedPercent) {
+    public FileSingleChannelBuilder capacityProtectedPercent(PercentSize capacityProtectedPercent) {
         this.capacityProtectedPercent = capacityProtectedPercent;
         return this;
     }
@@ -84,6 +85,12 @@ public class FileSingleChannelBuilder {
         return this;
     }
 
+    /**
+     * set block size.
+     *
+     * @param blockSize blockSize
+     * @return this
+     */
     public FileSingleChannelBuilder blockSize(int blockSize) {
         this.blockSize = blockSize;
         return this;
@@ -103,11 +110,11 @@ public class FileSingleChannelBuilder {
     /**
      * set group persist period second.
      *
-     * @param groupPersistPeriodSecond groupPersistPeriodSecond.
+     * @param groupPeriodSecond groupPeriodSecond.
      * @return this
      */
-    public FileSingleChannelBuilder groupPersistPeriodSecond(long groupPersistPeriodSecond) {
-        this.groupPersistPeriodSecond = groupPersistPeriodSecond;
+    public FileSingleChannelBuilder groupPersistPeriodSecond(long groupPeriodSecond) {
+        this.groupPeriodSecond = groupPeriodSecond;
         return this;
     }
 
@@ -202,73 +209,46 @@ public class FileSingleChannelBuilder {
         if (consumerGroups == null || consumerGroups.isEmpty()) {
             throw new IllegalStateException("file channel must has at least one consumer group");
         }
-        final Long[] capacityProtectedList = new Long[dirs.size()];
+        final File[] canonicalDirs = new File[dirs.size()];
+        final FileStore[] fileStores = new FileStore[dirs.size()];
+        final SingleGroupManagerFactory[] factories = new SingleGroupManagerFactory[dirs.size()];
         for (int i = 0; i < dirs.size(); i++) {
-            final File file = dirs.get(i);
-            final File dir = file.getCanonicalFile();
+            final File dir = dirs.get(i).getCanonicalFile();
             if (!dir.exists() && !IOUtils.makeDir(dir)) {
                 throw new IllegalStateException("try to create fail " + dir.getPath());
             }
-            final FileStore fileStore = Files.getFileStore(dir.toPath());
-            capacityProtectedList[i] =
-                    (long) (fileStore.getTotalSpace() * capacityProtectedPercent);
+            canonicalDirs[i] = dir;
+            fileStores[i] = Files.getFileStore(dir.toPath());
+            final File groupFile = new File(dir, createFileName(topic));
+            factories[i] = () -> new FileGroupManager(groupFile, consumerGroups, groupPeriodSecond);
         }
         return new DefaultChannel<>(
                 new AbstractChannelArrayFactory<FileSingleChannel>(topic, consumerGroups) {
                     @SuppressWarnings("resource")
                     @Override
-                    public FileSingleChannel[] create() throws IOException {
-                        final FileSingleChannel[] fileChannels = new FileSingleChannel[dirs.size()];
-                        for (int i = 0; i < dirs.size(); i++) {
-                            final File dir = dirs.get(i).getCanonicalFile();
-                            fileChannels[i] = createFileSingleChannel(dir);
+                    public FileSingleChannel[] create() {
+                        final int partitions = canonicalDirs.length;
+                        final FileSingleChannel[] fileChannels = new FileSingleChannel[partitions];
+                        for (int i = 0; i < partitions; i++) {
+                            fileChannels[i] =
+                                    new FileSingleChannel(
+                                            topic,
+                                            factories[i],
+                                            blockSize,
+                                            segmentSize,
+                                            compressionType,
+                                            canonicalDirs[i],
+                                            blockCacheCount,
+                                            appendSyncWait,
+                                            appendSyncWaitTimeoutMs,
+                                            fileStores[i]);
                         }
                         return fileChannels;
                     }
                 },
                 flushPeriodMills,
                 cleanupExpiredSegmentPeriodMills,
-                capacityProtectedList);
-    }
-
-    /**
-     * create group manager.
-     *
-     * @param dir dir
-     * @param topic topic
-     * @param consumerGroups consumerGroups
-     * @param groupPersistPeriodSecond groupPersistPeriodSecond
-     * @return SingleGroupManager
-     */
-    private static SingleGroupManagerFactory createSingleGroupManagerFactory(
-            File dir, String topic, Set<String> consumerGroups, long groupPersistPeriodSecond) {
-        return () ->
-                new FileGroupManager(
-                        new File(dir, createFileName(topic)),
-                        consumerGroups,
-                        groupPersistPeriodSecond);
-    }
-
-    /**
-     * file channel dir.
-     *
-     * @param dir dir
-     * @return FileChannel
-     */
-    private FileSingleChannel createFileSingleChannel(File dir) {
-        final SingleGroupManagerFactory factory =
-                createSingleGroupManagerFactory(
-                        dir, topic, consumerGroups, groupPersistPeriodSecond);
-        return new FileSingleChannel(
-                topic,
-                factory,
-                blockSize,
-                segmentSize,
-                compressionType,
-                dir,
-                blockCacheCount,
-                appendSyncWait,
-                appendSyncWaitTimeoutMs);
+                capacityProtectedPercent);
     }
 
     /**

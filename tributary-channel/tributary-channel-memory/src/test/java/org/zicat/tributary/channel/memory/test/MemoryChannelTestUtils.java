@@ -22,6 +22,7 @@ import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.channel.memory.MemorySingleChannel;
+import org.zicat.tributary.common.PercentSize;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
@@ -111,15 +112,13 @@ public class MemoryChannelTestUtils {
             CompressionType compressionType,
             String... groupIds)
             throws IOException {
-        final Long[] capacityProtectedList = new Long[partitionCount];
-        Arrays.fill(capacityProtectedList, Runtime.getRuntime().maxMemory());
         return createChannel(
                 topic,
                 partitionCount,
                 blockSize,
                 segmentSize,
                 compressionType,
-                capacityProtectedList,
+                PercentSize.HUNDRED,
                 groupIds);
     }
 
@@ -129,7 +128,7 @@ public class MemoryChannelTestUtils {
             int blockSize,
             long segmentSize,
             CompressionType compressionType,
-            Long[] capacityProtectedList,
+            PercentSize capacityPercent,
             String... groupIds)
             throws IOException {
         final Set<String> groups = new HashSet<>(Arrays.asList(groupIds));
@@ -148,7 +147,7 @@ public class MemoryChannelTestUtils {
                 },
                 500,
                 10000,
-                capacityProtectedList);
+                capacityPercent);
     }
 
     /**

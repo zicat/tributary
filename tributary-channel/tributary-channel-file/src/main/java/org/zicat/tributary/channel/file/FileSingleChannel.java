@@ -22,11 +22,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.Segment.AppendResult;
+import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.PercentSize;
+import static org.zicat.tributary.common.PercentSize.memoryPercent;
 import org.zicat.tributary.common.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.FileStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +66,7 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
     private final long flushPageCacheSize;
     private final boolean appendSyncWait;
     private final long appendSyncWaitTimeoutMs;
+    private final FileStore fileStore;
 
     protected FileSingleChannel(
             String topic,
@@ -72,7 +77,8 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
             File dir,
             int blockCacheCount,
             boolean appendSyncWait,
-            long appendSyncWaitTimeoutMs) {
+            long appendSyncWaitTimeoutMs,
+            FileStore fileStore) {
         super(topic, blockCacheCount, factory);
         if (blockSize >= segmentSize) {
             throw new IllegalArgumentException("block size must less than segment size");
@@ -84,6 +90,7 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
         this.dir = dir;
         this.appendSyncWait = appendSyncWait;
         this.appendSyncWaitTimeoutMs = appendSyncWaitTimeoutMs;
+        this.fileStore = fileStore;
         createLastSegment();
     }
 
@@ -122,6 +129,14 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
             segment.flush(false);
         }
         return result;
+    }
+
+    @Override
+    public boolean checkCapacityExceed(PercentSize capacityPercent) throws IOException {
+        final MemorySize used = new MemorySize(fileStore.getUsableSpace());
+        final MemorySize capacity = new MemorySize(fileStore.getTotalSpace());
+        final PercentSize usedPercent = memoryPercent(used, capacity);
+        return usedPercent.compareTo(capacityPercent) > 0;
     }
 
     /** load segments. */

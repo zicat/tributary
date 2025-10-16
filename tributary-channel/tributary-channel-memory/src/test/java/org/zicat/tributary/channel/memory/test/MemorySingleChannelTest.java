@@ -41,6 +41,7 @@ import org.zicat.tributary.channel.test.SinkGroup;
 import org.zicat.tributary.channel.test.SourceThread;
 import org.zicat.tributary.common.DefaultReadableConfig;
 import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.PercentSize;
 import org.zicat.tributary.common.Threads;
 
 import java.io.IOException;
@@ -69,15 +70,18 @@ public class MemorySingleChannelTest {
     @Test
     public void testCheckCapacityAndCloseSegments() throws IOException, InterruptedException {
         final Map<String, Offset> groupOffsets = new HashMap<>();
-        final SingleGroupManagerFactory factory =
-                createSingleGroupManagerFactory(groupOffsets);
+        final SingleGroupManagerFactory factory = createSingleGroupManagerFactory(groupOffsets);
         try (MemorySingleChannelMock channel =
                 new MemorySingleChannelMock("t1", factory, 10, 50L, CompressionType.NONE, 0)) {
             for (int i = 0; i < 100; i++) {
                 channel.append(0, "aabbc".getBytes());
             }
             Assert.assertEquals(15, channel.activeSegment());
-            channel.checkCapacityAndCloseEarliestSegments(290L);
+            final int count = 10;
+            for (int i = 0; i < count; i++) {
+                Assert.assertTrue(channel.checkCapacityExceed(PercentSize.ZERO));
+                channel.cleanUpEarliestSegment();
+            }
             Assert.assertEquals(5, channel.activeSegment());
             List<Segment> segments = new ArrayList<>(channel.segments().values());
             segments.sort(Comparator.comparingLong(Segment::segmentId));
@@ -91,7 +95,6 @@ public class MemorySingleChannelTest {
             Assert.assertTrue(size <= 290 && size >= (290 - 50));
 
             // more segments close
-            channel.checkCapacityAndCloseEarliestSegments(290L);
             Assert.assertEquals(5, channel.activeSegment());
             segments = new ArrayList<>(channel.segments().values());
             segments.sort(Comparator.comparingLong(Segment::segmentId));
@@ -133,8 +136,7 @@ public class MemorySingleChannelTest {
     @Test
     public void testSyncAwait() throws IOException, InterruptedException {
         final Map<String, Offset> groupOffsets = new HashMap<>();
-        final SingleGroupManagerFactory factory =
-                createSingleGroupManagerFactory(groupOffsets);
+        final SingleGroupManagerFactory factory = createSingleGroupManagerFactory(groupOffsets);
         final AtomicBoolean finished = new AtomicBoolean();
         try (Channel channel =
                 new MemorySingleChannel("t1", factory, 10240, 102400L, CompressionType.NONE, 10) {

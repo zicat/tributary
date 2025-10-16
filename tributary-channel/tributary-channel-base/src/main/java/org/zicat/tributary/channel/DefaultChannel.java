@@ -43,13 +43,13 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread flushSegmentThread;
     private final Thread cleanupExpiredSegmentThread;
-    private final Long[] capacityProtectedList;
+    private final PercentSize capacityPercent;
 
     public DefaultChannel(
             ChannelArrayFactory<C> factory,
             long flushPeriodMills,
             long cleanupExpiredSegmentPeriodMills,
-            Long[] capacityProtectedList)
+            PercentSize capacityPercent)
             throws IOException {
         final C[] channels = factory.create();
         if (channels == null || channels.length == 0) {
@@ -58,12 +58,9 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
         if (flushPeriodMills <= 0) {
             throw new IllegalArgumentException("flush period is less than 0");
         }
-        if (capacityProtectedList.length != channels.length) {
-            throw new IllegalArgumentException("capacity size not equal partition size");
-        }
         this.factory = factory;
         this.channels = channels;
-        this.capacityProtectedList = capacityProtectedList;
+        this.capacityPercent = capacityPercent;
         this.flushSegmentThread =
                 startLoopRunningThread(
                         closed, THREAD_NAME_SEGMENT_FLUSH, this::flushQuietly, flushPeriodMills);
@@ -252,14 +249,26 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
 
     /** clean up expired segments quietly for test. */
     public void cleanUpExpiredSegmentsQuietly() {
-        for (int i = 0; i < channels.length; i++) {
-            final C channel = channels[i];
-            channel.cleanUpExpiredSegmentsQuietly();
-            final Long capacity = capacityProtectedList[i];
-            if (capacity != null) {
-                channel.checkCapacityAndCloseEarliestSegments(capacity);
+        final boolean[] exceedChannel = new boolean[channels.length];
+        // for some channel like memory, clean up segment may not free memory immediately
+        int loopCount = 0;
+        do {
+            for (int i = 0; i < channels.length; i++) {
+                final C channel = channels[i];
+                channel.cleanUpExpiredSegmentsQuietly();
+                try {
+                    if (channel.checkCapacityExceed(capacityPercent)
+                            && channel.cleanUpEarliestSegment()) {
+                        exceedChannel[i] = channel.checkCapacityExceed(capacityPercent);
+                    } else {
+                        exceedChannel[i] = false;
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
+            loopCount++;
+        } while (Booleans.hasTrue(exceedChannel) && loopCount < channels.length);
     }
 
     /** flush segment quietly. */

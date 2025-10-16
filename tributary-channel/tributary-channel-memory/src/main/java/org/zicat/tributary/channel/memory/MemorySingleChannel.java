@@ -23,6 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.AbstractSingleChannel;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
+import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.PercentSize;
+import static org.zicat.tributary.common.PercentSize.memoryPercent;
 
 /** MemorySingleChannel. */
 public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {
@@ -59,6 +62,14 @@ public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {
                 blockWriter.capacity(),
                 bCache == null ? 0 : bCache.blockCount());
         return new MemorySegment(id, blockWriter, compressionType, segmentSize, bCache);
+    }
+
+    @Override
+    public boolean checkCapacityExceed(PercentSize capacityPercent) {
+        final MemorySize used = DirectMemoryPool.usage();
+        final MemorySize capacity = DirectMemoryPool.capacity();
+        final PercentSize usedPercent = memoryPercent(used, capacity);
+        return usedPercent.compareTo(capacityPercent) > 0;
     }
 
     /** load last segment. */

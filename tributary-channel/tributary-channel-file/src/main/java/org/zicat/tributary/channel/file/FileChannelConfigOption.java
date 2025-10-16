@@ -53,5 +53,5 @@ public class FileChannelConfigOption extends ChannelConfigOption {
             ConfigOptions.key("capacity.protected.percent")
                     .percentType()
                     .description("the capacity protected percent")
-                    .defaultValue(PercentSize.parse("85%"));
+                    .defaultValue(PercentSize.parse("90%"));
 }

@@ -23,6 +23,9 @@ import java.util.Objects;
 /** PercentileSize. */
 public class PercentSize implements java.io.Serializable, Comparable<PercentSize> {
 
+    public static final PercentSize ZERO = new PercentSize(0);
+    public static final PercentSize HUNDRED = new PercentSize(100);
+
     // from 0-100
     private final double percent;
 
@@ -64,6 +67,21 @@ public class PercentSize implements java.io.Serializable, Comparable<PercentSize
      */
     public double getPercent() {
         return percent;
+    }
+
+    /**
+     * Calculate the percentage of the numerator in the denominator.
+     *
+     * @param numerator numerator
+     * @param denominator denominator
+     * @return PercentSize
+     */
+    public static PercentSize memoryPercent(MemorySize numerator, MemorySize denominator) {
+        if (denominator.getBytes() == 0) {
+            throw new IllegalArgumentException("denominator is zero");
+        }
+        final double percent = ((double) numerator.getBytes() * 100 / denominator.getBytes());
+        return new PercentSize(percent);
     }
 
     @Override

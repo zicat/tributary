@@ -24,11 +24,11 @@ import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import static org.zicat.tributary.channel.memory.MemoryChannelConfigOption.OPTION_CAPACITY_PROTECTED_PERCENT;
 import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.PercentSize;
 import org.zicat.tributary.common.ReadableConfig;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -57,10 +57,7 @@ public class MemoryChannelFactory implements ChannelFactory {
         final Duration flushPeriod = config.get(OPTION_FLUSH_PERIOD);
         final Duration cleanupExpiredSegmentPeriod =
                 config.get(OPTION_CLEANUP_EXPIRED_SEGMENT_PERIOD);
-        final double capacityPercent = config.get(OPTION_CAPACITY_PROTECTED_PERCENT).getPercent();
-        final long capacity = (long) (Runtime.getRuntime().maxMemory() * capacityPercent);
-        final Long[] capacityProtectedList = new Long[partitionCounts];
-        Arrays.fill(capacityProtectedList, capacity);
+        final PercentSize capacityPercent = config.get(OPTION_CAPACITY_PROTECTED_PERCENT);
 
         return new DefaultChannel<>(
                 new AbstractChannelArrayFactory<AbstractSingleChannel<?>>(topic, groupSet) {
@@ -78,7 +75,7 @@ public class MemoryChannelFactory implements ChannelFactory {
                 },
                 flushPeriod.toMillis(),
                 cleanupExpiredSegmentPeriod.toMillis(),
-                capacityProtectedList);
+                capacityPercent);
     }
 
     /**

@@ -44,7 +44,7 @@ public class MemorySegment extends Segment {
             long segmentSize,
             ChannelBlockCache bCache) {
         super(id, writer, compressionType, segmentSize, 0, bCache);
-        this.chunkSize = writer.capacity();
+        this.chunkSize = (int) DirectMemoryPool.chunkSize().getBytes();
         newChunk();
     }
 
@@ -55,7 +55,7 @@ public class MemorySegment extends Segment {
 
     /** new chunk. */
     private void newChunk() {
-        final ByteBuffer chunk = ByteBuffer.allocate(chunkSize);
+        final ByteBuffer chunk = DirectMemoryPool.borrowChunk();
         chunkChain.add(chunk);
         currentChunk = chunk;
     }
@@ -124,9 +124,15 @@ public class MemorySegment extends Segment {
 
     @Override
     public void recycle() {
-        super.recycle();
-        chunkChain.clear();
-        currentChunk = null;
-        LOG.info("recycled memory segment: {}", segmentId());
+        try {
+            super.recycle();
+        } finally {
+            for (ByteBuffer byteBuffer : chunkChain) {
+                DirectMemoryPool.returnChunk(byteBuffer);
+            }
+            chunkChain.clear();
+            currentChunk = null;
+            LOG.info("recycled memory segment: {}", segmentId());
+        }
     }
 }

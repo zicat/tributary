@@ -21,6 +21,7 @@ package org.zicat.tributary.sink.test.handler;
 import org.zicat.tributary.channel.DefaultChannel;
 import org.zicat.tributary.channel.memory.MemorySingleChannel;
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
+import org.zicat.tributary.common.PercentSize;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.handler.PartitionHandler;
 
@@ -56,10 +57,9 @@ public class AbstractPartitionHandlerTest {
 
         PartitionHandler handler;
         final List<String> dataList = new ArrayList<>();
-        final Long[] capacityPerPartition = {80L};
         final DefaultChannel<MemorySingleChannel> channel =
                 MemoryChannelTestUtils.createChannel(
-                        "t1", 1, 30, 50, CompressionType.NONE, capacityPerPartition, groupId);
+                        "t1", 1, 30, 50, CompressionType.NONE, PercentSize.ZERO, groupId);
         final int partitionId = 0;
         handler =
                 new PartitionHandler(groupId, channel, partitionId, sinkGroupConfig) {
@@ -107,7 +107,10 @@ public class AbstractPartitionHandlerTest {
                 }
                 channel.flush();
             }
-            channel.cleanUpExpiredSegmentsQuietly();
+            for (int i = 0; i < 5; i++) {
+                channel.cleanUpExpiredSegmentsQuietly();
+            }
+
             for (int i = 0; i < testData.size(); i++) {
                 handler.runOneBatch();
             }

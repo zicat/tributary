@@ -36,5 +36,5 @@ public class MemoryChannelConfigOption {
             ConfigOptions.key("capacity.protected.percent")
                     .percentType()
                     .description("the capacity protected percent")
-                    .defaultValue(PercentSize.parse("75%"));
+                    .defaultValue(PercentSize.parse("95%"));
 }

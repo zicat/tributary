@@ -68,7 +68,7 @@ public class FileChannelFactory implements ChannelFactory {
                         .flushPeriodMills(flushPeriod.toMillis())
                         .cleanupExpiredSegmentPeriodMills(cleanupExpiredSegmentPeriod.toMillis())
                         .groupPersistPeriodSecond(groupPersist)
-                        .capacityProtectedPercent(capacityProtectedPercent.getPercent())
+                        .capacityProtectedPercent(capacityProtectedPercent)
                         .blockCacheCount(blockCacheCount);
         return builder.blockSize((int) blockSize)
                 .segmentSize(segmentSize)
