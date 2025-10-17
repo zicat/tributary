@@ -21,7 +21,7 @@ package org.zicat.tributary.source.base.netty.ssl;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
+import static org.zicat.tributary.common.util.ResourceUtils.getResourcePath;
 
 import java.io.File;
 import java.io.IOException;

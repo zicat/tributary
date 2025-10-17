@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink;
 
-import org.zicat.tributary.common.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOption;
 
 import java.util.HashMap;
 import java.util.Map;

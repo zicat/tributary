@@ -31,8 +31,8 @@ import io.netty.util.concurrent.EventExecutorGroup;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.common.Strings;
+import org.zicat.tributary.common.config.ReadableConfig;
+import org.zicat.tributary.common.util.Strings;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
 import java.io.IOException;

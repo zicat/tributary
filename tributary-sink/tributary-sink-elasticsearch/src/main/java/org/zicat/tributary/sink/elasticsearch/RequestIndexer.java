@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.elasticsearch;
 
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.zicat.tributary.common.MetricCollector;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricCollector;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.sink.function.Context;
 

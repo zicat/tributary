@@ -28,7 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.NettySource;

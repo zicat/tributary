@@ -18,14 +18,14 @@
 
 package org.zicat.tributary.channle.file.test;
 
-import static org.zicat.tributary.common.VIntUtil.putVInt;
+import static org.zicat.tributary.common.util.VIntUtil.putVInt;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.file.FileSegment;
 import org.zicat.tributary.channel.file.FileSegmentUtil;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 
 import java.io.File;
 import java.io.IOException;

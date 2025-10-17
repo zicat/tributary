@@ -21,7 +21,7 @@ package org.zicat.tributary.channel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static org.zicat.tributary.common.VIntUtil.*;
+import static org.zicat.tributary.common.util.VIntUtil.*;
 
 /** Block. */
 public class Block {

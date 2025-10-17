@@ -18,13 +18,18 @@
 
 package org.zicat.tributary.server.component;
 
-import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
+import org.zicat.tributary.common.config.ReadableConfig;
+import static org.zicat.tributary.common.config.ReadableConfig.DEFAULT_KEY_HANDLER;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.*;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.SourceFactory;
 

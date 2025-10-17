@@ -20,7 +20,7 @@ package org.zicat.tributary.source.http;
 
 import com.github.luben.zstd.Zstd;
 import org.xerial.snappy.Snappy;
-import static org.zicat.tributary.common.IOUtils.decompressionGZip;
+import static org.zicat.tributary.common.util.IOUtils.decompressionGZip;
 
 import java.io.IOException;
 

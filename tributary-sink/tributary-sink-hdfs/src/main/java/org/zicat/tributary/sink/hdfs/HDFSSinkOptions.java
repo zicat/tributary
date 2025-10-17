@@ -18,9 +18,9 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.MemorySize;
 import org.zicat.tributary.common.Clock;
 import org.zicat.tributary.common.SystemClock;
 

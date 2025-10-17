@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.MetricCollector;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricCollector;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;

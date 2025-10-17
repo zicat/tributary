@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.logstash.base;
 
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 
 import java.io.Closeable;

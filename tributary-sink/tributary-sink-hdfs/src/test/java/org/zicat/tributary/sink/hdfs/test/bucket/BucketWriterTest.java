@@ -27,7 +27,7 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.config.MemorySize;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.sink.function.ContextBuilder;

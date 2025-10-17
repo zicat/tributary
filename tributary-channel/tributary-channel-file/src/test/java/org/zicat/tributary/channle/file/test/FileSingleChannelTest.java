@@ -34,9 +34,9 @@ import org.zicat.tributary.channel.file.FileSingleChannel;
 import org.zicat.tributary.channel.file.FileSingleChannelBuilder;
 import org.zicat.tributary.channel.file.FileChannelFactory;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
-import org.zicat.tributary.common.DefaultReadableConfig;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.test.FileUtils;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.test.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;

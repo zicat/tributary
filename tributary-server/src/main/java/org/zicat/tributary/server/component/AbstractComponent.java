@@ -22,10 +22,10 @@ import io.prometheus.client.Collector;
 
 import io.prometheus.client.CounterMetricFamily;
 import io.prometheus.client.GaugeMetricFamily;
-import static org.zicat.tributary.common.Collections.concat;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.MetricCollector;
-import org.zicat.tributary.common.MetricKey;
+import static org.zicat.tributary.common.util.Collections.concat;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.metric.MetricCollector;
+import org.zicat.tributary.common.metric.MetricKey;
 
 import java.io.Closeable;
 import java.util.ArrayList;

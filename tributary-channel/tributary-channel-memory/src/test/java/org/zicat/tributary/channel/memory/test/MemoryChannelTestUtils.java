@@ -22,8 +22,8 @@ import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import org.zicat.tributary.channel.memory.MemoryChannelFactory;
 import org.zicat.tributary.channel.memory.MemorySingleChannel;
-import org.zicat.tributary.common.PercentSize;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.PercentSize;
+import org.zicat.tributary.common.config.ReadableConfig;
 
 import java.io.IOException;
 import java.util.Arrays;

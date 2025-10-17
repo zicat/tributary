@@ -24,7 +24,7 @@ import org.zicat.tributary.channel.DefaultChannel;
 import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.OPTION_CAPACITY_PROTECTED_PERCENT;
 import org.zicat.tributary.channel.group.FileGroupManager;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +36,7 @@ import java.util.Set;
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_BLOCK_CACHE_PER_PARTITION_SIZE;
 import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
-import org.zicat.tributary.common.PercentSize;
+import org.zicat.tributary.common.config.PercentSize;
 
 /** FileSingleChannelBuilder. */
 public class FileSingleChannelBuilder {

@@ -30,7 +30,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.HadoopOutputFile;
 import org.zicat.tributary.common.Clock;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.records.Records;
 
 import java.io.IOException;

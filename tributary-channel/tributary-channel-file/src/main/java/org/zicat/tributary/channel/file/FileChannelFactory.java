@@ -25,8 +25,8 @@ import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PE
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.common.PercentSize;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.PercentSize;
+import org.zicat.tributary.common.config.ReadableConfig;
 
 import java.io.File;
 import java.io.IOException;

@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.test.handler;
 import org.zicat.tributary.channel.DefaultChannel;
 import org.zicat.tributary.channel.memory.MemorySingleChannel;
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
-import org.zicat.tributary.common.PercentSize;
+import org.zicat.tributary.common.config.PercentSize;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.handler.PartitionHandler;
 
@@ -31,7 +31,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;

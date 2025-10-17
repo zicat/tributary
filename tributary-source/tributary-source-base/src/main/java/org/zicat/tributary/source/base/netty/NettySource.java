@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.source.base.netty;
 
-import static org.zicat.tributary.common.HostUtils.getHostAddresses;
-import org.zicat.tributary.common.IOUtils;
+import static org.zicat.tributary.common.util.HostUtils.getHostAddresses;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -34,8 +34,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.ReadableConfig;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.config.ReadableConfig;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.source.base.AbstractSource;
 
 import java.io.IOException;

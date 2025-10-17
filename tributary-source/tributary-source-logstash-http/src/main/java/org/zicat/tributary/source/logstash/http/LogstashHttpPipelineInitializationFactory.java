@@ -18,10 +18,10 @@
 
 package org.zicat.tributary.source.logstash.http;
 
-import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
+import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;

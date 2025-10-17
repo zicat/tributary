@@ -20,8 +20,8 @@ package org.zicat.tributary.source.base.netty.pipeline;
 
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.timeout.IdleStateHandler;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 

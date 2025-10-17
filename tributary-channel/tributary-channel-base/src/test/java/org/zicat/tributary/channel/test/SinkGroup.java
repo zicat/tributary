@@ -19,7 +19,7 @@
 package org.zicat.tributary.channel.test;
 
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.common.util.Threads;
 
 import java.util.ArrayList;
 import java.util.List;

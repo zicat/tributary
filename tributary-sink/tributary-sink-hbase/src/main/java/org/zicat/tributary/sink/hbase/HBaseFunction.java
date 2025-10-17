@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.sink.hbase;
 
-import static org.zicat.tributary.common.IOUtils.getClasspathResource;
-import org.zicat.tributary.common.MetricKey;
+import static org.zicat.tributary.common.util.IOUtils.getClasspathResource;
+import org.zicat.tributary.common.metric.MetricKey;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
 
@@ -33,8 +33,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;

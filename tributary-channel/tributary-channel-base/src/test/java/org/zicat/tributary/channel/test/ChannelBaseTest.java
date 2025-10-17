@@ -23,7 +23,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

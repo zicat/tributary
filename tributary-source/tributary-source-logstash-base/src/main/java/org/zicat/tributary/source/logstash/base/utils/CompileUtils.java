@@ -21,7 +21,7 @@ package org.zicat.tributary.source.logstash.base.utils;
 import org.codehaus.janino.SimpleCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.Strings;
+import org.zicat.tributary.common.util.Strings;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

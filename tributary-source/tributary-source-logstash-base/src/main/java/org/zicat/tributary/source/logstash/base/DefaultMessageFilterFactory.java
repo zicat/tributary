@@ -19,9 +19,9 @@
 package org.zicat.tributary.source.logstash.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;

@@ -18,12 +18,12 @@
 
 package org.zicat.tributary.channel.file;
 
-import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
+import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
 
 import org.zicat.tributary.channel.ChannelConfigOption;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.PercentSize;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.PercentSize;
 
 import java.time.Duration;
 import java.util.List;

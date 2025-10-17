@@ -24,7 +24,7 @@ import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.ChannelBlockCache;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.Segment;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 
 import java.io.File;
 import java.io.IOException;

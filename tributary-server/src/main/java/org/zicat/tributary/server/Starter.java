@@ -22,8 +22,8 @@ import io.prometheus.client.CollectorRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.component.*;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;

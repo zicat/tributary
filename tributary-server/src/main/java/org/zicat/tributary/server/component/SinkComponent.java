@@ -18,9 +18,9 @@
 
 package org.zicat.tributary.server.component;
 
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.MetricCollector;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.metric.MetricCollector;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.server.component.SinkComponent.SinkGroupManagerList;
 import org.zicat.tributary.sink.SinkGroupManager;
 

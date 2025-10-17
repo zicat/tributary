@@ -25,15 +25,15 @@ import org.junit.Test;
 import org.zicat.tributary.channel.Offset;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import org.zicat.tributary.channel.group.FileGroupManager;
-import org.zicat.tributary.common.test.FileUtils;
+import org.zicat.tributary.common.test.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
+import static org.zicat.tributary.common.util.IOUtils.deleteDir;
+import static org.zicat.tributary.common.util.IOUtils.makeDir;
 
 /** OnePartitionFileGroupManagerTest. */
 public class FileGroupManagerTest {

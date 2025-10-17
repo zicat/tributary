@@ -22,9 +22,9 @@ import static org.zicat.tributary.server.test.MetricsHttpServerTest.availablePor
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.DefaultReadableConfig;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.server.MetricsHttpServer;
 import org.zicat.tributary.server.Starter;

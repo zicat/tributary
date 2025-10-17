@@ -21,7 +21,7 @@ package org.zicat.tributary.source.base.test.netty;
 import org.zicat.tributary.source.base.netty.NettySource;
 
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NETTY_THREADS_EVENT_LOOP;
 import org.zicat.tributary.source.base.netty.pipeline.LengthPipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;

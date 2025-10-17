@@ -23,9 +23,9 @@ import org.zicat.tributary.channel.AbstractSingleChannel.SingleGroupManagerFacto
 import org.zicat.tributary.channel.DefaultChannel.AbstractChannelArrayFactory;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import static org.zicat.tributary.channel.memory.MemoryChannelConfigOption.OPTION_CAPACITY_PROTECTED_PERCENT;
-import org.zicat.tributary.common.MemorySize;
-import org.zicat.tributary.common.PercentSize;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.MemorySize;
+import org.zicat.tributary.common.config.PercentSize;
+import org.zicat.tributary.common.config.ReadableConfig;
 
 import java.io.IOException;
 import java.time.Duration;

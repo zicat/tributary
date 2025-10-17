@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.base.netty;
 
-import static org.zicat.tributary.common.Threads.createThreadFactoryByName;
+import static org.zicat.tributary.common.util.Threads.createThreadFactoryByName;
 
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;

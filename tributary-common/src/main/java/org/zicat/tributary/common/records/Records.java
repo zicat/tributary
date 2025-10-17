@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.zicat.tributary.common.BytesUtils.toVIntString;
-import static org.zicat.tributary.common.VIntUtil.*;
+import static org.zicat.tributary.common.util.BytesUtils.toVIntString;
+import static org.zicat.tributary.common.util.VIntUtil.*;
 import static org.zicat.tributary.common.records.Record.headBuffers;
 import static org.zicat.tributary.common.records.Record.parseHeaders;
 

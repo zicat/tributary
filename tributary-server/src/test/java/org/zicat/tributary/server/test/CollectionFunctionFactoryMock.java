@@ -19,8 +19,8 @@
 package org.zicat.tributary.server.test;
 
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;

@@ -20,14 +20,14 @@ package org.zicat.tributary.server.test.config;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 
 import java.util.Properties;
 import java.util.Set;
 
-import static org.zicat.tributary.common.ReadableConfig.DEFAULT_KEY_HANDLER;
+import static org.zicat.tributary.common.config.ReadableConfig.DEFAULT_KEY_HANDLER;
 
 /** PropertiesConfigBuilderTest. */
 public class PropertiesConfigBuilderTest {

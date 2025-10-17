@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.zicat.tributary.common.Strings.removeLastIfMatch;
+import static org.zicat.tributary.common.util.Strings.removeLastIfMatch;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.OPTION_SINK_PATH;
 
 /** DefaultBucketWriterManager. */

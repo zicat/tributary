@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.server.config;
 
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 
 import java.util.HashMap;
 import java.util.Map;

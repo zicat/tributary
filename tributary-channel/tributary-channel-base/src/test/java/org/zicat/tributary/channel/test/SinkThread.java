@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;

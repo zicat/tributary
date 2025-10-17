@@ -25,7 +25,7 @@ import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.io.InputFile;
-import org.zicat.tributary.common.BytesUtils;
+import org.zicat.tributary.common.util.BytesUtils;
 
 import java.io.IOException;
 import java.net.URI;

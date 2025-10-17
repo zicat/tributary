@@ -25,7 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.Functions.Runnable;
+import org.zicat.tributary.common.util.Functions.Runnable;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
@@ -40,10 +40,10 @@ import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.zicat.tributary.common.Functions.runWithRetry;
+import static org.zicat.tributary.common.util.Functions.runWithRetry;
 import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
-import static org.zicat.tributary.common.Exceptions.castAsIOException;
+import static org.zicat.tributary.common.util.Exceptions.castAsIOException;
 
 /** This class does file rolling and handles file formats and serialization. */
 public class BucketWriter extends BucketMeta implements RecordsWriter {

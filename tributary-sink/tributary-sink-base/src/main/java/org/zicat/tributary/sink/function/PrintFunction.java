@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricKey;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 
 import org.slf4j.Logger;

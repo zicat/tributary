@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.BlockReaderOffset;
 import org.zicat.tributary.channel.ChannelBlockCache;
-import org.zicat.tributary.common.VIntUtil;
+import org.zicat.tributary.common.util.VIntUtil;
 
 import java.nio.ByteBuffer;
 

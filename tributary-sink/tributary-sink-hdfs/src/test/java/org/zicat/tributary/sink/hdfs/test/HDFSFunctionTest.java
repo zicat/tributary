@@ -18,9 +18,9 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
-import static org.zicat.tributary.common.BytesUtils.toBytes;
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
+import static org.zicat.tributary.common.util.BytesUtils.toBytes;
+import static org.zicat.tributary.common.util.IOUtils.deleteDir;
+import static org.zicat.tributary.common.util.IOUtils.makeDir;
 import static org.zicat.tributary.common.records.RecordsUtils.HEAD_KEY_SENT_TS;
 import static org.zicat.tributary.common.records.RecordsUtils.createStringRecords;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
@@ -43,7 +43,7 @@ import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.common.test.FileUtils;
+import org.zicat.tributary.common.test.util.FileUtils;
 import org.zicat.tributary.sink.function.ContextBuilder;
 import org.zicat.tributary.sink.hdfs.HDFSFunction;
 import org.zicat.tributary.sink.hdfs.bucket.BucketGenerator;

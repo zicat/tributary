@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.elasticsearch;
 
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.SimpleLRUCache;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
@@ -30,7 +30,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.elasticsearch.listener.AbstractActionListener;
 import org.zicat.tributary.sink.elasticsearch.listener.BulkResponseActionListenerFactory;

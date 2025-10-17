@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.test.BlockReaderOffsetTest.BlockReaderOffsetMock;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

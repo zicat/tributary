@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
 
 import java.util.Map;
 

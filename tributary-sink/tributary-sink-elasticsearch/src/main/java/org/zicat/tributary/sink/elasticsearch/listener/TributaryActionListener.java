@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.elasticsearch.listener;
 
 import org.elasticsearch.action.ActionListener;
-import org.zicat.tributary.common.MetricCollector;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricCollector;
+import org.zicat.tributary.common.metric.MetricKey;
 
 import java.util.Collections;
 import java.util.Map;

@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.channel;
 
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 
 import java.util.HashSet;

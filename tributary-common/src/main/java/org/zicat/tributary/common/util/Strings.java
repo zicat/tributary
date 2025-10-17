@@ -1,0 +1,58 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.zicat.tributary.common.util;
+
+/** Strings. */
+public class Strings {
+
+    /**
+     * remove last if matched.
+     *
+     * @param value value
+     * @param matcher matcher
+     * @return value
+     */
+    public static String removeLastIfMatch(String value, String matcher) {
+        if (value == null || matcher == null) {
+            return value;
+        }
+        return value.endsWith(matcher)
+                ? value.substring(0, value.length() - matcher.length())
+                : value;
+    }
+
+    /**
+     * check blank 2 null.
+     *
+     * @param value value
+     * @return String
+     */
+    public static String blank2Null(String value) {
+        return value == null || value.trim().isEmpty() ? null : value;
+    }
+
+    /**
+     * is blank.
+     * @param value value
+     * @return boolean
+     */
+    public static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+}

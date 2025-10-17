@@ -21,7 +21,7 @@ package org.zicat.tributary.channel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static org.zicat.tributary.common.IOUtils.*;
+import static org.zicat.tributary.common.util.IOUtils.*;
 
 /** CompressionType. */
 public enum CompressionType {

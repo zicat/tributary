@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.handler;
 
-import static org.zicat.tributary.common.Collections.deepCopy;
+import static org.zicat.tributary.common.util.Collections.deepCopy;
 
 import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WorkHandler;
@@ -29,10 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.MetricKey;
-import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.metric.MetricKey;
+import org.zicat.tributary.common.util.Threads;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.Function;

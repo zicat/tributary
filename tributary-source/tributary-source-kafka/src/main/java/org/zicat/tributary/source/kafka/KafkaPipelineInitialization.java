@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.kafka;
 
-import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
+import static org.zicat.tributary.common.util.ResourceUtils.getResourcePath;
 import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder;
 import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder.SslClientVerifyMode;
@@ -43,8 +43,8 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.security.plain.internals.PlainSaslServer;
 import org.apache.kafka25.HostPort;
 import org.apache.kafka25.PlainServerCallbackHandler;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.source.base.netty.handler.LengthDecoder;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 

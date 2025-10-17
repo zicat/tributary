@@ -26,7 +26,7 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.common.util.Threads;
 
 import java.io.File;
 import java.io.IOException;

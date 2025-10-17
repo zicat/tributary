@@ -19,10 +19,10 @@
 package org.zicat.tributary.source.base.netty;
 
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.SourceFactory;

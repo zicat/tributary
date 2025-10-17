@@ -19,7 +19,7 @@
 package org.zicat.tributary.common.records;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.zicat.tributary.common.VIntUtil;
+import org.zicat.tributary.common.util.VIntUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -29,9 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static org.zicat.tributary.common.BytesUtils.toVIntBytes;
-import static org.zicat.tributary.common.BytesUtils.toVIntString;
-import static org.zicat.tributary.common.VIntUtil.*;
+import static org.zicat.tributary.common.util.BytesUtils.toVIntBytes;
+import static org.zicat.tributary.common.util.BytesUtils.toVIntString;
+import static org.zicat.tributary.common.util.VIntUtil.*;
 
 /** Record. */
 @JsonTypeInfo(defaultImpl = JsonRecord.class, use = JsonTypeInfo.Id.CLASS)

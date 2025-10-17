@@ -18,14 +18,14 @@
 
 package org.zicat.tributary.demo.client;
 
-import org.zicat.tributary.common.TributaryIOException;
+import org.zicat.tributary.common.exception.TributaryIOException;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
-import static org.zicat.tributary.common.IOUtils.writeData;
+import static org.zicat.tributary.common.util.IOUtils.writeData;
 
 /** LengthDecoderClient. */
 public class LengthDecoderClient implements Closeable {

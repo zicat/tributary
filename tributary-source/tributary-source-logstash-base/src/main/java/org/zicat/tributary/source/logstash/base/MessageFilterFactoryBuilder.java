@@ -18,9 +18,9 @@
 
 package org.zicat.tributary.source.logstash.base;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.ReadableConfig;
 
 /** MessageFilterFactoryManager. */
 public class MessageFilterFactoryBuilder {

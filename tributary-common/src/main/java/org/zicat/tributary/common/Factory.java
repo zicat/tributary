@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.common;
 
+import org.zicat.tributary.common.util.IOUtils;
+
 import java.io.Closeable;
 import java.io.IOException;
 

@@ -20,7 +20,7 @@ package org.zicat.tributary.server.test.component;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.component.ChannelComponent;
 import org.zicat.tributary.server.component.ChannelComponentFactory;
 import org.zicat.tributary.server.component.SourceComponent;

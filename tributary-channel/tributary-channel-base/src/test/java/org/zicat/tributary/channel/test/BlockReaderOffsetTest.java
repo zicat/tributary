@@ -28,8 +28,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.zicat.tributary.common.VIntUtil.putVInt;
-import static org.zicat.tributary.common.VIntUtil.vIntEncodeLength;
+import static org.zicat.tributary.common.util.VIntUtil.putVInt;
+import static org.zicat.tributary.common.util.VIntUtil.vIntEncodeLength;
 
 /** BlockReaderOffsetTest. */
 public class BlockReaderOffsetTest {

@@ -22,8 +22,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,8 +32,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.xcontent.XContentType;
-import org.zicat.tributary.common.MemorySize;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.config.MemorySize;
+import org.zicat.tributary.common.metric.MetricKey;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_BULK_MAX_BYTES;
 import org.zicat.tributary.sink.function.Context;
 

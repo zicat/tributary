@@ -20,8 +20,8 @@ package org.zicat.tributary.sink.function;
 
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.Clock;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.SystemClock;
 import static org.zicat.tributary.common.records.RecordsUtils.sinkExtraHeaders;
 

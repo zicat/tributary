@@ -18,10 +18,10 @@
 
 package org.zicat.tributary.channel.memory;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.MemorySize;
-import org.zicat.tributary.common.PercentSize;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.MemorySize;
+import org.zicat.tributary.common.config.PercentSize;
 
 /** MemoryChannelConfigOption. */
 public class MemoryChannelConfigOption {

@@ -39,10 +39,10 @@ import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
 import org.zicat.tributary.channel.test.SinkGroup;
 import org.zicat.tributary.channel.test.SourceThread;
-import org.zicat.tributary.common.DefaultReadableConfig;
-import org.zicat.tributary.common.MemorySize;
-import org.zicat.tributary.common.PercentSize;
-import org.zicat.tributary.common.Threads;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.MemorySize;
+import org.zicat.tributary.common.config.PercentSize;
+import org.zicat.tributary.common.util.Threads;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

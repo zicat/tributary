@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.AbstractSingleChannel;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
-import org.zicat.tributary.common.MemorySize;
-import org.zicat.tributary.common.PercentSize;
-import static org.zicat.tributary.common.PercentSize.memoryPercent;
+import org.zicat.tributary.common.config.MemorySize;
+import org.zicat.tributary.common.config.PercentSize;
+import static org.zicat.tributary.common.config.PercentSize.memoryPercent;
 
 /** MemorySingleChannel. */
 public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {

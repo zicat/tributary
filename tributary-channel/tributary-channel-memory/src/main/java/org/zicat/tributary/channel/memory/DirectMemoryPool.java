@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.channel.memory;
 
-import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.config.MemorySize;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;

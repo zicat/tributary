@@ -19,11 +19,11 @@
 package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.common.Clock;
-import org.zicat.tributary.common.MetricCollector;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricCollector;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.SystemClock;
-import static org.zicat.tributary.common.Threads.joinQuietly;
-import static org.zicat.tributary.common.Threads.sleepQuietly;
+import static org.zicat.tributary.common.util.Threads.joinQuietly;
+import static org.zicat.tributary.common.util.Threads.sleepQuietly;
 import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.snapshotIntervalMills;
 
@@ -32,9 +32,9 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
 

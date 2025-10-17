@@ -24,7 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.memory.MemorySegment;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

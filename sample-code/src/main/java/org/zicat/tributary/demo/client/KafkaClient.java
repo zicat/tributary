@@ -27,7 +27,7 @@ import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.serialization.StringSerializer;
-import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
+import static org.zicat.tributary.common.util.ResourceUtils.getResourcePath;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

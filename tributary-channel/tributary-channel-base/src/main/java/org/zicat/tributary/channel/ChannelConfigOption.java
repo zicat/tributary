@@ -18,14 +18,14 @@
 
 package org.zicat.tributary.channel;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.MemorySize;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.MemorySize;
 
 import java.time.Duration;
 import java.util.List;
 
-import static org.zicat.tributary.common.ConfigOptions.COMMA_SPLIT_HANDLER;
+import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
 
 /** ChannelConfigOption. */
 public class ChannelConfigOption {

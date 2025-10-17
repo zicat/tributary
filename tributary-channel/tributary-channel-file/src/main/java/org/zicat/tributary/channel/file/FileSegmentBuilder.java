@@ -27,8 +27,8 @@ import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_SEGMENT_SIZ
 import org.zicat.tributary.channel.CompressionType;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getNameById;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.RandomAccessFile;

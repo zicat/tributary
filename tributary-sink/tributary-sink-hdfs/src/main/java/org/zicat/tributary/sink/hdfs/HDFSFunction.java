@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.hdfs;
 
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.function.Context;

@@ -19,8 +19,8 @@
 package org.zicat.tributary.channle.file.test;
 
 import org.zicat.tributary.channel.file.FileSegmentBuilder;
-import static org.zicat.tributary.common.IOUtils.deleteDir;
-import static org.zicat.tributary.common.IOUtils.makeDir;
+import static org.zicat.tributary.common.util.IOUtils.deleteDir;
+import static org.zicat.tributary.common.util.IOUtils.makeDir;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -29,8 +29,8 @@ import org.junit.Test;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.file.FileSegment;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.test.FileUtils;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.test.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;

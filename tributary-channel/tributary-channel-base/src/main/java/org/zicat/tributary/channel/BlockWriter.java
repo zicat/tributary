@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.channel;
 
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.util.IOUtils;
 
 import java.nio.ByteBuffer;
 
-import static org.zicat.tributary.common.VIntUtil.vIntEncodeLength;
+import static org.zicat.tributary.common.util.VIntUtil.vIntEncodeLength;
 
 /**
  * BlockWriter.

@@ -20,7 +20,7 @@ package org.zicat.tributary.source.logstash.base.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
 import org.zicat.tributary.source.logstash.base.DefaultMessageFilterFactory;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;

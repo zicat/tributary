@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink;
 
-import org.zicat.tributary.common.DefaultReadableConfig;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
 
 import java.util.Map;
 

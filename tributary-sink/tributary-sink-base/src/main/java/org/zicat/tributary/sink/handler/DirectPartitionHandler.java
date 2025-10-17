@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.Function;

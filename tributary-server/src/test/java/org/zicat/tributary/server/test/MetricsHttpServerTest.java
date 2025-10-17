@@ -26,8 +26,8 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.AbstractSingleChannel;
-import org.zicat.tributary.common.DefaultReadableConfig;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.server.MetricsHttpServer;
 
 import java.io.IOException;
@@ -102,7 +102,7 @@ public class MetricsHttpServerTest {
             }
             return sockets.stream().map(ServerSocket::getLocalPort).collect(Collectors.toList());
         } finally {
-            sockets.forEach(org.zicat.tributary.common.IOUtils::closeQuietly);
+            sockets.forEach(org.zicat.tributary.common.util.IOUtils::closeQuietly);
         }
     }
 }

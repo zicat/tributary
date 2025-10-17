@@ -19,7 +19,7 @@
 package org.zicat.tributary.source.base;
 
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.Records;
 
 import java.io.IOException;

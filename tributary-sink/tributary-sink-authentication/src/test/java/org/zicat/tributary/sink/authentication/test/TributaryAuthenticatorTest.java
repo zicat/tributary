@@ -23,7 +23,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.common.test.FileUtils;
+import org.zicat.tributary.common.test.util.FileUtils;
 import org.zicat.tributary.sink.authentication.*;
 
 import java.io.File;

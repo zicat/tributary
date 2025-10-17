@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.logstash.beats;
 
-import static org.zicat.tributary.common.ResourceUtils.getResourcePath;
+import static org.zicat.tributary.common.util.ResourceUtils.getResourcePath;
 import org.zicat.tributary.source.base.Source;
 import static org.zicat.tributary.source.base.netty.EventExecutorGroups.createEventExecutorGroup;
 import static org.zicat.tributary.source.logstash.beats.LogstashBeatsPipelineInitializationFactory.*;
@@ -30,8 +30,8 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import org.logstash.beats.*;
 import org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder;
 import org.zicat.tributary.source.base.netty.ssl.SslHandlerProvider;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactoryBuilder;

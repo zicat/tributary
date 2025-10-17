@@ -19,8 +19,8 @@
 package org.zicat.tributary.channel;
 
 import static org.zicat.tributary.channel.SegmentUtil.BLOCK_HEAD_SIZE;
-import static org.zicat.tributary.common.BytesUtils.toBytes;
-import static org.zicat.tributary.common.IOUtils.reAllocate;
+import static org.zicat.tributary.common.util.BytesUtils.toBytes;
+import static org.zicat.tributary.common.util.IOUtils.reAllocate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

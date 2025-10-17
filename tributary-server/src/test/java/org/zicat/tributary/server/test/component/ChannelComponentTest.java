@@ -24,7 +24,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.component.ChannelComponent;
 import org.zicat.tributary.server.component.ChannelComponentFactory;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;

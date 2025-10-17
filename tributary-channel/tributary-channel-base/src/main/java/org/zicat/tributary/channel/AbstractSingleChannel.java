@@ -22,9 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.channel.group.SingleGroupManager;
-import org.zicat.tributary.common.MetricKey;
-import org.zicat.tributary.common.IOUtils;
-import org.zicat.tributary.common.PercentSize;
+import org.zicat.tributary.common.metric.MetricKey;
+import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.common.config.PercentSize;
 import org.zicat.tributary.common.SafeFactory;
 
 import java.io.Closeable;

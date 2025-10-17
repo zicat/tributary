@@ -18,15 +18,15 @@
 
 package org.zicat.tributary.sink;
 
-import static org.zicat.tributary.common.Collections.sumDouble;
-import org.zicat.tributary.common.MetricCollector;
+import static org.zicat.tributary.common.util.Collections.sumDouble;
+import org.zicat.tributary.common.metric.MetricCollector;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.MetricKey;
-import org.zicat.tributary.common.IOUtils;
+import org.zicat.tributary.common.metric.MetricKey;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.sink.handler.PartitionHandler;
 import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
 

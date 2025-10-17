@@ -18,8 +18,8 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.sink.function.Context;
 import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
 import org.zicat.tributary.sink.hdfs.HDFSRecordsWriterFactory;

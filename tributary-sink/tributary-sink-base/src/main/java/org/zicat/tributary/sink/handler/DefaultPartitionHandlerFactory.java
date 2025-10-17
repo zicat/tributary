@@ -19,9 +19,9 @@
 package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.ConfigOption;
-import org.zicat.tributary.common.ConfigOptions;
-import org.zicat.tributary.common.ReadableConfig;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.sink.SinkGroupConfig;
 
 import java.time.Duration;

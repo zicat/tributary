@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.common;
 
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
+
 import java.util.ServiceLoader;
 
 /** SpiFactory. */

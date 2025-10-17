@@ -19,7 +19,7 @@
 package org.zicat.tributary.channel;
 
 import org.zicat.tributary.channel.group.GroupManager;
-import org.zicat.tributary.common.MetricCollector;
+import org.zicat.tributary.common.metric.MetricCollector;
 
 import java.io.Closeable;
 import java.io.IOException;

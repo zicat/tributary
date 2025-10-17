@@ -18,13 +18,13 @@
 
 package org.zicat.tributary.channel.test;
 
-import static org.zicat.tributary.common.BytesUtils.toBytes;
+import static org.zicat.tributary.common.util.BytesUtils.toBytes;
 import static org.zicat.tributary.common.records.RecordsUtils.createBytesRecords;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

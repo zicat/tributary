@@ -23,10 +23,10 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
-import org.zicat.tributary.common.MemorySize;
-import org.zicat.tributary.common.PercentSize;
-import static org.zicat.tributary.common.PercentSize.memoryPercent;
-import org.zicat.tributary.common.TributaryRuntimeException;
+import org.zicat.tributary.common.config.MemorySize;
+import org.zicat.tributary.common.config.PercentSize;
+import static org.zicat.tributary.common.config.PercentSize.memoryPercent;
+import org.zicat.tributary.common.exception.TributaryRuntimeException;
 
 import java.io.File;
 import java.io.IOException;

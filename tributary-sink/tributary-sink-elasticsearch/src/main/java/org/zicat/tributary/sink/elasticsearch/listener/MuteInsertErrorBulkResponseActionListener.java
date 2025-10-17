@@ -21,7 +21,7 @@ package org.zicat.tributary.sink.elasticsearch.listener;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.MetricKey;
+import org.zicat.tributary.common.metric.MetricKey;
 
 import java.util.HashMap;
 import java.util.Map;
