@@ -274,11 +274,12 @@ public class FileSingleChannelTest {
             int blockSize,
             CompressionType compressionType)
             throws IOException {
-        final List<File> dirs = new ArrayList<>(partitionCount);
+        final List<String> dirs = new ArrayList<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
-            dirs.add(new File(dir + i));
+            dirs.add(dir + i);
         }
-        final FileSingleChannelBuilder builder = FileSingleChannelBuilder.newBuilder().flushPeriodMills(500);
+        final FileSingleChannelBuilder builder =
+                new FileSingleChannelBuilder().flushPeriodMills(500);
         builder.segmentSize(segmentSize)
                 .blockSize(blockSize)
                 .consumerGroups(consumerGroup)

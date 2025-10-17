@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
@@ -49,7 +50,7 @@ public class FileSegmentTest {
     public void testAppend() throws IOException {
         final File childDir = new File(DIR, "test_append");
         makeDir(childDir);
-        final FileSegment.Builder builder = new FileSegment.Builder();
+        final FileSegmentBuilder builder = new FileSegmentBuilder();
         final FileSegment segment =
                 builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
         Assert.assertTrue(segment.append("".getBytes(), 0, 0).appended());
@@ -71,7 +72,7 @@ public class FileSegmentTest {
     public void testRead() throws IOException, InterruptedException {
         final File childDir = new File(DIR, "test_read");
         makeDir(childDir);
-        final FileSegment.Builder builder = new FileSegment.Builder();
+        final FileSegmentBuilder builder = new FileSegmentBuilder();
         final int fileId = 1;
         final FileSegment segment =
                 builder.segmentSize(64L).fileId(fileId).dir(childDir).build(new BlockWriter(16));

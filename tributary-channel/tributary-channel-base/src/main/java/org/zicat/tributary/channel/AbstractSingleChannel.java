@@ -70,12 +70,14 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
     protected final Map<Long, S> cache = new ConcurrentHashMap<>();
     protected final ChannelBlockCache bCache;
     protected volatile S latestSegment;
+    protected int blockCacheCount;
 
     protected AbstractSingleChannel(
             String topic,
             int blockCacheCount,
             SingleGroupManagerFactory singleGroupManagerFactory) {
         this.topic = topic;
+        this.blockCacheCount = Math.max(blockCacheCount, 0);
         this.bCache = blockCacheCount <= 0 ? null : new ChannelBlockCache(blockCacheCount);
         this.singleGroupManagerFactory = singleGroupManagerFactory;
         this.singleGroupManager = singleGroupManagerFactory.create();

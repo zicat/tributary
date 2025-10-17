@@ -63,8 +63,8 @@ public class FileChannelFactory implements ChannelFactory {
                 config.get(OPTION_APPEND_SYNC_AWAIT_TIMEOUT, OPTION_FLUSH_PERIOD);
         final PercentSize capacityProtectedPercent = config.get(OPTION_CAPACITY_PROTECTED_PERCENT);
         final FileSingleChannelBuilder builder =
-                FileSingleChannelBuilder.newBuilder()
-                        .dirs(createDir(dirs))
+                new FileSingleChannelBuilder()
+                        .dirs(dirs)
                         .flushPeriodMills(flushPeriod.toMillis())
                         .cleanupExpiredSegmentPeriodMills(cleanupExpiredSegmentPeriod.toMillis())
                         .groupPersistPeriodSecond(groupPersist)

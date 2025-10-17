@@ -38,10 +38,10 @@ import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PE
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
 import org.zicat.tributary.common.PercentSize;
 
-/** FileChannelBuilder. */
+/** FileSingleChannelBuilder. */
 public class FileSingleChannelBuilder {
 
-    protected List<File> dirs;
+    protected List<String> dirs;
     protected long groupPeriodSecond = OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds();
     protected String topic;
     protected Long segmentSize;
@@ -102,7 +102,7 @@ public class FileSingleChannelBuilder {
      * @param dirs dirs.
      * @return this
      */
-    public FileSingleChannelBuilder dirs(List<File> dirs) {
+    public FileSingleChannelBuilder dirs(List<String> dirs) {
         this.dirs = dirs;
         return this;
     }
@@ -213,7 +213,7 @@ public class FileSingleChannelBuilder {
         final FileStore[] fileStores = new FileStore[dirs.size()];
         final SingleGroupManagerFactory[] factories = new SingleGroupManagerFactory[dirs.size()];
         for (int i = 0; i < dirs.size(); i++) {
-            final File dir = dirs.get(i).getCanonicalFile();
+            final File dir = new File(dirs.get(i)).getCanonicalFile();
             if (!dir.exists() && !IOUtils.makeDir(dir)) {
                 throw new IllegalStateException("try to create fail " + dir.getPath());
             }
@@ -249,14 +249,5 @@ public class FileSingleChannelBuilder {
                 flushPeriodMills,
                 cleanupExpiredSegmentPeriodMills,
                 capacityProtectedPercent);
-    }
-
-    /**
-     * create new builder.
-     *
-     * @return PartitionFileChannelBuilder
-     */
-    public static FileSingleChannelBuilder newBuilder() {
-        return new FileSingleChannelBuilder();
     }
 }

@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
 import static org.zicat.tributary.common.IOUtils.makeDir;
 
@@ -55,15 +56,7 @@ public class FileSegmentBuilderTest {
     @Test
     public void test() throws IOException {
 
-        final FileSegment.Builder builder = new FileSegment.Builder();
-        try {
-            try (FileSegment ignored =
-                    builder.segmentSize(1025L).fileId(1).dir(DIR).build(new BlockWriter(1024))) {
-                Assert.fail();
-            }
-        } catch (RuntimeException e) {
-            Assert.assertTrue(true);
-        }
+        final FileSegmentBuilder builder = new FileSegmentBuilder().fileId(1).dir(DIR);
 
         final int blockSize = 1024;
         final BlockWriter bw1 = new BlockWriter(blockSize);

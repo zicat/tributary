@@ -30,38 +30,36 @@ import static org.zicat.tributary.common.PercentSize.memoryPercent;
 /** MemorySingleChannel. */
 public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {
 
+    private static final String SEGMENT_LOG_FORMAT =
+            "create segment id: {}, compression type:{}, segment size:{}, block size:{}, block cache count:{}";
     private static final Logger LOG = LoggerFactory.getLogger(MemorySingleChannel.class);
     private final Long segmentSize;
-    private final CompressionType compressionType;
+    private final CompressionType compression;
     private final BlockWriter blockWriter;
+    private final int blockSize;
 
     protected MemorySingleChannel(
             String topic,
             SingleGroupManagerFactory singleGroupManagerFactory,
             int blockSize,
             Long segmentSize,
-            CompressionType compressionType,
+            CompressionType compression,
             int blockCacheCount) {
         super(topic, blockCacheCount, singleGroupManagerFactory);
         if (blockSize >= segmentSize) {
             throw new IllegalArgumentException("block size must less than segment size");
         }
+        this.blockSize = blockSize;
         this.blockWriter = new BlockWriter(blockSize);
         this.segmentSize = segmentSize;
-        this.compressionType = compressionType;
+        this.compression = compression;
         loadLastSegment();
     }
 
     @Override
     protected MemorySegment createSegment(long id) {
-        LOG.info(
-                "create segment id: {}, compression type:{}, segment size:{}, block size:{}, block cache count:{}",
-                id,
-                compressionType.name(),
-                segmentSize,
-                blockWriter.capacity(),
-                bCache == null ? 0 : bCache.blockCount());
-        return new MemorySegment(id, blockWriter, compressionType, segmentSize, bCache);
+        LOG.info(SEGMENT_LOG_FORMAT, id, compression, segmentSize, blockSize, blockCacheCount);
+        return new MemorySegment(id, blockWriter, compression, segmentSize, bCache);
     }
 
     @Override

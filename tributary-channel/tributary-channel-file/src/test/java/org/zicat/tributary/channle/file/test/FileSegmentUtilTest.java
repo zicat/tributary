@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.legalFileOffset;
 import static org.zicat.tributary.common.IOUtils.deleteDir;
@@ -86,7 +87,7 @@ public class FileSegmentUtilTest {
     public void testMinMax() {
         final File childDir = new File(DIR, "test_min_max");
         makeDir(childDir);
-        final FileSegment.Builder builder = new FileSegment.Builder();
+        final FileSegmentBuilder builder = new FileSegmentBuilder();
         final FileSegment segment1 =
                 builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
         final FileSegment segment2 =

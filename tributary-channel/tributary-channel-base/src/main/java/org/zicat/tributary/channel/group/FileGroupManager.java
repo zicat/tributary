@@ -20,11 +20,13 @@ package org.zicat.tributary.channel.group;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Offset;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
 import org.zicat.tributary.common.*;
+import static org.zicat.tributary.common.Threads.createThreadFactoryByName;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -78,9 +80,7 @@ public class FileGroupManager extends MemoryGroupManager {
             throw new IllegalArgumentException("period flush must over 0");
         }
         this.groupIndexFile = groupIndexFile;
-        this.schedule =
-                Executors.newSingleThreadScheduledExecutor(
-                        Threads.createThreadFactoryByName(THREAD_PREFIX));
+        this.schedule = newSingleThreadScheduledExecutor(createThreadFactoryByName(THREAD_PREFIX));
         schedule.scheduleWithFixedDelay(
                 this::persist, periodSecond, periodSecond, TimeUnit.SECONDS);
     }

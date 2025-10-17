@@ -41,6 +41,11 @@ public enum CompressionType {
         return id;
     }
 
+    @Override
+    public String toString() {
+        return name;
+    }
+
     /**
      * get type by name.
      *

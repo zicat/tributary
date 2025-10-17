@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.*;
 import org.zicat.tributary.channel.Segment.AppendResult;
+import static org.zicat.tributary.channel.file.FileSegmentUtil.FILE_SEGMENT_HEAD_SIZE;
 import org.zicat.tributary.common.MemorySize;
 import org.zicat.tributary.common.PercentSize;
 import static org.zicat.tributary.common.PercentSize.memoryPercent;
@@ -39,7 +40,7 @@ import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
 
 /**
- * FileChannel implements {@link Channel} to Storage records and {@link Offset} in local file
+ * FileSingleChannel implements {@link Channel} to Storage records and {@link Offset} in local file
  * system.
  *
  * <p>All public methods in FileChannel are @ThreadSafe.
@@ -80,7 +81,7 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
             long appendSyncWaitTimeoutMs,
             FileStore fileStore) {
         super(topic, blockCacheCount, factory);
-        if (blockSize >= segmentSize) {
+        if (segmentSize - FILE_SEGMENT_HEAD_SIZE < blockSize) {
             throw new IllegalArgumentException("block size must less than segment size");
         }
         this.blockWriter = new BlockWriter(blockSize);
@@ -98,12 +99,12 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
     protected FileSegment createSegment(long id) {
         LOG.info(
                 "create segment path: {}, compression type:{}, segment size:{}, block size:{}, block cache count:{}",
-                dir.getPath(),
-                compressionType.name(),
+                dir,
+                compressionType,
                 segmentSize,
                 blockWriter.capacity(),
                 bCache == null ? 0 : bCache.blockCount());
-        return new FileSegment.Builder()
+        return new FileSegmentBuilder()
                 .fileId(id)
                 .dir(dir)
                 .segmentSize(segmentSize)
