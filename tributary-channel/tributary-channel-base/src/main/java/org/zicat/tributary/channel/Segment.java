@@ -50,7 +50,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class Segment implements SegmentStorage, Closeable, Comparable<Segment> {
 
-    private static final AppendResult HAS_IN_STORAGE =
+    public static final AppendResult HAS_IN_STORAGE =
             new AppendResult() {
                 @Override
                 public boolean appended() {
@@ -58,12 +58,12 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
                 }
 
                 @Override
-                public boolean await2Storage(long timeout, TimeUnit unit) {
+                public boolean await2Storage() {
                     return true;
                 }
             };
 
-    private static final AppendResult APPEND_FAIL =
+    public static final AppendResult APPEND_FAIL =
             new AppendResult() {
                 @Override
                 public boolean appended() {
@@ -71,7 +71,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
                 }
 
                 @Override
-                public boolean await2Storage(long timeout, TimeUnit unit) {
+                public boolean await2Storage() {
                     throw new IllegalStateException("append fail, never call this method");
                 }
             };
@@ -92,7 +92,8 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     protected final BlockWriter writer;
     protected final CompressionType compression;
 
-    protected volatile InBlockAppendResult inBlockResult = new InBlockAppendResult(1);
+    protected volatile InBlockAppendResult inBlockResult;
+    protected long await2StorageTimeout;
     protected long cacheUsed = 0;
 
     public Segment(
@@ -101,12 +102,15 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
             CompressionType compression,
             long segmentSize,
             long position,
+            long await2StorageTimeout,
             ChannelBlockCache bCache) {
         this.id = id;
         this.segmentSize = segmentSize;
         this.writer = writer;
         this.compression = compression;
         this.position.set(position);
+        this.await2StorageTimeout = await2StorageTimeout;
+        this.inBlockResult = new InBlockAppendResult(await2StorageTimeout, 1);
         this.bCache = bCache;
         this.blockFlushHandler = createBlockFlushHandler();
     }
@@ -128,7 +132,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
                 throw e;
             } finally {
                 inBlockResult.countDown();
-                inBlockResult = new InBlockAppendResult(1);
+                inBlockResult = new InBlockAppendResult(await2StorageTimeout, 1);
             }
             final long preOffset = position.getAndAdd(writeCount);
             if (buff != null) {
@@ -220,10 +224,12 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
     /** InBlockAppendResult. */
     protected static class InBlockAppendResult extends CountDownLatch implements AppendResult {
 
+        protected final long await2StorageTimeout;
         protected volatile IOException exception;
 
-        public InBlockAppendResult(int count) {
+        public InBlockAppendResult(long await2StorageTimeout, int count) {
             super(count);
+            this.await2StorageTimeout = await2StorageTimeout;
         }
 
         @Override
@@ -232,9 +238,10 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         }
 
         @Override
-        public boolean await2Storage(long timeout, TimeUnit unit)
-                throws InterruptedException, IOException {
-            final boolean result = super.await(timeout, unit);
+        public boolean await2Storage() throws InterruptedException, IOException {
+            final boolean result =
+                    await2StorageTimeout <= 0
+                            || super.await(await2StorageTimeout, TimeUnit.MILLISECONDS);
             if (exception != null) {
                 throw exception;
             }
@@ -261,7 +268,7 @@ public abstract class Segment implements SegmentStorage, Closeable, Comparable<S
         boolean appended();
 
         /** await data 2 storage. */
-        boolean await2Storage(long timeout, TimeUnit unit) throws InterruptedException, IOException;
+        boolean await2Storage() throws InterruptedException, IOException;
     }
 
     /**

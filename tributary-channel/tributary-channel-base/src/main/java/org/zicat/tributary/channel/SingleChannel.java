@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.channel.group.SingleGroupManager;
 
 import java.io.IOException;
@@ -46,15 +47,15 @@ public interface SingleChannel extends Channel, SingleGroupManager {
     long lag(Offset offset);
 
     @Override
-    default void append(int partition, byte[] record, int offset, int length)
+    default AppendResult append(int partition, byte[] record, int offset, int length)
             throws IOException, InterruptedException {
-        append(record, offset, length);
+        return append(record, offset, length);
     }
 
     @Override
-    default void append(int partition, ByteBuffer byteBuffer)
+    default AppendResult append(int partition, ByteBuffer byteBuffer)
             throws IOException, InterruptedException {
-        append(byteBuffer);
+        return append(byteBuffer);
     }
 
     /**
@@ -70,9 +71,9 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    default void append(byte[] record, int offset, int length)
+    default AppendResult append(byte[] record, int offset, int length)
             throws IOException, InterruptedException {
-        append(ByteBuffer.wrap(record, offset, length));
+        return append(ByteBuffer.wrap(record, offset, length));
     }
 
     /**
@@ -85,7 +86,7 @@ public interface SingleChannel extends Channel, SingleGroupManager {
      * @param byteBuffer byteBuffer
      * @throws IOException IOException
      */
-    void append(ByteBuffer byteBuffer) throws IOException, InterruptedException;
+    AppendResult append(ByteBuffer byteBuffer) throws IOException, InterruptedException;
 
     @Override
     default RecordsResultSet poll(int partition, Offset offset, long time, TimeUnit unit)

@@ -53,8 +53,6 @@ public class FileSingleChannelBuilder {
     protected PercentSize capacityProtectedPercent =
             OPTION_CAPACITY_PROTECTED_PERCENT.defaultValue();
 
-    protected boolean appendSyncWait = false;
-    protected long appendSyncWaitTimeoutMs = 0;
     protected int blockCacheCount = OPTION_BLOCK_CACHE_PER_PARTITION_SIZE.defaultValue();
 
     /**
@@ -176,28 +174,6 @@ public class FileSingleChannelBuilder {
     }
 
     /**
-     * set append sync wait.
-     *
-     * @param appendSyncWait appendSyncWait
-     * @return this
-     */
-    public FileSingleChannelBuilder appendSyncWait(boolean appendSyncWait) {
-        this.appendSyncWait = appendSyncWait;
-        return this;
-    }
-
-    /**
-     * set append sync wait timeout ms.
-     *
-     * @param appendSyncWaitTimeoutMs appendSyncWaitTimeoutMs
-     * @return this
-     */
-    public FileSingleChannelBuilder appendSyncWaitTimeoutMs(long appendSyncWaitTimeoutMs) {
-        this.appendSyncWaitTimeoutMs = appendSyncWaitTimeoutMs;
-        return this;
-    }
-
-    /**
      * build to channel.
      *
      * @return PartitionFileChannel
@@ -236,11 +212,10 @@ public class FileSingleChannelBuilder {
                                             factories[i],
                                             blockSize,
                                             segmentSize,
+                                            flushPeriodMills,
                                             compressionType,
                                             canonicalDirs[i],
                                             blockCacheCount,
-                                            appendSyncWait,
-                                            appendSyncWaitTimeoutMs,
                                             fileStores[i]);
                         }
                         return fileChannels;

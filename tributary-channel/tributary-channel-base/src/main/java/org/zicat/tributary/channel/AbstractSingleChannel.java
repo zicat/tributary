@@ -111,9 +111,10 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
      * @throws IOException IOException
      */
     @Override
-    public void append(ByteBuffer byteBuffer) throws IOException, InterruptedException {
-        innerAppend(byteBuffer);
+    public AppendResult append(ByteBuffer byteBuffer) throws IOException, InterruptedException {
+        final AppendResult appendResult = innerAppend(byteBuffer);
         appendCounter.incrementAndGet();
+        return appendResult;
     }
 
     /**

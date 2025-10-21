@@ -40,7 +40,13 @@ public class SegmentTest {
         final Buffer buffer = new Buffer();
         try (final Segment segment =
                 new Segment(
-                        id, writer, compressionType, segmentSize, 0L, new ChannelBlockCache(1)) {
+                        id,
+                        writer,
+                        compressionType,
+                        segmentSize,
+                        0L,
+                        0L,
+                        new ChannelBlockCache(1)) {
                     @Override
                     protected long legalOffset(long offset) {
                         return offset;
@@ -76,7 +82,7 @@ public class SegmentTest {
         final CompressionType compressionType = CompressionType.NONE;
         final Buffer buffer = new Buffer();
         try (final Segment segment =
-                new Segment(id, writer, compressionType, segmentSize, 0L, null) {
+                new Segment(id, writer, compressionType, segmentSize, 0L, 0L, null) {
                     @Override
                     protected long legalOffset(long offset) {
                         return offset;

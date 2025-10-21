@@ -33,10 +33,10 @@ public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {
     private static final String SEGMENT_LOG_FORMAT =
             "create segment id: {}, compression type:{}, segment size:{}, block size:{}, block cache count:{}";
     private static final Logger LOG = LoggerFactory.getLogger(MemorySingleChannel.class);
-    private final Long segmentSize;
-    private final CompressionType compression;
-    private final BlockWriter blockWriter;
-    private final int blockSize;
+    protected final Long segmentSize;
+    protected final CompressionType compression;
+    protected final BlockWriter blockWriter;
+    protected final int blockSize;
 
     protected MemorySingleChannel(
             String topic,
@@ -59,7 +59,7 @@ public class MemorySingleChannel extends AbstractSingleChannel<MemorySegment> {
     @Override
     protected MemorySegment createSegment(long id) {
         LOG.info(SEGMENT_LOG_FORMAT, id, compression, segmentSize, blockSize, blockCacheCount);
-        return new MemorySegment(id, blockWriter, compression, segmentSize, bCache);
+        return new MemorySegment(id, blockWriter, compression, segmentSize, 0L, bCache);
     }
 
     @Override

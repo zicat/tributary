@@ -46,6 +46,12 @@ public class FileSegmentBuilder {
     private CompressionType compressionType = OPTION_COMPRESSION.defaultValue();
 
     private ChannelBlockCache bCache;
+    private long await2StorageTimeout;
+
+    public FileSegmentBuilder await2StorageTimeout(long timeoutMs) {
+        this.await2StorageTimeout = timeoutMs;
+        return this;
+    }
 
     /**
      * set file id.
@@ -153,6 +159,7 @@ public class FileSegmentBuilder {
                     realCompressType,
                     segmentSize,
                     position,
+                    await2StorageTimeout,
                     file,
                     fileChannel,
                     bCache);

@@ -98,7 +98,7 @@ public class ElasticsearchFunctionFactory implements FunctionFactory {
                     .description("bulk max bytes")
                     .defaultValue(MemorySize.parse("2mb"));
     public static final ConfigOption<String> OPTION_BULK_RESPONSE_ACTION_LISTENER_IDENTITY =
-            ConfigOptions.key("bulk.response.action_listener.identity")
+            ConfigOptions.key("bulk.response.action-listener.identity")
                     .stringType()
                     .description("The identity of request bulk response action listener.")
                     .defaultValue("default");

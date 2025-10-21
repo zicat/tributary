@@ -44,8 +44,10 @@ Each source must be associated with a channel and its implementation as follows
 
 ```properties
 source.s1.channel=c1
+source.s1.channel.append-result-type=block
 source.s1.implement=netty
 source.s2.channel=c2
+source.s2.channel.append-result-type=storage
 source.s2.implement=netty
 ``` 
 
@@ -56,10 +58,11 @@ The source must config the implement to receive data, convert
 as [Records](../tributary-common/src/main/java/org/zicat/tributary/common/records/Records.java) and
 append to channel for sinks to consume.
 
-| key       | default | type   | describe                                                                                                                                 |
-|-----------|---------|--------|------------------------------------------------------------------------------------------------------------------------------------------|
-| channel   |         | string | the channel to append records                                                                                                            |   
-| implement | netty   | string | the [SourceFactory](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/SourceFactory.java) identity |
+| key                        | default | type   | describe                                                                                                                                                                                                                                                                                                                                                                                                 |
+|----------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| channel                    |         | string | the channel to append records                                                                                                                                                                                                                                                                                                                                                                            |   
+| implement                  | netty   | string | the [SourceFactory](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/SourceFactory.java) identity                                                                                                                                                                                                                                                                 |
+| channel.append-result-type | block   | enum   | the type of channel append result, `block` means return after append to channel block successfully, `storage` means the source will await(the max waiting time depends on file channel param `flush.period`) until channel flush data to storage successfully. For `memory` channel this param is useless, for `file` channel the `storage` means waiting data flushing in os pagecache instead of disk. |
 
 Tributary provide the
 [SourceFactory](../tributary-source/tributary-source-base/src/main/java/org/zicat/tributary/source/base/SourceFactory.java)
@@ -268,8 +271,6 @@ channel.c2.block.cache.per.partition.size=1024
 | flush.period                   | 500ms          | duration               | the period time to async flush page cache to disk                                                                                                                                                                                                                                |
 | groups.persist.period          | 30s            | duration               | the period time to async persist the committed group offset to disk                                                                                                                                                                                                              |     
 | block.cache.per.partition.size | 1024           | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                   | 
-| append.sync.await              | false          | bool                   | the switch whether wait the append function put data to page cache successfully, default false means return directly only the append function  put data to block successfully                                                                                                    |
-| append.sync.await.timeout      | `flush.period` | duration               | the timeout if append sync await is open, the default equal flush.period                                                                                                                                                                                                         |
 | capacity.protected.percent     | 90%            | percent                | the max disk capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the disk usage percent over the param, those sink groups will skip offset to next segment to consume |
 
 ### Memory Config
@@ -426,7 +427,7 @@ sink.group_4.connection.timeout=10s
 sink.group_4.socket.timeout=20s
 sink.group_4.bulk.max.bytes=2mb
 sink.group_4.bulk.max.count=1000
-sink.group_4.bulk.response.action_listener.identity=default
+sink.group_4.bulk.response.action-listener.identity=default
 sink.group_4.request.indexer.identity=default
 ```
 
@@ -443,10 +444,10 @@ sink.group_4.request.indexer.identity=default
 | socket.timeout                            | 20s              | duration | the socket timeout (SO_TIMEOUT) for waiting for data, a maximum period inactivity between two consecutive data packets, default 20s                                                                          |
 | bulk.max.bytes                            | 2mb              | bytes    | the max index request bytes in bulk to async send, the request will be sent when `bulk.max.count` trigger or `bulk.max.bytes` trigger or checkpoint trigger                                                  |
 | bulk.max.count                            | 1000             | int      | the max index request count in bulk to async send. the request will be sent when `bulk.max.count` trigger or `bulk.max.bytes` trigger or checkpoint trigger                                                  |
-| bulk.response.action_listener.identity    | default          | string   | the spi identity of [BulkResponseActionListenerFactory](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/listener/BulkResponseActionListenerFactory.java) |
+| bulk.response.action-listener.identity    | default          | string   | the spi identity of [BulkResponseActionListenerFactory](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/listener/BulkResponseActionListenerFactory.java) |
 | request.indexer.identity                  | default          | string   | the spi identity of [RequestIndexer](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/RequestIndexer.java)                                                |
 | request.indexer.default.index             | null             | string   | the index if config `request.indexer` AS `default`, if null means using record topic as index                                                                                                                |
-| request.indexer.default.record_size_limit | `bulk.max.bytes` | bytes    | the max record size limit, if the record size over this value, the record will be discarded, default equal `bulk.max.bytes`                                                                                  |
+| request.indexer.default.record-size-limit | `bulk.max.bytes` | bytes    | the max record size limit, if the record size over this value, the record will be discarded, default equal `bulk.max.bytes`                                                                                  |
 
 Note:
 
@@ -468,8 +469,8 @@ Note:
    key
    exists.
 
-6. For the `default` of `bulk.response.action_listener.identity`, the failed bulk request will be retried util success.
-   For `mute_bulk_insert_error` of `bulk.response.action_listener.identity`, the failed bulk request will be ignored and
+6. For the `default` of `bulk.response.action-listener.identity`, the failed bulk request will be retried util success.
+   For `mute_bulk_insert_error` of `bulk.response.action-listener.identity`, the failed bulk request will be ignored and
    add the metric key `tributary_sink_elasticsearch_bulk_requests_with_errors` to monitor the fail count.
 
 ## The complete demo config

@@ -28,10 +28,8 @@ import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.common.config.PercentSize;
 import org.zicat.tributary.common.config.ReadableConfig;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -58,9 +56,6 @@ public class FileChannelFactory implements ChannelFactory {
         final CompressionType compression = config.get(OPTION_COMPRESSION);
         final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD).getSeconds();
         final int blockCacheCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
-        final boolean appendSyncWait = config.get(OPTION_APPEND_SYNC_AWAIT);
-        final Duration appendSyncWaitTimeout =
-                config.get(OPTION_APPEND_SYNC_AWAIT_TIMEOUT, OPTION_FLUSH_PERIOD);
         final PercentSize capacityProtectedPercent = config.get(OPTION_CAPACITY_PROTECTED_PERCENT);
         final FileSingleChannelBuilder builder =
                 new FileSingleChannelBuilder()
@@ -75,22 +70,6 @@ public class FileChannelFactory implements ChannelFactory {
                 .compressionType(compression)
                 .topic(topic)
                 .consumerGroups(groupSet)
-                .appendSyncWait(appendSyncWait)
-                .appendSyncWaitTimeoutMs(appendSyncWaitTimeout.toMillis())
                 .build();
-    }
-
-    /**
-     * create dir.
-     *
-     * @param dirs dir
-     * @return list files.
-     */
-    private List<File> createDir(List<String> dirs) {
-        final List<File> result = new ArrayList<>();
-        for (String dir : dirs) {
-            result.add(new File(dir));
-        }
-        return result;
     }
 }

@@ -187,7 +187,7 @@ public class BlockRecordsResultSetWriterTest {
                 long position,
                 File file,
                 FileChannel fileChannel) {
-            super(id, writer, compressionType, segmentSize, position, file, fileChannel, null);
+            super(id, writer, compressionType, segmentSize, position, 0L, file, fileChannel, null);
         }
     }
 }

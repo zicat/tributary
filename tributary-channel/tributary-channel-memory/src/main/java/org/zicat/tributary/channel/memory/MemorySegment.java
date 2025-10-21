@@ -32,18 +32,19 @@ import java.util.List;
 /** MemorySegment. */
 public class MemorySegment extends Segment {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MemorySegment.class);
-    private final List<ByteBuffer> chunkChain = new ArrayList<>();
-    private volatile ByteBuffer currentChunk;
-    private final int chunkSize;
+    protected static final Logger LOG = LoggerFactory.getLogger(MemorySegment.class);
+    protected final List<ByteBuffer> chunkChain = new ArrayList<>();
+    protected volatile ByteBuffer currentChunk;
+    protected final int chunkSize;
 
     public MemorySegment(
             long id,
             BlockWriter writer,
             CompressionType compressionType,
             long segmentSize,
+            long await2StorageTimeout,
             ChannelBlockCache bCache) {
-        super(id, writer, compressionType, segmentSize, 0, bCache);
+        super(id, writer, compressionType, segmentSize, 0, await2StorageTimeout, bCache);
         this.chunkSize = (int) DirectMemoryPool.chunkSize().getBytes();
         newChunk();
     }

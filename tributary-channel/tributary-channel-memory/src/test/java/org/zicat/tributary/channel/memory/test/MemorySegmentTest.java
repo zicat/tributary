@@ -46,6 +46,7 @@ public class MemorySegmentTest {
                         new BlockWriter(128),
                         CompressionType.NONE,
                         10240 * 4,
+                        0L,
                         new ChannelBlockCache(1))) {
             Assert.assertEquals(1, memorySegment.legalOffset(1));
         }
@@ -61,6 +62,7 @@ public class MemorySegmentTest {
                             new BlockWriter(128),
                             CompressionType.NONE,
                             10240 * 4,
+                            0L,
                             new ChannelBlockCache(1));
             final Random random = new Random(1023312);
             final List<byte[]> result = new ArrayList<>();
@@ -102,6 +104,7 @@ public class MemorySegmentTest {
                         new BlockWriter(128),
                         CompressionType.NONE,
                         10240 * 4,
+                        0L,
                         new ChannelBlockCache(1))) {
             Thread writerThread =
                     new Thread(

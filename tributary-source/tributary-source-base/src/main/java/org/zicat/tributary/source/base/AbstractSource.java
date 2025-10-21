@@ -47,6 +47,11 @@ public abstract class AbstractSource implements Source {
     public static final MetricKey APPEND_CHANNEL_RECORD_COUNTER =
             new MetricKey("tributary_source_append_channel_record_counter");
 
+    public static final ConfigOption<AppendResultType> OPTION_CHANNEL_APPEND_RESULT_TYPE =
+            ConfigOptions.key("channel.append-result-type")
+                    .enumType(AppendResultType.class)
+                    .defaultValue(AppendResultType.BLOCK);
+
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSource.class);
 
     protected final AtomicInteger count = new AtomicInteger();
@@ -56,12 +61,14 @@ public abstract class AbstractSource implements Source {
     protected final Map<MetricKey, Double> gaugeFamily = new ConcurrentHashMap<>();
     protected final Map<MetricKey, Double> counterFamily = new ConcurrentHashMap<>();
     protected final Clock clock;
+    protected final AppendResultType appendResultType;
 
     public AbstractSource(String sourceId, ReadableConfig config, Channel channel) {
         this.sourceId = sourceId;
         this.config = config;
         this.channel = channel;
         this.clock = config.get(OPTION_SOURCE_CLOCK);
+        this.appendResultType = config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE);
     }
 
     @Override
@@ -75,7 +82,7 @@ public abstract class AbstractSource implements Source {
         final ByteBuffer byteBuffer = records.toByteBuffer();
         final int realPartition = partition == null ? defaultPartition() : partition;
         try {
-            channel.append(realPartition, byteBuffer);
+            appendResultType.dealAppendResult(channel.append(realPartition, byteBuffer));
         } catch (IOException e) {
             LOG.error("append data error, close source", e);
             IOUtils.closeQuietly(this);

@@ -52,7 +52,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
                     .defaultValue(null);
 
     public static final ConfigOption<MemorySize> OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT =
-            ConfigOptions.key("request.indexer.default.record_size_limit")
+            ConfigOptions.key("request.indexer.default.record-size-limit")
                     .memoryType()
                     .description("The max size of a record, default bulk.max.bytes")
                     .defaultValue(null);

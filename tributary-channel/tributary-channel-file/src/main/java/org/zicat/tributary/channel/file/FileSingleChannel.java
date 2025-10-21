@@ -34,7 +34,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.zicat.tributary.channel.file.FileSegmentUtil.getIdByName;
 import static org.zicat.tributary.channel.file.FileSegmentUtil.isFileSegment;
@@ -65,20 +64,18 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
     private final CompressionType compressionType;
     private final BlockWriter blockWriter;
     private final long flushPageCacheSize;
-    private final boolean appendSyncWait;
-    private final long appendSyncWaitTimeoutMs;
     private final FileStore fileStore;
+    private final long await2StorageTimeout;
 
     protected FileSingleChannel(
             String topic,
             SingleGroupManagerFactory factory,
             int blockSize,
             Long segmentSize,
+            long await2StorageTimeout,
             CompressionType compressionType,
             File dir,
             int blockCacheCount,
-            boolean appendSyncWait,
-            long appendSyncWaitTimeoutMs,
             FileStore fileStore) {
         super(topic, blockCacheCount, factory);
         if (segmentSize - FILE_SEGMENT_HEAD_SIZE < blockSize) {
@@ -87,10 +84,9 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
         this.blockWriter = new BlockWriter(blockSize);
         this.flushPageCacheSize = blockSize * 10L;
         this.segmentSize = segmentSize;
+        this.await2StorageTimeout = await2StorageTimeout;
         this.compressionType = compressionType;
         this.dir = dir;
-        this.appendSyncWait = appendSyncWait;
-        this.appendSyncWaitTimeoutMs = appendSyncWaitTimeoutMs;
         this.fileStore = fileStore;
         createLastSegment();
     }
@@ -111,15 +107,8 @@ public class FileSingleChannel extends AbstractSingleChannel<FileSegment> {
                 .filePrefix(topic())
                 .compressionType(compressionType)
                 .blockCache(bCache)
+                .await2StorageTimeout(await2StorageTimeout)
                 .build(blockWriter);
-    }
-
-    @Override
-    public void append(ByteBuffer byteBuffer) throws IOException, InterruptedException {
-        final AppendResult appendResult = innerAppend(byteBuffer);
-        if (appendSyncWait) {
-            appendResult.await2Storage(appendSyncWaitTimeoutMs, TimeUnit.MILLISECONDS);
-        }
     }
 
     @Override

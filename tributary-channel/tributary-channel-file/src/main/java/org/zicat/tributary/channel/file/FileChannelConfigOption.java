@@ -25,7 +25,6 @@ import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.PercentSize;
 
-import java.time.Duration;
 import java.util.List;
 
 /** FileChannelConfigOption. */
@@ -36,18 +35,6 @@ public class FileChannelConfigOption extends ChannelConfigOption {
                     .listType(COMMA_SPLIT_HANDLER)
                     .description("partition paths, must allow read and write, split by ','")
                     .noDefaultValue();
-
-    public static final ConfigOption<Boolean> OPTION_APPEND_SYNC_AWAIT =
-            ConfigOptions.key("append.sync.await")
-                    .booleanType()
-                    .description("append sync await")
-                    .defaultValue(false);
-
-    public static final ConfigOption<Duration> OPTION_APPEND_SYNC_AWAIT_TIMEOUT =
-            ConfigOptions.key("append.sync.await.timeout")
-                    .durationType()
-                    .description("append sync await timeout")
-                    .defaultValue(null);
 
     public static final ConfigOption<PercentSize> OPTION_CAPACITY_PROTECTED_PERCENT =
             ConfigOptions.key("capacity.protected.percent")

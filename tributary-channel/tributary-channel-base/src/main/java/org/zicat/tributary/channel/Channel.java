@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.channel.Segment.AppendResult;
+import static org.zicat.tributary.channel.Segment.HAS_IN_STORAGE;
 import org.zicat.tributary.channel.group.GroupManager;
 import org.zicat.tributary.common.metric.MetricCollector;
 
@@ -46,8 +48,10 @@ public interface Channel extends Closeable, MetricCollector, GroupManager {
      * @param partition partition
      * @param byteBuffer byteBuffer
      * @throws IOException IOException
+     * @return AppendResult append result
      */
-    void append(int partition, ByteBuffer byteBuffer) throws IOException, InterruptedException;
+    AppendResult append(int partition, ByteBuffer byteBuffer)
+            throws IOException, InterruptedException;
 
     /**
      * append record to channel.
@@ -62,10 +66,12 @@ public interface Channel extends Closeable, MetricCollector, GroupManager {
      * @param length length the record length to append
      * @throws IOException IOException
      */
-    default void append(int partition, byte[] record, int offset, int length)
+    default AppendResult append(int partition, byte[] record, int offset, int length)
             throws IOException, InterruptedException {
         if (record != null) {
-            append(partition, ByteBuffer.wrap(record, offset, length));
+            return append(partition, ByteBuffer.wrap(record, offset, length));
+        } else {
+            return HAS_IN_STORAGE;
         }
     }
 

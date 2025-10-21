@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channel;
 
+import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.common.*;
 import org.zicat.tributary.common.metric.MetricKey;
 import static org.zicat.tributary.common.util.Threads.interruptQuietly;
@@ -133,9 +134,9 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
     }
 
     @Override
-    public void append(int partition, ByteBuffer byteBuffer)
+    public AppendResult append(int partition, ByteBuffer byteBuffer)
             throws IOException, InterruptedException {
-        getPartitionChannel(partition).append(byteBuffer);
+        return getPartitionChannel(partition).append(byteBuffer);
     }
 
     @Override

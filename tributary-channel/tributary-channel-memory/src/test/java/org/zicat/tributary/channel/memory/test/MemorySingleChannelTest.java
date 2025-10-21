@@ -47,7 +47,6 @@ import org.zicat.tributary.common.util.Threads;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -141,18 +140,25 @@ public class MemorySingleChannelTest {
         try (Channel channel =
                 new MemorySingleChannel("t1", factory, 10240, 102400L, CompressionType.NONE, 10) {
                     @Override
-                    public void append(ByteBuffer byteBuffer) throws IOException {
+                    public AppendResult append(ByteBuffer byteBuffer) throws IOException {
                         final AppendResult appendResult = innerAppend(byteBuffer);
                         if (!appendResult.appended()) {
                             throw new IOException("append fail");
                         }
                         try {
-                            Assert.assertTrue(appendResult.await2Storage(10, TimeUnit.SECONDS));
+                            Assert.assertTrue(appendResult.await2Storage());
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         } finally {
                             finished.set(true);
                         }
+                        return appendResult;
+                    }
+
+                    @Override
+                    protected MemorySegment createSegment(long id) {
+                        return new MemorySegment(
+                                id, blockWriter, compression, segmentSize, 10000L, bCache);
                     }
                 }) {
             final Thread t1 =
@@ -280,18 +286,9 @@ public class MemorySingleChannelTest {
                 // waiting source threads finish and flush
                 sourceThread.forEach(Threads::joinQuietly);
                 channel.flush();
-                long writeSpend = System.currentTimeMillis() - start;
-
                 // waiting sink threads finish.
                 sinGroup.forEach(Threads::joinQuietly);
                 Assert.assertEquals(totalSize, dataSize * partitionCount);
-                LOG.info(
-                        LOG_FORMAT,
-                        totalSize,
-                        writeSpend,
-                        System.currentTimeMillis() - start,
-                        sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum());
-
                 Assert.assertEquals(
                         dataSize * partitionCount * sinkGroups,
                         sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum());
@@ -361,7 +358,7 @@ public class MemorySingleChannelTest {
                     LOG_FORMAT,
                     writeSpend,
                     totalSize,
-                    String.valueOf(System.currentTimeMillis() - start),
+                    System.currentTimeMillis() - start,
                     (sinGroup.stream().mapToLong(SinkGroup::getConsumerCount).sum()));
         }
     }

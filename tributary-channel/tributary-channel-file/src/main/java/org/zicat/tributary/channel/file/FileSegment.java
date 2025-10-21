@@ -47,10 +47,11 @@ public class FileSegment extends Segment {
             CompressionType compressionType,
             long segmentSize,
             long position,
+            long await2StorageTimeout,
             File file,
             FileChannel fileChannel,
             ChannelBlockCache bCache) {
-        super(id, writer, compressionType, segmentSize, position, bCache);
+        super(id, writer, compressionType, segmentSize, position, await2StorageTimeout, bCache);
         this.file = file;
         this.fileChannel = fileChannel;
     }
