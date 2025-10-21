@@ -35,6 +35,10 @@ public class KafkaPipelineInitializationFactory implements PipelineInitializatio
 
     public static final String CONFIG_PREFIX = "netty.decoder.kafka.";
 
+    public static final ConfigOption<String> OPTION_KAFKA_ADVERTISED_HOST_PATTERN =
+            ConfigOptions.key(CONFIG_PREFIX + "advertised-host-pattern")
+                    .stringType()
+                    .noDefaultValue();
     public static final ConfigOption<String> OPTION_KAFKA_CLUSTER_ID =
             ConfigOptions.key(CONFIG_PREFIX + "cluster.id").stringType().defaultValue(null);
 

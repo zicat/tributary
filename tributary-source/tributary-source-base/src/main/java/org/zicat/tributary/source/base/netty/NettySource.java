@@ -243,15 +243,6 @@ public abstract class NettySource extends AbstractSource {
     }
 
     /**
-     * get host names.
-     *
-     * @return host name.
-     */
-    public List<String> getHostNames() {
-        return hostNames;
-    }
-
-    /**
      * get event threads.
      *
      * @return threads

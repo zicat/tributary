@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.source.kafka;
 
+import static org.zicat.tributary.common.util.HostUtils.geHostAddress;
 import static org.zicat.tributary.common.util.ResourceUtils.getResourcePath;
 import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder;
@@ -99,7 +100,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
                 config.get(OPTION_KAFKA_CLUSTER_ID) == null
                         ? source.sourceId()
                         : config.get(OPTION_KAFKA_CLUSTER_ID);
-        final String hostName = oneHostName(source.getHostNames());
+        final String hostName = geHostAddress(config.get(OPTION_KAFKA_ADVERTISED_HOST_PATTERN));
         final int port = source.getPort();
         final String zk = config.get(OPTION_ZOOKEEPER_CONNECT);
         final String zkHostPort = zk.substring(0, zk.indexOf("/"));
@@ -236,19 +237,6 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
             userPassword.put(split[0], split[1]);
         }
         return new PlainSaslServer(new PlainServerCallbackHandler(userPassword));
-    }
-
-    /**
-     * one host name.
-     *
-     * @param hosts hosts
-     * @return string
-     */
-    private static String oneHostName(List<String> hosts) {
-        if (hosts.size() != 1) {
-            throw new RuntimeException("kafka only support one host, but found " + hosts);
-        }
-        return hosts.get(0);
     }
 
     @Override

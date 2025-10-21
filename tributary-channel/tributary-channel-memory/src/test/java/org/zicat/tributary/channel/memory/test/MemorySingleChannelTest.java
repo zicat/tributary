@@ -140,8 +140,9 @@ public class MemorySingleChannelTest {
         try (Channel channel =
                 new MemorySingleChannel("t1", factory, 10240, 102400L, CompressionType.NONE, 10) {
                     @Override
-                    public AppendResult append(ByteBuffer byteBuffer) throws IOException {
-                        final AppendResult appendResult = innerAppend(byteBuffer);
+                    public AppendResult append(ByteBuffer byteBuffer)
+                            throws IOException, InterruptedException {
+                        final AppendResult appendResult = super.append(byteBuffer);
                         if (!appendResult.appended()) {
                             throw new IOException("append fail");
                         }

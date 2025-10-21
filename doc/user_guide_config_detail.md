@@ -123,6 +123,7 @@ more configuration as follows:
 
 | key                                                | default         | type          | describe                                                                                                                                                                                                        |
 |----------------------------------------------------|-----------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.decoder.kafka.advertised-host-pattern        | N/A             | string        | the pattern to advertise the host and register it in zookeeper, tributary will get the first InetAddress on the machine matching by pattern, like localhost or 10\\.103\\.1\\..*                                |
 | netty.decoder.kafka.cluster.id                     | ${sourceId}     | string        | the kafka cluster to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata)                                                                                   |
 | netty.decoder.kafka.zookeeper.connect              |                 | string        | the zookeeper host path to register the tributary instance for instance discovery, like: localhost:2181,localhost:2182/tributary_source_kafka                                                                   |
 | netty.decoder.kafka.zookeeper.connection.timeout   | 15sec           | duration      | the zookeeper client connection timeout                                                                                                                                                                         |
@@ -501,11 +502,11 @@ source.s2.netty.decoder=line
 
 source.s3.channel=c2
 source.s3.implement=netty
-source.s3.netty.host-patterns=localhost
 source.s3.netty.port=9093
 source.s3.netty.idle=60sec
 source.s3.netty.threads.event-loop=10
 source.s3.netty.decoder=kafka
+source.s3.netty.decoder.kafka.advertised-host-pattern=localhost
 source.s3.netty.decoder.kafka.worker-threads=10
 source.s3.netty.decoder.kafka.meta.ttl=10sec
 source.s3.netty.decoder.kafka.topic.partitions=60

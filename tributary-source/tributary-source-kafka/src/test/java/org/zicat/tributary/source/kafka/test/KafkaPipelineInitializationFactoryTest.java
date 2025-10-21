@@ -77,6 +77,7 @@ public class KafkaPipelineInitializationFactoryTest {
         config.put(OPTION_KAFKA_SASL_PLAIN, true);
         config.put(OPTION_SASL_USERS, AUTH_USER + "_" + AUTH_PASS);
         config.put(OPTION_KAFKA_WORKER_THREADS, -1);
+        config.put(OPTION_KAFKA_ADVERTISED_HOST_PATTERN, "localhost");
         final String zkPath = "/kafka_test_register";
         try (TestingServer server = new TestingServer();
                 Channel channel = memoryChannelFactory(groupId).createChannel(tp.topic(), config)) {

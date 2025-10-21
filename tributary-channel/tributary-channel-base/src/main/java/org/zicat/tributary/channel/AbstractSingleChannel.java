@@ -112,29 +112,17 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
      */
     @Override
     public AppendResult append(ByteBuffer byteBuffer) throws IOException, InterruptedException {
-        final AppendResult appendResult = innerAppend(byteBuffer);
-        appendCounter.incrementAndGet();
-        return appendResult;
-    }
-
-    /**
-     * append byte buffer.
-     *
-     * @param byteBuffer byteBuffer
-     * @return AppendResult
-     * @throws IOException IOException
-     */
-    protected AppendResult innerAppend(ByteBuffer byteBuffer) throws IOException {
         final S segment = this.latestSegment;
         final AppendResult result = append2Segment(segment, byteBuffer);
         if (result.appended()) {
+            appendCounter.incrementAndGet();
             return result;
         }
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
             if (segment != this.latestSegment) {
-                return innerAppend(byteBuffer);
+                return append(byteBuffer);
             }
             segment.readonly();
             final long newSegmentId = segment.segmentId() + 1L;
@@ -147,6 +135,7 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
             addSegment(newSegment);
             this.latestSegment = newSegment;
             newSegmentCondition.signalAll();
+            appendCounter.incrementAndGet();
             return newResult;
         } finally {
             lock.unlock();
@@ -378,10 +367,13 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            singleGroupManagerFactory.destroy(singleGroupManager);
-            cache.forEach((k, v) -> IOUtils.closeQuietly(v));
-            cache.clear();
-            LOG.info("close channel topic = {}", topic);
+            try {
+                singleGroupManagerFactory.destroy(singleGroupManager);
+            } finally {
+                cache.forEach((k, v) -> IOUtils.closeQuietly(v));
+                cache.clear();
+                LOG.info("close channel topic = {}", topic);
+            }
         }
     }
 
