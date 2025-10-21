@@ -81,13 +81,13 @@ public class MetricsHttpServer implements Closeable {
         this.port = serverConfig.get(OPTION_PORT);
         this.metricsPath = serverConfig.get(OPTION_METRICS_PATH);
         final int threads = serverConfig.get(OPTION_THREADS);
-        this.bossGroup = createBossGroup(Math.max(1, threads / 4));
-        this.workerGroup = createWorkGroup(threads);
+        this.bossGroup = createEventLoopGroup(Math.max(1, threads / 4));
+        this.workerGroup = createEventLoopGroup(threads);
         this.metricsHost = metricHost(serverConfig);
     }
 
     /** start. */
-    public void start() throws InterruptedException {
+    public void start() throws InterruptedException, IllegalAccessException {
         final ServerBootstrap b = createServerBootstrap(bossGroup, workerGroup);
         b.childHandler(
                 new ChannelInitializer<SocketChannel>() {

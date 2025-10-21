@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -104,7 +103,7 @@ public class StarterTest {
         }
 
         @Override
-        public void start() throws InterruptedException, UnknownHostException {
+        public void start() throws Exception {
             initComponent();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtils.closeQuietly(this)));
         }

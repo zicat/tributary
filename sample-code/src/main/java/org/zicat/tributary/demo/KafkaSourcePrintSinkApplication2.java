@@ -21,14 +21,12 @@ package org.zicat.tributary.demo;
 import org.zicat.tributary.server.Starter;
 import org.zicat.tributary.server.config.PropertiesLoader;
 
-import java.io.IOException;
-
 /** KafkaSourceDemoApplication. */
 public class KafkaSourcePrintSinkApplication2 {
 
     private static final String ACTIVE_PROFILE = "kafka-source-print-sink2";
 
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws Exception {
         try (Starter starter = new Starter(new PropertiesLoader(ACTIVE_PROFILE).load())) {
             starter.start();
         }

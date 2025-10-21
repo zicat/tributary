@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public class MetricsHttpServerTest {
 
     @Test
-    public void testMetricsPath() throws InterruptedException, IOException {
+    public void testMetricsPath() throws Exception {
         final CollectorRegistry registry = new CollectorRegistry();
         new Collector() {
             @Override

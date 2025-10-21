@@ -79,6 +79,10 @@ source.s1.netty.port=8200
 source.s1.netty.threads.event-loop=10
 source.s1.netty.idle=60sec
 source.s1.netty.decoder=line
+source.s1.netty.option.SO_BACKLOG=256
+source.s1.netty.option.SO_RCVBUF=1048576
+source.s1.netty.child-option.SO_RCVBUF=1048576
+source.s1.netty.child-option.SO_KEEPALIVE=true
 ```
 
 | key                      | default | type                                                       | describe                                                                                                                                                                                                                         |
@@ -88,6 +92,8 @@ source.s1.netty.decoder=line
 | netty.threads.event-loop | 10      | int(number)                                                | the count of netty event loop threads                                                                                                                                                                                            |
 | netty.idle               | 120sec  | duration                                                   | the idle time to close the socket                                                                                                                                                                                                |
 | netty.decoder            | N/A     | enum [length,line,kafka,http,logstash-http,logstash-beats] | the parser of network streaming                                                                                                                                                                                                  |
+| netty.option.*           | N/A     | string                                                     | the netty server bootstrap option, refer to [ChannelOption](https://netty.io/4.1/api/io/netty/channel/ChannelOption.html), only support base java class type like Integer, Boolean, String...                                    |
+| netty.child-option.*     | N/A     | string                                                     | the netty child channel option, refer to [ChannelOption](https://netty.io/4.1/api/io/netty/channel/ChannelOption.html), only support base java class type like Integer, Boolean, String...                                       |
 
 ### Netty Decoder
 

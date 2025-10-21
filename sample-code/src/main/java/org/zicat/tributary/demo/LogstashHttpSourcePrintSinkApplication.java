@@ -21,14 +21,12 @@ package org.zicat.tributary.demo;
 import org.zicat.tributary.server.Starter;
 import org.zicat.tributary.server.config.PropertiesLoader;
 
-import java.io.IOException;
-
 /** LogstashHttpSourcePrintSinkApplication. */
 public class LogstashHttpSourcePrintSinkApplication {
 
     private static final String ACTIVE_PROFILE = "logstash-http-source-print-sink";
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws Exception {
         /*
            curl -u user1:password1 -X POST "http://localhost:11223/" \
              -H "Content-Type: application/text" \

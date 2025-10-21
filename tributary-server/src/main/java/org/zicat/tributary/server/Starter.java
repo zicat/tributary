@@ -29,8 +29,6 @@ import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
 
 import java.io.Closeable;
-import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.concurrent.locks.LockSupport;
 
@@ -55,14 +53,14 @@ public class Starter implements Closeable {
     }
 
     /** open. this method will park current thread if open success. */
-    public void start() throws InterruptedException, UnknownHostException {
+    public void start() throws Exception {
         initComponent();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtils.closeQuietly(this)));
         LockSupport.park();
     }
 
     /** init component. */
-    protected void initComponent() throws InterruptedException, UnknownHostException {
+    protected void initComponent() throws Exception {
         final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         this.metricsHttpServer = new MetricsHttpServer(registry, serverConfig);
         final String metricsHost = metricsHttpServer.metricHost();
@@ -123,7 +121,7 @@ public class Starter implements Closeable {
         }
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws Exception {
         try (Starter starter = new Starter(new PropertiesLoader().load())) {
             starter.start();
         }

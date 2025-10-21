@@ -18,12 +18,12 @@
 
 package org.zicat.tributary.source.base.netty;
 
+import io.netty.bootstrap.AbstractBootstrap;
 import static org.zicat.tributary.common.util.HostUtils.getHostAddresses;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -39,14 +39,23 @@ import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.source.base.AbstractSource;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /** NettySource. */
 public abstract class NettySource extends AbstractSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettySource.class);
+    private static final String OPTION_PREFIX = "netty.option.";
+    private static final String CHILD_OPTION_PREFIX = "netty.child-option.";
 
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     protected final int port;
@@ -71,9 +80,14 @@ public abstract class NettySource extends AbstractSource {
         this.eventThreads = eventThreads;
         this.hostNames = getHostAddresses(hosts);
         try {
-            this.bossGroup = createBossGroup(Math.max(1, eventThreads / 4));
-            this.workGroup = createWorkGroup(eventThreads);
-            this.serverBootstrap = createServerBootstrap(bossGroup, workGroup);
+            this.bossGroup = createEventLoopGroup(Math.max(1, eventThreads / 4));
+            this.workGroup = createEventLoopGroup(eventThreads);
+            this.serverBootstrap =
+                    createServerBootstrap(
+                            bossGroup,
+                            workGroup,
+                            config.filterAndRemovePrefixKey(OPTION_PREFIX).toProperties(),
+                            config.filterAndRemovePrefixKey(CHILD_OPTION_PREFIX).toProperties());
             this.pipelineInitialization = createPipelineInitialization();
             this.serverBootstrap.childHandler(
                     new ChannelInitializer<SocketChannel>() {
@@ -139,32 +153,32 @@ public abstract class NettySource extends AbstractSource {
      * @return ServerBootstrap
      */
     public static ServerBootstrap createServerBootstrap(
-            EventLoopGroup bossGroup, EventLoopGroup workGroup) {
+            EventLoopGroup bossGroup,
+            EventLoopGroup workGroup,
+            Properties properties,
+            Properties childProperties)
+            throws IllegalAccessException {
         final ServerBootstrap serverBootstrap = new ServerBootstrap();
         final Class<? extends ServerChannel> channelClass =
                 SystemUtils.IS_OS_LINUX
                         ? EpollServerSocketChannel.class
                         : NioServerSocketChannel.class;
-        serverBootstrap
-                .group(bossGroup, workGroup)
-                .channel(channelClass)
-                .option(ChannelOption.SO_BACKLOG, 256)
-                .option(ChannelOption.SO_RCVBUF, 1024 * 1024)
-                .childOption(ChannelOption.SO_RCVBUF, 10 * 1024 * 1024)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        serverBootstrap.group(bossGroup, workGroup).channel(channelClass);
+        nettyOptions(serverBootstrap, properties);
+        nettyChildOptions(serverBootstrap, childProperties);
         return serverBootstrap;
     }
 
     /**
-     * create work group.
+     * create server bootstrap.
      *
-     * @return EventLoopGroup
+     * @param bossGroup bossGroup
+     * @param workGroup workGroup
+     * @return ServerBootstrap
      */
-    public static EventLoopGroup createWorkGroup(int eventThreads) {
-        return SystemUtils.IS_OS_LINUX
-                ? new EpollEventLoopGroup(eventThreads)
-                : new NioEventLoopGroup(eventThreads);
+    public static ServerBootstrap createServerBootstrap(
+            EventLoopGroup bossGroup, EventLoopGroup workGroup) throws IllegalAccessException {
+        return createServerBootstrap(bossGroup, workGroup, new Properties(), new Properties());
     }
 
     /**
@@ -172,7 +186,7 @@ public abstract class NettySource extends AbstractSource {
      *
      * @return EventLoopGroup
      */
-    public static EventLoopGroup createBossGroup(int nThreads) {
+    public static EventLoopGroup createEventLoopGroup(int nThreads) {
         return SystemUtils.IS_OS_LINUX
                 ? new EpollEventLoopGroup(nThreads)
                 : new NioEventLoopGroup(nThreads);
@@ -260,5 +274,83 @@ public abstract class NettySource extends AbstractSource {
         } catch (Exception e) {
             LOG.warn("wait close channel sync fail", e);
         }
+    }
+
+    /**
+     * set netty options.
+     *
+     * @param bootstrap bootstrap
+     * @param properties properties
+     * @throws IllegalAccessException IllegalAccessException
+     */
+    public static void nettyOptions(ServerBootstrap bootstrap, Properties properties)
+            throws IllegalAccessException {
+        nettyOptions(bootstrap, properties, AbstractBootstrap::option);
+    }
+
+    /**
+     * set netty child options.
+     *
+     * @param bootstrap bootstrap
+     * @param properties properties
+     * @throws IllegalAccessException IllegalAccessException
+     */
+    public static void nettyChildOptions(ServerBootstrap bootstrap, Properties properties)
+            throws IllegalAccessException {
+        nettyOptions(bootstrap, properties, ServerBootstrap::childOption);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void nettyOptions(
+            ServerBootstrap bootstrap, Properties props, OptionConsumer consumer)
+            throws IllegalAccessException {
+        final Map<String, Field> fieldNameMapping =
+                Arrays.stream(ChannelOption.class.getDeclaredFields())
+                        .collect(Collectors.toMap(Field::getName, field -> field));
+        for (String optionName : props.stringPropertyNames()) {
+            final Field field = fieldNameMapping.get(optionName);
+            if (field == null) {
+                LOG.warn("ChannelOption {} not exists, ignore it.", optionName);
+                continue;
+            }
+            final Object option = field.get(null); // static 字段，所以传 null
+            if (!(option instanceof ChannelOption)) {
+                continue;
+            }
+            final ChannelOption<Object> channelOption = (ChannelOption<Object>) option;
+            final Type type =
+                    ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+            final String value = props.get(optionName).toString().trim();
+            if (type == Integer.class) {
+                consumer.consume(bootstrap, channelOption, Integer.parseInt(value));
+            } else if (type == Boolean.class) {
+                consumer.consume(bootstrap, channelOption, Boolean.parseBoolean(value));
+            } else if (type == Long.class) {
+                consumer.consume(bootstrap, channelOption, Long.parseLong(value));
+            } else if (type == Double.class) {
+                consumer.consume(bootstrap, channelOption, Double.parseDouble(value));
+            } else if (type == Float.class) {
+                consumer.consume(bootstrap, channelOption, Float.parseFloat(value));
+            } else if (type == Short.class) {
+                consumer.consume(bootstrap, channelOption, Short.parseShort(value));
+            } else if (type == String.class) {
+                consumer.consume(bootstrap, channelOption, value);
+            } else {
+                LOG.warn("ChannelOption {} type {} not support, ignore it.", optionName, type);
+            }
+        }
+    }
+
+    /** OptionConsumer. */
+    public interface OptionConsumer {
+
+        /**
+         * consume option.
+         *
+         * @param bootstrap bootstrap
+         * @param channelOption channelOption
+         * @param value value
+         */
+        void consume(ServerBootstrap bootstrap, ChannelOption<Object> channelOption, Object value);
     }
 }
