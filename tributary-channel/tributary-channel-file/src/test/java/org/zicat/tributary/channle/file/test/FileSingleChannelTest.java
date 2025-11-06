@@ -278,14 +278,14 @@ public class FileSingleChannelTest {
         for (int i = 0; i < partitionCount; i++) {
             dirs.add(dir + i);
         }
-        final FileSingleChannelBuilder builder =
-                new FileSingleChannelBuilder().flushPeriodMills(500);
-        builder.segmentSize(segmentSize)
-                .blockSize(blockSize)
-                .consumerGroups(consumerGroup)
-                .topic(topic)
-                .compressionType(compressionType)
-                .blockCacheCount(10);
+        FileSingleChannelBuilder builder = new FileSingleChannelBuilder().flushPeriodMills(500);
+        builder =
+                builder.segmentSize(segmentSize)
+                        .blockSize(blockSize)
+                        .consumerGroups(consumerGroup)
+                        .topic(topic)
+                        .compressionType(compressionType)
+                        .blockCacheCount(10);
         return builder.dirs(dirs).build();
     }
 

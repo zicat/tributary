@@ -72,7 +72,6 @@ public class HDFSFunction extends AbstractFunction {
 
     @Override
     public void process(Offset offset, Iterator<Records> iterator) throws Exception {
-
         refresh();
         while (iterator.hasNext()) {
             final Records records = iterator.next();

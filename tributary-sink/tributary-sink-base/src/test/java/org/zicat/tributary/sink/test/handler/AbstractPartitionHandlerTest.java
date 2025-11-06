@@ -68,9 +68,6 @@ public class AbstractPartitionHandlerTest {
                     public void snapshot() {}
 
                     @Override
-                    public void closeCallback() {}
-
-                    @Override
                     public List<Function> getFunctions() {
                         return null;
                     }
@@ -124,7 +121,6 @@ public class AbstractPartitionHandlerTest {
         Assert.assertEquals(2, dataList.size());
         Assert.assertEquals(createStringByLength(55), dataList.get(0));
         Assert.assertEquals(createStringByLength(80), dataList.get(1));
-        Assert.assertEquals(5, handler.committedOffset().segmentId());
         Assert.assertFalse(channel.getCleanupExpiredSegmentThread().isAlive());
         Assert.assertFalse(channel.getFlushSegmentThread().isAlive());
     }
@@ -153,9 +149,6 @@ public class AbstractPartitionHandlerTest {
                         public void snapshot() {}
 
                         @Override
-                        public void closeCallback() {}
-
-                        @Override
                         public List<Function> getFunctions() {
                             return null;
                         }
@@ -163,7 +156,9 @@ public class AbstractPartitionHandlerTest {
                         private Offset offset;
 
                         @Override
-                        public void open() {}
+                        public void open() {
+                            this.offset = startOffset;
+                        }
 
                         @Override
                         public void process(Offset offset, Iterator<byte[]> iterator) {
@@ -192,6 +187,7 @@ public class AbstractPartitionHandlerTest {
                     }) {
 
                 try {
+                    handler.open();
                     handler.start();
 
                     for (String data : testData) {

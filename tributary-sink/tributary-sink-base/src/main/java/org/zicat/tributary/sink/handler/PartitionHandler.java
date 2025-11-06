@@ -77,7 +77,6 @@ public abstract class PartitionHandler extends Thread
     protected final Clock clock;
 
     protected Offset fetchOffset;
-    protected Offset committedOffset;
     protected long preSnapshotTime;
     protected long sinkSnapshotCost;
     protected MetricKey partitionSinkSnapShortCountKey;
@@ -93,7 +92,6 @@ public abstract class PartitionHandler extends Thread
         this.preSnapshotTime = clock.currentTimeMillis();
         this.functionFactory = findFunctionFactory(config.functionIdentity());
         this.startOffset = channel.committedOffset(groupId, partitionId);
-        this.committedOffset = startOffset;
         this.fetchOffset = startOffset;
         this.partitionSinkSnapShortCountKey =
                 SINK_SNAPSHOT_COAST.addLabel("partitionId", partitionId);
@@ -119,35 +117,18 @@ public abstract class PartitionHandler extends Thread
                 process(result.nexOffset(), result);
             }
             checkTriggerCheckpoint();
-            fetchOffset = nextFetchOffset(result.nexOffset());
-        } catch (InterruptedException interruptedException) {
-            if (closed.get()) {
-                return true;
-            }
+            fetchOffset = result.nexOffset();
+        } catch (InterruptedException ignore) {
+            return false;
         } catch (Throwable e) {
             LOG.error("poll data failed.", e);
             if (closed.get()) {
                 return true;
             }
-            updateAndCommitOffset();
-            fetchOffset = nextFetchOffset(null);
+            fetchOffset = committableOffset();
             sleepWhenException();
         }
         return false;
-    }
-
-    /**
-     * next fetch offset.
-     *
-     * @param nextOffset nextOffset
-     * @return Offset
-     */
-    private Offset nextFetchOffset(Offset nextOffset) {
-        if (nextOffset == null || nextOffset.compareTo(committedOffset()) < 0) {
-            return fetchOffset.skip2Target(committedOffset());
-        } else {
-            return nextOffset;
-        }
     }
 
     /**
@@ -166,7 +147,7 @@ public abstract class PartitionHandler extends Thread
             snapshot();
             sinkSnapshotCost = clock.currentTimeMillis() - currentTime;
             preSnapshotTime = currentTime;
-            updateAndCommitOffset();
+            channel.commit(partitionId, groupId, committableOffset());
         }
     }
 
@@ -179,9 +160,6 @@ public abstract class PartitionHandler extends Thread
      * @return Offset
      */
     public abstract Offset committableOffset();
-
-    /** callback close. */
-    public abstract void closeCallback() throws IOException;
 
     /**
      * get all functions.
@@ -206,23 +184,6 @@ public abstract class PartitionHandler extends Thread
      * @param iterator iterator
      */
     public abstract void process(Offset offset, Iterator<byte[]> iterator) throws Exception;
-
-    /**
-     * commit file offset.
-     *
-     * @param offset offset
-     */
-    protected void commit(Offset offset) {
-        if (offset == null) {
-            return;
-        }
-        try {
-            channel.commit(partitionId, groupId, offset);
-            committedOffset = offset;
-        } catch (Throwable e) {
-            LOG.warn("commit fail", e);
-        }
-    }
 
     /**
      * default poll data, subclass can override this function.
@@ -256,7 +217,6 @@ public abstract class PartitionHandler extends Thread
                 ContextBuilder.newBuilder()
                         .id(id == null ? getSinHandlerId() : id)
                         .partitionId(partitionId)
-                        .startOffset(startOffset)
                         .groupId(groupId)
                         .topic(channel.topic());
         builder.addAll(config);
@@ -271,13 +231,27 @@ public abstract class PartitionHandler extends Thread
 
     @Override
     public void close() throws IOException {
+        close(() -> {});
+    }
+
+    /**
+     * close with task.
+     *
+     * @param task task
+     */
+    protected final void close(Runnable task) {
         if (closed.compareAndSet(false, true)) {
             try {
                 interrupt();
                 joinQuietly(this);
+                try {
+                    snapshot();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             } finally {
-                closeCallback();
-                commit(fetchOffset);
+                task.run();
+                channel.commit(partitionId, groupId, committableOffset());
             }
         }
     }
@@ -297,24 +271,6 @@ public abstract class PartitionHandler extends Thread
         return channel.lag(partitionId, offset);
     }
 
-    /**
-     * get commit offset watermark. for unit test visitable.
-     *
-     * @return Offset offset
-     */
-    public Offset committedOffset() {
-        return committedOffset;
-    }
-
-    /** update commit offset watermark. */
-    protected void updateAndCommitOffset() {
-        final Offset committedOffset = committedOffset();
-        final Offset committableOffset = committableOffset();
-        if (committableOffset != null && committableOffset.compareTo(committedOffset) > 0) {
-            commit(committableOffset);
-        }
-    }
-
     @Override
     public Map<MetricKey, Double> gaugeFamily() {
         final Map<MetricKey, Double> result = new HashMap<>();
@@ -326,14 +282,5 @@ public abstract class PartitionHandler extends Thread
     @Override
     public Map<MetricKey, Double> counterFamily() {
         return Collections.emptyMap();
-    }
-
-    /**
-     * fetch offset for test.
-     *
-     * @return offset
-     */
-    public Offset fetchOffset() {
-        return fetchOffset;
     }
 }

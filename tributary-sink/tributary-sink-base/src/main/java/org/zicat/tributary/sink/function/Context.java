@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.sink.function;
 
-import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.config.DefaultReadableConfig;
 
 import java.util.Map;
@@ -30,21 +29,18 @@ public class Context extends DefaultReadableConfig {
     private final String topic;
     private final int partitionId;
     private final String groupId;
-    private final Offset startOffset;
 
     Context(
             String id,
             Map<String, Object> customConfig,
             String topic,
             int partitionId,
-            final String groupId,
-            Offset startOffset) {
+            final String groupId) {
         putAll(customConfig);
         this.id = id;
         this.topic = topic;
         this.partitionId = partitionId;
         this.groupId = groupId;
-        this.startOffset = startOffset;
     }
 
     public String topic() {
@@ -57,10 +53,6 @@ public class Context extends DefaultReadableConfig {
 
     public int partitionId() {
         return partitionId;
-    }
-
-    public Offset startOffset() {
-        return startOffset;
     }
 
     public String id() {

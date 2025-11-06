@@ -63,7 +63,9 @@ public class MemoryGroupManager implements SingleGroupManager {
 
     @Override
     public synchronized void commit(String groupId, Offset offset) {
-
+        if (offset == null) {
+            return;
+        }
         isOpen();
         final Offset cachedOffset = cache.get(groupId);
         if (cachedOffset == null) {

@@ -72,12 +72,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
 
         final long start = System.currentTimeMillis();
         final ContextBuilder builder =
-                new ContextBuilder()
-                        .id("f1")
-                        .groupId("g1")
-                        .partitionId(0)
-                        .topic("t1")
-                        .startOffset(Offset.ZERO);
+                new ContextBuilder().id("f1").groupId("g1").partitionId(0).topic("t1");
         builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, topic);
         builder.addCustomProperty(OPTION_REQUEST_TIMEOUT, Duration.ofSeconds(3));
         final Context context = builder.build();

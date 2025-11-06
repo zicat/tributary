@@ -78,12 +78,7 @@ public class HBaseFunctionTest {
         Mockito.when(ConnectionFactory.createConnection(configuration)).thenReturn(connection);
 
         final ContextBuilder builder =
-                new ContextBuilder()
-                        .id("f1")
-                        .groupId("g1")
-                        .partitionId(0)
-                        .topic("t1")
-                        .startOffset(Offset.ZERO);
+                new ContextBuilder().id("f1").groupId("g1").partitionId(0).topic("t1");
         builder.addCustomProperty(OPTION_HBASE_SITE_XML_PATH, "test-hbase-site.xml");
         builder.addCustomProperty(OPTION_HBASE_FAMILY, "f1");
         builder.addCustomProperty(OPTION_HBASE_COLUMN_VALUE_NAME, "v1");

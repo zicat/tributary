@@ -53,12 +53,7 @@ public class AbstractFunctionTest {
     private MockFunction createFunction(AtomicInteger callback) throws Exception {
         final MockFunction function = new MockFunction(callback);
         final ContextBuilder builder =
-                ContextBuilder.newBuilder()
-                        .id("1")
-                        .groupId("g1")
-                        .topic("t1")
-                        .startOffset(Offset.ZERO)
-                        .partitionId(1);
+                ContextBuilder.newBuilder().id("1").groupId("g1").topic("t1").partitionId(1);
         final Context context = builder.build();
         function.open(context);
         return function;

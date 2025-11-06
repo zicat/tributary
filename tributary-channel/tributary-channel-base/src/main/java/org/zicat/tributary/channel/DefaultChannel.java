@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.channel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.common.*;
 import org.zicat.tributary.common.metric.MetricKey;
@@ -25,8 +27,8 @@ import static org.zicat.tributary.common.util.Threads.interruptQuietly;
 import static org.zicat.tributary.common.util.Threads.joinQuietly;
 import org.zicat.tributary.common.config.PercentSize;
 import org.zicat.tributary.common.util.Booleans;
-import org.zicat.tributary.common.util.Functions;
 import org.zicat.tributary.common.util.IOUtils;
+import static org.zicat.tributary.common.util.Threads.startClosableCronJob;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** DefaultChannel. */
 public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Channel {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultChannel.class);
     private static final String THREAD_NAME_SEGMENT_FLUSH = "segment_flush_thread";
     private static final String THREAD_NAME_CLEANUP_EXPIRED_SEGMENT =
             "cleanup_expired_segment_thread";
@@ -57,42 +60,25 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
             long cleanupExpiredSegmentPeriodMills,
             PercentSize capacityPercent)
             throws IOException {
-        final C[] channels = factory.create();
-        if (channels == null || channels.length == 0) {
-            throw new IllegalArgumentException("channels is null or empty");
-        }
         if (flushPeriodMills <= 0) {
             throw new IllegalArgumentException("flush period is less than 0");
         }
         this.factory = factory;
-        this.channels = channels;
         this.capacityPercent = capacityPercent;
+        final C[] channels = factory.create();
+        if (channels == null || channels.length == 0) {
+            throw new IllegalArgumentException("channels is null or empty");
+        }
+        this.channels = channels;
         this.flushSegmentThread =
-                startLoopRunningThread(
+                startClosableCronJob(
                         closed, THREAD_NAME_SEGMENT_FLUSH, this::flushQuietly, flushPeriodMills);
         this.cleanupExpiredSegmentThread =
-                startLoopRunningThread(
+                startClosableCronJob(
                         closed,
                         THREAD_NAME_CLEANUP_EXPIRED_SEGMENT,
                         this::cleanUpExpiredSegmentsQuietly,
                         cleanupExpiredSegmentPeriodMills);
-    }
-
-    /**
-     * start loop running thread.
-     *
-     * @param closed closed
-     * @param name name
-     * @param runnable runnable
-     * @param period period
-     * @return Thread
-     */
-    private static Thread startLoopRunningThread(
-            AtomicBoolean closed, String name, Runnable runnable, long period) {
-        final Runnable task = () -> Functions.loopCloseableFunction(runnable, period, closed);
-        final Thread thread = new Thread(task, name);
-        thread.start();
-        return thread;
     }
 
     @Override
@@ -146,12 +132,12 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
     }
 
     @Override
-    public void commit(int partition, String groupId, Offset offset) throws IOException {
+    public void commit(int partition, String groupId, Offset offset) {
         getPartitionChannel(partition).commit(groupId, offset);
     }
 
     @Override
-    public void commit(int partition, Offset offset) throws IOException {
+    public void commit(int partition, Offset offset) {
         getPartitionChannel(partition).commit(offset);
     }
 
@@ -174,10 +160,11 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                factory.destroy(channels);
-            } finally {
                 interruptQuietly(flushSegmentThread, cleanupExpiredSegmentThread);
                 joinQuietly(flushSegmentThread, cleanupExpiredSegmentThread);
+            } finally {
+                factory.destroy(channels);
+                LOG.info("channel closed, topic: {}", topic());
             }
         }
     }
@@ -256,7 +243,7 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
     /** clean up expired segments quietly for test. */
     public void cleanUpExpiredSegmentsQuietly() {
         final boolean[] exceedChannel = new boolean[channels.length];
-        // for some channel like memory, clean up segment may not free memory immediately
+        // avoid infinite loop
         int loopCount = 0;
         do {
             for (int i = 0; i < channels.length; i++) {
@@ -270,7 +257,7 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
                         exceedChannel[i] = false;
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    LOG.warn("check capacity fail for topic:{}, partition:{}", topic(), i, e);
                 }
             }
             loopCount++;

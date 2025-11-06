@@ -22,6 +22,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.records.RecordsIterator;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.Function;
 
@@ -77,12 +78,8 @@ public class DirectPartitionHandler extends PartitionHandler {
 
     @Override
     public Offset committableOffset() {
-        return function.committableOffset();
-    }
-
-    @Override
-    public void closeCallback() throws IOException {
-        function.close();
+        final Offset commitableOffset = function.committableOffset();
+        return commitableOffset == null ? startOffset : commitableOffset;
     }
 
     @Override
@@ -97,5 +94,10 @@ public class DirectPartitionHandler extends PartitionHandler {
     @Override
     public void snapshot() throws Exception {
         function.snapshot();
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close(() -> IOUtils.closeQuietly(function));
     }
 }

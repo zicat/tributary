@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** ThreadPoolUtils. */
@@ -106,6 +107,11 @@ public class Threads {
         }
     }
 
+    /**
+     * interrupt quietly.
+     *
+     * @param ts threads
+     */
     public static void interruptQuietly(Thread... ts) {
         if (ts == null) {
             return;
@@ -117,5 +123,22 @@ public class Threads {
                 LOG.warn("interrupt thread {} error", t.getName(), e);
             }
         }
+    }
+
+    /**
+     * start closeable cron job.
+     *
+     * @param closed closed
+     * @param name name
+     * @param runnable runnable
+     * @param period period
+     * @return Thread
+     */
+    public static Thread startClosableCronJob(
+            AtomicBoolean closed, String name, Runnable runnable, long period) {
+        final Runnable task = () -> Functions.loopCloseableFunction(runnable, period, closed);
+        final Thread thread = new Thread(task, name);
+        thread.start();
+        return thread;
     }
 }

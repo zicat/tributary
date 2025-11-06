@@ -22,7 +22,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.test.util.FileUtils;
 import org.zicat.tributary.sink.function.ContextBuilder;
@@ -59,7 +58,7 @@ public class RecordsWriterManagerTest {
         builder.addCustomProperty(OPTION_SINK_PATH, bucketPath);
         builder.addCustomProperty(OPTION_WRITER_IDENTITY, MockHDFSRecordsWriterFactory.ID);
         builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER, mockWriter);
-        builder.topic("t1").groupId("g1").startOffset(Offset.ZERO).id("1");
+        builder.topic("t1").groupId("g1").id("1");
         try (final RecordsWriterManager recordsWriterManager = new DefaultRecordsWriterManager()) {
             recordsWriterManager.open(builder.build());
             final List<String> testData = Arrays.asList("1", "2", "3");

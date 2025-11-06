@@ -427,11 +427,7 @@ public class MemorySingleChannelTest {
                                             throw new RuntimeException(ioException);
                                         }
                                     }
-                                    try {
-                                        channel.commit(0, groupId, offset);
-                                    } catch (IOException ioException) {
-                                        throw new RuntimeException(ioException);
-                                    }
+                                    channel.commit(0, groupId, offset);
                                 });
                 readTreads.add(readTread);
             }

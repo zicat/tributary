@@ -21,7 +21,6 @@ package org.zicat.tributary.sink.elasticsearch.test;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.channel.Offset;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
 import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEXER_DEFAULT_INDEX;
@@ -42,12 +41,7 @@ public class DefaultRequestIndexerTest {
 
             BulkRequest bulkRequest = new BulkRequest();
             ContextBuilder builder =
-                    ContextBuilder.newBuilder()
-                            .topic("t1")
-                            .groupId("g1")
-                            .partitionId(0)
-                            .id("id1")
-                            .startOffset(Offset.ZERO);
+                    ContextBuilder.newBuilder().topic("t1").groupId("g1").partitionId(0).id("id1");
             builder.addCustomProperty(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, "1K");
             requestIndexer.open(builder.build());
 
@@ -70,12 +64,7 @@ public class DefaultRequestIndexerTest {
 
             BulkRequest bulkRequest = new BulkRequest();
             ContextBuilder builder =
-                    ContextBuilder.newBuilder()
-                            .topic("t1")
-                            .groupId("g1")
-                            .partitionId(0)
-                            .id("id1")
-                            .startOffset(Offset.ZERO);
+                    ContextBuilder.newBuilder().topic("t1").groupId("g1").partitionId(0).id("id1");
             builder.addCustomProperty(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, "1K");
             builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, "default_index");
             requestIndexer.open(builder.build());

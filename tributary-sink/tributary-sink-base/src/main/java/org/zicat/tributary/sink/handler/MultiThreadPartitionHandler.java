@@ -32,6 +32,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.metric.MetricKey;
+import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.util.Threads;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.sink.SinkGroupConfig;
@@ -77,8 +78,8 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
     private static final int MAX_CAPACITY = 128;
     private static final int MIN_CAPACITY = 4;
 
-    private Disruptor<Block> disruptor;
-    private DataHandler[] handlers;
+    private final Disruptor<Block> disruptor;
+    private final DataHandler[] handlers;
     private final AtomicReference<Throwable> error = new AtomicReference<>(null);
     private final int workerNumber;
 
@@ -90,15 +91,12 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
             SinkGroupConfig sinkGroupConfig) {
         super(groupId, channel, partitionId, sinkGroupConfig);
         this.workerNumber = workerNumber;
+        this.handlers = new DataHandler[workerNumber];
+        this.disruptor = createDisruptor();
     }
 
     @Override
     public void open() {
-        if (workerNumber <= 1) {
-            throw new IllegalStateException(OPTION_THREADS.key() + " must over 1");
-        }
-        this.disruptor = createDisruptor();
-        this.handlers = new DataHandler[workerNumber];
         for (int i = 0; i < workerNumber; i++) {
             handlers[i] = new DataHandler(createFunction(createFunctionId(i)), error);
             LOG.info("MultiThread Data handler initialed, GroupId:{}, Id:{}", groupId, i);
@@ -170,38 +168,24 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
     }
 
     @Override
-    public void closeCallback() throws IOException {
-        try {
-            if (handlers != null) {
-                IOException e = null;
-                for (DataHandler handler : handlers) {
-                    try {
-                        handler.close();
-                    } catch (IOException ioException) {
-                        e = ioException;
-                    }
-                }
-                handlers = null;
-                if (e != null) {
-                    throw e;
-                }
-            }
-        } finally {
-            if (disruptor != null) {
+    public void close() throws IOException {
+        super.close(() -> {
+            try {
+                IOUtils.closeQuietly(handlers);
+            } finally {
                 disruptor.shutdown();
-                disruptor = null;
             }
-        }
+        });
     }
 
     @Override
     public Offset committableOffset() {
-
-        Offset min = handlers[0].function.committableOffset();
+        Offset min = null;
         for (int i = 1; i < handlers.length; i++) {
-            min = Offset.min(min, handlers[i].function.committableOffset());
+            final Offset offset = handlers[i].function.committableOffset();
+            min = min == null ? offset : Offset.min(min, offset);
         }
-        return min;
+        return min == null ? startOffset : min;
     }
 
     @Override

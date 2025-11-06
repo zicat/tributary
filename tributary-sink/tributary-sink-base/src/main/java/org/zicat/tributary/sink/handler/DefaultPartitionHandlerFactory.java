@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.sink.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
@@ -29,6 +31,7 @@ import java.time.Duration;
 /** DefaultPartitionHandlerFactory. */
 public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultPartitionHandlerFactory.class);
     public static final String IDENTITY = "default";
 
     public static final ConfigOption<Integer> OPTION_THREADS =
@@ -39,8 +42,8 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
     public static final ConfigOption<Duration> OPTION_CHECKPOINT_INTERVAL =
             ConfigOptions.key("partition.checkpoint.interval")
                     .durationType()
-                    .description("snapshot interval, default 1 minutes")
-                    .defaultValue(Duration.ofMinutes(1));
+                    .description("snapshot interval, default 30 seconds")
+                    .defaultValue(Duration.ofSeconds(30));
 
     @Override
     public String identity() {
@@ -66,11 +69,12 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
      * @return value
      */
     public static long snapshotIntervalMills(ReadableConfig config) {
-        final long snapshotMills = config.get(OPTION_CHECKPOINT_INTERVAL).toMillis();
-        if (snapshotMills < 5000) {
-            throw new IllegalStateException(
-                    "snapshot interval must be greater than 5000ms, but got: " + snapshotMills);
+        final long snapshot = config.get(OPTION_CHECKPOINT_INTERVAL).toMillis();
+        final long min = OPTION_CHECKPOINT_INTERVAL.defaultValue().toMillis();
+        if (snapshot < min) {
+            LOG.warn("snapshot interval {}ms may affect performance, reset to {}ms", snapshot, min);
+            return min;
         }
-        return snapshotMills;
+        return snapshot;
     }
 }

@@ -45,12 +45,7 @@ public class MultiThreadPartitionHandlerTest {
             try (MultiThreadPartitionHandler handler =
                     new MultiThreadPartitionHandler(
                             groupId, channel, 0, threads, builder.build())) {
-                try {
-                    handler.open();
-                    Assert.fail();
-                } catch (IllegalStateException e) {
-                    Assert.assertTrue(true);
-                }
+                handler.open();
             }
             threads = 10;
             builder.addCustomProperty(OPTION_THREADS, threads);

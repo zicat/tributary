@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_BLOCK_CACHE_PER_PARTITION_SIZE;
-import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
 import static org.zicat.tributary.channel.group.FileGroupManager.createFileName;
 import org.zicat.tributary.common.config.PercentSize;
 
@@ -42,7 +41,6 @@ import org.zicat.tributary.common.config.PercentSize;
 public class FileSingleChannelBuilder {
 
     protected List<String> dirs;
-    protected long groupPeriodSecond = OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds();
     protected String topic;
     protected Long segmentSize;
     protected Integer blockSize;
@@ -105,16 +103,6 @@ public class FileSingleChannelBuilder {
         return this;
     }
 
-    /**
-     * set group persist period second.
-     *
-     * @param groupPeriodSecond groupPeriodSecond.
-     * @return this
-     */
-    public FileSingleChannelBuilder groupPersistPeriodSecond(long groupPeriodSecond) {
-        this.groupPeriodSecond = groupPeriodSecond;
-        return this;
-    }
 
     /**
      * set compression type.
@@ -196,7 +184,7 @@ public class FileSingleChannelBuilder {
             canonicalDirs[i] = dir;
             fileStores[i] = Files.getFileStore(dir.toPath());
             final File groupFile = new File(dir, createFileName(topic));
-            factories[i] = () -> new FileGroupManager(groupFile, consumerGroups, groupPeriodSecond);
+            factories[i] = () -> new FileGroupManager(groupFile, consumerGroups);
         }
         return new DefaultChannel<>(
                 new AbstractChannelArrayFactory<FileSingleChannel>(topic, consumerGroups) {

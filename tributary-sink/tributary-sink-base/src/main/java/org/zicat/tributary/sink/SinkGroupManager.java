@@ -46,18 +46,19 @@ public class SinkGroupManager implements Closeable, MetricCollector {
     private final String groupId;
     private final Channel channel;
     private final SinkGroupConfig sinkGroupConfig;
-    private final List<PartitionHandler> handlers = new ArrayList<>();
+    private final List<PartitionHandler> handlers;
     private final String id;
 
     public SinkGroupManager(String groupId, Channel channel, SinkGroupConfig sinkGroupConfig) {
         this.groupId = groupId;
         this.channel = channel;
         this.sinkGroupConfig = sinkGroupConfig;
+        this.handlers = new ArrayList<>(channel.partition());
         this.id = channel.topic() + "_" + groupId;
     }
 
     /** create sink handler. */
-    public synchronized void createPartitionHandlesAndStart() {
+    public void createPartitionHandlesAndStart() {
         if (handlers.size() == channel.partition()) {
             return;
         }
@@ -83,13 +84,23 @@ public class SinkGroupManager implements Closeable, MetricCollector {
     @Override
     public void close() {
         IOUtils.concurrentCloseQuietly(handlers);
-        LOG.info("stop sink topic = {}, group = {}", channel.topic(), groupId);
+        LOG.info("stop sink group manager, id: {}", id);
     }
 
+    /**
+     * get id.
+     *
+     * @return id
+     */
     public String id() {
         return id;
     }
 
+    /**
+     * get groupId.
+     *
+     * @return group id
+     */
     public String groupId() {
         return groupId;
     }

@@ -103,12 +103,7 @@ public class HDFSFunctionTest {
             final String timeFormat = "yyyyMMdd_HHmm";
             final String timeZoneId = "GMT+8";
             final ContextBuilder builder =
-                    new ContextBuilder()
-                            .id("id1")
-                            .partitionId(0)
-                            .groupId("g1")
-                            .startOffset(Offset.ZERO)
-                            .topic(topic);
+                    new ContextBuilder().id("id1").partitionId(0).groupId("g1").topic(topic);
             builder.addCustomProperty(OPTION_SINK_PATH, DIR.getCanonicalFile().getPath())
                     .addCustomProperty(OPTION_BUCKET_DATE_FORMAT, timeFormat)
                     .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE, timeZoneId)

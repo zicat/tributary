@@ -21,7 +21,6 @@ package org.zicat.tributary.channel.group;
 import org.zicat.tributary.channel.Offset;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Set;
 
 /** GroupManager. @ThreadSafe */
@@ -49,16 +48,14 @@ public interface GroupManager extends Closeable {
      * @param partition partition
      * @param groupId groupId
      * @param offset offset
-     * @throws IOException IOException
      */
-    void commit(int partition, String groupId, Offset offset) throws IOException;
+    void commit(int partition, String groupId, Offset offset);
 
     /**
      * commit group offset without group id.
      *
      * @param partition partition
      * @param offset offset
-     * @throws IOException IOException
      */
-    void commit(int partition, Offset offset) throws IOException;
+    void commit(int partition, Offset offset);
 }

@@ -45,15 +45,10 @@ public class FunctionTest {
                 }) {
             final Offset offset = new Offset(1, 0);
             final ContextBuilder builder =
-                    ContextBuilder.newBuilder()
-                            .id("1")
-                            .topic("t1")
-                            .groupId("g1")
-                            .startOffset(offset)
-                            .partitionId(1);
+                    ContextBuilder.newBuilder().id("1").topic("t1").groupId("g1").partitionId(1);
             final Context context = builder.build();
             function.open(context);
-            Assert.assertEquals(function.committableOffset(), offset);
+            Assert.assertNull(function.committableOffset());
             Assert.assertEquals(context.groupId(), function.groupId());
             Assert.assertEquals(context.partitionId(), function.partitionId());
             Assert.assertEquals(context.topic(), function.topic());
@@ -69,12 +64,7 @@ public class FunctionTest {
         try (final Function function = new DummyFunction()) {
             final Offset offset = new Offset(1, 0);
             final ContextBuilder builder =
-                    ContextBuilder.newBuilder()
-                            .id("1")
-                            .groupId("g1")
-                            .topic("t1")
-                            .startOffset(offset)
-                            .partitionId(1);
+                    ContextBuilder.newBuilder().id("1").groupId("g1").topic("t1").partitionId(1);
             final Context context = builder.build();
             function.open(context);
 

@@ -20,25 +20,18 @@ package org.zicat.tributary.channel.group;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Offset;
 import static org.zicat.tributary.channel.Offset.UNINITIALIZED_OFFSET;
-import static org.zicat.tributary.common.util.Threads.createThreadFactoryByName;
-import org.zicat.tributary.common.config.ConfigOption;
-import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -56,39 +49,32 @@ public class FileGroupManager extends MemoryGroupManager {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final TypeReference<Map<String, Offset>> TYPE =
             new TypeReference<Map<String, Offset>>() {};
-    public static final ConfigOption<Duration> OPTION_GROUP_PERSIST_PERIOD =
-            ConfigOptions.key("groups.persist.period")
-                    .durationType()
-                    .description("how long to persist group offset to storage, default 30s")
-                    .defaultValue(Duration.ofSeconds(30));
 
     private static final Logger LOG = LoggerFactory.getLogger(FileGroupManager.class);
 
     public static final String FILE_SUFFIX = "_group_id.index";
     public static final String TMP_SUFFIX = ".tmp";
-    private static final String THREAD_PREFIX = "group_persist";
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final File groupIndexFile;
-    protected ScheduledExecutorService schedule;
 
     public FileGroupManager(File groupIndexFile, Set<String> groupIds) {
-        this(groupIndexFile, groupIds, OPTION_GROUP_PERSIST_PERIOD.defaultValue().getSeconds());
+        super(getGroupOffsets(groupIndexFile, groupIds));
+        this.groupIndexFile = groupIndexFile;
     }
 
-    public FileGroupManager(File groupIndexFile, Set<String> groupIds, long periodSecond) {
-        super(getGroupOffsets(groupIndexFile, groupIds));
-        if (periodSecond < 0) {
-            throw new IllegalArgumentException("period flush must over 0");
+    @Override
+    public void commit(String groupId, Offset offset) {
+        final Offset oldOffset = committedOffset(groupId);
+        super.commit(groupId, offset);
+        final Offset newOffset = committedOffset(groupId);
+        if (!Objects.equals(oldOffset, newOffset)) {
+            persist();
         }
-        this.groupIndexFile = groupIndexFile;
-        this.schedule = newSingleThreadScheduledExecutor(createThreadFactoryByName(THREAD_PREFIX));
-        schedule.scheduleWithFixedDelay(
-                this::persist, periodSecond, periodSecond, TimeUnit.SECONDS);
     }
 
     /** persist group offsets. */
-    public synchronized void persist() {
+    private synchronized void persist() {
         final File tmpFile = createTmpGroupIndexFile();
         if (tmpFile == null) {
             return;
@@ -268,9 +254,6 @@ public class FileGroupManager extends MemoryGroupManager {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (schedule != null) {
-                    schedule.shutdown();
-                }
                 persist();
             } finally {
                 super.close();

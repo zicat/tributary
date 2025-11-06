@@ -42,12 +42,7 @@ public class MuteInsertErrorBulkResponseActionListenerFactoryTest {
     public void test() throws InterruptedException {
 
         ContextBuilder builder =
-                ContextBuilder.newBuilder()
-                        .id("1")
-                        .groupId("g1")
-                        .topic("t1")
-                        .partitionId(1)
-                        .startOffset(Offset.ZERO);
+                ContextBuilder.newBuilder().id("1").groupId("g1").topic("t1").partitionId(1);
 
         BulkResponseActionListenerFactory factory =
                 findFactory(

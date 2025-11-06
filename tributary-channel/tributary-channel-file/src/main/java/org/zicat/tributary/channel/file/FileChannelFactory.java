@@ -20,7 +20,6 @@ package org.zicat.tributary.channel.file;
 
 import static org.zicat.tributary.channel.ChannelConfigOption.*;
 import static org.zicat.tributary.channel.file.FileChannelConfigOption.*;
-import static org.zicat.tributary.channel.group.FileGroupManager.OPTION_GROUP_PERSIST_PERIOD;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.ChannelFactory;
@@ -54,7 +53,6 @@ public class FileChannelFactory implements ChannelFactory {
         final Duration cleanupExpiredSegmentPeriod =
                 config.get(OPTION_CLEANUP_EXPIRED_SEGMENT_PERIOD);
         final CompressionType compression = config.get(OPTION_COMPRESSION);
-        final long groupPersist = config.get(OPTION_GROUP_PERSIST_PERIOD).getSeconds();
         final int blockCacheCount = config.get(OPTION_BLOCK_CACHE_PER_PARTITION_SIZE);
         final PercentSize capacityProtectedPercent = config.get(OPTION_CAPACITY_PROTECTED_PERCENT);
         final FileSingleChannelBuilder builder =
@@ -62,7 +60,6 @@ public class FileChannelFactory implements ChannelFactory {
                         .dirs(dirs)
                         .flushPeriodMills(flushPeriod.toMillis())
                         .cleanupExpiredSegmentPeriodMills(cleanupExpiredSegmentPeriod.toMillis())
-                        .groupPersistPeriodSecond(groupPersist)
                         .capacityProtectedPercent(capacityProtectedPercent)
                         .blockCacheCount(blockCacheCount);
         return builder.blockSize((int) blockSize)

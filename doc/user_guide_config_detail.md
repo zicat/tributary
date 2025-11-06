@@ -248,7 +248,6 @@ channel.c1.block.size=32kb
 channel.c1.segment.size=4gb
 channel.c1.flush.period=1sec
 channel.c1.block.cache.per.partition.size=1024
-channel.c1.groups.persist.period=40s
 channel.c2.type=memory
 channel.c2.groups=group_2
 channel.c2.partitions=2
@@ -276,7 +275,6 @@ channel.c2.block.cache.per.partition.size=1024
 | segment.expired.cleanup.period | 30s            | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                                                                                                                 |
 | partitions                     |                | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                                                                                                          |
 | flush.period                   | 500ms          | duration               | the period time to async flush page cache to disk                                                                                                                                                                                                                                |
-| groups.persist.period          | 30s            | duration               | the period time to async persist the committed group offset to disk                                                                                                                                                                                                              |     
 | block.cache.per.partition.size | 1024           | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                   | 
 | capacity.protected.percent     | 90%            | percent                | the max disk capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the disk usage percent over the param, those sink groups will skip offset to next segment to consume |
 
@@ -320,11 +318,11 @@ sink.group_4.function.id=elasticsearch
 
 ### Common Config
 
-| key                           | default | type                                       | describe                                                                                                                                                                                                                                 |
-|-------------------------------|---------|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| function.id                   |         | enum[print,kafka,hdfs,hbase,elasticsearch] | the function identity that configure how to consume records, user can customize functions by  implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)   |
-| partition.concurrent          | 1       | int(number)                                | the threads to consume one partition data from channel, multi threads will cause data disorder in one partition, be careful                                                                                                              |  
-| partition.checkpoint.interval | 1min    | duration                                   | the interval to callback [CheckpointedFunction.snapshot()](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/CheckpointedFunction.java), each type of sink has different checkpoint implementations. |
+| key                           | default | type                                       | describe                                                                                                                                                                                                                                                                                                    |
+|-------------------------------|---------|--------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| function.id                   |         | enum[print,kafka,hdfs,hbase,elasticsearch] | the function identity that configure how to consume records, user can customize functions by  implements [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)                                                                      |
+| partition.concurrent          | 1       | int(number)                                | the threads to consume one partition data from channel, multi threads have better performance but cause data disorder in one partition.                                                                                                                                                                     |  
+| partition.checkpoint.interval | 30s     | duration                                   | the interval to callback [CheckpointedFunction.snapshot()](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/CheckpointedFunction.java), each type of sink has different checkpoint implementations. The value that less than 30s will be reset to 30s for performance. |
 
 ### Sink HDFS
 

@@ -74,12 +74,7 @@ public class KafkaFunctionTest {
                         new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2)));
         try (MockKafkaFunction function = new MockKafkaFunction()) {
             final ContextBuilder builder =
-                    new ContextBuilder()
-                            .id("id2")
-                            .partitionId(0)
-                            .groupId(groupId)
-                            .startOffset(new Offset(0, 0))
-                            .topic(topic);
+                    new ContextBuilder().id("id2").partitionId(0).groupId(groupId).topic(topic);
             function.open(builder.build());
 
             final Offset offset = new Offset(2, 0);
@@ -110,12 +105,7 @@ public class KafkaFunctionTest {
                         new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2)));
         try (KafkaFunction function = new MockKafkaFunction()) {
             final ContextBuilder builder =
-                    new ContextBuilder()
-                            .id("id")
-                            .partitionId(0)
-                            .groupId(groupId)
-                            .startOffset(new Offset(0, 0))
-                            .topic(topic);
+                    new ContextBuilder().id("id").partitionId(0).groupId(groupId).topic(topic);
             builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC, "aa_${topic}");
             function.open(builder.build());
             final Offset offset = new Offset(2, 0);

@@ -218,38 +218,18 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
     }
 
     @Override
-    public void commit(String groupId, Offset offset) throws IOException {
-        if (checkOffsetOver(offset)) {
-            return;
-        }
+    public void commit(String groupId, Offset offset) {
         singleGroupManager.commit(groupId, offset);
     }
 
     @Override
     public void commit(Offset offset) {
-        if (checkOffsetOver(offset)) {
-            return;
-        }
         singleGroupManager.commit(offset);
     }
 
     @Override
     public Offset getMinOffset() {
         return singleGroupManager.getMinOffset();
-    }
-
-    /**
-     * check offset over latest segment.
-     *
-     * @param offset offset
-     * @return checkOffsetOver
-     */
-    private boolean checkOffsetOver(Offset offset) {
-        final boolean result = latestSegment.segmentId() < offset.segmentId();
-        if (result) {
-            LOG.warn("commit group offset {} over latest segment", offset);
-        }
-        return result;
     }
 
     /**
@@ -372,7 +352,6 @@ public abstract class AbstractSingleChannel<S extends Segment> implements Single
             } finally {
                 cache.forEach((k, v) -> IOUtils.closeQuietly(v));
                 cache.clear();
-                LOG.info("close channel topic = {}", topic);
             }
         }
     }

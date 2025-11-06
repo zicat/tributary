@@ -20,8 +20,6 @@ package org.zicat.tributary.channel.group;
 
 import org.zicat.tributary.channel.Offset;
 
-import java.io.IOException;
-
 /** SingleGroupManager for {@link GroupManager} offset without partition. */
 public interface SingleGroupManager extends GroupManager {
 
@@ -43,9 +41,8 @@ public interface SingleGroupManager extends GroupManager {
      *
      * @param groupId groupId
      * @param offset offset
-     * @throws IOException IOException
      */
-    void commit(String groupId, Offset offset) throws IOException;
+    void commit(String groupId, Offset offset);
 
     /**
      * commit all group offset without partition.
@@ -55,17 +52,18 @@ public interface SingleGroupManager extends GroupManager {
     void commit(Offset offset);
 
     @Override
-    default void commit(int partition, String groupId, Offset offset) throws IOException {
+    default void commit(int partition, String groupId, Offset offset) {
         commit(groupId, offset);
     }
 
     @Override
-    default void commit(int partition, Offset offset) throws IOException {
+    default void commit(int partition, Offset offset) {
         commit(offset);
     }
 
     /**
      * get min offset of all groups.
+     *
      * @return offset
      */
     Offset getMinOffset();

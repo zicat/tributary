@@ -41,7 +41,6 @@ public abstract class AbstractFunction implements Function {
     @Override
     public void open(Context context) throws Exception {
         this.context = context;
-        this.committableOffset = context.startOffset();
         this.clock = context.get(OPTION_SINK_CLOCK);
     }
 
@@ -53,13 +52,10 @@ public abstract class AbstractFunction implements Function {
     /**
      * execute callback and persist offset.
      *
-     * @param newCommittableOffset newCommittableOffset
+     * @param offset offset
      */
-    public void commit(Offset newCommittableOffset) {
-        if (newCommittableOffset == null) {
-            return;
-        }
-        this.committableOffset = newCommittableOffset;
+    public void commit(Offset offset) {
+        this.committableOffset = offset;
     }
 
     @Override
