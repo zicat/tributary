@@ -21,6 +21,8 @@ package org.zicat.tributary.sink.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.common.Clock;
+import org.zicat.tributary.common.SystemClock;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.ReadableConfig;
@@ -44,6 +46,14 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
                     .durationType()
                     .description("snapshot interval, default 30 seconds")
                     .defaultValue(Duration.ofSeconds(30));
+    public static final ConfigOption<Boolean> OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT =
+            ConfigOptions.key("partition.graceful-close.quick-exit")
+                    .booleanType()
+                    .defaultValue(true);
+    public static final ConfigOption<Clock> OPTION_PARTITION_CLOCK =
+            ConfigOptions.key("partition._clock")
+                    .<Clock>objectType()
+                    .defaultValue(new SystemClock());
 
     @Override
     public String identity() {
@@ -51,7 +61,7 @@ public class DefaultPartitionHandlerFactory implements PartitionHandlerFactory {
     }
 
     @Override
-    public PartitionHandler createHandler(
+    public PartitionHandler create(
             String groupId, Channel channel, int partitionId, SinkGroupConfig config) {
         final int concurrent = config.get(OPTION_THREADS);
         if (concurrent > 1) {

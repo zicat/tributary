@@ -88,8 +88,8 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
             Channel channel,
             int partitionId,
             int workerNumber,
-            SinkGroupConfig sinkGroupConfig) {
-        super(groupId, channel, partitionId, sinkGroupConfig);
+            SinkGroupConfig config) {
+        super(groupId, channel, partitionId, config);
         this.workerNumber = workerNumber;
         this.handlers = new DataHandler[workerNumber];
         this.disruptor = createDisruptor();
@@ -169,13 +169,14 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
 
     @Override
     public void close() throws IOException {
-        super.close(() -> {
-            try {
-                IOUtils.closeQuietly(handlers);
-            } finally {
-                disruptor.shutdown();
-            }
-        });
+        super.close(
+                () -> {
+                    try {
+                        IOUtils.concurrentCloseQuietly(handlers);
+                    } finally {
+                        disruptor.shutdown();
+                    }
+                });
     }
 
     @Override

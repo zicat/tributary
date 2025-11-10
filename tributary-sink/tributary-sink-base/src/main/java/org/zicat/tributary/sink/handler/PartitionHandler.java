@@ -21,10 +21,11 @@ package org.zicat.tributary.sink.handler;
 import org.zicat.tributary.common.Clock;
 import org.zicat.tributary.common.metric.MetricCollector;
 import org.zicat.tributary.common.metric.MetricKey;
-import org.zicat.tributary.common.SystemClock;
 import static org.zicat.tributary.common.util.Threads.joinQuietly;
 import static org.zicat.tributary.common.util.Threads.sleepQuietly;
 import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
+import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT;
+import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_PARTITION_CLOCK;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.snapshotIntervalMills;
 
 import org.slf4j.Logger;
@@ -32,8 +33,6 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.common.config.ConfigOption;
-import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
@@ -53,12 +52,6 @@ public abstract class PartitionHandler extends Thread
         implements Closeable, CheckpointedFunction, MetricCollector {
 
     public static final MetricKey KEY_SINK_LAG = new MetricKey("tributary_sink_lag");
-
-    public static final ConfigOption<Clock> OPTION_PARTITION_HANDLER_CLOCK =
-            ConfigOptions.key("_partition_handler_clock")
-                    .<Clock>objectType()
-                    .defaultValue(new SystemClock());
-
     private static final MetricKey SINK_SNAPSHOT_COAST =
             new MetricKey("tributary_sink_snapshot_cost");
 
@@ -75,6 +68,7 @@ public abstract class PartitionHandler extends Thread
     protected final AtomicBoolean closed = new AtomicBoolean();
     protected final long snapshotIntervalMills;
     protected final Clock clock;
+    protected final boolean quickExist;
 
     protected Offset fetchOffset;
     protected long preSnapshotTime;
@@ -88,7 +82,8 @@ public abstract class PartitionHandler extends Thread
         this.partitionId = partitionId;
         this.snapshotIntervalMills = snapshotIntervalMills(config);
         this.config = config;
-        this.clock = config.get(OPTION_PARTITION_HANDLER_CLOCK);
+        this.quickExist = config.get(OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT);
+        this.clock = config.get(OPTION_PARTITION_CLOCK);
         this.preSnapshotTime = clock.currentTimeMillis();
         this.functionFactory = findFunctionFactory(config.functionIdentity());
         this.startOffset = channel.committedOffset(groupId, partitionId);
@@ -110,7 +105,7 @@ public abstract class PartitionHandler extends Thread
     public boolean runOneBatch() {
         try {
             final RecordsResultSet result = poll(fetchOffset);
-            if (closed.get() && result.isEmpty()) {
+            if (closed.get() && (quickExist || result.isEmpty())) {
                 return true;
             }
             if (!result.isEmpty()) {

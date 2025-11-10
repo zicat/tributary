@@ -44,8 +44,8 @@ public class DirectPartitionHandler extends PartitionHandler {
     private Function function;
 
     public DirectPartitionHandler(
-            String groupId, Channel channel, int partitionId, SinkGroupConfig sinkGroupConfig) {
-        super(groupId, channel, partitionId, sinkGroupConfig);
+            String groupId, Channel channel, int partitionId, SinkGroupConfig config) {
+        super(groupId, channel, partitionId, config);
     }
 
     @Override

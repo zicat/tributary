@@ -65,7 +65,7 @@ public class SinkGroupManager implements Closeable, MetricCollector {
         final PartitionHandlerFactory factory =
                 findFactory(sinkGroupConfig.handlerIdentity(), PartitionHandlerFactory.class);
         for (int partitionId = 0; partitionId < channel.partition(); partitionId++) {
-            handlers.add(factory.createHandler(groupId, channel, partitionId, sinkGroupConfig));
+            handlers.add(factory.create(groupId, channel, partitionId, sinkGroupConfig));
         }
         handlers.forEach(PartitionHandler::open);
         handlers.forEach(Thread::start);

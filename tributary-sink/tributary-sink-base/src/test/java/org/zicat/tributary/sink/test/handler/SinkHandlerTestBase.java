@@ -27,6 +27,7 @@ import org.zicat.tributary.sink.SinkGroupConfig;
 import org.zicat.tributary.sink.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
+import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT;
 import org.zicat.tributary.sink.test.function.AssertFunction;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
@@ -58,7 +59,8 @@ public class SinkHandlerTestBase {
                             .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
                             .functionIdentity(AssertFunctionFactory.IDENTITY);
             builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData)
-                    .addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, threads);
+                    .addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, threads)
+                    .addCustomProperty(OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT.key(), false);
             final SinkGroupConfig sinkGroupConfig = builder.build();
             try (SinkGroupManager sinkManager =
                     new SinkGroupManager(groupId, channel, sinkGroupConfig)) {

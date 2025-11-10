@@ -36,12 +36,12 @@ public class SystemClock implements Clock {
 
     @Override
     public long currentTimeMillis() {
-        return System.currentTimeMillis();
+        return DateTimeUtils.currentTimeMillis();
     }
 
     @Override
     public String currentTime(String pattern, String timeZoneId) {
-        return timeFormat(DateTimeUtils.currentTimeMillis(), pattern, timeZoneId);
+        return timeFormat(currentTimeMillis(), pattern, timeZoneId);
     }
 
     /**
