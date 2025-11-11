@@ -23,6 +23,7 @@ import org.zicat.tributary.common.metric.MetricCollector;
 import org.zicat.tributary.common.metric.MetricKey;
 import static org.zicat.tributary.common.util.Threads.joinQuietly;
 import static org.zicat.tributary.common.util.Threads.sleepQuietly;
+import org.zicat.tributary.sink.config.ContextBuilder;
 import static org.zicat.tributary.sink.function.FunctionFactory.findFunctionFactory;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_PARTITION_CLOCK;
@@ -34,7 +35,7 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.util.IOUtils;
-import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
 import org.zicat.tributary.sink.function.*;
 
 import java.io.Closeable;
@@ -214,7 +215,7 @@ public abstract class PartitionHandler extends Thread
                         .partitionId(partitionId)
                         .groupId(groupId)
                         .topic(channel.topic());
-        builder.addAll(config);
+        builder.addConfigs(config);
         try {
             function.open(builder.build());
             return function;

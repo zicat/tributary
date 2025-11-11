@@ -22,6 +22,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.sink.config.Context;
+import org.zicat.tributary.sink.config.ContextBuilder;
 import org.zicat.tributary.sink.function.*;
 
 import java.util.Collections;

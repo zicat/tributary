@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.sink.hdfs;
 
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 import java.io.Closeable;
 import java.io.IOException;

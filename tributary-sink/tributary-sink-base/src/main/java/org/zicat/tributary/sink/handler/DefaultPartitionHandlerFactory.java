@@ -26,7 +26,7 @@ import org.zicat.tributary.common.SystemClock;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.ReadableConfig;
-import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
 
 import java.time.Duration;
 

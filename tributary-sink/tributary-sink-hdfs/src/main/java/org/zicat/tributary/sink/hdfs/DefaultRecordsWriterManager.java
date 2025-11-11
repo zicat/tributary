@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.hdfs;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 import org.zicat.tributary.sink.hdfs.bucket.BucketWriter;
 
 import java.io.IOException;

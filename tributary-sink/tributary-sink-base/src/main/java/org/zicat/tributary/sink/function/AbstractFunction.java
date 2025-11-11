@@ -24,6 +24,7 @@ import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.SystemClock;
 import static org.zicat.tributary.common.records.RecordsUtils.sinkExtraHeaders;
+import org.zicat.tributary.sink.config.Context;
 
 import java.util.HashMap;
 import java.util.Map;

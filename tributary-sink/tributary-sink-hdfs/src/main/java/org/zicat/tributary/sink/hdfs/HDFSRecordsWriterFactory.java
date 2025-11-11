@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.hdfs;
 
 import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 /** HDFSRecordsWriterFactory. */
 public interface HDFSRecordsWriterFactory extends SpiFactory {

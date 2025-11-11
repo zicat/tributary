@@ -22,7 +22,7 @@ import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
 
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.Clock;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 import org.zicat.tributary.sink.hdfs.RecordsWriterManager;
 
 import java.io.IOException;

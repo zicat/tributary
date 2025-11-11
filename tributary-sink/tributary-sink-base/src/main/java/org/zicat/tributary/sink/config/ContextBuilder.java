@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink.function;
+package org.zicat.tributary.sink.config;
 
-import org.zicat.tributary.sink.CustomConfigBuilder;
+import org.zicat.tributary.common.config.ConfigBuilder;
 
 /** ContextBuilder. */
-public class ContextBuilder extends CustomConfigBuilder {
+public class ContextBuilder extends ConfigBuilder<ContextBuilder, Context> {
 
     private String id;
     private String topic;
@@ -72,11 +72,7 @@ public class ContextBuilder extends CustomConfigBuilder {
         return this;
     }
 
-    /**
-     * build context.
-     *
-     * @return Context
-     */
+    @Override
     public Context build() {
         if (groupId == null) {
             throw new IllegalArgumentException("groupId must not be null");
@@ -87,7 +83,7 @@ public class ContextBuilder extends CustomConfigBuilder {
         if (topic == null) {
             throw new IllegalArgumentException("topic must not be null");
         }
-        return new Context(id, customConfig, topic, partitionId, groupId);
+        return new Context(id, config, topic, partitionId, groupId);
     }
 
     /**

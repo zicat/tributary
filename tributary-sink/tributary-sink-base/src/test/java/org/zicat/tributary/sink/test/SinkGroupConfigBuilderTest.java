@@ -20,8 +20,8 @@ package org.zicat.tributary.sink.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.function.PrintFunctionFactory;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 

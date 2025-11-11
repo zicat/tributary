@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink;
+package org.zicat.tributary.sink.config;
 
 import org.zicat.tributary.common.config.DefaultReadableConfig;
 

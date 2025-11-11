@@ -27,7 +27,7 @@ import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 import java.util.Iterator;
 

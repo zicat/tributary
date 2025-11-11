@@ -51,8 +51,8 @@ import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactor
 import org.zicat.tributary.sink.elasticsearch.listener.DefaultBulkResponseActionListener;
 import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import org.zicat.tributary.sink.elasticsearch.ElasticsearchFunction;
-import org.zicat.tributary.sink.function.Context;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.Context;
+import org.zicat.tributary.sink.config.ContextBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -72,9 +72,13 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
 
         final long start = System.currentTimeMillis();
         final ContextBuilder builder =
-                new ContextBuilder().id("f1").groupId("g1").partitionId(0).topic("t1");
-        builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, topic);
-        builder.addCustomProperty(OPTION_REQUEST_TIMEOUT, Duration.ofSeconds(3));
+                new ContextBuilder()
+                        .id("f1")
+                        .groupId("g1")
+                        .partitionId(0)
+                        .topic("t1")
+                        .addConfig(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, topic)
+                        .addConfig(OPTION_REQUEST_TIMEOUT, Duration.ofSeconds(3));
         final Context context = builder.build();
 
         final Map<String, byte[]> recordHeader1 = new HashMap<>();

@@ -24,7 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.test.util.FileUtils;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.ContextBuilder;
 import org.zicat.tributary.sink.hdfs.DefaultRecordsWriterManager;
 import org.zicat.tributary.sink.hdfs.RecordsWriter;
 import org.zicat.tributary.sink.hdfs.RecordsWriterManager;
@@ -54,11 +54,14 @@ public class RecordsWriterManagerTest {
         final String bucket = "bucket_1";
         final String bucket2 = "bucket_2";
         final MockHDFSRecordsWriter mockWriter = new MockHDFSRecordsWriter();
-        final ContextBuilder builder = new ContextBuilder();
-        builder.addCustomProperty(OPTION_SINK_PATH, bucketPath);
-        builder.addCustomProperty(OPTION_WRITER_IDENTITY, MockHDFSRecordsWriterFactory.ID);
-        builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER, mockWriter);
-        builder.topic("t1").groupId("g1").id("1");
+        final ContextBuilder builder =
+                new ContextBuilder()
+                        .addConfig(OPTION_SINK_PATH, bucketPath)
+                        .addConfig(OPTION_WRITER_IDENTITY, MockHDFSRecordsWriterFactory.ID)
+                        .addConfig(MockHDFSRecordsWriterFactory.OPTION_WRITER, mockWriter)
+                        .topic("t1")
+                        .groupId("g1")
+                        .id("1");
         try (final RecordsWriterManager recordsWriterManager = new DefaultRecordsWriterManager()) {
             recordsWriterManager.open(builder.build());
             final List<String> testData = Arrays.asList("1", "2", "3");

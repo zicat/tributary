@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.elasticsearch.listener;
 
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 /** MuteInsertErrorBulkResponseActionListenerFactory. */
 public class MuteInsertErrorBulkResponseActionListenerFactory

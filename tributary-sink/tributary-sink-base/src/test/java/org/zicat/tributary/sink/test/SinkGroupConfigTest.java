@@ -21,8 +21,8 @@ package org.zicat.tributary.sink.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.config.ConfigOptions;
-import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
@@ -39,14 +39,14 @@ public class SinkGroupConfigTest {
         final Map<String, Object> mapValue = new HashMap<>();
         mapValue.put("m_1", "m_v_1");
         builder.functionIdentity(AssertFunctionFactory.IDENTITY)
-                .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY);
-        builder.addCustomProperty("aa", "bb")
-                .addCustomPropertyIfContainKey("aa", "cc", "dd")
-                .addCustomPropertyIfContainKey("bb", "ee", "ff")
-                .addCustomProperty("kafka.aa", "hh")
-                .addCustomProperty("kafka.bb", "jj")
-                .addAll(mapValue)
-                .addCustomProperty("kk", 3);
+                .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
+                .addConfig("aa", "bb")
+                .addConfigIfContainKey("aa", "cc", "dd")
+                .addConfigIfContainKey("bb", "ee", "ff")
+                .addConfig("kafka.aa", "hh")
+                .addConfig("kafka.bb", "jj")
+                .addConfigs(mapValue)
+                .addConfig("kk", 3);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         Assert.assertEquals(
                 DefaultPartitionHandlerFactory.IDENTITY, sinkGroupConfig.handlerIdentity());

@@ -22,7 +22,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.zicat.tributary.common.metric.MetricCollector;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 import java.io.Closeable;
 import java.util.Collections;

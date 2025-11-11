@@ -37,7 +37,7 @@ import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.ContextBuilder;
 import org.zicat.tributary.sink.function.Function;
 import org.zicat.tributary.sink.hbase.HBaseFunction;
 
@@ -78,13 +78,17 @@ public class HBaseFunctionTest {
         Mockito.when(ConnectionFactory.createConnection(configuration)).thenReturn(connection);
 
         final ContextBuilder builder =
-                new ContextBuilder().id("f1").groupId("g1").partitionId(0).topic("t1");
-        builder.addCustomProperty(OPTION_HBASE_SITE_XML_PATH, "test-hbase-site.xml");
-        builder.addCustomProperty(OPTION_HBASE_FAMILY, "f1");
-        builder.addCustomProperty(OPTION_HBASE_COLUMN_VALUE_NAME, "v1");
-        builder.addCustomProperty(OPTION_HBASE_COLUMN_HEAD_PREFIX, "h_");
-        builder.addCustomProperty(OPTION_HBASE_TABLE_NAME, "tl1");
-        builder.addCustomProperty(OPTION_HBASE_COLUMN_TOPIC_NAME, "tp1");
+                new ContextBuilder()
+                        .id("f1")
+                        .groupId("g1")
+                        .partitionId(0)
+                        .topic("t1")
+                        .addConfig(OPTION_HBASE_SITE_XML_PATH, "test-hbase-site.xml")
+                        .addConfig(OPTION_HBASE_FAMILY, "f1")
+                        .addConfig(OPTION_HBASE_COLUMN_VALUE_NAME, "v1")
+                        .addConfig(OPTION_HBASE_COLUMN_HEAD_PREFIX, "h_")
+                        .addConfig(OPTION_HBASE_TABLE_NAME, "tl1")
+                        .addConfig(OPTION_HBASE_COLUMN_TOPIC_NAME, "tp1");
         try (Function function =
                 new HBaseFunction() {
                     @Override

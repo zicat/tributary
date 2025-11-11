@@ -19,7 +19,7 @@
 package org.zicat.tributary.sink.hdfs.bucket;
 
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 import java.io.Closeable;
 

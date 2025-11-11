@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
 import org.zicat.tributary.sink.handler.PartitionHandler;
 import org.zicat.tributary.sink.handler.PartitionHandlerFactory;
 

@@ -22,11 +22,12 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
+import org.zicat.tributary.common.config.MemorySize;
 import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEXER_DEFAULT_INDEX;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT;
 import org.zicat.tributary.sink.elasticsearch.RequestIndexer;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.ContextBuilder;
 
 import java.util.Collections;
 
@@ -41,8 +42,14 @@ public class DefaultRequestIndexerTest {
 
             BulkRequest bulkRequest = new BulkRequest();
             ContextBuilder builder =
-                    ContextBuilder.newBuilder().topic("t1").groupId("g1").partitionId(0).id("id1");
-            builder.addCustomProperty(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, "1K");
+                    ContextBuilder.newBuilder()
+                            .topic("t1")
+                            .groupId("g1")
+                            .partitionId(0)
+                            .id("id1")
+                            .addConfig(
+                                    OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT,
+                                    MemorySize.parse("1K"));
             requestIndexer.open(builder.build());
 
             Assert.assertFalse(
@@ -50,7 +57,7 @@ public class DefaultRequestIndexerTest {
                             bulkRequest, null, null, "{}".getBytes(), Collections.emptyMap()));
             Assert.assertEquals(0, bulkRequest.numberOfActions());
 
-            builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, "default_index");
+            builder.addConfig(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, "default_index");
             requestIndexer.open(builder.build());
             Assert.assertTrue(
                     requestIndexer.add(
@@ -64,9 +71,15 @@ public class DefaultRequestIndexerTest {
 
             BulkRequest bulkRequest = new BulkRequest();
             ContextBuilder builder =
-                    ContextBuilder.newBuilder().topic("t1").groupId("g1").partitionId(0).id("id1");
-            builder.addCustomProperty(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, "1K");
-            builder.addCustomProperty(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, "default_index");
+                    ContextBuilder.newBuilder()
+                            .topic("t1")
+                            .groupId("g1")
+                            .partitionId(0)
+                            .id("id1")
+                            .addConfig(
+                                    OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT,
+                                    MemorySize.parse("1K"))
+                            .addConfig(OPTION_REQUEST_INDEXER_DEFAULT_INDEX, "default_index");
             requestIndexer.open(builder.build());
 
             Assert.assertFalse(

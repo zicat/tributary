@@ -23,7 +23,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;

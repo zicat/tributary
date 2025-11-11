@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
-import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.function.PrintFunctionFactory;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import org.zicat.tributary.sink.handler.DirectPartitionHandler;
@@ -43,16 +43,14 @@ public class DefaultPartitionHandlerFactoryTest {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
                             .functionIdentity(PrintFunctionFactory.IDENTITY);
-            builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, 1);
-            try (PartitionHandler handler =
-                    factory.create(groupId, channel, 0, builder.build())) {
+            builder.addConfig(DefaultPartitionHandlerFactory.OPTION_THREADS, 1);
+            try (PartitionHandler handler = factory.create(groupId, channel, 0, builder.build())) {
                 handler.open();
                 Assert.assertEquals(DirectPartitionHandler.class, handler.getClass());
             }
 
-            builder.addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, 2);
-            try (PartitionHandler handler =
-                    factory.create(groupId, channel, 0, builder.build())) {
+            builder.addConfig(DefaultPartitionHandlerFactory.OPTION_THREADS, 2);
+            try (PartitionHandler handler = factory.create(groupId, channel, 0, builder.build())) {
                 handler.open();
                 Assert.assertEquals(MultiThreadPartitionHandler.class, handler.getClass());
             }

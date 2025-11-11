@@ -16,12 +16,13 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink;
+package org.zicat.tributary.sink.config;
 
+import org.zicat.tributary.common.config.ConfigBuilder;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 
 /** SinkGroupConfigBuilder. */
-public class SinkGroupConfigBuilder extends CustomConfigBuilder {
+public class SinkGroupConfigBuilder extends ConfigBuilder<SinkGroupConfigBuilder, SinkGroupConfig> {
 
     private String handlerIdentity = DefaultPartitionHandlerFactory.IDENTITY;
     private String functionIdentity;
@@ -61,15 +62,11 @@ public class SinkGroupConfigBuilder extends CustomConfigBuilder {
         return this;
     }
 
-    /**
-     * build SinkGroupConfig.
-     *
-     * @return SinkGroupConfig
-     */
+    @Override
     public SinkGroupConfig build() {
         if (functionIdentity == null) {
             throw new IllegalStateException("function identity must not null");
         }
-        return new SinkGroupConfig(handlerIdentity, functionIdentity, customConfig);
+        return new SinkGroupConfig(handlerIdentity, functionIdentity, config);
     }
 }

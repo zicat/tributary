@@ -44,7 +44,7 @@ import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.test.util.FileUtils;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.ContextBuilder;
 import org.zicat.tributary.sink.hdfs.HDFSFunction;
 import org.zicat.tributary.sink.hdfs.bucket.BucketGenerator;
 import org.zicat.tributary.sink.hdfs.bucket.ProcessTimeBucketGenerator;
@@ -103,12 +103,16 @@ public class HDFSFunctionTest {
             final String timeFormat = "yyyyMMdd_HHmm";
             final String timeZoneId = "GMT+8";
             final ContextBuilder builder =
-                    new ContextBuilder().id("id1").partitionId(0).groupId("g1").topic(topic);
-            builder.addCustomProperty(OPTION_SINK_PATH, DIR.getCanonicalFile().getPath())
-                    .addCustomProperty(OPTION_BUCKET_DATE_FORMAT, timeFormat)
-                    .addCustomProperty(OPTION_BUCKET_DATE_TIMEZONE, timeZoneId)
-                    .addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC, "snappy")
-                    .addCustomProperty(OPTION_CLOCK, mockClock);
+                    new ContextBuilder()
+                            .id("id1")
+                            .partitionId(0)
+                            .groupId("g1")
+                            .topic(topic)
+                            .addConfig(OPTION_SINK_PATH, DIR.getCanonicalFile().getPath())
+                            .addConfig(OPTION_BUCKET_DATE_FORMAT, timeFormat)
+                            .addConfig(OPTION_BUCKET_DATE_TIMEZONE, timeZoneId)
+                            .addConfig(OPTION_OUTPUT_COMPRESSION_CODEC, "snappy")
+                            .addConfig(OPTION_CLOCK, mockClock);
 
             function.open(builder.build());
 

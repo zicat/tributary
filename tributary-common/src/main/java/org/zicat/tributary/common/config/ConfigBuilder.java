@@ -16,17 +16,16 @@
  * limitations under the License.
  */
 
-package org.zicat.tributary.sink;
-
-import org.zicat.tributary.common.config.ConfigOption;
+package org.zicat.tributary.common.config;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/** CustomConfigBuilder. */
-public class CustomConfigBuilder {
+/** ConfigBuilder. */
+@SuppressWarnings("unchecked")
+public abstract class ConfigBuilder<T extends ConfigBuilder<T, V>, V extends ReadableConfig> {
 
-    protected final Map<String, Object> customConfig = new HashMap<>();
+    protected final Map<String, Object> config = new HashMap<>();
 
     /**
      * add property.
@@ -35,9 +34,9 @@ public class CustomConfigBuilder {
      * @param value value
      * @return this
      */
-    public final CustomConfigBuilder addCustomProperty(String key, Object value) {
-        customConfig.put(key, value);
-        return this;
+    public final T addConfig(String key, Object value) {
+        config.put(key, value);
+        return (T) this;
     }
 
     /**
@@ -46,12 +45,11 @@ public class CustomConfigBuilder {
      * @param option option
      * @param value value
      * @return this
-     * @param <T> T
      */
-    public final <T> CustomConfigBuilder addCustomProperty(ConfigOption<T> option, Object value) {
+    public final <X> T addConfig(ConfigOption<X> option, X value) {
         final Object realValue =
                 option.hasDefaultValue() && value == null ? option.defaultValue() : value;
-        return addCustomProperty(option.key(), realValue);
+        return addConfig(option.key(), realValue);
     }
 
     /**
@@ -60,9 +58,9 @@ public class CustomConfigBuilder {
      * @param value values.
      * @return this
      */
-    public final CustomConfigBuilder addAll(Map<String, Object> value) {
-        customConfig.putAll(value);
-        return this;
+    public final T addConfigs(Map<String, Object> value) {
+        config.putAll(value);
+        return (T) this;
     }
 
     /**
@@ -73,11 +71,17 @@ public class CustomConfigBuilder {
      * @param value value
      * @return this
      */
-    public final CustomConfigBuilder addCustomPropertyIfContainKey(
-            String containsKey, String key, Object value) {
-        if (customConfig.containsKey(containsKey)) {
-            return addCustomProperty(key, value);
+    public final T addConfigIfContainKey(String containsKey, String key, Object value) {
+        if (config.containsKey(containsKey)) {
+            return addConfig(key, value);
         }
-        return this;
+        return (T) this;
     }
+
+    /**
+     * build config.
+     *
+     * @return config
+     */
+    public abstract V build();
 }

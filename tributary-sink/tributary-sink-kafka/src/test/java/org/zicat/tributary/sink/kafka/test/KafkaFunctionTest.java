@@ -30,8 +30,8 @@ import org.junit.Test;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.records.*;
-import org.zicat.tributary.sink.function.Context;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.Context;
+import org.zicat.tributary.sink.config.ContextBuilder;
 import org.zicat.tributary.sink.kafka.KafkaFunction;
 import org.zicat.tributary.sink.kafka.KafkaFunctionFactory;
 
@@ -105,8 +105,12 @@ public class KafkaFunctionTest {
                         new DefaultRecords(topic, recordsHeader, Arrays.asList(record1, record2)));
         try (KafkaFunction function = new MockKafkaFunction()) {
             final ContextBuilder builder =
-                    new ContextBuilder().id("id").partitionId(0).groupId(groupId).topic(topic);
-            builder.addCustomProperty(KafkaFunctionFactory.OPTION_TOPIC, "aa_${topic}");
+                    new ContextBuilder()
+                            .id("id")
+                            .partitionId(0)
+                            .groupId(groupId)
+                            .topic(topic)
+                            .addConfig(KafkaFunctionFactory.OPTION_TOPIC, "aa_${topic}");
             function.open(builder.build());
             final Offset offset = new Offset(2, 0);
             function.process(offset, recordsList.iterator());

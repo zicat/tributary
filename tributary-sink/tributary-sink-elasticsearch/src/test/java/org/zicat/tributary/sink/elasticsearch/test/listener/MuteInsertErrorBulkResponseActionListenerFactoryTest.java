@@ -31,7 +31,7 @@ import org.zicat.tributary.sink.elasticsearch.listener.BulkResponseActionListene
 import static org.zicat.tributary.sink.elasticsearch.listener.MuteInsertErrorBulkResponseActionListener.ERROR_COUNTER;
 import static org.zicat.tributary.sink.elasticsearch.listener.MuteInsertErrorBulkResponseActionListener.LABEL_INDEX;
 import org.zicat.tributary.sink.elasticsearch.listener.MuteInsertErrorBulkResponseActionListenerFactory;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.ContextBuilder;
 
 import java.util.concurrent.TimeUnit;
 

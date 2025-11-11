@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.sink.config.Context;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;

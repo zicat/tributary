@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.config.MemorySize;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
-import org.zicat.tributary.sink.function.ContextBuilder;
+import org.zicat.tributary.sink.config.ContextBuilder;
 import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
 import org.zicat.tributary.sink.hdfs.bucket.BucketWriter;
 import org.zicat.tributary.sink.hdfs.test.MockFileSystem;
@@ -293,13 +293,16 @@ public class BucketWriterTest {
             if (writer == null) {
                 writer = new MockHDFSRecordsWriter();
             }
-            ContextBuilder builder = new ContextBuilder();
-            builder.addCustomProperty(OPTION_ROLL_SIZE, new MemorySize(rollSize));
-            builder.addCustomProperty(OPTION_MAX_RETRIES, maxRetries);
-            builder.addCustomProperty(OPTION_WRITER_IDENTITY, MockHDFSRecordsWriterFactory.ID);
-            builder.addCustomProperty(MockHDFSRecordsWriterFactory.OPTION_WRITER, writer);
-            builder.addCustomProperty(OPTION_OUTPUT_COMPRESSION_CODEC, codeC);
-            builder.id("1").groupId("g1").topic("t1");
+            ContextBuilder builder =
+                    new ContextBuilder()
+                            .addConfig(OPTION_ROLL_SIZE, new MemorySize(rollSize))
+                            .addConfig(OPTION_MAX_RETRIES, maxRetries)
+                            .addConfig(OPTION_WRITER_IDENTITY, MockHDFSRecordsWriterFactory.ID)
+                            .addConfig(MockHDFSRecordsWriterFactory.OPTION_WRITER, writer)
+                            .addConfig(OPTION_OUTPUT_COMPRESSION_CODEC, codeC)
+                            .id("1")
+                            .groupId("g1")
+                            .topic("t1");
 
             return new BucketWriter(builder.build(), bucketPath, fileName) {
                 @Override

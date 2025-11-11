@@ -35,7 +35,7 @@ import org.elasticsearch.xcontent.XContentType;
 import org.zicat.tributary.common.config.MemorySize;
 import org.zicat.tributary.common.metric.MetricKey;
 import static org.zicat.tributary.sink.elasticsearch.ElasticsearchFunctionFactory.OPTION_BULK_MAX_BYTES;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 import java.util.Collections;
 import java.util.Map;

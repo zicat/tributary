@@ -23,7 +23,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.records.RecordsIterator;
 import org.zicat.tributary.common.util.IOUtils;
-import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
 import org.zicat.tributary.sink.function.Function;
 
 import java.io.IOException;

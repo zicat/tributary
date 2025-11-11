@@ -20,7 +20,7 @@ package org.zicat.tributary.sink.handler;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.sink.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
 
 /** PartitionHandlerFactory. */
 public interface PartitionHandlerFactory extends SpiFactory {

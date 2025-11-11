@@ -23,8 +23,8 @@ import static org.zicat.tributary.common.records.RecordsUtils.createStringRecord
 import org.junit.Assert;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
-import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import static org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory.OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT;
@@ -57,10 +57,10 @@ public class SinkHandlerTestBase {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
                             .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
-                            .functionIdentity(AssertFunctionFactory.IDENTITY);
-            builder.addCustomProperty(AssertFunction.KEY_ASSERT_DATA, testData)
-                    .addCustomProperty(DefaultPartitionHandlerFactory.OPTION_THREADS, threads)
-                    .addCustomProperty(OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT.key(), false);
+                            .functionIdentity(AssertFunctionFactory.IDENTITY)
+                            .addConfig(AssertFunction.KEY_ASSERT_DATA, testData)
+                            .addConfig(DefaultPartitionHandlerFactory.OPTION_THREADS, threads)
+                            .addConfig(OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT.key(), false);
             final SinkGroupConfig sinkGroupConfig = builder.build();
             try (SinkGroupManager sinkManager =
                     new SinkGroupManager(groupId, channel, sinkGroupConfig)) {

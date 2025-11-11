@@ -35,7 +35,7 @@ import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.elasticsearch.listener.AbstractActionListener;
 import org.zicat.tributary.sink.elasticsearch.listener.BulkResponseActionListenerFactory;
 import org.zicat.tributary.sink.function.AbstractFunction;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 
 import java.util.Collections;
 import java.util.HashMap;

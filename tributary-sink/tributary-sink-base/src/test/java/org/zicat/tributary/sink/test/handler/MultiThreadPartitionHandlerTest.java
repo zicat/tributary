@@ -24,7 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
-import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.MultiThreadPartitionHandler;
 
 import java.io.IOException;
@@ -48,7 +48,7 @@ public class MultiThreadPartitionHandlerTest {
                 handler.open();
             }
             threads = 10;
-            builder.addCustomProperty(OPTION_THREADS, threads);
+            builder.addConfig(OPTION_THREADS, threads);
             try (MultiThreadPartitionHandler handler2 =
                     new MultiThreadPartitionHandler(
                             groupId, channel, 0, threads, builder.build())) {

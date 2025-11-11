@@ -28,8 +28,8 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.server.component.SinkComponent.SinkGroupManagerList;
-import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 
@@ -110,7 +110,7 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
                         .handlerIdentity(dynamicSinkValue(groupId, OPTION_SINK_HANDLER_ID));
         final String keyPrefix = groupId + ".";
         final ReadableConfig groupConfig = sinkConfig.filterAndRemovePrefixKey(keyPrefix);
-        groupConfig.forEach(configBuilder::addCustomProperty);
+        groupConfig.forEach(configBuilder::addConfig);
         return configBuilder;
     }
 

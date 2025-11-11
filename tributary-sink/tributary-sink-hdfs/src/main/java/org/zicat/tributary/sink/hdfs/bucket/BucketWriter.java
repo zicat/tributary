@@ -29,7 +29,7 @@ import org.zicat.tributary.common.util.Functions.Runnable;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
-import org.zicat.tributary.sink.function.Context;
+import org.zicat.tributary.sink.config.Context;
 import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
 import org.zicat.tributary.sink.hdfs.HDFSRecordsWriterFactory;
 import org.zicat.tributary.sink.hdfs.RecordsWriter;

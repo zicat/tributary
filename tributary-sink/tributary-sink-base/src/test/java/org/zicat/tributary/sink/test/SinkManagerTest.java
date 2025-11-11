@@ -28,8 +28,8 @@ import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.channel.test.SourceThread;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.util.Threads;
-import org.zicat.tributary.sink.SinkGroupConfig;
-import org.zicat.tributary.sink.SinkGroupConfigBuilder;
+import org.zicat.tributary.sink.config.SinkGroupConfig;
+import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 
@@ -73,8 +73,8 @@ public class SinkManagerTest {
             final SinkGroupConfigBuilder builder =
                     SinkGroupConfigBuilder.newBuilder()
                             .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
-                            .functionIdentity("assertCount");
-            builder.addCustomProperty(OPTION_ASSERT_COUNT, dataSize);
+                            .functionIdentity("assertCount")
+                            .addConfig(OPTION_ASSERT_COUNT, dataSize);
             final SinkGroupConfig sinkGroupConfig = builder.build();
             // waiting source threads finish and flush
             final List<SinkGroupManager> groupManagers = new ArrayList<>();

@@ -22,6 +22,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.records.Records;
+import org.zicat.tributary.sink.config.Context;
 
 import java.util.ArrayList;
 import java.util.Iterator;
