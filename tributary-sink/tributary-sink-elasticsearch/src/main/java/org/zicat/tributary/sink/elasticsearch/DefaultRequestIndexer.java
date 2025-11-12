@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -57,17 +56,23 @@ public class DefaultRequestIndexer implements RequestIndexer {
                     .description("The max size of a record, default bulk.max.bytes")
                     .defaultValue(null);
 
+    public static final ConfigOption<String> OPTION_REQUEST_INDEX_DEFAULT_VALUE_FIELD_NAME =
+            ConfigOptions.key("request.indexer.default.value-field-name-if-not-json")
+                    .stringType()
+                    .description("The field name to store the original value if value is not json.")
+                    .defaultValue("message");
+
     public static final MetricKey DISCARD_COUNTER =
             new MetricKey("tributary_sink_elasticsearch_discard_counter");
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestIndexer.class);
-    private static final String ERROR_VALUE_FORMAT = "skip invalid message, index:{}, value: {}";
     private static final ObjectMapper MAPPER = new ObjectMapper();
     public static final String KEY_TOPIC = "_topic";
 
     private transient String index;
     private transient long discardCounter;
     private transient long recordSizeLimit;
+    private transient String valueFieldName;
 
     @Override
     public void open(Context context) {
@@ -75,6 +80,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
         recordSizeLimit =
                 context.get(OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT, OPTION_BULK_MAX_BYTES)
                         .getBytes();
+        valueFieldName = context.get(OPTION_REQUEST_INDEX_DEFAULT_VALUE_FIELD_NAME);
     }
 
     @Override
@@ -105,7 +111,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
     protected IndexRequest indexRequest(
             String topic, byte[] key, byte[] value, Map<String, byte[]> headers)
             throws JsonProcessingException {
-        final String realIndex = index == null ? topic : index;
+        final String realIndex = index(topic);
         if (realIndex == null) {
             discardCounter++;
             LOG.warn("skip invalid message, index is null");
@@ -119,20 +125,7 @@ public class DefaultRequestIndexer implements RequestIndexer {
         }
         final IndexRequest indexRequest = new IndexRequest(realIndex);
         indexRequest.id(id(topic, key, value, headers));
-        final JsonNode jsonNode;
-        try {
-            jsonNode = MAPPER.readTree(value);
-            if (!(jsonNode instanceof ObjectNode)) {
-                LOG.warn(ERROR_VALUE_FORMAT, realIndex, new String(value, UTF_8));
-                discardCounter++;
-                return null;
-            }
-        } catch (Exception e) {
-            discardCounter++;
-            LOG.warn(ERROR_VALUE_FORMAT, realIndex, new String(value, UTF_8), e);
-            return null;
-        }
-        final ObjectNode objectNode = (ObjectNode) jsonNode;
+        final ObjectNode objectNode = parseValue(value);
         for (Entry<String, byte[]> entry : headers.entrySet()) {
             if (objectNode.has(entry.getKey())) {
                 continue;
@@ -145,6 +138,32 @@ public class DefaultRequestIndexer implements RequestIndexer {
         }
         indexRequest.source(MAPPER.writeValueAsBytes(objectNode), XContentType.JSON);
         return indexRequest;
+    }
+
+    /**
+     * get index.
+     *
+     * @param topic topic
+     * @return real index
+     */
+    protected String index(String topic) {
+        return index == null ? topic : index;
+    }
+
+    /**
+     * parse value.
+     *
+     * @param value value
+     * @return ObjectNode
+     */
+    protected ObjectNode parseValue(byte[] value) {
+        try {
+            return (ObjectNode) MAPPER.readTree(value);
+        } catch (Exception e) {
+            final ObjectNode objectNode = MAPPER.createObjectNode();
+            objectNode.put(valueFieldName, new String(value, UTF_8));
+            return objectNode;
+        }
     }
 
     @Override

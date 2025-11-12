@@ -114,8 +114,8 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
         function.open(context);
         try {
             function.process(Offset.ZERO, recordsList.iterator());
-            Assert.assertEquals(2, function.sinkCount());
-            Assert.assertEquals(1, (int) function.counterFamily().get(DISCARD_COUNTER).intValue());
+            Assert.assertEquals(3, function.sinkCount());
+            Assert.assertEquals(0, (int) function.counterFamily().get(DISCARD_COUNTER).intValue());
             function.sync();
             Assert.assertEquals(Offset.ZERO, function.committableOffset());
             Assert.assertTrue(function.isEmpty());

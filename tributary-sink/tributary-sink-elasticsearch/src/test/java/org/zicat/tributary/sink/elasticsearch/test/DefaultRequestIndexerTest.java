@@ -19,6 +19,7 @@
 package org.zicat.tributary.sink.elasticsearch.test;
 
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
@@ -26,6 +27,7 @@ import org.zicat.tributary.common.config.MemorySize;
 import org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEXER_DEFAULT_INDEX;
 import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEX_DEFAULT_RECORD_SIZE_LIMIT;
+import static org.zicat.tributary.sink.elasticsearch.DefaultRequestIndexer.OPTION_REQUEST_INDEX_DEFAULT_VALUE_FIELD_NAME;
 import org.zicat.tributary.sink.elasticsearch.RequestIndexer;
 import org.zicat.tributary.sink.config.ContextBuilder;
 
@@ -87,10 +89,17 @@ public class DefaultRequestIndexerTest {
                             bulkRequest, null, null, new byte[1024], Collections.emptyMap()));
             Assert.assertEquals(0, bulkRequest.numberOfActions());
 
-            Assert.assertFalse(
+            Assert.assertTrue(
                     requestIndexer.add(
-                            bulkRequest, null, null, "[]".getBytes(), Collections.emptyMap()));
-            Assert.assertEquals(0, bulkRequest.numberOfActions());
+                            bulkRequest, null, null, "aaa".getBytes(), Collections.emptyMap()));
+            Assert.assertEquals(1, bulkRequest.numberOfActions());
+            IndexRequest request = (IndexRequest) bulkRequest.requests().get(0);
+            Assert.assertEquals("default_index", request.index());
+            Assert.assertNull(request.id());
+            Assert.assertEquals(
+                    "aaa",
+                    request.sourceAsMap()
+                            .get(OPTION_REQUEST_INDEX_DEFAULT_VALUE_FIELD_NAME.defaultValue()));
         }
     }
 }
