@@ -20,14 +20,14 @@ package org.zicat.tributary.sink.test;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.sink.config.SinkGroupConfig;
 import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
 import org.zicat.tributary.sink.test.function.AssertFunctionFactory;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 /** SinkGroupConfigBuilder. */
@@ -36,24 +36,26 @@ public class SinkGroupConfigTest {
     @Test
     public void test() {
         final SinkGroupConfigBuilder builder = new SinkGroupConfigBuilder();
-        final Map<String, Object> mapValue = new HashMap<>();
-        mapValue.put("m_1", "m_v_1");
+        final ConfigOption<String> aa = ConfigOptions.key("aa").stringType().noDefaultValue();
+        final ConfigOption<String> cc = ConfigOptions.key("cc").stringType().noDefaultValue();
+        final ConfigOption<String> ee = ConfigOptions.key("ee").stringType().noDefaultValue();
         builder.functionIdentity(AssertFunctionFactory.IDENTITY)
                 .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
-                .addConfig("aa", "bb")
-                .addConfigIfContainKey("aa", "cc", "dd")
-                .addConfigIfContainKey("bb", "ee", "ff")
+                .addConfig(aa.key(), "bb")
+                .addConfigIfContainKey(aa.key(), cc.key(), "dd")
+                .addConfigIfContainKey("bb", ee.key(), "ff")
                 .addConfig("kafka.aa", "hh")
                 .addConfig("kafka.bb", "jj")
-                .addConfigs(mapValue)
+                .addConfigs(new ReadableConfigConfigBuilder().addConfig("m_1", "m_v_1").build())
                 .addConfig("kk", 3);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         Assert.assertEquals(
                 DefaultPartitionHandlerFactory.IDENTITY, sinkGroupConfig.handlerIdentity());
         Assert.assertEquals(AssertFunctionFactory.IDENTITY, sinkGroupConfig.functionIdentity());
-        Assert.assertEquals("bb", sinkGroupConfig.get("aa"));
-        Assert.assertEquals("dd", sinkGroupConfig.get("cc"));
-        Assert.assertNull(sinkGroupConfig.get("ee"));
+        Assert.assertEquals("bb", sinkGroupConfig.get(aa));
+        Assert.assertEquals("dd", sinkGroupConfig.get(cc));
+        Assert.assertNull(sinkGroupConfig.get(ee, (String) null));
+
         final Properties properties =
                 sinkGroupConfig.filterAndRemovePrefixKey("kafka.").toProperties();
         Assert.assertEquals("hh", properties.getProperty("aa"));

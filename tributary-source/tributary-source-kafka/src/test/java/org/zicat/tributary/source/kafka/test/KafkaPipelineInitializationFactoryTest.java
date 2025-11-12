@@ -20,6 +20,7 @@ package org.zicat.tributary.source.kafka.test;
 
 import static org.apache.kafka25.ApiKeys.*;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory.*;
 
@@ -41,7 +42,6 @@ import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
@@ -72,18 +72,22 @@ public class KafkaPipelineInitializationFactoryTest {
 
     @Test
     public void test() throws Exception {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_TOPIC_PARTITION_COUNT, partitions);
-        config.put(OPTION_KAFKA_SASL_PLAIN, true);
-        config.put(OPTION_SASL_USERS, AUTH_USER + "_" + AUTH_PASS);
-        config.put(OPTION_KAFKA_WORKER_THREADS, -1);
-        config.put(OPTION_KAFKA_ADVERTISED_HOST_PATTERN, "localhost");
+        final ReadableConfigConfigBuilder builder =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_TOPIC_PARTITION_COUNT, partitions)
+                        .addConfig(OPTION_KAFKA_SASL_PLAIN, true)
+                        .addConfig(OPTION_SASL_USERS, AUTH_USER + "_" + AUTH_PASS)
+                        .addConfig(OPTION_KAFKA_WORKER_THREADS, -1)
+                        .addConfig(OPTION_KAFKA_ADVERTISED_HOST_PATTERN, "localhost");
         final String zkPath = "/kafka_test_register";
         try (TestingServer server = new TestingServer();
-                Channel channel = memoryChannelFactory(groupId).createChannel(tp.topic(), config)) {
+                Channel channel =
+                        memoryChannelFactory(groupId).createChannel(tp.topic(), builder.build())) {
             server.start();
-            config.put(OPTION_ZOOKEEPER_CONNECT, server.getConnectString() + zkPath);
-            test(channel, config);
+            test(
+                    channel,
+                    builder.addConfig(OPTION_ZOOKEEPER_CONNECT, server.getConnectString() + zkPath)
+                            .build());
         }
     }
 

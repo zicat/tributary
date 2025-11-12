@@ -58,7 +58,7 @@ public class SinkHandlerTestBase {
                     SinkGroupConfigBuilder.newBuilder()
                             .handlerIdentity(DefaultPartitionHandlerFactory.IDENTITY)
                             .functionIdentity(AssertFunctionFactory.IDENTITY)
-                            .addConfig(AssertFunction.KEY_ASSERT_DATA, testData)
+                            .addConfig(AssertFunction.OPTION_ASSERT_DATA, testData)
                             .addConfig(DefaultPartitionHandlerFactory.OPTION_THREADS, threads)
                             .addConfig(OPTION_PARTITION_GRACEFUL_CLOSE_QUICK_EXIT.key(), false);
             final SinkGroupConfig sinkGroupConfig = builder.build();

@@ -22,15 +22,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.config.ConfigOptions;
 import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.common.config.PercentSize;
+import org.zicat.tributary.common.config.ReadableConfig;
 
 /** ReadableConfigTest. */
 public class ReadableConfigTest {
 
     @Test
     public void test() {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
+        ReadableConfig config = new ReadableConfigConfigBuilder().build();
         Assert.assertEquals(
                 "bb", config.get(ConfigOptions.key("aa").stringType().defaultValue(null), "bb"));
         Assert.assertEquals(
@@ -42,7 +43,7 @@ public class ReadableConfigTest {
         } catch (Exception ignore) {
         }
 
-        config.put("aa", "bb");
+        config = new ReadableConfigConfigBuilder().addConfig("aa", "bb").build();
         Assert.assertEquals(
                 "bb", config.get(ConfigOptions.key("aa").stringType().noDefaultValue()));
         Assert.assertEquals(
@@ -54,8 +55,8 @@ public class ReadableConfigTest {
 
     @Test
     public void testListType() {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put("aa", "aa,bb;,,cc");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder().addConfig("aa", "aa,bb;,,cc").build();
         Assert.assertArrayEquals(
                 new String[] {"aa", "bb;", "cc"},
                 config.get(ConfigOptions.key("aa").listType(COMMA_SPLIT_HANDLER).noDefaultValue())
@@ -64,9 +65,11 @@ public class ReadableConfigTest {
 
     @Test
     public void testPercentType() {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put("aa", "10.1 % ");
-        config.put("bb", "20%");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig("aa", "10.1 % ")
+                        .addConfig("bb", "20%")
+                        .build();
         Assert.assertEquals(
                 10.1,
                 config.get(ConfigOptions.key("aa").percentType().noDefaultValue()).getPercent(),
@@ -109,12 +112,14 @@ public class ReadableConfigTest {
 
     @Test
     public void testEnumType() {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put("aa", "none");
-        config.put("bb", "zstd");
-        config.put("cc", "snappy");
-        config.put("dd", "Zstd");
-        config.put("ee", "ZSTD");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig("aa", "none")
+                        .addConfig("bb", "zstd")
+                        .addConfig("cc", "snappy")
+                        .addConfig("dd", "Zstd")
+                        .addConfig("ee", "ZSTD")
+                        .build();
         Assert.assertEquals(
                 CompressionTypeMock.NONE,
                 config.get(
@@ -150,12 +155,14 @@ public class ReadableConfigTest {
 
     @Test
     public void testDurationType() {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put("aa", "10ms");
-        config.put("bb", "20sec");
-        config.put("cc", "30min");
-        config.put("dd", "40h");
-        config.put("ee", "50d");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig("aa", "10ms")
+                        .addConfig("bb", "20sec")
+                        .addConfig("cc", "30min")
+                        .addConfig("dd", "40h")
+                        .addConfig("ee", "50d")
+                        .build();
         Assert.assertEquals(
                 10L,
                 config.get(ConfigOptions.key("aa").durationType().noDefaultValue()).toMillis());
@@ -175,12 +182,14 @@ public class ReadableConfigTest {
 
     @Test
     public void testMemoryType() {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put("aa", "10b");
-        config.put("bb", "20kb");
-        config.put("cc", "30mb");
-        config.put("dd", "40gb");
-        config.put("ee", "50tb");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig("aa", "10b")
+                        .addConfig("bb", "20kb")
+                        .addConfig("cc", "30mb")
+                        .addConfig("dd", "40gb")
+                        .addConfig("ee", "50tb")
+                        .build();
         Assert.assertEquals(
                 10L, config.get(ConfigOptions.key("aa").memoryType().noDefaultValue()).getBytes());
         Assert.assertEquals(

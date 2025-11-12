@@ -20,7 +20,7 @@ package org.zicat.tributary.source.base.test.netty;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import static org.zicat.tributary.source.base.AbstractSource.OPTION_CHANNEL_APPEND_RESULT_TYPE;
 import org.zicat.tributary.source.base.AppendResultType;
 
@@ -29,15 +29,13 @@ public class AppendResultTypeTest {
 
     @Test
     public void test() {
-        DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_CHANNEL_APPEND_RESULT_TYPE.key(), "block");
-        Assert.assertEquals(AppendResultType.BLOCK, config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE));
+        ReadableConfigConfigBuilder builder = new ReadableConfigConfigBuilder();
+        builder.addConfig(OPTION_CHANNEL_APPEND_RESULT_TYPE.key(), "block");
+        Assert.assertEquals(
+                AppendResultType.BLOCK, builder.build().get(OPTION_CHANNEL_APPEND_RESULT_TYPE));
 
-        config.put(OPTION_CHANNEL_APPEND_RESULT_TYPE.key(), "storage");
-        Assert.assertEquals(AppendResultType.STORAGE, config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE));
-
-        config.put(OPTION_CHANNEL_APPEND_RESULT_TYPE.key(), "StoragE");
-        Assert.assertEquals(config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE.key()), "StoragE");
-        Assert.assertEquals(AppendResultType.STORAGE, config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE));
+        builder.addConfig(OPTION_CHANNEL_APPEND_RESULT_TYPE.key(), "storage");
+        Assert.assertEquals(
+                AppendResultType.STORAGE, builder.build().get(OPTION_CHANNEL_APPEND_RESULT_TYPE));
     }
 }

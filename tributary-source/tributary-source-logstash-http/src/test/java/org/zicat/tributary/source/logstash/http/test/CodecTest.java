@@ -20,7 +20,8 @@ package org.zicat.tributary.source.logstash.http.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.source.logstash.http.Codec;
 import org.zicat.tributary.source.logstash.http.LogstashHttpPipelineInitializationFactory;
 
@@ -35,10 +36,13 @@ public class CodecTest {
 
     @Test
     public void testPlain() throws IOException {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(
-                LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC.key(),
-                Codec.PLAIN.getName());
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(
+                                LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC
+                                        .key(),
+                                Codec.PLAIN.getName())
+                        .build();
         final Codec codec =
                 config.get(LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC);
         Assert.assertEquals(Codec.PLAIN, codec);
@@ -51,10 +55,13 @@ public class CodecTest {
 
     @Test
     public void testJson() throws IOException {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(
-                LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC.key(),
-                Codec.JSON.getName());
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(
+                                LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC
+                                        .key(),
+                                Codec.JSON.getName())
+                        .build();
         final Codec codec =
                 config.get(LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC);
         Assert.assertEquals(Codec.JSON, codec);
@@ -67,7 +74,8 @@ public class CodecTest {
         // test nest
         final List<Map<String, Object>> dataList2 =
                 codec.encode("{\"id\":{\"name\":\"zicat\"}}".getBytes(StandardCharsets.UTF_8));
-        Assert.assertEquals("zicat", ((Map<String, Object>) dataList2.get(0).get("id")).get("name"));
+        Assert.assertEquals(
+                "zicat", ((Map<String, Object>) dataList2.get(0).get("id")).get("name"));
 
         // test array
         final List<Map<String, Object>> dataList3 =

@@ -20,7 +20,7 @@ package org.zicat.tributary.source.logstash.base.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.source.logstash.base.DefaultMessageFilterFactory;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilterFactory;
@@ -32,7 +32,7 @@ public class DefaultMessageFilterFactoryTest {
     public void test() throws Exception {
         try (MessageFilterFactory messageFilterFactory =
                 MessageFilterFactory.findFactory(DefaultMessageFilterFactory.IDENTITY)) {
-            messageFilterFactory.open(new DefaultReadableConfig());
+            messageFilterFactory.open(new ReadableConfigConfigBuilder().build());
             Assert.assertNotNull(
                     messageFilterFactory.getMessageFilter().convert("", (Message<Object>) null));
         }

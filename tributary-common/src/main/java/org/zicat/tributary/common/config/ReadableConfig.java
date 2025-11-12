@@ -18,21 +18,13 @@
 
 package org.zicat.tributary.common.config;
 
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
 /** ReadableConfig. */
 public interface ReadableConfig {
-
-    /**
-     * group by keyHandler.
-     *
-     * @param keyHandler keyHandler
-     * @return set
-     */
-    Set<String> groupKeys(KeyHandler keyHandler);
 
     /**
      * forEach.
@@ -42,20 +34,6 @@ public interface ReadableConfig {
     void forEach(BiConsumer<? super String, ? super Object> consumer);
 
     /**
-     * create with values.
-     *
-     * @param values values
-     * @return Readable Config
-     */
-    static ReadableConfig create(Map<String, Object> values) {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        if (values != null) {
-            config.putAll(values);
-        }
-        return config;
-    }
-
-    /**
      * get value by config option.
      *
      * @param configOption configOption
@@ -63,6 +41,18 @@ public interface ReadableConfig {
      * @return value
      */
     <T> T get(ConfigOption<T> configOption);
+
+    /**
+     * group by keyHandler.
+     *
+     * @param keyHandler keyHandler
+     * @return set
+     */
+    default Set<String> groupKeys(KeyHandler keyHandler) {
+        final Set<String> result = new HashSet<>();
+        forEach((k, v) -> result.add(keyHandler.apply(k)));
+        return result;
+    }
 
     /**
      * get value by config option, if null return defaultValue.
@@ -90,12 +80,7 @@ public interface ReadableConfig {
      * @param <T> T
      */
     default <T> T get(ConfigOption<T> configOption, ConfigOption<T> defaultValue) {
-        try {
-            final T t = get(configOption);
-            return t == null ? get(defaultValue) : t;
-        } catch (Exception e) {
-            return get(defaultValue);
-        }
+        return get(configOption, defaultValue.defaultValue());
     }
 
     /**
@@ -104,14 +89,27 @@ public interface ReadableConfig {
      * @param prefixKey prefixKey
      * @return ReadableConfig
      */
-    ReadableConfig filterAndRemovePrefixKey(String prefixKey);
+    default ReadableConfig filterAndRemovePrefixKey(String prefixKey) {
+        final ReadableConfigConfigBuilder builder = new ReadableConfigConfigBuilder();
+        forEach(
+                (k, v) -> {
+                    if (k.indexOf(prefixKey) == 0) {
+                        builder.addConfig(k.substring(prefixKey.length()), v);
+                    }
+                });
+        return builder.build();
+    }
 
     /**
      * to properties.
      *
      * @return properties.
      */
-    Properties toProperties();
+    default Properties toProperties() {
+        final Properties properties = new Properties();
+        forEach(properties::put);
+        return properties;
+    }
 
     /** KeyHandler. */
     interface KeyHandler {

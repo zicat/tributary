@@ -55,11 +55,11 @@ public abstract class ConfigBuilder<T extends ConfigBuilder<T, V>, V extends Rea
     /**
      * add all properties.
      *
-     * @param value values.
+     * @param config config.
      * @return this
      */
-    public final T addConfigs(Map<String, Object> value) {
-        config.putAll(value);
+    public final T addConfigs(ReadableConfig config) {
+        config.forEach(this::addConfig);
         return (T) this;
     }
 

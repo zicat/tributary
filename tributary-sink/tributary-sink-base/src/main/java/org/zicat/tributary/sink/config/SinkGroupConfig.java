@@ -30,7 +30,7 @@ public class SinkGroupConfig extends DefaultReadableConfig {
 
     SinkGroupConfig(
             String handlerIdentity, String functionIdentity, Map<String, Object> customConfig) {
-        putAll(customConfig);
+        super(customConfig);
         this.handlerIdentity = handlerIdentity;
         this.functionIdentity = functionIdentity;
     }

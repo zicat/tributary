@@ -26,7 +26,6 @@ import org.zicat.tributary.common.metric.MetricKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** MuteInsertErrorBulkResponseActionListener. */
@@ -44,19 +43,13 @@ public class MuteInsertErrorBulkResponseActionListener extends AbstractActionLis
 
     @Override
     protected Exception checkResponseItems(BulkResponse response) {
-        final Map<String, AtomicInteger> errorMap = new HashMap<>();
         for (BulkItemResponse item : response.getItems()) {
             if (!item.isFailed()) {
                 continue;
             }
-            errorMap.computeIfAbsent(item.getIndex(), k -> new AtomicInteger(0)).incrementAndGet();
-        }
-        for (Map.Entry<String, AtomicInteger> entry : errorMap.entrySet()) {
-            String index = entry.getKey();
-            int bulkErrorCnt = entry.getValue().get();
             indexErrorMapCounters
-                    .computeIfAbsent(index, k -> new AtomicLong(0L))
-                    .addAndGet(bulkErrorCnt);
+                    .computeIfAbsent(item.getIndex(), k -> new AtomicLong(0))
+                    .incrementAndGet();
         }
         return null;
     }

@@ -26,7 +26,8 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.AbstractSingleChannel;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.server.MetricsHttpServer;
 
@@ -57,8 +58,10 @@ public class MetricsHttpServerTest {
             }
         }.register(registry);
 
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(MetricsHttpServer.OPTION_PORT, availablePort());
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(MetricsHttpServer.OPTION_PORT, availablePort())
+                        .build();
         try (MetricsHttpServer metricsHttpServer = new MetricsHttpServer(registry, config)) {
             metricsHttpServer.start();
             final URL url =

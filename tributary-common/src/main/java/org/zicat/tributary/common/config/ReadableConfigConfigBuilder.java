@@ -18,32 +18,12 @@
 
 package org.zicat.tributary.common.config;
 
-import java.util.Map;
-import java.util.function.BiConsumer;
-
-/** DefaultReadableConfig. */
-public class DefaultReadableConfig implements ReadableConfig {
-
-    protected final Map<String, Object> configMap;
-
-    protected DefaultReadableConfig(Map<String, Object> configMap) {
-        this.configMap = configMap;
-    }
+/** ReadableConfigConfigBuilder. */
+public class ReadableConfigConfigBuilder
+        extends ConfigBuilder<ReadableConfigConfigBuilder, ReadableConfig> {
 
     @Override
-    public void forEach(BiConsumer<? super String, ? super Object> consumer) {
-        configMap.forEach(consumer);
-    }
-
-    @Override
-    public <T> T get(ConfigOption<T> configOption) {
-        final Object value = configMap.get(configOption.key());
-        if (value != null) {
-            return configOption.parseValue(value);
-        }
-        if (configOption.hasDefaultValue()) {
-            return configOption.defaultValue();
-        }
-        throw new IllegalStateException("config option not config " + configOption);
+    public ReadableConfig build() {
+        return new DefaultReadableConfig(config);
     }
 }

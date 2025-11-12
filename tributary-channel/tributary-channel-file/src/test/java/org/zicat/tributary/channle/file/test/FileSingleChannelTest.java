@@ -34,7 +34,8 @@ import org.zicat.tributary.channel.file.FileSingleChannel;
 import org.zicat.tributary.channel.file.FileSingleChannelBuilder;
 import org.zicat.tributary.channel.file.FileChannelFactory;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.test.util.FileUtils;
 
@@ -54,12 +55,15 @@ public class FileSingleChannelTest {
     @Test
     public void testChannelStorage() throws Exception {
         final ChannelFactory factory = new FileChannelFactory();
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(
-                OPTION_PARTITION_PATHS,
-                Collections.singletonList(
-                        new File(PARENT_DIR, "test_channel_storage/partition-").getPath()));
-        config.put(OPTION_GROUPS, Arrays.asList("g1", "g2"));
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(
+                                OPTION_PARTITION_PATHS,
+                                Collections.singletonList(
+                                        new File(PARENT_DIR, "test_channel_storage/partition-")
+                                                .getPath()))
+                        .addConfig(OPTION_GROUPS, Arrays.asList("g1", "g2"))
+                        .build();
         ChannelBaseTest.testChannelStorage(factory, "test_channel_storage", config);
     }
 

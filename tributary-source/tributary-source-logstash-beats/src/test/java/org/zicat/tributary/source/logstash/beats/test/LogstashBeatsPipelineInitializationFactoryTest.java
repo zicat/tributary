@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.source.logstash.beats.test;
 
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUPPORTED_CIPHERS;
 import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUPPORT_PROTOCOL;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
@@ -47,7 +49,6 @@ import org.logstash.beats.*;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.RecordsUtils;
@@ -69,8 +70,8 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
     private static final TypeReference<Map<String, String>> MAP_TYPE_REFERENCE =
             new TypeReference<Map<String, String>>() {};
 
-    private LogstashBeatsPipelineInitialization beatsPipelineInitialization(
-            NettySource source) throws Exception {
+    private LogstashBeatsPipelineInitialization beatsPipelineInitialization(NettySource source)
+            throws Exception {
         return (LogstashBeatsPipelineInitialization)
                 SpiFactory.findFactory(
                                 LogstashBeatsPipelineInitializationFactory.IDENTITY,
@@ -82,13 +83,17 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
     public void testSsl() throws Exception {
         final String topic = "t1";
         final String caCertPath = "ca.crt";
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1);
-        config.put(OPTION_LOGSTASH_BEATS_SSL, true);
-        config.put(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE, "server.crt");
-        config.put(OPTION_LOGSTASH_BEATS_SSL_KEY, "server.key");
-        config.put(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES, caCertPath);
-        config.put(CONFIG_PREFIX + DefaultMessageFilterFactory.OPTION_TOPIC.key(), topic);
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1)
+                        .addConfig(OPTION_LOGSTASH_BEATS_SSL, true)
+                        .addConfig(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE, "server.crt")
+                        .addConfig(OPTION_LOGSTASH_BEATS_SSL_KEY, "server.key")
+                        .addConfig(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE_AUTHORITIES, caCertPath)
+                        .addConfig(
+                                CONFIG_PREFIX + DefaultMessageFilterFactory.OPTION_TOPIC.key(),
+                                topic)
+                        .build();
 
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 NettySource source = new NettySourceMock(config, topic, channel)) {
@@ -166,12 +171,16 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
     @Test
     public void testMessageFilter() throws Exception {
         final String topic = "t1";
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1); // set to sync for test
-        config.put(
-                CONFIG_PREFIX + OPTION_MESSAGE_FILTER_FACTORY_ID.key(),
-                LocalFileMessageFilterFactory.IDENTITY);
-        config.put(CONFIG_PREFIX + OPTION_LOCAL_FILE_PATH.key(), "DefaultMessageFilterTest.txt");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1) // set to sync for test
+                        .addConfig(
+                                CONFIG_PREFIX + OPTION_MESSAGE_FILTER_FACTORY_ID.key(),
+                                LocalFileMessageFilterFactory.IDENTITY)
+                        .addConfig(
+                                CONFIG_PREFIX + OPTION_LOCAL_FILE_PATH.key(),
+                                "DefaultMessageFilterTest.txt")
+                        .build();
 
         final AtomicBoolean clientReceivedAck = new AtomicBoolean();
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
@@ -219,10 +228,14 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
     public void test() throws Exception {
 
         final String topic = "t1";
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1); // set to sync for test
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1) // set to sync for test
+                        .addConfig(
+                                CONFIG_PREFIX + DefaultMessageFilterFactory.OPTION_TOPIC.key(),
+                                topic)
+                        .build();
         final AtomicBoolean clientReceivedAck = new AtomicBoolean();
-        config.put(CONFIG_PREFIX + DefaultMessageFilterFactory.OPTION_TOPIC.key(), topic);
 
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 NettySource source = new NettySourceMock(config, topic, channel)) {

@@ -214,8 +214,8 @@ public abstract class PartitionHandler extends Thread
                         .id(id == null ? getSinHandlerId() : id)
                         .partitionId(partitionId)
                         .groupId(groupId)
-                        .topic(channel.topic());
-        builder.addConfigs(config);
+                        .topic(channel.topic())
+                        .addConfigs(config);
         try {
             function.open(builder.build());
             return function;

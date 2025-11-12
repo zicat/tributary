@@ -18,11 +18,12 @@
 
 package org.zicat.tributary.server.test;
 
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import static org.zicat.tributary.server.test.MetricsHttpServerTest.availablePorts;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.records.Record;
@@ -47,19 +48,21 @@ public class StarterTest {
 
         final List<Record> collection = Collections.synchronizedList(new ArrayList<>());
         final List<Integer> availablePorts = availablePorts(2);
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put("server.metrics.port", availablePorts.get(0));
-        config.put("server.metrics.host-patterns", "127.0.0.1");
-        config.put("source.s1.channel", "c1");
-        config.put("source.s1.implement", "netty");
-        config.put("source.s1.netty.host-patterns", "127.0.0.1");
-        config.put("source.s1.netty.port", availablePorts.get(1));
-        config.put("source.s1.netty.decoder", "line");
-        config.put("channel.c1.type", "memory");
-        config.put("channel.c1.groups", "group_1");
-        config.put("channel.c1.flush.period", "100ms");
-        config.put("sink.group_1.function.id", "collection_mock");
-        config.put("sink.group_1.collection", collection);
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig("server.metrics.port", availablePorts.get(0))
+                        .addConfig("server.metrics.host-patterns", "127.0.0.1")
+                        .addConfig("source.s1.channel", "c1")
+                        .addConfig("source.s1.implement", "netty")
+                        .addConfig("source.s1.netty.host-patterns", "127.0.0.1")
+                        .addConfig("source.s1.netty.port", availablePorts.get(1))
+                        .addConfig("source.s1.netty.decoder", "line")
+                        .addConfig("channel.c1.type", "memory")
+                        .addConfig("channel.c1.groups", "group_1")
+                        .addConfig("channel.c1.flush.period", "100ms")
+                        .addConfig("sink.group_1.function.id", "collection_mock")
+                        .addConfig("sink.group_1.collection", collection)
+                        .build();
 
         try (final StarterMock starter = new StarterMock(config.toProperties())) {
             starter.start();

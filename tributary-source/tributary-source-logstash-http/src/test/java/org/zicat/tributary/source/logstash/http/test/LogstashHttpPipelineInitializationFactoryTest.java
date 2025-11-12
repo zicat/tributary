@@ -18,6 +18,8 @@
 
 package org.zicat.tributary.source.logstash.http.test;
 
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.http.HttpMessageDecoder.MAPPER;
@@ -40,7 +42,6 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
@@ -68,14 +69,18 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     @Test
     public void test() throws Exception {
 
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1);
-        config.put(OPTION_LOGSTASH_CODEC, Codec.PLAIN);
-        config.put(OPTION_LOGSTASH_HTTP_REMOTE_HOST_TARGET_FIELD, "remote_host");
-        config.put(OPTION_LOGSTASH_HTTP_REQUEST_HEADERS_TARGET_FIELD, "request_headers");
-        config.put(OPTION_LOGSTASH_HTTP_TAGS, Arrays.asList("t1", "t2"));
-        config.put(OPTION_LOGSTASH_HTTP_USER, "user1");
-        config.put(OPTION_LOGSTASH_HTTP_PASSWORD, "password1");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
+                        .addConfig(OPTION_LOGSTASH_CODEC, Codec.PLAIN)
+                        .addConfig(OPTION_LOGSTASH_HTTP_REMOTE_HOST_TARGET_FIELD, "remote_host")
+                        .addConfig(
+                                OPTION_LOGSTASH_HTTP_REQUEST_HEADERS_TARGET_FIELD,
+                                "request_headers")
+                        .addConfig(OPTION_LOGSTASH_HTTP_TAGS, Arrays.asList("t1", "t2"))
+                        .addConfig(OPTION_LOGSTASH_HTTP_USER, "user1")
+                        .addConfig(OPTION_LOGSTASH_HTTP_PASSWORD, "password1")
+                        .build();
 
         final PipelineInitializationFactory factory =
                 SpiFactory.findFactory(
@@ -155,9 +160,11 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     @Test
     public void test2() throws Exception {
 
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1);
-        config.put(OPTION_LOGSTASH_CODEC, Codec.JSON);
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
+                        .addConfig(OPTION_LOGSTASH_CODEC, Codec.JSON)
+                        .build();
 
         final PipelineInitializationFactory factory =
                 SpiFactory.findFactory(
@@ -213,9 +220,11 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     @Test
     public void testContentType() throws Exception {
 
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1);
-        config.put(OPTION_LOGSTASH_CODEC, Codec.PLAIN);
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
+                        .addConfig(OPTION_LOGSTASH_CODEC, Codec.PLAIN)
+                        .build();
 
         final PipelineInitializationFactory factory =
                 SpiFactory.findFactory(
@@ -271,13 +280,17 @@ public class LogstashHttpPipelineInitializationFactoryTest {
 
     @Test
     public void testMessageFilter() throws Exception {
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1);
-        config.put(OPTION_LOGSTASH_CODEC, Codec.JSON);
-        config.put(
-                CONFIG_PREFIX + OPTION_MESSAGE_FILTER_FACTORY_ID.key(),
-                LocalFileMessageFilterFactory.IDENTITY);
-        config.put(CONFIG_PREFIX + OPTION_LOCAL_FILE_PATH.key(), "DefaultMessageFilterTest.txt");
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
+                        .addConfig(OPTION_LOGSTASH_CODEC, Codec.JSON)
+                        .addConfig(
+                                CONFIG_PREFIX + OPTION_MESSAGE_FILTER_FACTORY_ID.key(),
+                                LocalFileMessageFilterFactory.IDENTITY)
+                        .addConfig(
+                                CONFIG_PREFIX + OPTION_LOCAL_FILE_PATH.key(),
+                                "DefaultMessageFilterTest.txt")
+                        .build();
 
         final PipelineInitializationFactory factory =
                 SpiFactory.findFactory(

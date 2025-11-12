@@ -20,6 +20,8 @@ package org.zicat.tributary.sink.test.function;
 
 import org.junit.Assert;
 import org.zicat.tributary.channel.Offset;
+import org.zicat.tributary.common.config.ConfigOption;
+import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
@@ -32,14 +34,18 @@ import java.util.List;
 /** AssertFunction. */
 public class AssertFunction extends AbstractFunction {
 
+    public static final ConfigOption<List<?>> OPTION_ASSERT_DATA =
+            ConfigOptions.key("assert.data")
+                    .<List<?>>objectType()
+                    .defaultValue(null);
+
     private List<?> assertData;
-    public static final String KEY_ASSERT_DATA = "assert.data";
 
     @Override
     public void open(Context context) throws Exception {
         super.open(context);
         // important: assert data list must thread safe.
-        assertData = (List<?>) context.get(KEY_ASSERT_DATA);
+        assertData = context.get(OPTION_ASSERT_DATA);
     }
 
     @Override

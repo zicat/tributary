@@ -19,9 +19,8 @@
 package org.zicat.tributary.server.config;
 
 import org.zicat.tributary.common.config.ReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 /** PropertiesConfigBuilder. */
@@ -56,19 +55,19 @@ public class PropertiesConfigBuilder {
      * @return config
      */
     public ReadableConfig build() {
-        final Map<String, Object> config = new HashMap<>();
+        final ReadableConfigConfigBuilder builder = new ReadableConfigConfigBuilder();
         properties.forEach(
                 (k, v) -> {
                     final String key = k.toString();
                     if (prefixFilter == null) {
-                        config.put(key, v);
+                        builder.addConfig(key, v);
                         return;
                     }
                     if (key.startsWith(prefixFilter)) {
-                        config.put(key.substring(prefixFilter.length()), v);
+                        builder.addConfig(key.substring(prefixFilter.length()), v);
                     }
                 });
-        return ReadableConfig.create(config);
+        return builder.build();
     }
 
     /**

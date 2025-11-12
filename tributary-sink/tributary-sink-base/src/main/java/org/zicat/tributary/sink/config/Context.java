@@ -36,7 +36,7 @@ public class Context extends DefaultReadableConfig {
             String topic,
             int partitionId,
             final String groupId) {
-        putAll(customConfig);
+        super(customConfig);
         this.id = id;
         this.topic = topic;
         this.partitionId = partitionId;

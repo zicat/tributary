@@ -22,7 +22,8 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.util.ResourceUtils;
 import org.zicat.tributary.source.logstash.base.LocalFileMessageFilterFactory;
@@ -63,10 +64,12 @@ public class LocalFileMessageFilterFactoryTest {
                     (LocalFileMessageFilterFactory)
                             MessageFilterFactory.findFactory(
                                     LocalFileMessageFilterFactory.IDENTITY);
-            DefaultReadableConfig config = new DefaultReadableConfig();
-            config.put(
-                    LocalFileMessageFilterFactory.OPTION_LOCAL_FILE_PATH,
-                    CHANGEABLE_PATH.getPath());
+            ReadableConfig config =
+                    new ReadableConfigConfigBuilder()
+                            .addConfig(
+                                    LocalFileMessageFilterFactory.OPTION_LOCAL_FILE_PATH,
+                                    CHANGEABLE_PATH.getPath())
+                            .build();
             IOUtils.transform(PATH1, CHANGEABLE_PATH);
             messageFilterFactory.open(config);
 

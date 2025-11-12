@@ -23,6 +23,8 @@ import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 
 import org.xerial.snappy.Snappy;
+import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfig;
 import static org.zicat.tributary.common.util.IOUtils.compressionGZip;
 import static org.zicat.tributary.common.util.IOUtils.decompressionGZip;
 import org.zicat.tributary.source.base.netty.NettySource;
@@ -41,7 +43,6 @@ import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
-import org.zicat.tributary.common.config.DefaultReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
@@ -73,9 +74,11 @@ public class HttpPipelineInitializationFactoryTest {
                 SpiFactory.findFactory(
                         HttpPipelineInitializationFactory.IDENTITY,
                         PipelineInitializationFactory.class);
-        final DefaultReadableConfig config = new DefaultReadableConfig();
-        config.put(HttpPipelineInitializationFactory.OPTIONS_PATH, PATH);
-        config.put(HttpPipelineInitializationFactory.OPTION_HTTP_WORKER_THREADS, -1);
+        final ReadableConfig config =
+                new ReadableConfigConfigBuilder()
+                        .addConfig(HttpPipelineInitializationFactory.OPTIONS_PATH, PATH)
+                        .addConfig(HttpPipelineInitializationFactory.OPTION_HTTP_WORKER_THREADS, -1)
+                        .build();
 
         try (Channel channel =
                         MemoryChannelTestUtils.memoryChannelFactory(GROUP_ID)
