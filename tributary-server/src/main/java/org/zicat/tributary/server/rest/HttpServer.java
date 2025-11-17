@@ -29,7 +29,6 @@ import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.prometheus.client.CollectorRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,23 +54,19 @@ public class HttpServer implements Closeable {
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
     private final String host;
-    private final DispatcherHttpHandlerBuilder dispatcherHttpHandlerBuilder;
 
-    public HttpServer(CollectorRegistry registry, ReadableConfig serverConfig)
-            throws UnknownHostException {
+    public HttpServer(ReadableConfig serverConfig) throws UnknownHostException {
         this.port = serverConfig.get(OPTION_PORT);
         this.host = host(serverConfig);
         final int threads = serverConfig.get(OPTION_THREADS);
         this.bossGroup = createEventLoopGroup(Math.max(1, threads / 4));
         this.workerGroup = createEventLoopGroup(threads);
-        this.dispatcherHttpHandlerBuilder =
-                new DispatcherHttpHandlerBuilder(serverConfig).metricCollectorRegistry(registry);
     }
 
     /** start. */
-    public void start() throws InterruptedException, IllegalAccessException {
+    public void start(DispatcherHttpHandler dispatcherHttpHandler)
+            throws InterruptedException, IllegalAccessException {
         final ServerBootstrap b = createServerBootstrap(bossGroup, workerGroup);
-        final DispatcherHttpHandler httpHandler = dispatcherHttpHandlerBuilder.build();
         b.childHandler(
                 new ChannelInitializer<SocketChannel>() {
                     @Override
@@ -80,7 +75,7 @@ public class HttpServer implements Closeable {
                         ch.pipeline().addLast(new HttpObjectAggregator(MAX_CONTENT_LENGTH));
                         ch.pipeline().addLast(new HttpResponseEncoder());
                         ch.pipeline().addLast(new ChunkedWriteHandler());
-                        ch.pipeline().addLast(httpHandler);
+                        ch.pipeline().addLast(dispatcherHttpHandler);
                     }
                 });
         this.channel = b.bind(port).sync().channel();

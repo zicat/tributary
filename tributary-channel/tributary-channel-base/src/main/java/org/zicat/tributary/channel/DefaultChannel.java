@@ -170,6 +170,20 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
     }
 
     @Override
+    public Map<String, Map<Integer, Offset>> committedOffsets() {
+        final Set<String> groups = groups();
+        final Map<String, Map<Integer, Offset>> groupOffsets = new HashMap<>();
+        for (String group : groups) {
+            final Map<Integer, Offset> partitionOffsetMap =
+                    groupOffsets.computeIfAbsent(group, k -> new HashMap<>());
+            for (int i = 0; i < channels.length; i++) {
+                partitionOffsetMap.put(i, channels[i].committedOffset(group));
+            }
+        }
+        return groupOffsets;
+    }
+
+    @Override
     public Set<String> groups() {
         return Collections.unmodifiableSet(factory.groups());
     }

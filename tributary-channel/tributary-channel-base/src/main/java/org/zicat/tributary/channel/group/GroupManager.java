@@ -21,10 +21,18 @@ package org.zicat.tributary.channel.group;
 import org.zicat.tributary.channel.Offset;
 
 import java.io.Closeable;
+import java.util.Map;
 import java.util.Set;
 
 /** GroupManager. @ThreadSafe */
 public interface GroupManager extends Closeable {
+
+    /**
+     * get all committed offsets.
+     *
+     * @return committed offsets map
+     */
+    Map<String, Map<Integer, Offset>> committedOffsets();
 
     /**
      * get all group consume this topic.

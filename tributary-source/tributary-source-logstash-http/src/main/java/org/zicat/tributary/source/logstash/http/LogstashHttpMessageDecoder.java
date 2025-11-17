@@ -139,7 +139,7 @@ public class LogstashHttpMessageDecoder extends HttpMessageDecoder {
 
     @Override
     protected void okResponse(ChannelHandlerContext ctx) {
-        http1_1Response(ctx, HttpResponseStatus.OK, OK_RESPONSE);
+        http1_1TextResponse(ctx, HttpResponseStatus.OK, OK_RESPONSE);
     }
 
     @Override

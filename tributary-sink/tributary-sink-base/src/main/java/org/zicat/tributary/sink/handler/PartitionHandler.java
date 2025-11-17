@@ -87,7 +87,7 @@ public abstract class PartitionHandler extends Thread
         this.clock = config.get(OPTION_PARTITION_CLOCK);
         this.preSnapshotTime = clock.currentTimeMillis();
         this.functionFactory = findFunctionFactory(config.functionIdentity());
-        this.startOffset = channel.committedOffset(groupId, partitionId);
+        this.startOffset = committedOffset();
         this.fetchOffset = startOffset;
         this.partitionSinkSnapShortCountKey =
                 SINK_SNAPSHOT_COAST.addLabel("partitionId", partitionId);
@@ -105,6 +105,8 @@ public abstract class PartitionHandler extends Thread
 
     public boolean runOneBatch() {
         try {
+            // the fetch offset must be greater than or equal to commited offset in group manager
+            fetchOffset = Offset.max(fetchOffset, committedOffset());
             final RecordsResultSet result = poll(fetchOffset);
             if (closed.get() && (quickExist || result.isEmpty())) {
                 return true;
@@ -125,6 +127,15 @@ public abstract class PartitionHandler extends Thread
             sleepWhenException();
         }
         return false;
+    }
+
+    /**
+     * committed offset.
+     *
+     * @return offset
+     */
+    public final Offset committedOffset() {
+        return channel.committedOffset(groupId, partitionId);
     }
 
     /**
@@ -237,17 +248,18 @@ public abstract class PartitionHandler extends Thread
      */
     protected final void close(Runnable task) {
         if (closed.compareAndSet(false, true)) {
+            interrupt();
+            joinQuietly(this);
             try {
-                interrupt();
-                joinQuietly(this);
-                try {
-                    snapshot();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                snapshot();
+            } catch (Exception e) {
+                LOG.warn("snapshot failed when close partition handler.", e);
             } finally {
-                task.run();
-                channel.commit(partitionId, groupId, committableOffset());
+                try {
+                    task.run();
+                } finally {
+                    channel.commit(partitionId, groupId, committableOffset());
+                }
             }
         }
     }

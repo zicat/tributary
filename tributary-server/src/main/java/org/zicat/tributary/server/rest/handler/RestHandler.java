@@ -18,11 +18,14 @@
 
 package org.zicat.tributary.server.rest.handler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 
 /** RestHandler. */
 public interface RestHandler {
+
+    ObjectMapper MAPPER = new ObjectMapper();
 
     /**
      * handle http request.

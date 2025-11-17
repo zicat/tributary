@@ -29,6 +29,7 @@ import org.zicat.tributary.channel.AbstractSingleChannel;
 import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.metric.MetricKey;
+import org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder;
 import static org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder.OPTION_METRICS_PATH;
 import org.zicat.tributary.server.rest.HttpServer;
 
@@ -63,8 +64,11 @@ public class HttpServerTest {
                 new ReadableConfigConfigBuilder()
                         .addConfig(HttpServer.OPTION_PORT, availablePort())
                         .build();
-        try (HttpServer httpServer = new HttpServer(registry, config)) {
-            httpServer.start();
+        try (HttpServer httpServer = new HttpServer(config)) {
+            httpServer.start(
+                    new DispatcherHttpHandlerBuilder(config)
+                            .metricCollectorRegistry(registry)
+                            .build());
             final URL url =
                     new URL(
                             "http://localhost:"

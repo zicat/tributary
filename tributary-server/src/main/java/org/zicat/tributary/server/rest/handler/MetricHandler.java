@@ -23,7 +23,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
-import static org.zicat.tributary.source.http.HttpMessageDecoder.http1_1Response;
+import org.zicat.tributary.source.http.HttpMessageDecoder;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -32,17 +32,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 /** MetricRestHandler. */
-public class MetricRestHandler implements RestHandler {
+public class MetricHandler implements RestHandler {
 
     private final CollectorRegistry registry;
 
-    public MetricRestHandler(CollectorRegistry registry) {
+    public MetricHandler(CollectorRegistry registry) {
         this.registry = registry;
     }
 
     @Override
     public void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-        http1_1Response(ctx, HttpResponseStatus.OK, metrics().getBytes(StandardCharsets.UTF_8));
+        HttpMessageDecoder.http1_1TextResponse(ctx, HttpResponseStatus.OK, metrics().getBytes(StandardCharsets.UTF_8));
     }
 
     /**

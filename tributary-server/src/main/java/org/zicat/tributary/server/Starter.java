@@ -27,6 +27,7 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.component.*;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
+import org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder;
 import org.zicat.tributary.server.rest.HttpServer;
 
 import java.io.Closeable;
@@ -63,14 +64,18 @@ public class Starter implements Closeable {
     /** init component. */
     protected void initComponent() throws Exception {
         final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
-        this.httpServer = new HttpServer(registry, serverConfig);
-        final String metricsHost = httpServer.host();
-        this.channelComponent = channelComponentFactory(metricsHost).create().register(registry);
+        this.httpServer = new HttpServer(serverConfig);
+        final String host = httpServer.host();
+        this.channelComponent = channelComponentFactory(host).create().register(registry);
         this.sinkComponent =
-                sinkComponentFactory(metricsHost, channelComponent).create().register(registry);
+                sinkComponentFactory(host, channelComponent).create().register(registry);
         this.sourceComponent =
-                sourceComponentFactory(metricsHost, channelComponent).create().register(registry);
-        httpServer.start();
+                sourceComponentFactory(host, channelComponent).create().register(registry);
+        httpServer.start(
+                new DispatcherHttpHandlerBuilder(serverConfig)
+                        .metricCollectorRegistry(registry)
+                        .channelComponent(channelComponent)
+                        .build());
     }
 
     /**

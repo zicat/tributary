@@ -20,6 +20,8 @@ package org.zicat.tributary.channel.group;
 
 import org.zicat.tributary.channel.Offset;
 
+import java.util.Map;
+
 /** SingleGroupManager for {@link GroupManager} offset without partition. */
 public interface SingleGroupManager extends GroupManager {
 
@@ -34,6 +36,11 @@ public interface SingleGroupManager extends GroupManager {
     @Override
     default Offset committedOffset(String groupId, int partition) {
         return committedOffset(groupId);
+    }
+
+    @Override
+    default Map<String, Map<Integer, Offset>> committedOffsets() {
+        throw new UnsupportedOperationException();
     }
 
     /**

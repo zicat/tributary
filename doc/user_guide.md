@@ -110,19 +110,6 @@ dir.
 Attempt to send some records through telnet, and please note that the port in the command needs to
 match the configuration of source.s1.netty.port.
 
-```shell
-$ curl -s "http://localhost:9090/metrics"|grep -v '#'
-tributary_sink_snapshot_cost{partitionId="0",topic="c1",groupId="group_1",host="MAGIT03797.local",} 0.0
-tributary_sink_lag{topic="c1",groupId="group_1",host="MAGIT03797.local",} 0.0
-tributary_sink_print_counter{topic="c1",groupId="group_1",host="MAGIT03797.local",} 1.0
-tributary_channel_active_segment{topic="c1",host="MAGIT03797.local",} 1.0
-tributary_channel_buffer_usage{topic="c1",host="MAGIT03797.local",} 0.0
-tributary_channel_read_bytes{topic="c1",host="MAGIT03797.local",} 95.0
-tributary_channel_block_cache_query_hit_count{topic="c1",host="MAGIT03797.local",} 1.0
-tributary_channel_block_cache_query_total_count{topic="c1",host="MAGIT03797.local",} 1.0
-tributary_channel_write_bytes{topic="c1",host="MAGIT03797.local",} 95.0
-```
-
 Congratulations - you’ve successfully configured and deployed a tributary service!
 
 [Tributary User Guide Of Config Details](user_guide_config_detail.md) cover more details about the

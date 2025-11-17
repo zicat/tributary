@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.server.rest;
 
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -31,6 +32,7 @@ import static org.zicat.tributary.source.http.HttpMessageDecoder.notFoundRespons
 import java.util.Map;
 
 /** DispatcherHttpHandler. */
+@Sharable
 public class DispatcherHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private static final Logger LOG = LoggerFactory.getLogger(DispatcherHttpHandler.class);

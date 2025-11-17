@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /** ChannelComponent. */
 public class ChannelComponent extends AbstractComponent<String, Channel> {
@@ -37,6 +38,14 @@ public class ChannelComponent extends AbstractComponent<String, Channel> {
     public ChannelComponent(Map<String, Channel> elements, String metricsHost) {
         super(elements);
         this.metricsHost = metricsHost;
+    }
+
+    /**
+     * for each channel.
+     * @param action action
+     */
+    public void forEachChannel(BiConsumer<String, Channel> action) {
+        elements.forEach(action);
     }
 
     @Override

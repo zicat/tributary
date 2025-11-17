@@ -22,9 +22,12 @@ import io.prometheus.client.CollectorRegistry;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.ReadableConfig;
-import org.zicat.tributary.server.rest.handler.MetricRestHandler;
+import org.zicat.tributary.server.component.ChannelComponent;
+import org.zicat.tributary.server.rest.handler.ApiOffsetShowHandler;
+import org.zicat.tributary.server.rest.handler.MetricHandler;
 import org.zicat.tributary.server.rest.handler.RestHandler;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,10 +36,15 @@ public class DispatcherHttpHandlerBuilder {
 
     public static final ConfigOption<String> OPTION_METRICS_PATH =
             ConfigOptions.key("path.metrics").stringType().defaultValue("/metrics");
+    public static final ConfigOption<String> OPTION_API_OFFSET_SHOW_PATH =
+            ConfigOptions.key("path.api-offsets-show")
+                    .stringType()
+                    .defaultValue("/api/offsets/show");
 
     private CollectorRegistry metricCollectorRegistry = CollectorRegistry.defaultRegistry;
 
     private final ReadableConfig serverConfig;
+    private ChannelComponent channelComponent;
 
     public DispatcherHttpHandlerBuilder(ReadableConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -57,6 +65,11 @@ public class DispatcherHttpHandlerBuilder {
         return this;
     }
 
+    public DispatcherHttpHandlerBuilder channelComponent(ChannelComponent channelComponent) {
+        this.channelComponent = channelComponent;
+        return this;
+    }
+
     /**
      * build DispatcherHttpHandler.
      *
@@ -65,8 +78,12 @@ public class DispatcherHttpHandlerBuilder {
     public DispatcherHttpHandler build() {
         final Map<String, RestHandler> mapping = new HashMap<>();
         mapping.put(
-                serverConfig.get(OPTION_METRICS_PATH),
-                new MetricRestHandler(metricCollectorRegistry));
-        return new DispatcherHttpHandler(mapping);
+                serverConfig.get(OPTION_METRICS_PATH), new MetricHandler(metricCollectorRegistry));
+        if (channelComponent != null) {
+            mapping.put(
+                    serverConfig.get(OPTION_API_OFFSET_SHOW_PATH),
+                    new ApiOffsetShowHandler(channelComponent));
+        }
+        return new DispatcherHttpHandler(Collections.unmodifiableMap(mapping));
     }
 }

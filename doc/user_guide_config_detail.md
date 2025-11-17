@@ -9,16 +9,17 @@ server.port=9090
 server.host-pattern=127.0.0.1
 ```
 
-The Tributary service provides metrics indicators in the form of http restful api.
+The Tributary service provides indicators in the form of http restful api.
 
 The parameter "server.host-pattern" is a regular expression that is used to filter the
-required hosts when there are multiple network cards in the machine, and assign the value to the
-host dimension in the metrics.
+required hosts when there are multiple network cards in the machine.
 
-Get tributary metrics as follows, ensure that the port matches the server.port configuration:
+### Metrics Api
+
+Get tributary metrics as follows.
 
 ```shell
-$ curl -s http://localhost:9090/metrics|grep -v '#'
+$ curl -s 'http://localhost:9090/metrics'|grep -v '#'
 sink_print_counter{host="127.0.0.1",id="c1_group_1_0",} 1.0
 channel_block_cache_query_hit_count{topic="c1",host="127.0.0.1",} 1.0
 channel_buffer_usage{topic="c1",host="127.0.0.1",} 0.0
@@ -29,12 +30,22 @@ channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
 sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
 ```
 
-| Key                   | default  | valid value | describe                                                                                                             |
-|-----------------------|----------|-------------|----------------------------------------------------------------------------------------------------------------------|
-| server.port           |          | int(number) | the port to bind, range 1000-65535                                                                                   |
-| server.worker-threads | 1        | int(number) | the work thread to deal with request                                                                                 |
-| server.host-pattern   | null     | string      | the pattern the config the output metrics value, default null means using `InetAddress.getLocalHost().getHostName()` |
-| server.path.metrics   | /metrics | string      | the metrics http path                                                                                                |
+### Rest Api
+
+1. Show offsets
+
+   ```shell
+   $ curl -s 'http://localhost:9090/api/offsets/show'
+   [{"topic":"c1","group":"group_1","partitionOffsets":[{"partition":0,"offset":{"segmentId":0,"offset":119}}]}]
+   ```
+
+| Key                   | default           | valid value | describe                                                                                                             |
+|-----------------------|-------------------|-------------|----------------------------------------------------------------------------------------------------------------------|
+| server.port           | 9090              | int(number) | the port to bind, range 1000-65535                                                                                   |
+| server.worker-threads | 1                 | int(number) | the work thread to deal with request                                                                                 |
+| server.host-pattern   | null              | string      | the pattern the config the output metrics value, default null means using `InetAddress.getLocalHost().getHostName()` |
+| server.path.metrics   | /metrics          | string      | the metrics http path                                                                                                |
+| path.api-offsets-show | /api/offsets/show | string      | the api offsets show http path                                                                                       |
 
 ## Source
 
@@ -267,16 +278,16 @@ channel.c2.block.cache.per.partition.size=1024
 
 ### File Config
 
-| key                            | default        | type                   | describe                                                                                                                                                                                                                                                                         |
-|--------------------------------|----------------|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block.size                     | 32kb           | bytes                  | the block size to store records in memory                                                                                                                                                                                                                                        |
-| compression                    | none           | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                                                                                                                 |
-| segment.size                   | 4gb            | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                                                                                                             |
-| segment.expired.cleanup.period | 30s            | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                                                                                                                 |
-| partitions                     |                | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                                                                                                          |
-| flush.period                   | 500ms          | duration               | the period time to async flush page cache to disk                                                                                                                                                                                                                                |
-| block.cache.per.partition.size | 1024           | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                   | 
-| capacity.protected.percent     | 90%            | percent                | the max disk capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the disk usage percent over the param, those sink groups will skip offset to next segment to consume |
+| key                            | default | type                   | describe                                                                                                                                                                                                                                                                         |
+|--------------------------------|---------|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                                                                                                        |
+| compression                    | none    | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                                                                                                                 |
+| segment.size                   | 4gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                                                                                                             |
+| segment.expired.cleanup.period | 30s     | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                                                                                                                 |
+| partitions                     |         | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                                                                                                          |
+| flush.period                   | 500ms   | duration               | the period time to async flush page cache to disk                                                                                                                                                                                                                                |
+| block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                   | 
+| capacity.protected.percent     | 90%     | percent                | the max disk capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the disk usage percent over the param, those sink groups will skip offset to next segment to consume |
 
 ### Memory Config
 
@@ -356,7 +367,9 @@ sink.group_1.writer.parquet.compression.codec=snappy
 [more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
 Note:
-   1. The default checkpoint implement of HDFS function is to check the bucket whether rolled over by time, if it should be rolled over, the current file will be closed and offset will be commited.
+
+1. The default checkpoint implement of HDFS function is to check the bucket whether rolled over by time, if it should be
+   rolled over, the current file will be closed and offset will be commited.
 
 ### Sink Kafka
 
@@ -458,7 +471,8 @@ sink.group_4.request.indexer.identity=default
 
 Note:
 
-1. The default checkpoint implement of Elasticsearch function is to flush buffer and wait all async bulk request to finished and commit offset.
+1. The default checkpoint implement of Elasticsearch function is to flush buffer and wait all async bulk request to
+   finished and commit offset.
 
 2. For the `default` of `request.indexer`, the value of records must be a string object json. The records will be
    discarded
@@ -480,108 +494,3 @@ Note:
    For `mute_bulk_insert_error` of `bulk.response.action-listener.identity`, the failed bulk request will be ignored and
    add the metric key `tributary_sink_elasticsearch_bulk_requests_with_errors` to monitor the fail count.
 
-## The complete demo config
-
-```
-server.port=9090
-server.host-pattern=.*
-server.path.metrics=/metrics
-
-source.s1.channel=c1
-source.s1.implement=netty
-source.s1.netty.port=8200
-source.s1.netty.threads.event-loop=10
-source.s1.netty.idle=60sec
-
-source.s2.channel=c1
-source.s2.implement=netty
-source.s2.netty.port=8300
-source.s2.netty.threads.event-loop=5
-source.s2.netty.idle=120sec
-source.s2.netty.decoder=line
-
-source.s3.channel=c2
-source.s3.implement=netty
-source.s3.netty.port=9093
-source.s3.netty.idle=60sec
-source.s3.netty.threads.event-loop=10
-source.s3.netty.decoder=kafka
-source.s3.netty.decoder.kafka.advertised-host-pattern=localhost
-source.s3.netty.decoder.kafka.worker-threads=10
-source.s3.netty.decoder.kafka.meta.ttl=10sec
-source.s3.netty.decoder.kafka.topic.partitions=60
-source.s3.netty.decoder.kafka.zookeeper.connect=localhost:2181/tributary_source_kafka
-source.s3.netty.decoder.kafka.zookeeper.retry.times=3
-source.s3.netty.decoder.kafka.zookeeper.fail.base.sleep.time=1sec
-source.s3.netty.decoder.kafka.zookeeper.connection.timeout=15sec
-source.s3.netty.decoder.kafka.zookeeper.session.timeout=60sec
-source.s3.netty.decoder.kafka.sasl.plain=true
-source.s3.netty.decoder.kafka.sasl.plain.usernames=user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc
-
-source.s4.channel=c1
-source.s4.implement=netty
-source.s4.netty.port=5044
-source.s4.netty.decoder=logstash-beats
-source.s4.netty.decoder.logstash-beats.worker-threads=10
-source.s4.netty.decoder.logstash-beats.ssl=true
-source.s4.netty.decoder.logstash-beats.ssl.certificate.authorities=ssl/ca.crt
-source.s4.netty.decoder.logstash-beats.ssl.certificate=ssl/server.crt
-source.s4.netty.decoder.logstash-beats.ssl.key=ssl/server.key
-
-channel.c1.type=file
-channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
-channel.c1.groups=group_1,group_2,group_3,group_4
-channel.c1.compression=snappy
-channel.c1.block.size=32kb
-channel.c1.segment.size=4gb
-channel.c1.flush.period=1sec
-
-channel.c2.type=memory
-channel.c2.partitions=2
-channel.c2.groups=group_2
-channel.c2.compression=snappy
-channel.c2.block.size=32kb
-channel.c2.segment.size=4gb
-channel.c2.flush.period=1sec
-
-sink.group_1.function.id=hdfs
-sink.group_1.sink.path=/tmp/test/cache
-sink.group_1.roll.size=10mb
-sink.group_1.bucket.date.format=yyyyMMdd_HH
-sink.group_1.max.retries=3
-sink.group_1.retry.interval=200ms
-sink.group_1.keytab=
-sink.group_1.principle=
-sink.group_1.writer.identity=parquet
-sink.group_1.writer.parquet.compression.codec=snappy
-
-sink.group_2.partition.concurrent=3
-sink.group_2.function.id=kafka
-sink.group_2.kafka.bootstrap.servers=127.0.0.1:9092
-sink.group_2.topic=proxy_sink_${topic}
-sink.group_2.kafka.buffer.memory=134217728
-sink.group_2.kafka.linger.ms=1000
-sink.group_2.kafka.batch.size=524288
-sink.group_2.kafka.compression.type=snappy
-
-sink.group_3.function.id=hbase
-sink.group_3.hbase-site-xml.path=/tmp/hbase-site.xml
-sink.group_3.table.name=table_test
-sink.group_3.table.family.name=info
-sink.group_3.table.column.value.name=value
-sink.group_3.table.column.topic.name=topic
-sink.group_3.table.column.head.name.prefix=head_
-
-sink.group_4.function.id=elasticsearch
-sink.group_4.hosts=http://localhost:9200
-sink.group_4.path-prefix=
-
-sink.group_4.compression=true
-sink.group_4.username=
-sink.group_4.password=
-sink.group_4.request.timeout=30s
-sink.group_4.connection.timeout=10s
-sink.group_4.socket.timeout=20s
-sink.group_4.request.indexer.identity=default
-sink.group_4.request.indexer.default.index=my_index
-```       

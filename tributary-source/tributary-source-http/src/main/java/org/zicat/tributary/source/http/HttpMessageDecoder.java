@@ -263,7 +263,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param ctx ctx
      */
     protected void okResponse(ChannelHandlerContext ctx) {
-        http1_1Response(ctx, HttpResponseStatus.OK, EMPTY);
+        http1_1TextResponse(ctx, HttpResponseStatus.OK, EMPTY);
     }
 
     /**
@@ -274,7 +274,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      */
     public static void internalServerErrorResponse(ChannelHandlerContext ctx, String message) {
         final byte[] content = message.getBytes(StandardCharsets.UTF_8);
-        http1_1Response(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, content);
+        http1_1TextResponse(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, content);
     }
 
     /**
@@ -285,7 +285,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      */
     public static void badRequestResponse(ChannelHandlerContext ctx, String message) {
         final byte[] content = message.getBytes(StandardCharsets.UTF_8);
-        http1_1Response(ctx, HttpResponseStatus.BAD_REQUEST, content);
+        http1_1TextResponse(ctx, HttpResponseStatus.BAD_REQUEST, content);
     }
 
     /**
@@ -294,7 +294,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param ctx ctx
      */
     public static void unauthorizedResponse(ChannelHandlerContext ctx) {
-        http1_1Response(ctx, HttpResponseStatus.UNAUTHORIZED, UNAUTHORIZED);
+        http1_1TextResponse(ctx, HttpResponseStatus.UNAUTHORIZED, UNAUTHORIZED);
     }
 
     /**
@@ -305,7 +305,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      */
     public static void notFoundResponse(ChannelHandlerContext ctx, String path) {
         final byte[] content = (path + " not found").getBytes(StandardCharsets.UTF_8);
-        http1_1Response(ctx, HttpResponseStatus.NOT_FOUND, content);
+        http1_1TextResponse(ctx, HttpResponseStatus.NOT_FOUND, content);
     }
 
     /**
@@ -338,9 +338,25 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
      * @param status status
      * @param message message
      */
-    public static void http1_1Response(
+    public static void http1_1TextResponse(
             ChannelHandlerContext ctx, HttpResponseStatus status, byte[] message) {
         http1_1Response(ctx, status, textPlainUtf8Headers(message.length), message);
+    }
+
+    /**
+     * http 1.1 json response.
+     *
+     * @param ctx ctx
+     * @param status status
+     * @param message message
+     */
+    public static void http1_1JsonResponse(
+            ChannelHandlerContext ctx, HttpResponseStatus status, byte[] message) {
+        http1_1Response(ctx, status, applicationJsonUtf8Headers(message.length), message);
+    }
+
+    public static void http1_1JsonOkResponse(ChannelHandlerContext ctx, byte[] message) {
+        http1_1JsonResponse(ctx, HttpResponseStatus.OK, message);
     }
 
     /**
@@ -352,6 +368,13 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     public static HttpHeaders textPlainUtf8Headers(int contentLength) {
         return new DefaultHttpHeaders()
                 .add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_TEXT_PLAIN_UTF8)
+                .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
+                .add(HttpHeaderNames.CONTENT_LENGTH, contentLength);
+    }
+
+    public static HttpHeaders applicationJsonUtf8Headers(int contentLength) {
+        return new DefaultHttpHeaders()
+                .add(HttpHeaderNames.CONTENT_TYPE, HTTP_HEADER_VALUE_APPLICATION_JSON_UTF8)
                 .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
                 .add(HttpHeaderNames.CONTENT_LENGTH, contentLength);
     }
