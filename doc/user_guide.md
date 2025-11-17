@@ -54,7 +54,7 @@ which includes three subdirectories: "bin", "config", and "libs".
 Here, a simple config of application.properties in config dir is shown as follows:
 
 ```properties
-server.metrics.port=9090
+server.port=9090
 source.s1.channel=c1
 source.s1.implement=netty
 source.s1.netty.port=8200
@@ -64,7 +64,7 @@ channel.c1.groups=group_1
 sink.group_1.function.id=print
 ```
 
-Please note that the port configuration for server.metrics.port and source.s1.netty.port should not be
+Please note that the port configuration for server.port and source.s1.netty.port should not be
 duplicated and must not be occupied by other processes.
 
 Start the Tributary service by using this application.properties as follows

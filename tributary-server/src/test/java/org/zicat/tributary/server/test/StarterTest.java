@@ -20,14 +20,15 @@ package org.zicat.tributary.server.test;
 
 import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
-import static org.zicat.tributary.server.test.MetricsHttpServerTest.availablePorts;
+import static org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder.OPTION_METRICS_PATH;
+import static org.zicat.tributary.server.test.HttpServerTest.availablePorts;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.records.Record;
-import org.zicat.tributary.server.MetricsHttpServer;
+import org.zicat.tributary.server.rest.HttpServer;
 import org.zicat.tributary.server.Starter;
 
 import java.io.IOException;
@@ -50,8 +51,8 @@ public class StarterTest {
         final List<Integer> availablePorts = availablePorts(2);
         final ReadableConfig config =
                 new ReadableConfigConfigBuilder()
-                        .addConfig("server.metrics.port", availablePorts.get(0))
-                        .addConfig("server.metrics.host-patterns", "127.0.0.1")
+                        .addConfig("server.port", availablePorts.get(0))
+                        .addConfig("server.host-pattern", "127.0.0.1")
                         .addConfig("source.s1.channel", "c1")
                         .addConfig("source.s1.implement", "netty")
                         .addConfig("source.s1.netty.host-patterns", "127.0.0.1")
@@ -76,13 +77,13 @@ public class StarterTest {
                 Assert.assertEquals("aaa", new String(collection.get(0).value()));
             }
 
-            final MetricsHttpServer metricsHttpServer = starter.httpServer();
+            final HttpServer httpServer = starter.httpServer();
             // check metrics
             final URL url =
                     new URL(
                             "http://localhost:"
-                                    + metricsHttpServer.port()
-                                    + metricsHttpServer.metricsPath());
+                                    + httpServer.port()
+                                    + OPTION_METRICS_PATH.defaultValue());
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             try {
                 final String v =
@@ -115,8 +116,8 @@ public class StarterTest {
             channelComponent.flush();
         }
 
-        public MetricsHttpServer httpServer() {
-            return metricsHttpServer;
+        public HttpServer httpServer() {
+            return httpServer;
         }
     }
 }

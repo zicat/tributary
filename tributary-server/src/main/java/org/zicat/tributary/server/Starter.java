@@ -27,6 +27,7 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.component.*;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
+import org.zicat.tributary.server.rest.HttpServer;
 
 import java.io.Closeable;
 import java.util.Properties;
@@ -43,7 +44,7 @@ public class Starter implements Closeable {
     protected transient ChannelComponent channelComponent;
     protected transient SinkComponent sinkComponent;
     protected transient SourceComponent sourceComponent;
-    protected transient MetricsHttpServer metricsHttpServer;
+    protected transient HttpServer httpServer;
 
     public Starter(Properties properties) {
         this.channelConfig = PropertiesConfigBuilder.channelConfig(properties);
@@ -62,14 +63,14 @@ public class Starter implements Closeable {
     /** init component. */
     protected void initComponent() throws Exception {
         final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
-        this.metricsHttpServer = new MetricsHttpServer(registry, serverConfig);
-        final String metricsHost = metricsHttpServer.metricHost();
+        this.httpServer = new HttpServer(registry, serverConfig);
+        final String metricsHost = httpServer.host();
         this.channelComponent = channelComponentFactory(metricsHost).create().register(registry);
         this.sinkComponent =
                 sinkComponentFactory(metricsHost, channelComponent).create().register(registry);
         this.sourceComponent =
                 sourceComponentFactory(metricsHost, channelComponent).create().register(registry);
-        metricsHttpServer.start();
+        httpServer.start();
     }
 
     /**
@@ -109,7 +110,7 @@ public class Starter implements Closeable {
     @Override
     public void close() {
         LOG.info("start to close tributary....");
-        IOUtils.closeQuietly(metricsHttpServer);
+        IOUtils.closeQuietly(httpServer);
         IOUtils.closeQuietly(sourceComponent);
         try {
             if (channelComponent != null) {

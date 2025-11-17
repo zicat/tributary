@@ -28,7 +28,7 @@ prepare_lib() {
 
 prepare_config() {
 cat << EOF > "${release_dir_config}""/application.properties"
-server.metrics.port=9090
+server.port=9090
 source.s1.channel=c1
 source.s1.implement=netty
 source.s1.netty.port=8200

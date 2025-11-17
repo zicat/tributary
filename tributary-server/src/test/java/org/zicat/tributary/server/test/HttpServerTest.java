@@ -29,7 +29,8 @@ import org.zicat.tributary.channel.AbstractSingleChannel;
 import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.metric.MetricKey;
-import org.zicat.tributary.server.MetricsHttpServer;
+import static org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder.OPTION_METRICS_PATH;
+import org.zicat.tributary.server.rest.HttpServer;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -42,7 +43,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /** HttServerTest. */
-public class MetricsHttpServerTest {
+public class HttpServerTest {
 
     @Test
     public void testMetricsPath() throws Exception {
@@ -60,15 +61,15 @@ public class MetricsHttpServerTest {
 
         final ReadableConfig config =
                 new ReadableConfigConfigBuilder()
-                        .addConfig(MetricsHttpServer.OPTION_PORT, availablePort())
+                        .addConfig(HttpServer.OPTION_PORT, availablePort())
                         .build();
-        try (MetricsHttpServer metricsHttpServer = new MetricsHttpServer(registry, config)) {
-            metricsHttpServer.start();
+        try (HttpServer httpServer = new HttpServer(registry, config)) {
+            httpServer.start();
             final URL url =
                     new URL(
                             "http://localhost:"
-                                    + metricsHttpServer.port()
-                                    + metricsHttpServer.metricsPath());
+                                    + httpServer.port()
+                                    + OPTION_METRICS_PATH.defaultValue());
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             try {
                 final String v =

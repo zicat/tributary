@@ -5,17 +5,17 @@ Tributary Configuration consists of four parts, including server, source, channe
 ## Server
 
 ```properties
-server.metrics.port=9090
-server.metrics.host-patterns=127.0.0.1
+server.port=9090
+server.host-pattern=127.0.0.1
 ```
 
 The Tributary service provides metrics indicators in the form of http restful api.
 
-The parameter "server.metrics.host-patterns" is a regular expression that is used to filter the
+The parameter "server.host-pattern" is a regular expression that is used to filter the
 required hosts when there are multiple network cards in the machine, and assign the value to the
 host dimension in the metrics.
 
-Get tributary metrics as follows, ensure that the port matches the server.metrics.port configuration:
+Get tributary metrics as follows, ensure that the port matches the server.port configuration:
 
 ```shell
 $ curl -s http://localhost:9090/metrics|grep -v '#'
@@ -29,12 +29,12 @@ channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
 sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
 ```
 
-| Key                           | default  | valid value | describe                                                      |
-|-------------------------------|----------|-------------|---------------------------------------------------------------|
-| server.metrics.port           |          | int(number) | the port to bind, range 1000-65535                            |
-| server.metrics.worker-threads | 1        | int(number) | the work thread to deal with request                          |
-| server.metrics.host-patterns  | null     | string      | the pattern the config the output metrics value, default null |
-| server.metrics.path           | /metrics | string      | the metrics http path                                         |
+| Key                   | default  | valid value | describe                                                                                                             |
+|-----------------------|----------|-------------|----------------------------------------------------------------------------------------------------------------------|
+| server.port           |          | int(number) | the port to bind, range 1000-65535                                                                                   |
+| server.worker-threads | 1        | int(number) | the work thread to deal with request                                                                                 |
+| server.host-pattern   | null     | string      | the pattern the config the output metrics value, default null means using `InetAddress.getLocalHost().getHostName()` |
+| server.path.metrics   | /metrics | string      | the metrics http path                                                                                                |
 
 ## Source
 
@@ -483,9 +483,9 @@ Note:
 ## The complete demo config
 
 ```
-server.metrics.port=9090
-server.metrics.host-patterns=.*
-server.metrics.path=/metrics
+server.port=9090
+server.host-pattern=.*
+server.path.metrics=/metrics
 
 source.s1.channel=c1
 source.s1.implement=netty
