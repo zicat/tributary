@@ -41,7 +41,8 @@ public class BlockReader extends Block {
      */
     public BlockReader wrap(byte[] data, long readBytes) {
         final ByteBuffer byteBuffer = IOUtils.reAllocate(this.resultBuf, data.length);
-        byteBuffer.put(data).flip();
+        byteBuffer.put(data);
+        byteBuffer.flip();
         return new BlockReader(byteBuffer, reusedBuf, readBytes);
     }
 

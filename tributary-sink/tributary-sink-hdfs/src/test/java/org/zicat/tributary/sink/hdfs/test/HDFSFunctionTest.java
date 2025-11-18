@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.hdfs.test;
 
+import org.zicat.tributary.common.records.Record0;
 import static org.zicat.tributary.common.util.BytesUtils.toBytes;
 import static org.zicat.tributary.common.util.IOUtils.deleteDir;
 import static org.zicat.tributary.common.util.IOUtils.makeDir;
@@ -41,7 +42,6 @@ import org.junit.Test;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.test.util.FileUtils;
 import org.zicat.tributary.sink.config.ContextBuilder;
@@ -80,10 +80,10 @@ public class HDFSFunctionTest {
 
         final Map<String, byte[]> recordHeader1 = new HashMap<>();
         recordHeader1.put("rhk1", "rhv1".getBytes());
-        final Record record1 = new DefaultRecord(recordHeader1, "rk1".getBytes(), "rv1".getBytes());
+        final Record0 record1 = new DefaultRecord(recordHeader1, "rk1".getBytes(), "rv1".getBytes());
         final Map<String, byte[]> recordHeader2 = new HashMap<>();
         recordHeader2.put("rhk2", "rhv2".getBytes());
-        Record record2 = new DefaultRecord(recordHeader2, "rk2".getBytes(), "rv2".getBytes());
+        Record0 record2 = new DefaultRecord(recordHeader2, "rk2".getBytes(), "rv2".getBytes());
 
         final Map<String, byte[]> recordsHeader = new HashMap<>();
         recordHeader1.put("rshk1", "rshv1".getBytes());

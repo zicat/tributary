@@ -29,8 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DirectMemoryPool {
 
     private static final MemorySize CHUNK = new MemorySize(1024 * 1024);
-    private static final MemorySize DEFAULT_DIRECT_CAPACITY =
-            new MemorySize(sun.misc.VM.maxDirectMemory());
+    private static final MemorySize DEFAULT_DIRECT_CAPACITY = new MemorySize(getMaxDirectMemory());
     private static final BlockingQueue<ByteBuffer> POOL =
             new ArrayBlockingQueue<>(
                     (int) ((DEFAULT_DIRECT_CAPACITY.getBytes() * 0.3) / CHUNK.getBytes()));
@@ -89,5 +88,29 @@ public class DirectMemoryPool {
         if (!POOL.offer(byteBuffer)) {
             CREATED_COUNT.decrementAndGet();
         }
+    }
+
+    public static long getMaxDirectMemory() {
+        for (String arg :
+                java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments()) {
+            if (arg.startsWith("-XX:MaxDirectMemorySize")) {
+                String value = arg.split("=")[1].toUpperCase();
+                return parseMemorySize(value);
+            }
+        }
+        return Runtime.getRuntime().maxMemory();
+    }
+
+    private static long parseMemorySize(String value) {
+        value = value.trim().toUpperCase();
+        final long baseValue = Long.parseLong(value.substring(0, value.length() - 1));
+        if (value.endsWith("G")) {
+            return baseValue * 1024 * 1024 * 1024;
+        } else if (value.endsWith("M")) {
+            return baseValue * 1024 * 1024;
+        } else if (value.endsWith("K")) {
+            return baseValue * 1024;
+        }
+        return Long.parseLong(value);
     }
 }

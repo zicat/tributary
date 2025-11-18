@@ -28,9 +28,9 @@ public class DefaultRecords implements Records {
 
     private final String topic;
     private final Map<String, byte[]> headers;
-    private final Collection<Record> records;
+    private final Collection<Record0> records;
 
-    public DefaultRecords(String topic, Map<String, byte[]> headers, Collection<Record> records) {
+    public DefaultRecords(String topic, Map<String, byte[]> headers, Collection<Record0> records) {
         if (topic == null) {
             throw new IllegalArgumentException("topic is null");
         }
@@ -43,7 +43,7 @@ public class DefaultRecords implements Records {
         this(topic, headers, new ArrayList<>());
     }
 
-    public DefaultRecords(String topic, Collection<Record> records) {
+    public DefaultRecords(String topic, Collection<Record0> records) {
         this(topic, null, records);
     }
 
@@ -62,13 +62,13 @@ public class DefaultRecords implements Records {
         return records.size();
     }
 
-    public void addRecord(Record record) {
+    public void addRecord(Record0 record) {
         records.add(record);
     }
 
     @Override
     @NotNull
-    public Iterator<Record> iterator() {
+    public Iterator<Record0> iterator() {
         return records.iterator();
     }
 
@@ -90,7 +90,7 @@ public class DefaultRecords implements Records {
             }
         }
         sb.append("], records:[");
-        final Iterator<Record> recordIt = records.iterator();
+        final Iterator<Record0> recordIt = records.iterator();
         while (recordIt.hasNext()) {
             sb.append(recordIt.next().toString());
             if (recordIt.hasNext()) {

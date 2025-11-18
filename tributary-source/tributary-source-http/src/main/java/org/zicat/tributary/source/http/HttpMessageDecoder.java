@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.PathParams;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.Source;
 
@@ -50,8 +50,8 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
     public static final ObjectMapper MAPPER =
             new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-    protected static final TypeReference<List<Record>> BODY_TYPE =
-            new TypeReference<List<Record>>() {};
+    protected static final TypeReference<List<Record0>> BODY_TYPE =
+            new TypeReference<List<Record0>>() {};
 
     private static final byte[] UNAUTHORIZED =
             "Authentication required".getBytes(StandardCharsets.UTF_8);
@@ -178,7 +178,7 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             Map<String, String> httpHeaders,
             byte[] body)
             throws Exception {
-        final List<Record> records = MAPPER.readValue(body, BODY_TYPE);
+        final List<Record0> records = MAPPER.readValue(body, BODY_TYPE);
         return Collections.singletonList(
                 new DefaultRecords(topic, recordsHeaders(httpHeaders), records));
     }

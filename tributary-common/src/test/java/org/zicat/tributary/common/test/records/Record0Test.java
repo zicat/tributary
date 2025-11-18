@@ -21,14 +21,14 @@ package org.zicat.tributary.common.test.records;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.records.DefaultRecord;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 /** RecordTest. */
-public class RecordTest {
+public class Record0Test {
 
     @Test
     public void test() {
@@ -40,14 +40,14 @@ public class RecordTest {
         test(new DefaultRecord(headers, "k1".getBytes(), "k2".getBytes()));
     }
 
-    public static void test(Record record) {
+    public static void test(Record0 record) {
         final ByteBuffer buffer = record.toByteBuffer();
         Assert.assertEquals(0, buffer.position());
         Assert.assertEquals(buffer.limit(), buffer.capacity());
-        assertRecord(record, Record.parse(buffer));
+        assertRecord(record, Record0.parse(buffer));
     }
 
-    public static void assertRecord(Record record, Record newRecord) {
+    public static void assertRecord(Record0 record, Record0 newRecord) {
         Assert.assertArrayEquals(record.key(), newRecord.key());
         Assert.assertArrayEquals(record.value(), newRecord.value());
         Assert.assertEquals(record.headers().size(), newRecord.headers().size());

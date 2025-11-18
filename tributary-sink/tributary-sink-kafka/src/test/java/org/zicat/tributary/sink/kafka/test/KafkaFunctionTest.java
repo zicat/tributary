@@ -43,8 +43,8 @@ public class KafkaFunctionTest {
 
     private static final String topic = "kt1";
     private static final String groupId = "g2";
-    private Record record1;
-    private Record record2;
+    private Record0 record1;
+    private Record0 record2;
     private Map<String, byte[]> recordsHeader;
     private MockProducer<byte[], byte[]> mockProducer;
 
@@ -123,7 +123,7 @@ public class KafkaFunctionTest {
     }
 
     private static void assertData(
-            Record record,
+            Record0 record,
             ProducerRecord<byte[], byte[]> kafkaRecord,
             Map<String, byte[]> recordsHeader) {
         Assert.assertArrayEquals(record.key(), kafkaRecord.key());

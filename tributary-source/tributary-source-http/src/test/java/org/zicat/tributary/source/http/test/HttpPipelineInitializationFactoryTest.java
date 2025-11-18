@@ -25,6 +25,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import org.xerial.snappy.Snappy;
 import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
+import org.zicat.tributary.common.records.Record0;
 import static org.zicat.tributary.common.util.IOUtils.compressionGZip;
 import static org.zicat.tributary.common.util.IOUtils.decompressionGZip;
 import org.zicat.tributary.source.base.netty.NettySource;
@@ -44,7 +45,6 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils;
 import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
@@ -224,7 +224,7 @@ public class HttpPipelineInitializationFactoryTest {
         final Records record = Records.parse(data.get(0));
         Assert.assertEquals(TOPIC, record.topic());
         Assert.assertEquals(1, record.count());
-        final Record record2 = record.iterator().next();
+        final Record0 record2 = record.iterator().next();
         Assert.assertEquals("key2", new String(record2.key(), StandardCharsets.UTF_8));
         Assert.assertEquals("value2", new String(record2.value(), StandardCharsets.UTF_8));
         Assert.assertEquals(2, record2.headers().size());
@@ -283,7 +283,7 @@ public class HttpPipelineInitializationFactoryTest {
         final Records records1 = Records.parse(data.get(0));
         Assert.assertEquals(TOPIC, records1.topic());
         Assert.assertEquals(1, records1.count());
-        final Record record1 = records1.iterator().next();
+        final Record0 record1 = records1.iterator().next();
         Assert.assertEquals("key1", new String(record1.key(), StandardCharsets.UTF_8));
         Assert.assertEquals("value1", new String(record1.value(), StandardCharsets.UTF_8));
         Assert.assertEquals(2, record1.headers().size());
@@ -295,7 +295,7 @@ public class HttpPipelineInitializationFactoryTest {
         final Records records2 = Records.parse(data.get(1));
         Assert.assertEquals(TOPIC, records2.topic());
         Assert.assertEquals(1, records2.count());
-        final Record record2 = records2.iterator().next();
+        final Record0 record2 = records2.iterator().next();
         Assert.assertEquals("key2", new String(record2.key(), StandardCharsets.UTF_8));
         Assert.assertEquals("value2", new String(record2.value(), StandardCharsets.UTF_8));
         Assert.assertEquals(2, record2.headers().size());

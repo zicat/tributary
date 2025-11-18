@@ -26,11 +26,11 @@ import java.util.Map;
 
 import static org.zicat.tributary.common.util.BytesUtils.toVIntString;
 import static org.zicat.tributary.common.util.VIntUtil.*;
-import static org.zicat.tributary.common.records.Record.headBuffers;
-import static org.zicat.tributary.common.records.Record.parseHeaders;
+import static org.zicat.tributary.common.records.Record0.headBuffers;
+import static org.zicat.tributary.common.records.Record0.parseHeaders;
 
 /** Records. */
-public interface Records extends Iterable<Record> {
+public interface Records extends Iterable<Record0> {
 
     /**
      * Get the topic of record.
@@ -95,7 +95,7 @@ public interface Records extends Iterable<Record> {
      */
     default List<ByteBuffer> recordBuffer() {
         final List<ByteBuffer> recordBuffers = new ArrayList<>(count());
-        for (Record value : this) {
+        for (Record0 value : this) {
             final ByteBuffer record = value.toByteBuffer();
             recordBuffers.add(record);
         }
@@ -112,9 +112,9 @@ public interface Records extends Iterable<Record> {
         final String topic = toVIntString(byteBuffer);
         final Map<String, byte[]> headers = parseHeaders(byteBuffer);
         final int recordCount = readVInt(byteBuffer);
-        final List<Record> records = new ArrayList<>(recordCount);
+        final List<Record0> records = new ArrayList<>(recordCount);
         for (int i = 0; i < recordCount; i++) {
-            records.add(Record.parse(byteBuffer));
+            records.add(Record0.parse(byteBuffer));
         }
         return new DefaultRecords(topic, headers, records);
     }

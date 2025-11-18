@@ -22,7 +22,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.records.DefaultRecord;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.config.Context;
@@ -37,14 +37,14 @@ import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
 /** CollectionFunctionFactoryMock. */
 public class CollectionFunctionFactoryMock implements FunctionFactory {
 
-    public static final ConfigOption<List<Record>> OPTION_COLLECTION =
-            ConfigOptions.key("collection").<List<Record>>objectType().noDefaultValue();
+    public static final ConfigOption<List<Record0>> OPTION_COLLECTION =
+            ConfigOptions.key("collection").<List<Record0>>objectType().noDefaultValue();
 
     @Override
     public Function create() {
         return new AbstractFunction() {
 
-            private transient List<Record> collection;
+            private transient List<Record0> collection;
 
             @Override
             public void open(Context context) throws Exception {

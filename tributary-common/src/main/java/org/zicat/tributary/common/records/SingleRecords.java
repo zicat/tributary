@@ -27,9 +27,9 @@ public class SingleRecords implements Records {
 
     private final String topic;
     private final Map<String, byte[]> headers;
-    private final Record record;
+    private final Record0 record;
 
-    public SingleRecords(String topic, Map<String, byte[]> headers, Record record) {
+    public SingleRecords(String topic, Map<String, byte[]> headers, Record0 record) {
         if (topic == null) {
             throw new IllegalArgumentException("topic is null");
         }
@@ -38,7 +38,7 @@ public class SingleRecords implements Records {
         this.record = record;
     }
 
-    public SingleRecords(String topic, Record record) {
+    public SingleRecords(String topic, Record0 record) {
         this(topic, null, record);
     }
 
@@ -59,9 +59,9 @@ public class SingleRecords implements Records {
 
     @Override
     @NotNull
-    public Iterator<Record> iterator() {
-        return new Iterator<Record>() {
-            Record offset = record;
+    public Iterator<Record0> iterator() {
+        return new Iterator<Record0>() {
+            Record0 offset = record;
 
             @Override
             public boolean hasNext() {
@@ -69,8 +69,8 @@ public class SingleRecords implements Records {
             }
 
             @Override
-            public Record next() {
-                Record result = offset;
+            public Record0 next() {
+                Record0 result = offset;
                 offset = null;
                 return result;
             }

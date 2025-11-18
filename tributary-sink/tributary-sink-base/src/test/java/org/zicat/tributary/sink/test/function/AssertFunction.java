@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.function.AbstractFunction;
 import org.zicat.tributary.sink.config.Context;
@@ -51,7 +51,7 @@ public class AssertFunction extends AbstractFunction {
     @Override
     public void process(Offset offset, Iterator<Records> iterator) {
         while (iterator.hasNext()) {
-            for (Record record : iterator.next()) {
+            for (Record0 record : iterator.next()) {
                 Assert.assertFalse(assertData.isEmpty());
                 String value = new String(record.value(), StandardCharsets.UTF_8);
                 Assert.assertTrue(assertData.remove(value));

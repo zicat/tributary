@@ -44,7 +44,7 @@ import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.channel.RecordsResultSet;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
@@ -143,7 +143,7 @@ public class KafkaPipelineInitializationFactoryTest {
 
             final Records records = Records.parse(resultSet.next());
             Assert.assertEquals(tp.topic(), records.topic());
-            final Record record = records.iterator().next();
+            final Record0 record = records.iterator().next();
             Assert.assertEquals("k1", new String(record.key()));
             Assert.assertEquals("v1", new String(record.value()));
             Assert.assertEquals(1, record.headers().size());

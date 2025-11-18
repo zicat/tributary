@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 import org.zicat.tributary.common.records.Records;
 
 import java.nio.ByteBuffer;
@@ -53,7 +53,7 @@ public class RecordsTest {
         final Map<String, byte[]> record2Headers = new HashMap<>();
         record2Headers.put("rh11", "rhv11".getBytes());
         record2Headers.put("rh22", "rhv22".getBytes());
-        final Collection<Record> records =
+        final Collection<Record0> records =
                 Arrays.asList(
                         new DefaultRecord(record1Headers, "kr1".getBytes(), "vr1".getBytes()),
                         new DefaultRecord(record2Headers, "kr2".getBytes(), "vr2".getBytes()));
@@ -70,10 +70,10 @@ public class RecordsTest {
         Assert.assertEquals(records.topic(), newRecords.topic());
         Assert.assertEquals(records.count(), newRecords.count());
 
-        final Iterator<Record> it = records.iterator();
-        final Iterator<Record> it2 = records.iterator();
+        final Iterator<Record0> it = records.iterator();
+        final Iterator<Record0> it2 = records.iterator();
         while (it.hasNext()) {
-            RecordTest.assertRecord(it.next(), it2.next());
+            Record0Test.assertRecord(it.next(), it2.next());
         }
     }
 }

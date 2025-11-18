@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** JsonRecord. */
-public class JsonRecord implements Record {
+public class JsonRecord implements Record0 {
     private static final byte[] EMPTY = new byte[0];
     private final String key;
     private final String value;
