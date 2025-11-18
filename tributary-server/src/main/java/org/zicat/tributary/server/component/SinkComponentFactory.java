@@ -28,6 +28,7 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.server.component.SinkComponent.SinkGroupManagerList;
+import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.sink.config.SinkGroupConfig;
 import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -58,13 +59,15 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
 
     private final ReadableConfig sinkConfig;
     private final ChannelComponent channelComponent;
-    private final String metricsHost;
+    private final TributaryCollectorRegistry registry;
 
     public SinkComponentFactory(
-            ReadableConfig sinkConfig, ChannelComponent channelComponent, String metricsHost) {
+            ReadableConfig sinkConfig,
+            ChannelComponent channelComponent,
+            TributaryCollectorRegistry registry) {
         this.sinkConfig = sinkConfig;
         this.channelComponent = channelComponent;
-        this.metricsHost = metricsHost;
+        this.registry = registry;
     }
 
     @Override
@@ -78,8 +81,7 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
                 if (channels.isEmpty()) {
                     throw new TributaryRuntimeException("group " + group + " not found channel");
                 }
-                final SinkGroupManagerList managerList =
-                        new SinkGroupManagerList(group, metricsHost);
+                final SinkGroupManagerList managerList = new SinkGroupManagerList(group, registry);
                 sinkGroupManagers.put(group, managerList);
                 for (Channel channel : channels) {
                     final SinkGroupConfig config = entry.getValue().build();
@@ -90,7 +92,7 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
                     managerList.add(sinkGroupManager);
                 }
             }
-            return new SinkComponent(sinkGroupManagers);
+            return new SinkComponent(sinkGroupManagers, registry);
         } catch (Exception e) {
             sinkGroupManagers.forEach((k, v) -> IOUtils.closeQuietly(v));
             throw new TributaryRuntimeException(e);

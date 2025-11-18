@@ -64,7 +64,7 @@ public class HttpServer implements Closeable {
     }
 
     /** start. */
-    public void start(DispatcherHttpHandler dispatcherHttpHandler)
+    public void start(ChannelHandler dispatcherHttpHandler)
             throws InterruptedException, IllegalAccessException {
         final ServerBootstrap b = createServerBootstrap(bossGroup, workerGroup);
         b.childHandler(

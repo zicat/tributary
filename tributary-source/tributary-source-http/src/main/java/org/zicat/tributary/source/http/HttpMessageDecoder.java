@@ -94,7 +94,11 @@ public class HttpMessageDecoder extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
 
-        final PathParams pathParams = new PathParams(msg.uri());
+        final PathParams pathParams = PathParams.create(msg.uri());
+        if (pathParams == null) {
+            notFoundResponse(ctx, path);
+            return;
+        }
         final String path = pathParams.path();
         if (!pathMatch(path)) {
             notFoundResponse(ctx, path);

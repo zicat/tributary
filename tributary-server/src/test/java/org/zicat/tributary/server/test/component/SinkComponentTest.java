@@ -27,6 +27,7 @@ import org.zicat.tributary.server.component.SinkComponent;
 import org.zicat.tributary.server.component.SinkComponentFactory;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
+import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.IOException;
@@ -44,12 +45,11 @@ public class SinkComponentTest {
         final Properties properties = new PropertiesLoader(profile).load();
         final ReadableConfig channelConfig = PropertiesConfigBuilder.channelConfig(properties);
         final ReadableConfig sinkConfig = PropertiesConfigBuilder.sinkConfig(properties);
-        final String metricsHost = "local";
+        final TributaryCollectorRegistry registry = new TributaryCollectorRegistry("local");
         try (ChannelComponent channelComponent =
-                        new ChannelComponentFactory(channelConfig, metricsHost).create();
+                        new ChannelComponentFactory(channelConfig, registry).create();
                 SinkComponent sinkComponent =
-                        new SinkComponentFactory(sinkConfig, channelComponent, metricsHost)
-                                .create()) {
+                        new SinkComponentFactory(sinkConfig, channelComponent, registry).create()) {
 
             Assert.assertEquals(4, sinkComponent.size());
             Assert.assertTrue(sinkComponent.collect().size() >= sinkComponent.size());

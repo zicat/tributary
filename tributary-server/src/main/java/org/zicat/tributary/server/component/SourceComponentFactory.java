@@ -30,6 +30,7 @@ import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.SourceFactory;
 
@@ -52,13 +53,15 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
 
     private final ReadableConfig sourceConfig;
     private final ChannelComponent channelComponent;
-    private final String metricsHost;
+    private final TributaryCollectorRegistry registry;
 
     public SourceComponentFactory(
-            ReadableConfig sourceConfig, ChannelComponent channelComponent, String metricsHost) {
+            ReadableConfig sourceConfig,
+            ChannelComponent channelComponent,
+            TributaryCollectorRegistry registry) {
         this.sourceConfig = sourceConfig;
         this.channelComponent = channelComponent;
-        this.metricsHost = metricsHost;
+        this.registry = registry;
     }
 
     @Override
@@ -80,7 +83,7 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
                 sources.put(sourceId, source);
             }
             LOG.info("create source success, sources {}", sources.keySet());
-            return new SourceComponent(sources, metricsHost);
+            return new SourceComponent(sources, registry);
         } catch (Exception e) {
             sources.forEach((k, v) -> IOUtils.closeQuietly(v));
             throw new TributaryRuntimeException(e);

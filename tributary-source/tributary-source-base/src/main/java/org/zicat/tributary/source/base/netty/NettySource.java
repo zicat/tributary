@@ -201,7 +201,7 @@ public abstract class NettySource extends AbstractSource {
             closeServerChannelsAndGroup();
         } finally {
             try {
-                super.close();
+                flush();
             } finally {
                 IOUtils.closeQuietly(pipelineInitialization);
             }
@@ -211,9 +211,7 @@ public abstract class NettySource extends AbstractSource {
     private void closeServerChannelsAndGroup() {
         if (channelList != null) {
             channelList.forEach(NettySource::closeChannelSync);
-            for (String host : hostNames) {
-                LOG.info("close netty source listen {}:{}", prettyHost(host), port);
-            }
+            LOG.info("close netty source, id:{}, port:{}", sourceId, port);
         }
         if (workGroup != null) {
             workGroup.shutdownGracefully();
@@ -304,7 +302,7 @@ public abstract class NettySource extends AbstractSource {
                 LOG.warn("ChannelOption {} not exists, ignore it.", optionName);
                 continue;
             }
-            final Object option = field.get(null); // static 字段，所以传 null
+            final Object option = field.get(null);
             if (!(option instanceof ChannelOption)) {
                 continue;
             }

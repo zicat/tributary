@@ -33,6 +33,7 @@ import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
+import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 
 /** ChannelComponentFactory. */
 public class ChannelComponentFactory implements SafeFactory<ChannelComponent> {
@@ -45,11 +46,12 @@ public class ChannelComponentFactory implements SafeFactory<ChannelComponent> {
                     .defaultValue(FileChannelFactory.TYPE);
 
     private final ReadableConfig channelConfig;
-    private final String metricsHost;
+    private final TributaryCollectorRegistry registry;
 
-    public ChannelComponentFactory(ReadableConfig channelConfig, String metricsHost) {
+    public ChannelComponentFactory(
+            ReadableConfig channelConfig, TributaryCollectorRegistry registry) {
         this.channelConfig = channelConfig;
-        this.metricsHost = metricsHost;
+        this.registry = registry;
     }
 
     @Override
@@ -65,7 +67,7 @@ public class ChannelComponentFactory implements SafeFactory<ChannelComponent> {
                 channels.put(topic, factory.createChannel(topic, topicConfig));
             }
             LOG.info("create channel success, topics {}", topics);
-            return new ChannelComponent(channels, metricsHost);
+            return new ChannelComponent(channels, registry);
         } catch (Exception e) {
             channels.forEach((k, v) -> IOUtils.closeQuietly(v));
             throw new TributaryRuntimeException(e);

@@ -26,7 +26,6 @@ import static org.zicat.tributary.server.test.HttpServerTest.availablePorts;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.server.rest.HttpServer;
 import org.zicat.tributary.server.Starter;
@@ -66,7 +65,7 @@ public class StarterTest {
                         .build();
 
         try (final StarterMock starter = new StarterMock(config.toProperties())) {
-            starter.start();
+            starter.start0();
 
             // check data in sink
             try (Socket socket = new Socket("127.0.0.1", availablePorts.get(1))) {
@@ -106,14 +105,13 @@ public class StarterTest {
             super(properties);
         }
 
-        @Override
-        public void start() throws Exception {
-            initComponent();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtils.closeQuietly(this)));
-        }
-
         public void flushChannel() {
             channelComponent.flush();
+        }
+
+        @Override
+        public void start0() throws Exception {
+            super.start0();
         }
 
         public HttpServer httpServer() {

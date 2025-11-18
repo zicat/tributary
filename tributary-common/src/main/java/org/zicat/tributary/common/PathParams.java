@@ -33,10 +33,18 @@ public class PathParams {
     private final Map<String, String> params;
     private final String path;
 
-    public PathParams(String u) throws URISyntaxException, UnsupportedEncodingException {
+    private PathParams(String u) throws URISyntaxException, UnsupportedEncodingException {
         final URI uri = new URI(u);
         this.path = uri.getPath();
         this.params = params(uri);
+    }
+
+    public static PathParams create(String u) {
+        try {
+            return new PathParams(u);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

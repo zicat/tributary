@@ -45,7 +45,11 @@ public class DispatcherHttpHandler extends SimpleChannelInboundHandler<FullHttpR
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-        final PathParams pathParams = new PathParams(req.uri());
+        final PathParams pathParams = PathParams.create(req.uri());
+        if (pathParams == null) {
+            notFoundResponse(ctx, req.uri());
+            return;
+        }
         final RestHandler restHandler = requestMapping.get(pathParams.path());
         if (restHandler == null) {
             notFoundResponse(ctx, pathParams.path());

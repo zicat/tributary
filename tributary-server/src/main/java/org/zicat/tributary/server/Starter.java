@@ -18,8 +18,7 @@
 
 package org.zicat.tributary.server;
 
-import io.prometheus.client.CollectorRegistry;
-
+import io.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.util.IOUtils;
@@ -27,6 +26,7 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.component.*;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
+import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder;
 import org.zicat.tributary.server.rest.HttpServer;
 
@@ -34,7 +34,7 @@ import java.io.Closeable;
 import java.util.Properties;
 import java.util.concurrent.locks.LockSupport;
 
-/** Server. */
+/** Starter. */
 public class Starter implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Starter.class);
@@ -56,60 +56,24 @@ public class Starter implements Closeable {
 
     /** open. this method will park current thread if open success. */
     public void start() throws Exception {
-        initComponent();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtils.closeQuietly(this)));
+        start0();
         LockSupport.park();
     }
 
-    /** init component. */
-    protected void initComponent() throws Exception {
-        final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
+    /**
+     * start0 without park.
+     *
+     * @throws Exception Exception
+     */
+    protected void start0() throws Exception {
         this.httpServer = new HttpServer(serverConfig);
-        final String host = httpServer.host();
-        this.channelComponent = channelComponentFactory(host).create().register(registry);
-        this.sinkComponent =
-                sinkComponentFactory(host, channelComponent).create().register(registry);
-        this.sourceComponent =
-                sourceComponentFactory(host, channelComponent).create().register(registry);
-        httpServer.start(
-                new DispatcherHttpHandlerBuilder(serverConfig)
-                        .metricCollectorRegistry(registry)
-                        .channelComponent(channelComponent)
-                        .build());
-    }
-
-    /**
-     * create ChannelComponentFactory.
-     *
-     * @param metricsHost metricsHost
-     * @return ChannelComponentFactory
-     */
-    protected ChannelComponentFactory channelComponentFactory(String metricsHost) {
-        return new ChannelComponentFactory(channelConfig, metricsHost);
-    }
-
-    /**
-     * create SinkComponentFactory.
-     *
-     * @param metricsHost metricsHost
-     * @param channelComponent channelComponent
-     * @return SinkComponentFactory
-     */
-    protected SinkComponentFactory sinkComponentFactory(
-            String metricsHost, ChannelComponent channelComponent) {
-        return new SinkComponentFactory(sinkConfig, channelComponent, metricsHost);
-    }
-
-    /**
-     * create SourceComponentFactory.
-     *
-     * @param metricsHost metricsHost
-     * @param channelComponent channelComponent
-     * @return SourceComponentFactory
-     */
-    protected SourceComponentFactory sourceComponentFactory(
-            String metricsHost, ChannelComponent channelComponent) {
-        return new SourceComponentFactory(sourceConfig, channelComponent, metricsHost);
+        final TributaryCollectorRegistry registry =
+                new TributaryCollectorRegistry(httpServer.host());
+        this.channelComponent = createChannelComponent(registry);
+        this.sinkComponent = createSinkComponent(registry);
+        this.sourceComponent = createSourceComponent(registry);
+        httpServer.start(createDispatcherHttpHandler(registry));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtils.closeQuietly(this)));
     }
 
     @Override
@@ -125,6 +89,58 @@ public class Starter implements Closeable {
             IOUtils.closeQuietly(sinkComponent);
             IOUtils.closeQuietly(channelComponent);
         }
+    }
+
+    /**
+     * create Channel Component.
+     *
+     * @param registry registry
+     * @return ChannelComponent
+     */
+    protected ChannelComponent createChannelComponent(TributaryCollectorRegistry registry) {
+        return new ChannelComponentFactory(channelConfig, registry).create();
+    }
+
+    /**
+     * create Sink Component.
+     *
+     * @param registry registry
+     * @return SinkComponent
+     */
+    protected SinkComponent createSinkComponent(TributaryCollectorRegistry registry) {
+        if (channelComponent == null) {
+            throw new IllegalStateException("channel component is null");
+        }
+        return new SinkComponentFactory(sinkConfig, channelComponent, registry).create();
+    }
+
+    /**
+     * create Source Component.
+     *
+     * @param registry registry
+     * @return SourceComponent
+     */
+    protected SourceComponent createSourceComponent(TributaryCollectorRegistry registry) {
+        if (channelComponent == null) {
+            throw new IllegalStateException("channel component is null");
+        }
+        return new SourceComponentFactory(sourceConfig, channelComponent, registry).create();
+    }
+
+    /**
+     * create Dispatcher Http Handler.
+     *
+     * @param registry registry
+     * @return ChannelHandler
+     */
+    protected ChannelHandler createDispatcherHttpHandler(TributaryCollectorRegistry registry) {
+        if (channelComponent == null) {
+            throw new IllegalStateException("channel component is null");
+        }
+        return new DispatcherHttpHandlerBuilder(serverConfig)
+                .metricCollectorRegistry(registry)
+                .channelComponent(channelComponent)
+                .build();
     }
 
     public static void main(String[] args) throws Exception {

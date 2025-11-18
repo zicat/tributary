@@ -145,11 +145,6 @@ public abstract class AbstractSource implements Source {
         return sourceId;
     }
 
-    @Override
-    public void close() throws IOException {
-        flush();
-    }
-
     /**
      * get config.
      *

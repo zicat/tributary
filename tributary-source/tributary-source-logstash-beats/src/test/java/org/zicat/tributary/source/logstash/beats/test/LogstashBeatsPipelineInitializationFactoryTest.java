@@ -125,7 +125,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
             final SslHandler clientSslHandler = clientChannel.pipeline().get(SslHandler.class);
             final SslHandler serverSslHandler = serverChannel.pipeline().get(SslHandler.class);
 
-            // 通过手动触发链接active事件来执行ssl握手
+            // handle active event to execute ssl
             clientChannel.pipeline().fireChannelActive();
             serverChannel.pipeline().fireChannelActive();
             // 5. Process handshake messages

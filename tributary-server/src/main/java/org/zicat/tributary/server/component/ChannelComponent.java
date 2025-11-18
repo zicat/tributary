@@ -21,6 +21,7 @@ package org.zicat.tributary.server.component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,15 +34,17 @@ public class ChannelComponent extends AbstractComponent<String, Channel> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChannelComponent.class);
     private static final List<String> LABELS = Arrays.asList("topic", "host");
-    private final String metricsHost;
+    private final TributaryCollectorRegistry registry;
 
-    public ChannelComponent(Map<String, Channel> elements, String metricsHost) {
+    public ChannelComponent(Map<String, Channel> elements, TributaryCollectorRegistry registry) {
         super(elements);
-        this.metricsHost = metricsHost;
+        this.registry = registry;
+        register(registry);
     }
 
     /**
      * for each channel.
+     *
      * @param action action
      */
     public void forEachChannel(BiConsumer<String, Channel> action) {
@@ -59,7 +62,7 @@ public class ChannelComponent extends AbstractComponent<String, Channel> {
 
                     @Override
                     public List<String> additionalLabelValues(Channel channel) {
-                        return Arrays.asList(channel.topic(), metricsHost);
+                        return Arrays.asList(channel.topic(), registry.host());
                     }
                 });
     }
