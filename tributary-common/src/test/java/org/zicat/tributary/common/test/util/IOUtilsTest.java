@@ -203,7 +203,9 @@ public class IOUtilsTest {
 
         final ByteBuffer dataBuffer;
         dataBuffer = ByteBuffer.allocateDirect(bs.length + 4);
-        dataBuffer.putInt(bs.length).put(bs).flip();
+        dataBuffer.putInt(bs.length);
+        dataBuffer.put(bs);
+        dataBuffer.flip();
         dataBuffer.getInt();
         return dataBuffer;
     }

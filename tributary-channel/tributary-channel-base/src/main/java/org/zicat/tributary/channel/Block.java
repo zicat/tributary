@@ -41,7 +41,8 @@ public class Block {
      */
     public Block reset() {
         if (resultBuf != null && resultBuf.hasRemaining()) {
-            resultBuf.clear().flip();
+            resultBuf.clear();
+            resultBuf.flip();
         }
         return this;
     }

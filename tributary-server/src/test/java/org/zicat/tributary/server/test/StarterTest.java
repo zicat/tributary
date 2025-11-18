@@ -20,6 +20,7 @@ package org.zicat.tributary.server.test;
 
 import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
+import org.zicat.tributary.common.records.Record0;
 import static org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder.OPTION_METRICS_PATH;
 import static org.zicat.tributary.server.test.HttpServerTest.availablePorts;
 
@@ -27,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
-import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.server.rest.HttpServer;
 import org.zicat.tributary.server.Starter;
 
@@ -47,7 +47,7 @@ public class StarterTest {
     @Test
     public void test() throws IOException, InterruptedException {
 
-        final List<Record> collection = Collections.synchronizedList(new ArrayList<>());
+        final List<Record0> collection = Collections.synchronizedList(new ArrayList<>());
         final List<Integer> availablePorts = availablePorts(2);
         final ReadableConfig config =
                 new ReadableConfigConfigBuilder()

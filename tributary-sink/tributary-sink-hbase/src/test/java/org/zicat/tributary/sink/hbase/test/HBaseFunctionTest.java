@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.sink.hbase.test;
 
+import org.zicat.tributary.common.records.Record0;
 import static org.zicat.tributary.sink.hbase.HBaseFunctionFactory.*;
 
 import org.apache.hadoop.conf.Configuration;
@@ -35,7 +36,6 @@ import org.mockito.Mockito;
 import org.zicat.tributary.channel.Offset;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.sink.config.ContextBuilder;
 import org.zicat.tributary.sink.function.Function;
@@ -63,10 +63,10 @@ public class HBaseFunctionTest {
     public void test() throws Exception {
         final Map<String, byte[]> recordHeader1 = new HashMap<>();
         recordHeader1.put("rhk1", "rhv1".getBytes());
-        final Record record1 = new DefaultRecord(recordHeader1, "rk1".getBytes(), "rv1".getBytes());
+        final Record0 record1 = new DefaultRecord(recordHeader1, "rk1".getBytes(), "rv1".getBytes());
         final Map<String, byte[]> recordHeader2 = new HashMap<>();
         recordHeader2.put("rhk2", "rhv2".getBytes());
-        final Record record2 = new DefaultRecord(recordHeader2, "rk2".getBytes(), "rv2".getBytes());
+        final Record0 record2 = new DefaultRecord(recordHeader2, "rk2".getBytes(), "rv2".getBytes());
         final Map<String, byte[]> recordsHeader = new HashMap<>();
         recordsHeader.put("rshk1", "rshv1".getBytes());
         final List<Records> recordsList =

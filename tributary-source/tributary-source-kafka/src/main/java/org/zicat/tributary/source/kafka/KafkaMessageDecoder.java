@@ -42,6 +42,7 @@ import org.apache.kafka25.MetadataResponse.TopicMetadata;
 import org.apache.kafka25.ProduceResponse.PartitionResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.common.records.Record0;
 import org.zicat.tributary.common.util.BytesUtils;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.records.DefaultRecord;
@@ -296,7 +297,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
      * @param record kafka record
      * @return tributary record
      */
-    private static org.zicat.tributary.common.records.Record toRecord(Record record) {
+    private static Record0 toRecord(Record record) {
         final Map<String, byte[]> headers = new HashMap<>();
         for (Header header : record.headers()) {
             headers.put(header.key(), header.value());

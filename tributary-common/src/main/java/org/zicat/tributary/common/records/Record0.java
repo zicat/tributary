@@ -35,7 +35,7 @@ import static org.zicat.tributary.common.util.VIntUtil.*;
 
 /** Record. */
 @JsonTypeInfo(defaultImpl = JsonRecord.class, use = JsonTypeInfo.Id.CLASS)
-public interface Record {
+public interface Record0 {
 
     /**
      * Get the headers of record.
@@ -123,7 +123,7 @@ public interface Record {
      * @param byteBuffer byteBuffer
      * @return Record
      */
-    static Record parse(ByteBuffer byteBuffer) {
+    static Record0 parse(ByteBuffer byteBuffer) {
         final Map<String, byte[]> headers = parseHeaders(byteBuffer);
         final byte[] key = toVIntBytes(byteBuffer);
         final byte[] value = toVIntBytes(byteBuffer);

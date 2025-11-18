@@ -53,7 +53,9 @@ public class IOUtils {
     public static ByteBuffer compressionNone(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
         reusedByteBuffer =
                 IOUtils.reAllocate(reusedByteBuffer, byteBuffer.remaining() + INT_LENGTH);
-        reusedByteBuffer.putInt(byteBuffer.remaining()).put(byteBuffer).flip();
+        reusedByteBuffer.putInt(byteBuffer.remaining());
+        reusedByteBuffer.put(byteBuffer);
+        reusedByteBuffer.flip();
         return reusedByteBuffer;
     }
 
@@ -77,7 +79,8 @@ public class IOUtils {
      */
     public static ByteBuffer decompressionNone(ByteBuffer byteBuffer, ByteBuffer targetBuffer) {
         targetBuffer = IOUtils.reAllocate(targetBuffer, byteBuffer.remaining());
-        targetBuffer.put(byteBuffer).flip();
+        targetBuffer.put(byteBuffer);
+        targetBuffer.flip();
         return targetBuffer;
     }
 
@@ -102,7 +105,9 @@ public class IOUtils {
         final ByteBuffer zstdBuffer = Zstd.compress(byteBuffer, 3);
         reusedByteBuffer =
                 IOUtils.reAllocate(reusedByteBuffer, zstdBuffer.remaining() + INT_LENGTH);
-        reusedByteBuffer.putInt(zstdBuffer.remaining()).put(zstdBuffer).flip();
+        reusedByteBuffer.putInt(zstdBuffer.remaining());
+        reusedByteBuffer.put(zstdBuffer);
+        reusedByteBuffer.flip();
         return reusedByteBuffer;
     }
 

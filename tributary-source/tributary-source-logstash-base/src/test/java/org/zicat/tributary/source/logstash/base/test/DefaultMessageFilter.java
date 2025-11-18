@@ -21,7 +21,7 @@ package org.zicat.tributary.source.logstash.base.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilter;
 
@@ -40,7 +40,7 @@ public class DefaultMessageFilter implements MessageFilter<Object> {
 
     @Override
     public Collection convert(String topic, Iterator iterator) throws Exception {
-        List<Record> records = new ArrayList<>();
+        List<Record0> records = new ArrayList<>();
         while (iterator.hasNext()) {
             Map data = ((Message<Object>) iterator.next()).getData();
             data.remove("aa");

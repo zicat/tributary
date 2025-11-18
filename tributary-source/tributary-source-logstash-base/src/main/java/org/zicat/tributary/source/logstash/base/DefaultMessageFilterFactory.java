@@ -24,7 +24,7 @@ import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
-import org.zicat.tributary.common.records.Record;
+import org.zicat.tributary.common.records.Record0;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +48,7 @@ public class DefaultMessageFilterFactory implements MessageFilterFactory {
     @Override
     public MessageFilter<Object> getMessageFilter() {
         return (topic, iterator) -> {
-            final Collection<Record> result = new ArrayList<>();
+            final Collection<Record0> result = new ArrayList<>();
             while (iterator.hasNext()) {
                 final Message<Object> message = iterator.next();
                 if (message == null) {

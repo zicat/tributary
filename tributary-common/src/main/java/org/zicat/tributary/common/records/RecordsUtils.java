@@ -127,7 +127,7 @@ public class RecordsUtils {
     public static void foreachRecord(
             Records records, RecordConsumer consumer, Map<String, byte[]> extraHeaders)
             throws Exception {
-        for (Record record : records) {
+        for (Record0 record : records) {
             final Map<String, byte[]> headers = new HashMap<>(record.headers());
             appendHead(extraHeaders, headers);
             appendHead(records.headers(), headers);

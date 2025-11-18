@@ -83,7 +83,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
 
         final Map<String, byte[]> recordHeader1 = new HashMap<>();
         recordHeader1.put("rhk1", "rhv1".getBytes());
-        final Record record1 =
+        final Record0 record1 =
                 new DefaultRecord(
                         recordHeader1,
                         "rk1".getBytes(),
@@ -91,7 +91,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
 
         final Map<String, byte[]> recordHeader2 = new HashMap<>();
         recordHeader2.put("rhk2", "rhv2".getBytes());
-        final Record record2 =
+        final Record0 record2 =
                 new DefaultRecord(
                         recordHeader2,
                         null,
@@ -99,7 +99,7 @@ public class ElasticsearchFunctionTest extends ESSingleNodeTestCase {
 
         final Map<String, byte[]> recordHeader3 = new HashMap<>();
         recordHeader3.put("rhk3", "rhv3".getBytes());
-        final Record record3 =
+        final Record0 record3 =
                 new DefaultRecord(recordHeader3, null, "{\"name\":\"n1\", score:30}".getBytes());
 
         final Map<String, byte[]> recordsHeader = new HashMap<>();

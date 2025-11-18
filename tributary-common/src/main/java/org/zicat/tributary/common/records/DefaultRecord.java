@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /** DefaultRecord. */
-public class DefaultRecord implements Record {
+public class DefaultRecord implements Record0 {
 
     private static final byte[] EMPTY = new byte[0];
 
