@@ -51,6 +51,7 @@ import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFact
 import org.zicat.tributary.source.base.test.netty.NettySourceMock;
 import org.zicat.tributary.source.kafka.KafkaMessageDecoder;
 import org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory;
+import org.zicat.tributary.source.kafka.SaslMechanism;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -75,7 +76,7 @@ public class KafkaPipelineInitializationFactoryTest {
         final ReadableConfigBuilder builder =
                 new ReadableConfigBuilder()
                         .addConfig(OPTION_TOPIC_PARTITION_COUNT, partitions)
-                        .addConfig(OPTION_KAFKA_SASL_PLAIN, true)
+                        .addConfig(OPTION_KAFKA_SASL_MECHANISM, SaslMechanism.PLAIN)
                         .addConfig(OPTION_SASL_USERS, AUTH_USER + "_" + AUTH_PASS)
                         .addConfig(OPTION_KAFKA_WORKER_THREADS, -1)
                         .addConfig(OPTION_KAFKA_ADVERTISED_HOST_PATTERN, "localhost");

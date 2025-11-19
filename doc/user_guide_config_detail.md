@@ -151,8 +151,8 @@ more configuration as follows:
 | netty.decoder.kafka.ssl.keystore.password          | null            | string        | the keystore password to read keystore file                                                                                                                                                                     |
 | netty.decoder.kafka.ssl.key.password               | null            | string        | the key password to get private key from keystore file                                                                                                                                                          |
 | netty.decoder.kafka.ssl.timeout                    | 10sec           | duration      | the ssl handle timeout                                                                                                                                                                                          |
-| netty.decoder.kafka.sasl.plain                     | false           | bool          | the security switch whether open sasl plain                                                                                                                                                                     |
-| netty.decoder.kafka.sasl.plain.usernames           | null            | string        | the plain users configuration, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                                              |
+| netty.decoder.kafka.sasl.mechanism=PLAIN           | null            | enum          | the sasl mechanism, only support value `PLAIN`                                                                                                                                                                  |
+| netty.decoder.kafka.sasl.plain.usernames           | null            | string        | the plain users configuration if sasl.mechanism=PLAIN, config multi user-password pairs splitting by `,`, user-password is split by `_`, like user1_16Ew658jjzvmxDqk,user2_bbbb,user3_cccc                      |
 
 #### http
 

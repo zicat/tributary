@@ -69,8 +69,10 @@ public class KafkaPipelineInitializationFactory implements PipelineInitializatio
     public static final ConfigOption<Integer> OPTION_TOPIC_PARTITION_COUNT =
             ConfigOptions.key(CONFIG_PREFIX + "topic.partitions").integerType().defaultValue(60);
 
-    public static final ConfigOption<Boolean> OPTION_KAFKA_SASL_PLAIN =
-            ConfigOptions.key(CONFIG_PREFIX + "sasl.plain").booleanType().defaultValue(false);
+    public static final ConfigOption<SaslMechanism> OPTION_KAFKA_SASL_MECHANISM =
+            ConfigOptions.key(CONFIG_PREFIX + "sasl.mechanism")
+                    .enumType(SaslMechanism.class)
+                    .defaultValue(SaslMechanism.NONE);
 
     public static final ConfigOption<String> OPTION_SASL_USERS =
             ConfigOptions.key(CONFIG_PREFIX + "sasl.plain.usernames")

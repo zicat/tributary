@@ -219,8 +219,8 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
      * @return SaslServer
      */
     private static SaslServer createSaslServer(ReadableConfig config) {
-        final boolean saslPlain = config.get(OPTION_KAFKA_SASL_PLAIN);
-        if (!saslPlain) {
+        final SaslMechanism mechanism = config.get(OPTION_KAFKA_SASL_MECHANISM);
+        if (mechanism == null || mechanism == SaslMechanism.NONE) {
             return null;
         }
         final String users = config.get(OPTION_SASL_USERS);
