@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.config.ConfigOptions;
 import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.PercentSize;
 import org.zicat.tributary.common.config.ReadableConfig;
 
@@ -31,7 +31,7 @@ public class ReadableConfigTest {
 
     @Test
     public void test() {
-        ReadableConfig config = new ReadableConfigConfigBuilder().build();
+        ReadableConfig config = new ReadableConfigBuilder().build();
         Assert.assertEquals(
                 "bb", config.get(ConfigOptions.key("aa").stringType().defaultValue(null), "bb"));
         Assert.assertEquals(
@@ -43,7 +43,7 @@ public class ReadableConfigTest {
         } catch (Exception ignore) {
         }
 
-        config = new ReadableConfigConfigBuilder().addConfig("aa", "bb").build();
+        config = new ReadableConfigBuilder().addConfig("aa", "bb").build();
         Assert.assertEquals(
                 "bb", config.get(ConfigOptions.key("aa").stringType().noDefaultValue()));
         Assert.assertEquals(
@@ -56,7 +56,7 @@ public class ReadableConfigTest {
     @Test
     public void testListType() {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder().addConfig("aa", "aa,bb;,,cc").build();
+                new ReadableConfigBuilder().addConfig("aa", "aa,bb;,,cc").build();
         Assert.assertArrayEquals(
                 new String[] {"aa", "bb;", "cc"},
                 config.get(ConfigOptions.key("aa").listType(COMMA_SPLIT_HANDLER).noDefaultValue())
@@ -66,7 +66,7 @@ public class ReadableConfigTest {
     @Test
     public void testPercentType() {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig("aa", "10.1 % ")
                         .addConfig("bb", "20%")
                         .build();
@@ -113,7 +113,7 @@ public class ReadableConfigTest {
     @Test
     public void testEnumType() {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig("aa", "none")
                         .addConfig("bb", "zstd")
                         .addConfig("cc", "snappy")
@@ -156,7 +156,7 @@ public class ReadableConfigTest {
     @Test
     public void testDurationType() {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig("aa", "10ms")
                         .addConfig("bb", "20sec")
                         .addConfig("cc", "30min")
@@ -183,7 +183,7 @@ public class ReadableConfigTest {
     @Test
     public void testMemoryType() {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig("aa", "10b")
                         .addConfig("bb", "20kb")
                         .addConfig("cc", "30mb")

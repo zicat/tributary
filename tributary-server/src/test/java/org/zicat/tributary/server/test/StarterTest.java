@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.server.test;
 
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.Record0;
 import static org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder.OPTION_METRICS_PATH;
@@ -49,7 +49,7 @@ public class StarterTest {
         final List<Record0> collection = Collections.synchronizedList(new ArrayList<>());
         final List<Integer> availablePorts = availablePorts(2);
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig("server.port", availablePorts.get(0))
                         .addConfig("server.host-pattern", "127.0.0.1")
                         .addConfig("source.s1.channel", "c1")

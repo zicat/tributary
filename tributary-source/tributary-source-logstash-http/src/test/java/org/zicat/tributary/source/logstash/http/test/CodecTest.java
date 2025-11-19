@@ -20,7 +20,7 @@ package org.zicat.tributary.source.logstash.http.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.source.logstash.http.Codec;
 import org.zicat.tributary.source.logstash.http.LogstashHttpPipelineInitializationFactory;
@@ -37,7 +37,7 @@ public class CodecTest {
     @Test
     public void testPlain() throws IOException {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(
                                 LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC
                                         .key(),
@@ -56,7 +56,7 @@ public class CodecTest {
     @Test
     public void testJson() throws IOException {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(
                                 LogstashHttpPipelineInitializationFactory.OPTION_LOGSTASH_CODEC
                                         .key(),

@@ -20,7 +20,7 @@ package org.zicat.tributary.source.base.test.netty;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import static org.zicat.tributary.source.base.AbstractSource.OPTION_CHANNEL_APPEND_RESULT_TYPE;
 import org.zicat.tributary.source.base.AppendResultType;
 
@@ -29,7 +29,7 @@ public class AppendResultTypeTest {
 
     @Test
     public void test() {
-        ReadableConfigConfigBuilder builder = new ReadableConfigConfigBuilder();
+        ReadableConfigBuilder builder = new ReadableConfigBuilder();
         builder.addConfig(OPTION_CHANNEL_APPEND_RESULT_TYPE.key(), "block");
         Assert.assertEquals(
                 AppendResultType.BLOCK, builder.build().get(OPTION_CHANNEL_APPEND_RESULT_TYPE));

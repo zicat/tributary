@@ -90,7 +90,7 @@ public interface ReadableConfig {
      * @return ReadableConfig
      */
     default ReadableConfig filterAndRemovePrefixKey(String prefixKey) {
-        final ReadableConfigConfigBuilder builder = new ReadableConfigConfigBuilder();
+        final ReadableConfigBuilder builder = new ReadableConfigBuilder();
         forEach(
                 (k, v) -> {
                     if (k.indexOf(prefixKey) == 0) {

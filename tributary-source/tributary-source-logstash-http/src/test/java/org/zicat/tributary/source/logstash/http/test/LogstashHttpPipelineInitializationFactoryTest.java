@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.logstash.http.test;
 
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.source.base.netty.NettySource;
@@ -70,7 +70,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     public void test() throws Exception {
 
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
                         .addConfig(OPTION_LOGSTASH_CODEC, Codec.PLAIN)
                         .addConfig(OPTION_LOGSTASH_HTTP_REMOTE_HOST_TARGET_FIELD, "remote_host")
@@ -161,7 +161,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     public void test2() throws Exception {
 
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
                         .addConfig(OPTION_LOGSTASH_CODEC, Codec.JSON)
                         .build();
@@ -221,7 +221,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     public void testContentType() throws Exception {
 
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
                         .addConfig(OPTION_LOGSTASH_CODEC, Codec.PLAIN)
                         .build();
@@ -281,7 +281,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
     @Test
     public void testMessageFilter() throws Exception {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_LOGSTASH_HTTP_WORKER_THREADS, -1)
                         .addConfig(OPTION_LOGSTASH_CODEC, Codec.JSON)
                         .addConfig(

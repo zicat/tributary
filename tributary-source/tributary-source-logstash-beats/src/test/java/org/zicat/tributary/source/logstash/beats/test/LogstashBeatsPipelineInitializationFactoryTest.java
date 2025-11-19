@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.logstash.beats.test;
 
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUPPORTED_CIPHERS;
 import static org.zicat.tributary.source.base.netty.ssl.PemSslContextBuilder.SUPPORT_PROTOCOL;
@@ -84,7 +84,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
         final String topic = "t1";
         final String caCertPath = "ca.crt";
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1)
                         .addConfig(OPTION_LOGSTASH_BEATS_SSL, true)
                         .addConfig(OPTION_LOGSTASH_BEATS_SSL_CERTIFICATE, "server.crt")
@@ -172,7 +172,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
     public void testMessageFilter() throws Exception {
         final String topic = "t1";
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1) // set to sync for test
                         .addConfig(
                                 CONFIG_PREFIX + OPTION_MESSAGE_FILTER_FACTORY_ID.key(),
@@ -229,7 +229,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
 
         final String topic = "t1";
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_LOGSTASH_BEATS_WORKER_THREADS, -1) // set to sync for test
                         .addConfig(
                                 CONFIG_PREFIX + DefaultMessageFilterFactory.OPTION_TOPIC.key(),

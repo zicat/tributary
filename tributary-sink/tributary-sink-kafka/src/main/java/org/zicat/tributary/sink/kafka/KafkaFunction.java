@@ -20,8 +20,10 @@ package org.zicat.tributary.sink.kafka;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.metric.MetricKey;
 import static org.zicat.tributary.common.records.RecordsUtils.foreachRecord;
+import static org.zicat.tributary.common.util.ResourceUtils.getResourcePath;
 import static org.zicat.tributary.sink.kafka.KafkaFunctionFactory.OPTION_TOPIC;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -43,6 +45,7 @@ import java.util.Map.Entry;
 /** KafkaFunction. */
 public class KafkaFunction extends AbstractFunction {
 
+    private static final String PROPERTY_KEY_LOCATION_SUFFIX = ".location";
     public static final String HEAD_KEY_ORIGIN_TOPIC = "_origin_topic";
     public static final String TOPIC_TEMPLATE = "${topic}";
 
@@ -122,8 +125,17 @@ public class KafkaFunction extends AbstractFunction {
      * @return producer
      */
     protected Producer<byte[], byte[]> createProducer(Context context) {
-        final Properties properties =
-                context.filterAndRemovePrefixKey(KAFKA_KEY_PREFIX).toProperties();
+        final ReadableConfigBuilder builder = new ReadableConfigBuilder();
+        context.filterAndRemovePrefixKey(KAFKA_KEY_PREFIX)
+                .forEach(
+                        (k, v) -> {
+                            if (k.endsWith(PROPERTY_KEY_LOCATION_SUFFIX)) {
+                                builder.addConfig(k, getResourcePath(v.toString()));
+                            } else {
+                                builder.addConfig(k, v);
+                            }
+                        });
+        final Properties properties = builder.build().toProperties();
         properties.put(KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         properties.put(VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         return new KafkaProducer<>(properties);

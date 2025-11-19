@@ -19,7 +19,7 @@
 package org.zicat.tributary.server.config;
 
 import org.zicat.tributary.common.config.ReadableConfig;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 
 import java.util.Properties;
 
@@ -55,7 +55,7 @@ public class PropertiesConfigBuilder {
      * @return config
      */
     public ReadableConfig build() {
-        final ReadableConfigConfigBuilder builder = new ReadableConfigConfigBuilder();
+        final ReadableConfigBuilder builder = new ReadableConfigBuilder();
         properties.forEach(
                 (k, v) -> {
                     final String key = k.toString();

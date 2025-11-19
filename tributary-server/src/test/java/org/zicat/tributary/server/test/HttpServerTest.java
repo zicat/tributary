@@ -26,7 +26,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.AbstractSingleChannel;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder;
@@ -61,7 +61,7 @@ public class HttpServerTest {
         }.register(registry);
 
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(HttpServer.OPTION_PORT, availablePort())
                         .build();
         try (HttpServer httpServer = new HttpServer(config)) {

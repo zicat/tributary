@@ -84,7 +84,7 @@ public class KafkaPipelineInitializationFactory implements PipelineInitializatio
                     .defaultValue(10);
 
     public static final ConfigOption<List<String>> OPTION_SSL_ENABLE_PROTOCOLS =
-            ConfigOptions.key(CONFIG_PREFIX + "ssl.enable.protocols")
+            ConfigOptions.key(CONFIG_PREFIX + "ssl.enabled.protocols")
                     .listType(COMMA_SPLIT_HANDLER)
                     .description("Set the enabled protocols for SSL/TLS connections.")
                     .defaultValue(null);

@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.sink.config.SinkGroupConfig;
 import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.handler.DefaultPartitionHandlerFactory;
@@ -46,7 +46,7 @@ public class SinkGroupConfigTest {
                 .addConfigIfContainKey("bb", ee.key(), "ff")
                 .addConfig("kafka.aa", "hh")
                 .addConfig("kafka.bb", "jj")
-                .addConfigs(new ReadableConfigConfigBuilder().addConfig("m_1", "m_v_1").build())
+                .addConfigs(new ReadableConfigBuilder().addConfig("m_1", "m_v_1").build())
                 .addConfig("kk", 3);
         final SinkGroupConfig sinkGroupConfig = builder.build();
         Assert.assertEquals(

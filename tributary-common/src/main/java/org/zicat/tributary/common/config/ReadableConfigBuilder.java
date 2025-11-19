@@ -18,9 +18,8 @@
 
 package org.zicat.tributary.common.config;
 
-/** ReadableConfigConfigBuilder. */
-public class ReadableConfigConfigBuilder
-        extends ConfigBuilder<ReadableConfigConfigBuilder, ReadableConfig> {
+/** ReadableConfigBuilder. */
+public class ReadableConfigBuilder extends ConfigBuilder<ReadableConfigBuilder, ReadableConfig> {
 
     @Override
     public ReadableConfig build() {

@@ -28,7 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.Records;
@@ -53,7 +53,7 @@ public class LengthPipelineInitializationFactoryTest {
         final String groupId = "g1";
         final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder().addConfig(OPTION_LENGTH_WORKER_THREADS, -1).build();
+                new ReadableConfigBuilder().addConfig(OPTION_LENGTH_WORKER_THREADS, -1).build();
         try (Channel channel = memoryChannelFactory(groupId).createChannel("t1", null);
                 NettySource source = new NettySourceMock(config, channel)) {
             final PipelineInitialization pipelineInitialization =

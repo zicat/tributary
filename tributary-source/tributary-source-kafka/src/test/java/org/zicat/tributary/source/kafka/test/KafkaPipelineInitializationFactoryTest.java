@@ -20,7 +20,7 @@ package org.zicat.tributary.source.kafka.test;
 
 import static org.apache.kafka25.ApiKeys.*;
 import static org.zicat.tributary.channel.memory.test.MemoryChannelTestUtils.memoryChannelFactory;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.source.base.netty.NettySource;
 import static org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory.*;
 
@@ -72,8 +72,8 @@ public class KafkaPipelineInitializationFactoryTest {
 
     @Test
     public void test() throws Exception {
-        final ReadableConfigConfigBuilder builder =
-                new ReadableConfigConfigBuilder()
+        final ReadableConfigBuilder builder =
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_TOPIC_PARTITION_COUNT, partitions)
                         .addConfig(OPTION_KAFKA_SASL_PLAIN, true)
                         .addConfig(OPTION_SASL_USERS, AUTH_USER + "_" + AUTH_PASS)

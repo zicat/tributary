@@ -39,7 +39,7 @@ import org.zicat.tributary.channel.test.ChannelBaseTest;
 import org.zicat.tributary.channel.test.ChannelBaseTest.DataOffset;
 import org.zicat.tributary.channel.test.SinkGroup;
 import org.zicat.tributary.channel.test.SourceThread;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.MemorySize;
 import org.zicat.tributary.common.config.PercentSize;
 import org.zicat.tributary.common.config.ReadableConfig;
@@ -62,7 +62,7 @@ public class MemorySingleChannelTest {
     public void testChannelStorage() throws Exception {
         final ChannelFactory factory = new MemoryChannelFactory();
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_GROUPS, Arrays.asList("g1", "g2"))
                         .addConfig(OPTION_PARTITION_COUNT, 2)
                         .build();
@@ -187,7 +187,7 @@ public class MemorySingleChannelTest {
     @Test
     public void testBaseCorrect() throws Exception {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_PARTITION_COUNT, 4)
                         .addConfig(OPTION_GROUPS, Arrays.asList("g1", "g2", "g3"))
                         .addConfig(OPTION_COMPRESSION, CompressionType.ZSTD)
@@ -506,7 +506,7 @@ public class MemorySingleChannelTest {
             Set<String> groups)
             throws IOException {
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(OPTION_PARTITION_COUNT, partition)
                         .addConfig(OPTION_BLOCK_SIZE, new MemorySize(blockSize))
                         .addConfig(OPTION_SEGMENT_SIZE, new MemorySize(segmentSize))

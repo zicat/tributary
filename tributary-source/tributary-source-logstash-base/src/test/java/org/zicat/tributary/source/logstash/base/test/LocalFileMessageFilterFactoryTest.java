@@ -22,7 +22,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.util.ResourceUtils;
@@ -65,7 +65,7 @@ public class LocalFileMessageFilterFactoryTest {
                             MessageFilterFactory.findFactory(
                                     LocalFileMessageFilterFactory.IDENTITY);
             ReadableConfig config =
-                    new ReadableConfigConfigBuilder()
+                    new ReadableConfigBuilder()
                             .addConfig(
                                     LocalFileMessageFilterFactory.OPTION_LOCAL_FILE_PATH,
                                     CHANGEABLE_PATH.getPath())

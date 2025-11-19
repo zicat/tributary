@@ -158,16 +158,20 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
             return;
         }
         if (request instanceof SaslAuthenticateRequest) {
+            SaslAuthenticateResponseData responseData =
+                    new SaslAuthenticateResponseData().setErrorCode(Errors.NONE.code());
+            if (saslServer == null) {
+                ctx.writeAndFlush(toByteBuf(new SaslAuthenticateResponse(responseData), header));
+                return;
+            }
             final SaslAuthenticateRequest authenticateRequest = (SaslAuthenticateRequest) request;
             final byte[] token =
                     saslServer.evaluateResponse(authenticateRequest.data().authBytes());
-            final SaslAuthenticateResponse res =
-                    new SaslAuthenticateResponse(
-                            new SaslAuthenticateResponseData()
-                                    .setErrorCode(Errors.NONE.code())
-                                    .setAuthBytes(token));
             ctx.channel().attr(KEY_AUTHENTICATED_USER).set(saslServer.getAuthorizationID());
-            ctx.writeAndFlush(toByteBuf(res, header));
+            ctx.writeAndFlush(
+                    toByteBuf(
+                            new SaslAuthenticateResponse(responseData.setAuthBytes(token)),
+                            header));
             return;
         }
         ctx.close();

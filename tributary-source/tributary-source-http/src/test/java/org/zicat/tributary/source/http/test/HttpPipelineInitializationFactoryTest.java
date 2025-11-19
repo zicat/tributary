@@ -23,7 +23,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 
 import org.xerial.snappy.Snappy;
-import org.zicat.tributary.common.config.ReadableConfigConfigBuilder;
+import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.records.Record0;
 import static org.zicat.tributary.common.util.IOUtils.compressionGZip;
@@ -75,7 +75,7 @@ public class HttpPipelineInitializationFactoryTest {
                         HttpPipelineInitializationFactory.IDENTITY,
                         PipelineInitializationFactory.class);
         final ReadableConfig config =
-                new ReadableConfigConfigBuilder()
+                new ReadableConfigBuilder()
                         .addConfig(HttpPipelineInitializationFactory.OPTIONS_PATH, PATH)
                         .addConfig(HttpPipelineInitializationFactory.OPTION_HTTP_WORKER_THREADS, -1)
                         .build();
