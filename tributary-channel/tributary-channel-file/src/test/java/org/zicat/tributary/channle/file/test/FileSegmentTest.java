@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.channle.file.test;
 
+import org.zicat.tributary.channel.CompressionType;
 import org.zicat.tributary.channel.file.FileSegmentBuilder;
 import static org.zicat.tributary.channel.test.StringTestUtils.createStringByLength;
 import static org.zicat.tributary.common.util.IOUtils.deleteDir;
@@ -52,7 +53,11 @@ public class FileSegmentTest {
         makeDir(childDir);
         final FileSegmentBuilder builder = new FileSegmentBuilder();
         final FileSegment segment =
-                builder.segmentSize(64L).fileId(1).dir(childDir).build(new BlockWriter(16));
+                builder.compressionType(CompressionType.NONE)
+                        .segmentSize(64L)
+                        .fileId(1)
+                        .dir(childDir)
+                        .build(new BlockWriter(16));
         Assert.assertTrue(segment.append("".getBytes(), 0, 0).appended());
 
         testAppend(6, segment);

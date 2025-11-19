@@ -45,8 +45,8 @@ public class ChannelConfigOption {
     public static final ConfigOption<CompressionType> OPTION_COMPRESSION =
             ConfigOptions.key("compression")
                     .enumType(CompressionType.class)
-                    .description("compression type [none,snappy,zstd]")
-                    .defaultValue(CompressionType.NONE);
+                    .description("compression type [none,snappy,zstd], default snappy")
+                    .defaultValue(CompressionType.SNAPPY);
 
     public static final ConfigOption<Integer> OPTION_PARTITION_COUNT =
             ConfigOptions.key("partitions")
