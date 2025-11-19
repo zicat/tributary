@@ -62,7 +62,7 @@ channel, including:
 
 For the above reasons, the [Tributary-Channel](../tributary-channel)
 implements the
-[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileSingleChannel.java)
 based on disk.
 
 The design of file channel allows tributary deployment to be independent of Kafka components, but
@@ -76,7 +76,7 @@ Under normal circumstances, the data lifecycle of a distribution system is trans
 a record can be deleted immediately after it has been successfully consumed by all sinks.
 
 However, in order to cater to the characteristics of the disk,
-[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileSingleChannel.java)
 manages data through segments.
 
 Segments cannot be too small, as frequent creation and deletion will bring additional performance
@@ -138,7 +138,7 @@ and management of Offset.
    to allow the clean-up thread to delete expired segments.
 
 Go to the source code of
-[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileChannel.java)
+[FileChannel](../tributary-channel/tributary-channel-file/src/main/java/org/zicat/tributary/channel/file/FileSingleChannel.java)
 for more details.
 
 ## Sink
@@ -193,7 +193,7 @@ to develop sinks that meet actual needs.
 [FunctionFactory](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/FunctionFactory.java)
 uses Java SPI to inject
 the [Function](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/AbstractFunction.java)
-instance, users can implement it according to actual needs, such
+instance, users can implement it according to actual needs. The tributary support the functions such
 as [PrintFunction](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/PrintFunctionFactory.java)
 ,
 [HDFSFunction](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSFunctionFactory.java)
@@ -201,18 +201,6 @@ as [PrintFunction](../tributary-sink/tributary-sink-base/src/main/java/org/zicat
 [KafkaFunction](../tributary-sink/tributary-sink-kafka/src/main/java/org/zicat/tributary/sink/kafka/KafkaFunctionFactory.java)
 ,
 [HBaseFunction](../tributary-sink/tributary-sink-hbase/src/main/java/org/zicat/tributary/sink/hbase/HBaseFunctionFactory.java)
+,
+[ElasticsearchFunction](../tributary-sink/tributary-sink-elasticsearch/src/main/java/org/zicat/tributary/sink/elasticsearch/ElasticsearchFunctionFactory.java)
 .
-
-#### Trigger
-
-User can define an implement of
-the [AbstractFunction](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/AbstractFunction.java)
-with the interface
-of [Trigger](../tributary-sink/tributary-sink-base/src/main/java/org/zicat/tributary/sink/function/Trigger.java).
-Set
-idleTimeMillis and trigger idleTrigger() function if no records is received for idleTimeMillis.
-
-Tributary service use the trigger feature
-in [HDFSFunction](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSFunction.java)
-to flush the records to hdfs and close the file handler when the idle exceeds the configured time.
-
