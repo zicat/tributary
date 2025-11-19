@@ -52,6 +52,7 @@ import org.zicat.tributary.source.base.test.netty.NettySourceMock;
 import org.zicat.tributary.source.kafka.KafkaMessageDecoder;
 import org.zicat.tributary.source.kafka.KafkaPipelineInitializationFactory;
 import org.zicat.tributary.source.kafka.SaslMechanism;
+import static org.zicat.tributary.source.kafka.ZookeeperMetaKafkaMessageDecoder.OPTION_CONNECT;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -87,7 +88,7 @@ public class KafkaPipelineInitializationFactoryTest {
             server.start();
             test(
                     channel,
-                    builder.addConfig(OPTION_ZOOKEEPER_CONNECT, server.getConnectString() + zkPath)
+                    builder.addConfig(OPTION_CONNECT, server.getConnectString() + zkPath)
                             .build());
         }
     }

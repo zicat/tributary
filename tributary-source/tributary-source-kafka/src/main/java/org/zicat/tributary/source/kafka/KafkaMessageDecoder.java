@@ -55,8 +55,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.security.sasl.SaslServer;
@@ -78,43 +76,36 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
             AttributeKey.valueOf("authenticated_user");
 
     protected final Source source;
+    protected final HostPort hostPort;
     protected final String clusterId;
     protected final int partitions;
+    protected final SaslServer saslServer;
     protected volatile List<Node> nodes;
     protected volatile Node currentNode;
-    protected final SaslServer saslServer;
-    protected final ScheduledExecutorService executor;
 
     public KafkaMessageDecoder(
             Source source,
             HostPort hostPort,
             String clusterId,
             int partitions,
-            long metaTTL,
-            SaslServer saslServer,
-            ScheduledExecutorService executor)
-            throws Exception {
+            SaslServer saslServer) {
         this.source = source;
+        this.hostPort = hostPort;
         this.clusterId = clusterId;
         this.partitions = partitions;
         this.saslServer = saslServer;
-        this.executor = executor;
-        this.nodes = getNodes();
-        this.currentNode = currentNode(nodes, hostPort);
-        executor.scheduleWithFixedDelay(
-                () -> {
-                    try {
-                        final List<Node> nodes = getNodes();
-                        final Node currentNode = currentNode(nodes, hostPort);
-                        this.nodes = nodes;
-                        this.currentNode = currentNode;
-                    } catch (Exception e) {
-                        LOG.error("schedule update meta error", e);
-                    }
-                },
-                metaTTL,
-                metaTTL,
-                TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * update nodes.
+     *
+     * @throws Exception Exception
+     */
+    protected void updateNodes() throws Exception {
+        final List<Node> nodes = getNodes();
+        final Node currentNode = currentNode(nodes, hostPort);
+        this.nodes = nodes;
+        this.currentNode = currentNode;
     }
 
     @Override
@@ -204,7 +195,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
      * @param hostPort hostPort
      * @return node
      */
-    private static Node currentNode(List<Node> nodes, HostPort hostPort) {
+    public static Node currentNode(List<Node> nodes, HostPort hostPort) {
         final Node current = findCurrentNode(nodes, hostPort);
         if (current == null) {
             throw new IllegalStateException("current node not found");

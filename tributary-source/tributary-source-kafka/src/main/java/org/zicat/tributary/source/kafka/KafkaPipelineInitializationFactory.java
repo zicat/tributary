@@ -41,39 +41,12 @@ public class KafkaPipelineInitializationFactory implements PipelineInitializatio
                     .noDefaultValue();
     public static final ConfigOption<String> OPTION_KAFKA_CLUSTER_ID =
             ConfigOptions.key(CONFIG_PREFIX + "cluster.id").stringType().defaultValue(null);
-
-    public static final ConfigOption<String> OPTION_ZOOKEEPER_CONNECT =
-            ConfigOptions.key(CONFIG_PREFIX + "zookeeper.connect").stringType().noDefaultValue();
-    public static final ConfigOption<Duration> OPTION_CONNECTION_TIMEOUT =
-            ConfigOptions.key(CONFIG_PREFIX + "zookeeper.connection.timeout")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(15));
-    public static final ConfigOption<Duration> OPTION_SESSION_TIMEOUT =
-            ConfigOptions.key(CONFIG_PREFIX + "zookeeper.session.timeout")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(60));
-    public static final ConfigOption<Integer> OPTION_RETRY_TIMES =
-            ConfigOptions.key(CONFIG_PREFIX + "zookeeper.retry.times")
-                    .integerType()
-                    .defaultValue(3);
-    public static final ConfigOption<Duration> OPTION_FAIL_BASE_SLEEP_TIME =
-            ConfigOptions.key(CONFIG_PREFIX + "zookeeper.fail.base.sleep.time")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(1));
-
-    public static final ConfigOption<Duration> OPTION_META_CACHE_TTL =
-            ConfigOptions.key(CONFIG_PREFIX + "meta.ttl")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(10));
-
     public static final ConfigOption<Integer> OPTION_TOPIC_PARTITION_COUNT =
             ConfigOptions.key(CONFIG_PREFIX + "topic.partitions").integerType().defaultValue(60);
-
     public static final ConfigOption<SaslMechanism> OPTION_KAFKA_SASL_MECHANISM =
             ConfigOptions.key(CONFIG_PREFIX + "sasl.mechanism")
                     .enumType(SaslMechanism.class)
                     .defaultValue(SaslMechanism.NONE);
-
     public static final ConfigOption<String> OPTION_SASL_USERS =
             ConfigOptions.key(CONFIG_PREFIX + "sasl.plain.usernames")
                     .stringType()

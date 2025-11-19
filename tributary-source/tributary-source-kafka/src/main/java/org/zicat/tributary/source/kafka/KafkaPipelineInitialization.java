@@ -33,14 +33,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.util.concurrent.EventExecutorGroup;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.curator.x.discovery.ServiceDiscovery;
-import org.apache.curator.x.discovery.ServiceDiscoveryBuilder;
-import org.apache.curator.x.discovery.ServiceInstance;
-import org.apache.curator.x.discovery.details.JsonInstanceSerializer;
-import org.apache.kafka.common.Node;
 import org.apache.kafka.common.security.plain.internals.PlainSaslServer;
 import org.apache.kafka25.HostPort;
 import org.apache.kafka25.PlainServerCallbackHandler;
@@ -50,9 +42,6 @@ import org.zicat.tributary.source.base.netty.handler.LengthDecoder;
 import org.zicat.tributary.source.base.netty.pipeline.AbstractPipelineInitialization;
 
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
 import javax.security.sasl.SaslServer;
 
@@ -93,7 +82,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
      * @param source source
      * @return KafkaMessageDecoder
      */
-    private static KafkaMessageDecoder createKafkaMessageDeCoder(NettySource source)
+    protected KafkaMessageDecoder createKafkaMessageDeCoder(NettySource source)
             throws Exception {
         final ReadableConfig config = source.config();
         final String clusterId =
@@ -102,114 +91,11 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
                         : config.get(OPTION_KAFKA_CLUSTER_ID);
         final String hostName = geHostAddress(config.get(OPTION_KAFKA_ADVERTISED_HOST_PATTERN));
         final int port = source.getPort();
-        final String zk = config.get(OPTION_ZOOKEEPER_CONNECT);
-        final String zkHostPort = zk.substring(0, zk.indexOf("/"));
-        final String path = zk.substring(zk.indexOf("/"));
-        final int connectionTimeout = (int) config.get(OPTION_CONNECTION_TIMEOUT).toMillis();
-        final int sessionTimeout = (int) config.get(OPTION_SESSION_TIMEOUT).toMillis();
-        final int retryTimes = config.get(OPTION_RETRY_TIMES);
-        final long baseSleepTimeMs =
-                Math.max(
-                        config.get(OPTION_FAIL_BASE_SLEEP_TIME).toMillis(),
-                        OPTION_FAIL_BASE_SLEEP_TIME.defaultValue().toMillis());
         final int partitions = config.get(OPTION_TOPIC_PARTITION_COUNT);
-        final long metaTTL = config.get(OPTION_META_CACHE_TTL).toMillis();
-        final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-
         final HostPort hostPort = new HostPort(hostName, port);
-        final ServiceInstance<HostPort> currentInstance =
-                ServiceInstance.<HostPort>builder().name(clusterId).payload(hostPort).build();
-        CuratorFramework client = null;
-        ServiceDiscovery<HostPort> serviceDiscovery = null;
-        try {
-            client =
-                    CuratorFrameworkFactory.newClient(
-                            zkHostPort,
-                            sessionTimeout,
-                            connectionTimeout,
-                            new ExponentialBackoffRetry((int) baseSleepTimeMs, retryTimes));
-            client.start();
-            final JsonInstanceSerializer<HostPort> serializer =
-                    new JsonInstanceSerializer<>(HostPort.class);
-            serviceDiscovery =
-                    ServiceDiscoveryBuilder.builder(HostPort.class)
-                            .client(client)
-                            .basePath(path)
-                            .serializer(serializer)
-                            .build();
-            serviceDiscovery.start();
-            serviceDiscovery.registerService(currentInstance);
-            final SaslServer saslServer = createSaslServer(config);
-            final ServiceDiscovery<HostPort> finalServiceDiscovery = serviceDiscovery;
-            final CuratorFramework finalClient = client;
-            return new KafkaMessageDecoder(
-                    source, hostPort, clusterId, partitions, metaTTL, saslServer, executor) {
-                @Override
-                protected List<Node> getNodes() throws Exception {
-
-                    for (int j = 0; j < retryTimes; j++) {
-                        final Collection<ServiceInstance<HostPort>> instances =
-                                finalServiceDiscovery.queryForInstances(clusterId);
-                        final Set<HostPort> hostPorts = new HashSet<>();
-                        for (ServiceInstance<HostPort> instance : instances) {
-                            hostPorts.add(instance.getPayload());
-                        }
-                        final List<HostPort> sortedHostPorts =
-                                hostPorts.stream()
-                                        .sorted(
-                                                Comparator.comparing(HostPort::getHost)
-                                                        .thenComparingInt(HostPort::getPort))
-                                        .collect(Collectors.toList());
-                        final List<Node> nodes = new ArrayList<>(sortedHostPorts.size());
-                        for (int i = 0; i < sortedHostPorts.size(); i++) {
-                            final HostPort hostPort = sortedHostPorts.get(i);
-                            nodes.add(new Node(i, hostPort.getHost(), hostPort.getPort()));
-                        }
-                        if (findCurrentNode(nodes, hostPort) == null) {
-                            Thread.sleep(baseSleepTimeMs + (j + 1));
-                            continue;
-                        }
-                        return nodes;
-                    }
-                    throw new RuntimeException("can not find current node " + hostPort);
-                }
-
-                @Override
-                public void close() {
-                    closeResources(executor, currentInstance, finalServiceDiscovery, finalClient);
-                }
-            };
-        } catch (Exception e) {
-            closeResources(executor, currentInstance, serviceDiscovery, client);
-            throw e;
-        }
-    }
-
-    /**
-     * close resources.
-     *
-     * @param executor executor
-     * @param currentInstance currentInstance
-     * @param serviceDiscovery serviceDiscovery
-     * @param client client
-     */
-    private static void closeResources(
-            ScheduledExecutorService executor,
-            ServiceInstance<HostPort> currentInstance,
-            ServiceDiscovery<HostPort> serviceDiscovery,
-            CuratorFramework client) {
-        try {
-            executor.shutdown();
-        } finally {
-            try {
-                if (serviceDiscovery != null) {
-                    serviceDiscovery.unregisterService(currentInstance);
-                }
-            } catch (Exception ignore) {
-            } finally {
-                IOUtils.closeQuietly(serviceDiscovery, client);
-            }
-        }
+        final SaslServer saslServer = createSaslServer(config);
+        return new ZookeeperMetaKafkaMessageDecoder(
+                source, hostPort, clusterId, partitions, saslServer, config);
     }
 
     /**
