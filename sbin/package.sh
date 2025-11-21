@@ -49,7 +49,7 @@ cat << EOF > "${release_dir_config}""/logback.xml"
             <maxHistory>7</maxHistory>
         </rollingPolicy>
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{32} - %msg%n</Pattern>
+            <Pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%level][%logger{32}-%line] - %msg%n</Pattern>
         </layout>
     </appender>
     <root level="INFO">
