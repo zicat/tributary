@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tributary</artifactId>
         <groupId>org.zicat</groupId>
-        <version>1.5.3</version>
+        <version>1.5.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>tributary-source</artifactId>
