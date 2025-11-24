@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.sink.test.handler;
 
-import static org.zicat.tributary.sink.handler.MultiThreadPartitionHandler.OPTION_THREADS;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
@@ -40,15 +38,8 @@ public class MultiThreadPartitionHandlerTest {
         final String groupId = "g1";
         final SinkGroupConfigBuilder builder =
                 SinkGroupConfigBuilder.newBuilder().functionIdentity("dummy");
-        int threads = 0;
+        int threads = 10;
         try (Channel channel = MemoryChannelTestUtils.createChannel(topic, groupId)) {
-            try (MultiThreadPartitionHandler handler =
-                    new MultiThreadPartitionHandler(
-                            groupId, channel, 0, threads, builder.build())) {
-                handler.open();
-            }
-            threads = 10;
-            builder.addConfig(OPTION_THREADS, threads);
             try (MultiThreadPartitionHandler handler2 =
                     new MultiThreadPartitionHandler(
                             groupId, channel, 0, threads, builder.build())) {

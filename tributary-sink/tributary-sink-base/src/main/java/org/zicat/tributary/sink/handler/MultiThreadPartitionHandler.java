@@ -29,8 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Offset;
-import org.zicat.tributary.common.config.ConfigOption;
-import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.util.Threads;
@@ -56,27 +54,11 @@ import java.util.stream.Collectors;
  * <p>Multi Threads mode, One ${@link MultiThreadPartitionHandler} instance bind with at least one
  * {@link Function} instance
  *
- * <p>Set threads and {@link Function} count by ${@link MultiThreadPartitionHandler#OPTION_THREADS}
- * .
+ * <p>.
  */
 public class MultiThreadPartitionHandler extends PartitionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiThreadPartitionHandler.class);
-
-    public static final ConfigOption<Integer> OPTION_THREADS =
-            ConfigOptions.key("threads")
-                    .integerType()
-                    .description("consume threads per partition")
-                    .defaultValue(2);
-
-    public static final ConfigOption<Integer> OPTION_BUFFER_SIZE =
-            ConfigOptions.key("buffer.size")
-                    .integerType()
-                    .description("the buffer size of memory queue")
-                    .defaultValue(128);
-
-    private static final int MAX_CAPACITY = 128;
-    private static final int MIN_CAPACITY = 4;
 
     private final Disruptor<Block> disruptor;
     private final DataHandler[] handlers;
@@ -90,9 +72,13 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
             int workerNumber,
             SinkGroupConfig config) {
         super(groupId, channel, partitionId, config);
+        if (workerNumber <= 1) {
+            throw new IllegalArgumentException(
+                    "worker number must > 1, real value " + workerNumber);
+        }
         this.workerNumber = workerNumber;
         this.handlers = new DataHandler[workerNumber];
-        this.disruptor = createDisruptor();
+        this.disruptor = createDisruptor(cap(workerNumber * 3));
     }
 
     @Override
@@ -129,10 +115,10 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
      *
      * @return disruptor
      */
-    protected Disruptor<Block> createDisruptor() {
+    protected Disruptor<Block> createDisruptor(int buffSize) {
         return new Disruptor<>(
                 Block::new,
-                formatCap(config.get(OPTION_BUFFER_SIZE)),
+                buffSize,
                 Threads.createThreadFactoryByName(threadName() + "-", true),
                 ProducerType.SINGLE,
                 new TimeoutBlockingWaitStrategy(30, TimeUnit.SECONDS));
@@ -263,20 +249,14 @@ public class MultiThreadPartitionHandler extends PartitionHandler {
         }
     }
 
-    /**
-     * format cap as a power of 2.
-     *
-     * @param cap cap
-     * @return new cap
-     */
-    static int formatCap(int cap) {
+    static int cap(int cap) {
         int n = cap - 1;
         n |= n >>> 1;
         n |= n >>> 2;
         n |= n >>> 4;
         n |= n >>> 8;
         n |= n >>> 16;
-        return (n < MIN_CAPACITY) ? MIN_CAPACITY : (n >= MAX_CAPACITY) ? MAX_CAPACITY : n + 1;
+        return n + 1;
     }
 
     /** block. */
