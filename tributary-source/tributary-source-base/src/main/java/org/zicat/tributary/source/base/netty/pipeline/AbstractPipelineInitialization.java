@@ -28,7 +28,6 @@ import org.zicat.tributary.source.base.netty.handler.IdleCloseHandler;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** AbstractPipelineInitialization. */
 public abstract class AbstractPipelineInitialization implements PipelineInitialization {
@@ -39,7 +38,6 @@ public abstract class AbstractPipelineInitialization implements PipelineInitiali
                     .description("max wait to close when channel idle over this param")
                     .defaultValue(Duration.ofSeconds(120));
 
-    protected final AtomicInteger count = new AtomicInteger();
     protected final Source source;
     protected final long idle;
 
