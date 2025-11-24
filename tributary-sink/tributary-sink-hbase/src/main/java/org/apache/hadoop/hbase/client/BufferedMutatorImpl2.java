@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
 import org.apache.hbase.thirdparty.com.google.common.annotations.VisibleForTesting;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class BufferedMutatorImpl2 implements BufferedMutator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BufferedMutatorImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BufferedMutatorImpl2.class);
 
     private final ExceptionListener listener;
 
@@ -221,9 +222,7 @@ public class BufferedMutatorImpl2 implements BufferedMutator {
             checkClose();
             doFlush(true);
         } catch (InterruptedIOException | RetriesExhaustedWithDetailsException e) {
-            LOG.error(
-                    "Exception during timerCallbackForWriteBufferPeriodicFlush --> "
-                            + e.getMessage());
+            LOG.error("Exception during timerCallbackForWriteBufferPeriodicFlush", e);
         }
     }
 
@@ -516,6 +515,7 @@ public class BufferedMutatorImpl2 implements BufferedMutator {
         }
 
         @Override
+        @NotNull
         public Iterator<Row> iterator() {
             return new Iterator<Row>() {
                 private int countDown = remainder;
