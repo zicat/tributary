@@ -20,7 +20,6 @@ package org.zicat.tributary.server.rest;
 
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
-import static org.zicat.tributary.common.util.HostUtils.geHostAddress;
 import org.zicat.tributary.common.config.ReadableConfig;
 import static org.zicat.tributary.source.base.netty.NettySource.*;
 
@@ -34,30 +33,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /** HttpServer. */
 public class HttpServer implements Closeable {
+
     private static final Logger LOG = LoggerFactory.getLogger(HttpServer.class);
+
     public static final int MAX_CONTENT_LENGTH = 10240;
     public static final ConfigOption<Integer> OPTION_PORT =
             ConfigOptions.key("port").integerType().defaultValue(9090);
     public static final ConfigOption<Integer> OPTION_THREADS =
             ConfigOptions.key("worker-threads").integerType().defaultValue(1);
-    public static final ConfigOption<String> OPTION_HOST_PATTERN =
-            ConfigOptions.key("host-pattern").stringType().defaultValue(null);
 
     private final int port;
-
-    private transient Channel channel;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
-    private final String host;
+    private transient Channel channel;
 
-    public HttpServer(ReadableConfig serverConfig) throws UnknownHostException {
+    public HttpServer(ReadableConfig serverConfig) {
         this.port = serverConfig.get(OPTION_PORT);
-        this.host = host(serverConfig);
         final int threads = serverConfig.get(OPTION_THREADS);
         this.bossGroup = createEventLoopGroup(Math.max(1, threads / 4));
         this.workerGroup = createEventLoopGroup(threads);
@@ -87,45 +81,12 @@ public class HttpServer implements Closeable {
         try {
             if (channel != null) {
                 channel.close().sync();
-                LOG.info("close metric http server listen {}:{}", host, port);
+                LOG.info("close metric http server listen {}", port);
             }
         } catch (InterruptedException ignored) {
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
-    }
-
-    /**
-     * get port.
-     *
-     * @return int
-     */
-    public int port() {
-        return port;
-    }
-
-    /**
-     * get metrics host.
-     *
-     * @return string
-     */
-    public String host() {
-        return host;
-    }
-
-    /**
-     * metric host.
-     *
-     * @param serverConfig serverConfig
-     * @return string
-     * @throws UnknownHostException UnknownHostException
-     */
-    private static String host(ReadableConfig serverConfig) throws UnknownHostException {
-        final String hostPattern = serverConfig.get(OPTION_HOST_PATTERN);
-        if (hostPattern == null) {
-            return InetAddress.getLocalHost().getHostName();
-        }
-        return geHostAddress(hostPattern);
     }
 }

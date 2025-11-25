@@ -21,15 +21,12 @@ package org.zicat.tributary.source.base.netty;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
-import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.SourceFactory;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitializationFactory;
-
-import java.util.List;
 
 /** NettySourceFactory. */
 public class NettySourceFactory implements SourceFactory {
@@ -46,9 +43,9 @@ public class NettySourceFactory implements SourceFactory {
                     .description("netty event loop threads count")
                     .defaultValue(10);
 
-    public static final ConfigOption<List<String>> OPTION_NETTY_HOSTS =
-            ConfigOptions.key("netty.host-patterns")
-                    .listType(COMMA_SPLIT_HANDLER)
+    public static final ConfigOption<String> OPTION_NETTY_HOST_PATTERN =
+            ConfigOptions.key("netty.host-pattern")
+                    .stringType()
                     .description("netty host to register, split by ,")
                     .defaultValue(null);
 
@@ -68,14 +65,14 @@ public class NettySourceFactory implements SourceFactory {
     public Source createSource(String sourceId, Channel channel, ReadableConfig config)
             throws Exception {
 
-        final List<String> hosts = config.get(OPTION_NETTY_HOSTS);
+        final String hostPattern = config.get(OPTION_NETTY_HOST_PATTERN);
         final int port = config.get(OPTION_NETTY_PORT);
         final int eventLoopThreads = config.get(OPTION_NETTY_THREADS_EVENT_LOOP);
         final String decoder = config.get(OPTION_NETTY_DECODER);
         final PipelineInitializationFactory initializationFactory =
                 SpiFactory.findFactory(decoder, PipelineInitializationFactory.class);
 
-        return new NettySource(sourceId, config, channel, hosts, port, eventLoopThreads) {
+        return new NettySource(sourceId, config, channel, hostPattern, port, eventLoopThreads) {
             @Override
             protected PipelineInitialization createPipelineInitialization() throws Exception {
                 return initializationFactory.createPipelineInitialization(this);

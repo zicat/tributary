@@ -18,7 +18,7 @@
 
 package org.zicat.tributary.source.kafka;
 
-import static org.zicat.tributary.common.util.HostUtils.geHostAddress;
+import static org.zicat.tributary.common.util.HostUtils.getFirstMatchedHostAddress;
 import static org.zicat.tributary.common.util.ResourceUtils.getResourcePath;
 import org.zicat.tributary.source.base.netty.NettySource;
 import org.zicat.tributary.source.base.netty.ssl.AbstractSslContextBuilder;
@@ -89,7 +89,7 @@ public class KafkaPipelineInitialization extends AbstractPipelineInitialization 
                 config.get(OPTION_KAFKA_CLUSTER_ID) == null
                         ? source.sourceId()
                         : config.get(OPTION_KAFKA_CLUSTER_ID);
-        final String hostName = geHostAddress(config.get(OPTION_KAFKA_ADVERTISED_HOST_PATTERN));
+        final String hostName = getFirstMatchedHostAddress(config.get(OPTION_KAFKA_ADVERTISED_HOST_PATTERN));
         final int port = source.getPort();
         final int partitions = config.get(OPTION_TOPIC_PARTITION_COUNT);
         final HostPort hostPort = new HostPort(hostName, port);

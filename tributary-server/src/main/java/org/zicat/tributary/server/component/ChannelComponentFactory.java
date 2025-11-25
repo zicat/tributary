@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.server.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
@@ -33,7 +34,6 @@ import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 
 /** ChannelComponentFactory. */
 public class ChannelComponentFactory implements SafeFactory<ChannelComponent> {
@@ -46,10 +46,9 @@ public class ChannelComponentFactory implements SafeFactory<ChannelComponent> {
                     .defaultValue(FileChannelFactory.TYPE);
 
     private final ReadableConfig channelConfig;
-    private final TributaryCollectorRegistry registry;
+    private final CollectorRegistry registry;
 
-    public ChannelComponentFactory(
-            ReadableConfig channelConfig, TributaryCollectorRegistry registry) {
+    public ChannelComponentFactory(ReadableConfig channelConfig, CollectorRegistry registry) {
         this.channelConfig = channelConfig;
         this.registry = registry;
     }

@@ -27,7 +27,6 @@ import static org.zicat.tributary.server.test.HttpServerTest.availablePorts;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
-import org.zicat.tributary.server.rest.HttpServer;
 import org.zicat.tributary.server.Starter;
 
 import java.io.IOException;
@@ -51,10 +50,9 @@ public class StarterTest {
         final ReadableConfig config =
                 new ReadableConfigBuilder()
                         .addConfig("server.port", availablePorts.get(0))
-                        .addConfig("server.host-pattern", "127.0.0.1")
                         .addConfig("source.s1.channel", "c1")
                         .addConfig("source.s1.implement", "netty")
-                        .addConfig("source.s1.netty.host-patterns", "127.0.0.1")
+                        .addConfig("source.s1.netty.host-pattern", "127.0.0.1")
                         .addConfig("source.s1.netty.port", availablePorts.get(1))
                         .addConfig("source.s1.netty.decoder", "line")
                         .addConfig("channel.c1.type", "memory")
@@ -76,12 +74,11 @@ public class StarterTest {
                 Assert.assertEquals("aaa", new String(collection.get(0).value()));
             }
 
-            final HttpServer httpServer = starter.httpServer();
             // check metrics
             final URL url =
                     new URL(
                             "http://localhost:"
-                                    + httpServer.port()
+                                    + availablePorts.get(0)
                                     + OPTION_METRICS_PATH.defaultValue());
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             try {
@@ -112,10 +109,6 @@ public class StarterTest {
         @Override
         public void start0() throws Exception {
             super.start0();
-        }
-
-        public HttpServer httpServer() {
-            return httpServer;
         }
     }
 }

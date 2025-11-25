@@ -26,8 +26,6 @@ import static org.zicat.tributary.source.base.netty.NettySourceFactory.OPTION_NE
 import org.zicat.tributary.source.base.netty.pipeline.LengthPipelineInitialization;
 import org.zicat.tributary.source.base.netty.pipeline.PipelineInitialization;
 
-import java.util.Collections;
-
 /** NettySourceMock. */
 public class NettySourceMock extends NettySource {
 
@@ -39,13 +37,7 @@ public class NettySourceMock extends NettySource {
             int eventThreads,
             Channel channel)
             throws Exception {
-        super(
-                sourceId,
-                config,
-                channel,
-                host == null ? Collections.emptyList() : Collections.singletonList(host),
-                port,
-                eventThreads);
+        super(sourceId, config, channel, host, port, eventThreads);
     }
 
     public NettySourceMock(ReadableConfig config, Channel channel) throws Exception {

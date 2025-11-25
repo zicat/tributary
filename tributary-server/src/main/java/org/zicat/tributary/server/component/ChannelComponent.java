@@ -18,13 +18,13 @@
 
 package org.zicat.tributary.server.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -33,12 +33,10 @@ import java.util.function.BiConsumer;
 public class ChannelComponent extends AbstractComponent<String, Channel> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChannelComponent.class);
-    private static final List<String> LABELS = Arrays.asList("topic", "host");
-    private final TributaryCollectorRegistry registry;
+    private static final List<String> LABELS = Collections.singletonList("topic");
 
-    public ChannelComponent(Map<String, Channel> elements, TributaryCollectorRegistry registry) {
+    public ChannelComponent(Map<String, Channel> elements, CollectorRegistry registry) {
         super(elements);
-        this.registry = registry;
         register(registry);
     }
 
@@ -62,7 +60,7 @@ public class ChannelComponent extends AbstractComponent<String, Channel> {
 
                     @Override
                     public List<String> additionalLabelValues(Channel channel) {
-                        return Arrays.asList(channel.topic(), registry.host());
+                        return Collections.singletonList(channel.topic());
                     }
                 });
     }

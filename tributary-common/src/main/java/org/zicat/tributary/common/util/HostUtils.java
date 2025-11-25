@@ -24,8 +24,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,31 +32,26 @@ import java.util.stream.Collectors;
 /** host utils. */
 public class HostUtils {
 
-    private static final String KEY_HOSTNAME = "HOSTNAME";
-    private static final String KEY_COMPUTERNAME = "COMPUTERNAME";
-    private static final String ALL_IP_FILTER_PATTERN = ".*";
-
     /**
      * get localhost string ip by pattern filter.
      *
      * @param pattern pattern
      * @return string host
      */
-    public static String geHostAddress(String pattern) {
-        return getInetAddress(pattern).getHostAddress();
+    public static String getFirstMatchedHostAddress(String pattern) {
+        return getHostAddresses(pattern).get(0);
     }
 
     /**
-     * get localhost string ip list by pattern filter.
+     * get host addresses.
      *
-     * @param patterns patterns
-     * @return list hosts
+     * @param pattern pattern
+     * @return hosts
      */
-    public static List<String> getHostAddresses(List<String> patterns) {
-        if (patterns == null || patterns.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return patterns.stream().map(HostUtils::geHostAddress).collect(Collectors.toList());
+    public static List<String> getHostAddresses(String pattern) {
+        return getInetAddress(pattern).stream()
+                .map(InetAddress::getHostAddress)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -65,12 +59,13 @@ public class HostUtils {
      *
      * @return host
      */
-    private static InetAddress getInetAddress(String pattern) {
+    private static List<InetAddress> getInetAddress(String pattern) {
+        final List<InetAddress> inetAddresses = new ArrayList<>();
         if (pattern == null) {
-            pattern = ALL_IP_FILTER_PATTERN;
+            return inetAddresses;
         }
-        if (pattern.equals("localhost") || pattern.equals("127.0.0.1")) {
-            return InetAddress.getLoopbackAddress();
+        if ("localhost".matches(pattern) || "127.0.0.1".matches(pattern)) {
+            inetAddresses.add(InetAddress.getLoopbackAddress());
         }
         final Enumeration<NetworkInterface> it;
         try {
@@ -86,32 +81,10 @@ public class HostUtils {
                 if (!inetAddress.isLoopbackAddress()
                         && inetAddress instanceof Inet4Address
                         && inetAddress.getHostAddress().matches(pattern)) {
-                    return inetAddress;
+                    inetAddresses.add(inetAddress);
                 }
             }
         }
-        throw new TributaryRuntimeException("inet address not found by ip pattern " + pattern);
-    }
-
-    /**
-     * get host name.
-     *
-     * @return hostname
-     */
-    public static String getHostName() {
-        String hostname = System.getenv(KEY_HOSTNAME);
-        if (hostname != null && !hostname.isEmpty()) {
-            return hostname;
-        }
-
-        hostname = System.getenv(KEY_COMPUTERNAME);
-        if (hostname != null && !hostname.isEmpty()) {
-            return hostname;
-        }
-        try {
-            return InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        return inetAddresses;
     }
 }

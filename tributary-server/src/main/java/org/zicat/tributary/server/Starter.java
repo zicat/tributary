@@ -19,6 +19,7 @@
 package org.zicat.tributary.server;
 
 import io.netty.channel.ChannelHandler;
+import io.prometheus.client.CollectorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.util.IOUtils;
@@ -26,7 +27,6 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.server.component.*;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.server.rest.DispatcherHttpHandlerBuilder;
 import org.zicat.tributary.server.rest.HttpServer;
 
@@ -67,8 +67,7 @@ public class Starter implements Closeable {
      */
     protected void start0() throws Exception {
         this.httpServer = new HttpServer(serverConfig);
-        final TributaryCollectorRegistry registry =
-                new TributaryCollectorRegistry(httpServer.host());
+        final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         this.channelComponent = createChannelComponent(registry);
         this.sinkComponent = createSinkComponent(registry);
         this.sourceComponent = createSourceComponent(registry);
@@ -97,7 +96,7 @@ public class Starter implements Closeable {
      * @param registry registry
      * @return ChannelComponent
      */
-    protected ChannelComponent createChannelComponent(TributaryCollectorRegistry registry) {
+    protected ChannelComponent createChannelComponent(CollectorRegistry registry) {
         return new ChannelComponentFactory(channelConfig, registry).create();
     }
 
@@ -107,10 +106,8 @@ public class Starter implements Closeable {
      * @param registry registry
      * @return SinkComponent
      */
-    protected SinkComponent createSinkComponent(TributaryCollectorRegistry registry) {
-        if (channelComponent == null) {
-            throw new IllegalStateException("channel component is null");
-        }
+    protected SinkComponent createSinkComponent(CollectorRegistry registry) {
+        checkChannelComponentState();
         return new SinkComponentFactory(sinkConfig, channelComponent, registry).create();
     }
 
@@ -120,10 +117,8 @@ public class Starter implements Closeable {
      * @param registry registry
      * @return SourceComponent
      */
-    protected SourceComponent createSourceComponent(TributaryCollectorRegistry registry) {
-        if (channelComponent == null) {
-            throw new IllegalStateException("channel component is null");
-        }
+    protected SourceComponent createSourceComponent(CollectorRegistry registry) {
+        checkChannelComponentState();
         return new SourceComponentFactory(sourceConfig, channelComponent, registry).create();
     }
 
@@ -133,14 +128,19 @@ public class Starter implements Closeable {
      * @param registry registry
      * @return ChannelHandler
      */
-    protected ChannelHandler createDispatcherHttpHandler(TributaryCollectorRegistry registry) {
-        if (channelComponent == null) {
-            throw new IllegalStateException("channel component is null");
-        }
+    protected ChannelHandler createDispatcherHttpHandler(CollectorRegistry registry) {
+        checkChannelComponentState();
         return new DispatcherHttpHandlerBuilder(serverConfig)
                 .metricCollectorRegistry(registry)
                 .channelComponent(channelComponent)
                 .build();
+    }
+
+    /** check channel component state. */
+    private void checkChannelComponentState() {
+        if (channelComponent == null) {
+            throw new IllegalStateException("channel component is null");
+        }
     }
 
     public static void main(String[] args) throws Exception {

@@ -18,11 +18,11 @@
 
 package org.zicat.tributary.server.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.metric.MetricCollector;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.server.component.SinkComponent.SinkGroupManagerList;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.Closeable;
@@ -35,12 +35,11 @@ import java.util.Map;
 /** SinkComponent. */
 public class SinkComponent extends AbstractComponent<String, SinkGroupManagerList> {
 
-    private static final List<String> LABELS = Arrays.asList("topic", "groupId", "host");
+    private static final List<String> LABELS = Arrays.asList("topic", "groupId");
 
     private final int size;
 
-    public SinkComponent(
-            Map<String, SinkGroupManagerList> elements, TributaryCollectorRegistry registry) {
+    public SinkComponent(Map<String, SinkGroupManagerList> elements, CollectorRegistry registry) {
         super(elements);
         this.size = elements.values().stream().mapToInt(List::size).sum();
         register(registry);
@@ -56,11 +55,9 @@ public class SinkComponent extends AbstractComponent<String, SinkGroupManagerLis
             implements Closeable, MetricCollector {
 
         private final String groupId;
-        private final TributaryCollectorRegistry registry;
 
-        public SinkGroupManagerList(String groupId, TributaryCollectorRegistry registry) {
+        public SinkGroupManagerList(String groupId) {
             this.groupId = groupId;
-            this.registry = registry;
         }
 
         @Override
@@ -72,8 +69,7 @@ public class SinkComponent extends AbstractComponent<String, SinkGroupManagerLis
         public Map<MetricKey, Double> gaugeFamily() {
             final Map<MetricKey, Double> result = new HashMap<>();
             for (SinkGroupManager sinkGroupManager : this) {
-                final List<String> labelValues =
-                        Arrays.asList(sinkGroupManager.topic(), groupId, registry.host());
+                final List<String> labelValues = Arrays.asList(sinkGroupManager.topic(), groupId);
                 for (Map.Entry<MetricKey, Double> gaugeEntry :
                         sinkGroupManager.gaugeFamily().entrySet()) {
                     final MetricKey metricKey = gaugeEntry.getKey();
@@ -88,8 +84,7 @@ public class SinkComponent extends AbstractComponent<String, SinkGroupManagerLis
         public Map<MetricKey, Double> counterFamily() {
             final Map<MetricKey, Double> result = new HashMap<>();
             for (SinkGroupManager sinkGroupManager : this) {
-                final List<String> labelValues =
-                        Arrays.asList(sinkGroupManager.topic(), groupId, registry.host());
+                final List<String> labelValues = Arrays.asList(sinkGroupManager.topic(), groupId);
                 for (Map.Entry<MetricKey, Double> counterEntry :
                         sinkGroupManager.counterFamily().entrySet()) {
                     final MetricKey metricKey = counterEntry.getKey();

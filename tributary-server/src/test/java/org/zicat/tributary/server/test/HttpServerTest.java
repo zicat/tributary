@@ -60,20 +60,16 @@ public class HttpServerTest {
             }
         }.register(registry);
 
+        final int port = availablePort();
         final ReadableConfig config =
-                new ReadableConfigBuilder()
-                        .addConfig(HttpServer.OPTION_PORT, availablePort())
-                        .build();
+                new ReadableConfigBuilder().addConfig(HttpServer.OPTION_PORT, port).build();
         try (HttpServer httpServer = new HttpServer(config)) {
             httpServer.start(
                     new DispatcherHttpHandlerBuilder(config)
                             .metricCollectorRegistry(registry)
                             .build());
             final URL url =
-                    new URL(
-                            "http://localhost:"
-                                    + httpServer.port()
-                                    + OPTION_METRICS_PATH.defaultValue());
+                    new URL("http://localhost:" + port + OPTION_METRICS_PATH.defaultValue());
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             try {
                 final String v =

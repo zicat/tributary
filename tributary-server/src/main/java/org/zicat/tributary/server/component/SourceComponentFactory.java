@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.server.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.zicat.tributary.common.config.ReadableConfig;
 import static org.zicat.tributary.common.config.ReadableConfig.DEFAULT_KEY_HANDLER;
 import static org.zicat.tributary.common.SpiFactory.findFactory;
@@ -30,7 +31,6 @@ import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.source.base.Source;
 import org.zicat.tributary.source.base.SourceFactory;
 
@@ -53,12 +53,12 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
 
     private final ReadableConfig sourceConfig;
     private final ChannelComponent channelComponent;
-    private final TributaryCollectorRegistry registry;
+    private final CollectorRegistry registry;
 
     public SourceComponentFactory(
             ReadableConfig sourceConfig,
             ChannelComponent channelComponent,
-            TributaryCollectorRegistry registry) {
+            CollectorRegistry registry) {
         this.sourceConfig = sourceConfig;
         this.channelComponent = channelComponent;
         this.registry = registry;

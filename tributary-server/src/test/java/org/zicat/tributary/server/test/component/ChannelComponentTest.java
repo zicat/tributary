@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.server.test.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
@@ -29,7 +30,6 @@ import org.zicat.tributary.server.component.ChannelComponent;
 import org.zicat.tributary.server.component.ChannelComponentFactory;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -46,8 +46,7 @@ public class ChannelComponentTest {
         final ReadableConfig config = PropertiesConfigBuilder.channelConfig(properties);
         final Offset offset = Offset.ZERO;
         try (ChannelComponent channelComponent =
-                new ChannelComponentFactory(config, new TributaryCollectorRegistry("localhost"))
-                        .create()) {
+                new ChannelComponentFactory(config, new CollectorRegistry()).create()) {
             Assert.assertEquals(2, channelComponent.size());
             final Channel channel1 = channelComponent.get("c1");
             final Channel channel2 = channelComponent.get("c2");

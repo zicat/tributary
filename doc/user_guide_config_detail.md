@@ -6,13 +6,9 @@ Tributary Configuration consists of four parts, including server, source, channe
 
 ```properties
 server.port=9090
-server.host-pattern=127.0.0.1
 ```
 
 The Tributary service provides indicators in the form of http restful api.
-
-The parameter "server.host-pattern" is a regular expression that is used to filter the
-required hosts when there are multiple network cards in the machine.
 
 ### Metrics Api
 
@@ -20,14 +16,14 @@ Get tributary metrics as follows.
 
 ```shell
 $ curl -s 'http://localhost:9090/metrics'|grep -v '#'
-sink_print_counter{host="127.0.0.1",id="c1_group_1_0",} 1.0
-channel_block_cache_query_hit_count{topic="c1",host="127.0.0.1",} 1.0
-channel_buffer_usage{topic="c1",host="127.0.0.1",} 0.0
-channel_write_bytes{topic="c1",host="127.0.0.1",} 95.0
-channel_active_segment{topic="c1",host="127.0.0.1",} 1.0
-channel_read_bytes{topic="c1",host="127.0.0.1",} 95.0
-channel_block_cache_query_total_count{topic="c1",host="127.0.0.1",} 1.0
-sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
+sink_print_counter{id="c1_group_1_0",} 1.0
+channel_block_cache_query_hit_count{topic="c1",} 1.0
+channel_buffer_usage{topic="c1",} 0.0
+channel_write_bytes{topic="c1",} 95.0
+channel_active_segment{topic="c1",} 1.0
+channel_read_bytes{topic="c1",} 95.0
+channel_block_cache_query_total_count{topic="c1",} 1.0
+sink_lag{id="c1_group_1",} 0.0
 ```
 
 ### Rest Api
@@ -39,13 +35,12 @@ sink_lag{host="127.0.0.1",id="c1_group_1",} 0.0
    [{"topic":"c1","group":"group_1","partitionOffsets":[{"partition":0,"offset":{"segmentId":0,"offset":119}}]}]
    ```
 
-| Key                   | default           | valid value | describe                                                                                                             |
-|-----------------------|-------------------|-------------|----------------------------------------------------------------------------------------------------------------------|
-| server.port           | 9090              | int(number) | the port to bind, range 1000-65535                                                                                   |
-| server.worker-threads | 1                 | int(number) | the work thread to deal with request                                                                                 |
-| server.host-pattern   | null              | string      | the pattern the config the output metrics value, default null means using `InetAddress.getLocalHost().getHostName()` |
-| server.path.metrics   | /metrics          | string      | the metrics http path                                                                                                |
-| path.api-offsets-show | /api/offsets/show | string      | the api offsets show http path                                                                                       |
+| Key                          | default           | valid value | describe                                                                                                             |
+|------------------------------|-------------------|-------------|----------------------------------------------------------------------------------------------------------------------|
+| server.port                  | 9090              | int(number) | the port to bind, range 1000-65535                                                                                   |
+| server.worker-threads        | 1                 | int(number) | the work thread to deal with request                                                                                 |
+| server.path.metrics          | /metrics          | string      | the metrics http path                                                                                                |
+| server.path.api-offsets-show | /api/offsets/show | string      | the api offsets show http path                                                                                       |
 
 ## Source
 
@@ -85,7 +80,7 @@ which supports receiving data from the network. The configuration parameters for
 follows :
 
 ```properties
-source.s1.netty.host-patterns=10\\.103\\.1\\..*,localhost
+source.s1.netty.host-pattern=10\\..*|localhost
 source.s1.netty.port=8200
 source.s1.netty.threads.event-loop=10
 source.s1.netty.idle=60sec
@@ -96,15 +91,15 @@ source.s1.netty.child-option.SO_RCVBUF=1048576
 source.s1.netty.child-option.SO_KEEPALIVE=true
 ```
 
-| key                      | default | type                                                       | describe                                                                                                                                                                                                                         |
-|--------------------------|---------|------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.host-patterns      | null    | string                                                     | the host to bind, default null means bind \*, one port can bind multi host split by`,`, localhost means bind loop back address, 10\\.103\\.1\\..* means bind the first InetAddress on the machine matching start with 10.103.1.* |   
-| netty.port               |         | int(number)                                                | the port to bind, range 1000-65535                                                                                                                                                                                               |
-| netty.threads.event-loop | 10      | int(number)                                                | the count of netty event loop threads                                                                                                                                                                                            |
-| netty.idle               | 120sec  | duration                                                   | the idle time to close the socket                                                                                                                                                                                                |
-| netty.decoder            | N/A     | enum [length,line,kafka,http,logstash-http,logstash-beats] | the parser of network streaming                                                                                                                                                                                                  |
-| netty.option.*           | N/A     | string                                                     | the netty server bootstrap option, refer to [ChannelOption](https://netty.io/4.1/api/io/netty/channel/ChannelOption.html), only support base java class type like Integer, Boolean, String...                                    |
-| netty.child-option.*     | N/A     | string                                                     | the netty child channel option, refer to [ChannelOption](https://netty.io/4.1/api/io/netty/channel/ChannelOption.html), only support base java class type like Integer, Boolean, String...                                       |
+| key                      | default | type        | describe                                                                                                                                                                                      |
+|--------------------------|---------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| netty.host-pattern       | null    | string      | the host to bind, default null means bind *, like `localhost\|127\\.0\\.0\\.1` If the pattern match none bind *.                                                                              |   
+| netty.port               |         | int(number) | the port to bind, range 1000-65535                                                                                                                                                            |
+| netty.threads.event-loop | 10      | int(number) | the count of netty event loop threads                                                                                                                                                         |
+| netty.idle               | 120sec  | duration    | the idle time to close the socket                                                                                                                                                             |
+| netty.decoder            | N/A     | enum        | the parser of network streaming include [length,line,kafka,http,logstash-http,logstash-beats]                                                                                                 |
+| netty.option.*           | N/A     | string      | the netty server bootstrap option, refer to [ChannelOption](https://netty.io/4.1/api/io/netty/channel/ChannelOption.html), only support base java class type like Integer, Boolean, String... |
+| netty.child-option.*     | N/A     | string      | the netty child channel option, refer to [ChannelOption](https://netty.io/4.1/api/io/netty/channel/ChannelOption.html), only support base java class type like Integer, Boolean, String...    |
 
 ### Netty Decoder
 
@@ -134,7 +129,7 @@ more configuration as follows:
 
 | key                                                | default         | type          | describe                                                                                                                                                                                                        |
 |----------------------------------------------------|-----------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| netty.decoder.kafka.advertised-host-pattern        | N/A             | string        | the pattern to advertise the host and register it in zookeeper, tributary will get the first InetAddress on the machine matching by pattern, like localhost or 10\\.103\\.1\\..*                                |
+| netty.decoder.kafka.advertised-host-pattern        | N/A             | string        | the pattern to advertise the host and register it in zookeeper, tributary will get the first InetAddress on the machine matching by pattern.                                                                    |
 | netty.decoder.kafka.cluster.id                     | ${sourceId}     | string        | the kafka cluster to response when the client send [MetadataRequest](https://kafka.apache.org/protocol#The_Messages_Metadata)                                                                                   |
 | netty.decoder.kafka.zookeeper.connect              |                 | string        | the zookeeper host path to register the tributary instance for instance discovery, like: localhost:2181,localhost:2182/tributary_source_kafka                                                                   |
 | netty.decoder.kafka.zookeeper.meta.ttl             | 10sec           | duration      | the zookeeper nodes cache ttl                                                                                                                                                                                   |

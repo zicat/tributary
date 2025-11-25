@@ -18,22 +18,20 @@
 
 package org.zicat.tributary.server.component;
 
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
+import io.prometheus.client.CollectorRegistry;
 import org.zicat.tributary.source.base.Source;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /** SourceComponent. */
 public class SourceComponent extends AbstractComponent<String, Source> {
 
-    private final TributaryCollectorRegistry registry;
-    private static final List<String> LABELS = Arrays.asList("id", "host");
+    private static final List<String> LABELS = Collections.singletonList("id");
 
-    public SourceComponent(Map<String, Source> elements, TributaryCollectorRegistry registry) {
+    public SourceComponent(Map<String, Source> elements, CollectorRegistry registry) {
         super(elements);
-        this.registry = registry;
         register(registry);
     }
 
@@ -48,7 +46,7 @@ public class SourceComponent extends AbstractComponent<String, Source> {
 
                     @Override
                     public List<String> additionalLabelValues(Source source) {
-                        return Arrays.asList(source.sourceId(), registry.host());
+                        return Collections.singletonList(source.sourceId());
                     }
                 });
     }

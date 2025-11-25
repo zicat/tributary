@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.server.test.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.config.ReadableConfig;
@@ -27,7 +28,6 @@ import org.zicat.tributary.server.component.SinkComponent;
 import org.zicat.tributary.server.component.SinkComponentFactory;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.sink.SinkGroupManager;
 
 import java.io.IOException;
@@ -45,7 +45,7 @@ public class SinkComponentTest {
         final Properties properties = new PropertiesLoader(profile).load();
         final ReadableConfig channelConfig = PropertiesConfigBuilder.channelConfig(properties);
         final ReadableConfig sinkConfig = PropertiesConfigBuilder.sinkConfig(properties);
-        final TributaryCollectorRegistry registry = new TributaryCollectorRegistry("local");
+        final CollectorRegistry registry = new CollectorRegistry();
         try (ChannelComponent channelComponent =
                         new ChannelComponentFactory(channelConfig, registry).create();
                 SinkComponent sinkComponent =

@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.server.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
@@ -28,7 +29,6 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.exception.TributaryRuntimeException;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.server.component.SinkComponent.SinkGroupManagerList;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.sink.config.SinkGroupConfig;
 import org.zicat.tributary.sink.config.SinkGroupConfigBuilder;
 import org.zicat.tributary.sink.SinkGroupManager;
@@ -59,12 +59,12 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
 
     private final ReadableConfig sinkConfig;
     private final ChannelComponent channelComponent;
-    private final TributaryCollectorRegistry registry;
+    private final CollectorRegistry registry;
 
     public SinkComponentFactory(
             ReadableConfig sinkConfig,
             ChannelComponent channelComponent,
-            TributaryCollectorRegistry registry) {
+            CollectorRegistry registry) {
         this.sinkConfig = sinkConfig;
         this.channelComponent = channelComponent;
         this.registry = registry;
@@ -81,7 +81,7 @@ public class SinkComponentFactory implements SafeFactory<SinkComponent> {
                 if (channels.isEmpty()) {
                     throw new TributaryRuntimeException("group " + group + " not found channel");
                 }
-                final SinkGroupManagerList managerList = new SinkGroupManagerList(group, registry);
+                final SinkGroupManagerList managerList = new SinkGroupManagerList(group);
                 sinkGroupManagers.put(group, managerList);
                 for (Channel channel : channels) {
                     final SinkGroupConfig config = entry.getValue().build();

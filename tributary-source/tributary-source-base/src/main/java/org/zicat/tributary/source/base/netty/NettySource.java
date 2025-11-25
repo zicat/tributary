@@ -71,14 +71,14 @@ public abstract class NettySource extends AbstractSource {
             String sourceId,
             ReadableConfig config,
             org.zicat.tributary.channel.Channel channel,
-            List<String> hosts,
+            String hostPattern,
             int port,
             int eventThreads)
             throws Exception {
         super(sourceId, config, channel);
         this.port = port;
         this.eventThreads = eventThreads;
-        this.hostNames = getHostAddresses(hosts);
+        this.hostNames = getHostAddresses(hostPattern);
         try {
             this.bossGroup = createEventLoopGroup(Math.max(1, eventThreads / 4));
             this.workGroup = createEventLoopGroup(eventThreads);

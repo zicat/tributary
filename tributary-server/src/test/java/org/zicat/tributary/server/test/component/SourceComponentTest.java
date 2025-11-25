@@ -18,6 +18,7 @@
 
 package org.zicat.tributary.server.test.component;
 
+import io.prometheus.client.CollectorRegistry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.common.config.ReadableConfig;
@@ -27,7 +28,6 @@ import org.zicat.tributary.server.component.SourceComponent;
 import org.zicat.tributary.server.component.SourceComponentFactory;
 import org.zicat.tributary.server.config.PropertiesConfigBuilder;
 import org.zicat.tributary.server.config.PropertiesLoader;
-import org.zicat.tributary.server.metrics.TributaryCollectorRegistry;
 import org.zicat.tributary.source.base.netty.NettySource;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class SourceComponentTest {
         final Properties properties = new PropertiesLoader(profile).load();
         final ReadableConfig channelConfig = PropertiesConfigBuilder.channelConfig(properties);
         final ReadableConfig sourceConfig = PropertiesConfigBuilder.sourceConfig(properties);
-        final TributaryCollectorRegistry registry = new TributaryCollectorRegistry("localhost");
+        final CollectorRegistry registry = new CollectorRegistry();
         try (ChannelComponent channelComponent =
                         new ChannelComponentFactory(channelConfig, registry).create();
                 SourceComponent sourceComponent =
