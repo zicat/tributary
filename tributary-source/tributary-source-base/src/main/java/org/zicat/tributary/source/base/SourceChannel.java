@@ -50,9 +50,6 @@ public interface SourceChannel {
         append(null, records);
     }
 
-    /** flush block data and page cache data to disk. */
-    void flush() throws IOException;
-
     /**
      * get topic.
      *

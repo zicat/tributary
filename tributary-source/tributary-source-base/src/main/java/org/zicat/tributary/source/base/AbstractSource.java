@@ -21,6 +21,7 @@ package org.zicat.tributary.source.base;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
+import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.common.Clock;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
@@ -81,13 +82,15 @@ public abstract class AbstractSource implements Source {
         appendRecTs(clock, records.headers());
         final ByteBuffer byteBuffer = records.toByteBuffer();
         final int realPartition = partition == null ? defaultPartition() : partition;
+        AppendResult appendResult;
         try {
-            appendResultType.dealAppendResult(channel.append(realPartition, byteBuffer));
+            appendResult = channel.append(realPartition, byteBuffer);
         } catch (IOException e) {
             LOG.error("append data error, close source", e);
             IOUtils.closeQuietly(this);
             throw e;
         }
+        appendResultType.dealAppendResult(appendResult);
     }
 
     /**
@@ -123,11 +126,6 @@ public abstract class AbstractSource implements Source {
     @Override
     public Map<MetricKey, Double> counterFamily() {
         return counterFamily;
-    }
-
-    @Override
-    public void flush() throws IOException {
-        channel.flush();
     }
 
     @Override

@@ -27,6 +27,9 @@ public enum AppendResultType {
     BLOCK("block") {
         @Override
         public void dealAppendResult(AppendResult appendResult) {
+            if (appendResult == null) {
+                return;
+            }
             if (!appendResult.appended()) {
                 throw new IllegalStateException("append block failed");
             }
@@ -37,6 +40,9 @@ public enum AppendResultType {
         @Override
         public void dealAppendResult(AppendResult appendResult)
                 throws IOException, InterruptedException {
+            if (appendResult == null) {
+                return;
+            }
             if (!appendResult.appended()) {
                 throw new IllegalStateException("append block failed");
             }

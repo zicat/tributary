@@ -65,7 +65,6 @@ public abstract class NettySource extends AbstractSource {
     protected final ServerBootstrap serverBootstrap;
     protected final PipelineInitialization pipelineInitialization;
     protected final List<Channel> channelList;
-    protected final List<String> hostNames;
 
     public NettySource(
             String sourceId,
@@ -78,7 +77,6 @@ public abstract class NettySource extends AbstractSource {
         super(sourceId, config, channel);
         this.port = port;
         this.eventThreads = eventThreads;
-        this.hostNames = getHostAddresses(hostPattern);
         try {
             this.bossGroup = createEventLoopGroup(Math.max(1, eventThreads / 4));
             this.workGroup = createEventLoopGroup(eventThreads);
@@ -96,7 +94,8 @@ public abstract class NettySource extends AbstractSource {
                             pipelineInitialization.init(ch);
                         }
                     });
-            this.channelList = createChannelList();
+            this.channelList =
+                    createChannelList(serverBootstrap, getHostAddresses(hostPattern), port);
         } catch (Exception e) {
             IOUtils.closeQuietly(this);
             throw e;
@@ -115,7 +114,8 @@ public abstract class NettySource extends AbstractSource {
      *
      * @param host host
      */
-    private Channel createChannel(String host) throws InterruptedException {
+    private static Channel createChannel(ServerBootstrap serverBootstrap, String host, int port)
+            throws InterruptedException {
         final ChannelFuture syncFuture =
                 host == null
                         ? serverBootstrap.bind(port).sync()
@@ -133,14 +133,16 @@ public abstract class NettySource extends AbstractSource {
      *
      * @return channel list
      */
-    private List<Channel> createChannelList() throws InterruptedException {
+    private static List<Channel> createChannelList(
+            ServerBootstrap bootstrap, List<String> hostNames, int port)
+            throws InterruptedException {
         final List<Channel> channelList = new ArrayList<>();
         if (hostNames.isEmpty()) {
-            channelList.add(createChannel(null));
+            channelList.add(createChannel(bootstrap, null, port));
             return channelList;
         }
         for (String h : hostNames) {
-            channelList.add(createChannel(h));
+            channelList.add(createChannel(bootstrap, h, port));
         }
         return channelList;
     }
@@ -194,14 +196,9 @@ public abstract class NettySource extends AbstractSource {
 
     @Override
     public void close() throws IOException {
-        if (!closed.compareAndSet(false, true)) {
-            return;
-        }
-        try {
-            closeServerChannelsAndGroup();
-        } finally {
+        if (closed.compareAndSet(false, true)) {
             try {
-                flush();
+                closeServerChannelsAndGroup();
             } finally {
                 IOUtils.closeQuietly(pipelineInitialization);
             }
@@ -211,12 +208,13 @@ public abstract class NettySource extends AbstractSource {
     private void closeServerChannelsAndGroup() {
         if (channelList != null) {
             channelList.forEach(NettySource::closeChannelSync);
+            channelList.clear();
             LOG.info("close netty source, id:{}, port:{}", sourceId, port);
         }
-        if (workGroup != null) {
+        if (workGroup != null && !workGroup.isShutdown()) {
             workGroup.shutdownGracefully();
         }
-        if (bossGroup != null) {
+        if (bossGroup != null && !bossGroup.isShutdown()) {
             bossGroup.shutdownGracefully();
         }
     }
@@ -227,7 +225,7 @@ public abstract class NettySource extends AbstractSource {
      * @param host host
      * @return String
      */
-    private String prettyHost(String host) {
+    private static String prettyHost(String host) {
         return host == null || host.isEmpty() ? "*" : host;
     }
 
