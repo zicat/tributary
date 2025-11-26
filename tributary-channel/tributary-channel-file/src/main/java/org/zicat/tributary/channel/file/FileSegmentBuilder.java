@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.channel.file;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.BlockWriter;
 import org.zicat.tributary.channel.ChannelBlockCache;
 import static org.zicat.tributary.channel.ChannelConfigOption.OPTION_COMPRESSION;
@@ -38,7 +36,6 @@ import java.nio.channels.FileChannel;
 /** FileSegmentBuilder. */
 public class FileSegmentBuilder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileSegmentBuilder.class);
     private Long fileId;
     private long segmentSize = OPTION_SEGMENT_SIZE.defaultValue().getBytes();
     private File dir;
@@ -166,9 +163,6 @@ public class FileSegmentBuilder {
         } catch (Exception e) {
             IOUtils.closeQuietly(fileChannel);
             IOUtils.closeQuietly(randomAccessFile);
-            if (file.exists() && !file.delete()) {
-                LOG.warn("delete file fail, file id {}", file.getPath());
-            }
             throw new TributaryRuntimeException("create segment fail, path " + file, e);
         }
     }
