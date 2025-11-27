@@ -20,6 +20,7 @@ package org.zicat.tributary.common.test.config;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
 import org.zicat.tributary.common.config.ReadableConfigBuilder;
@@ -61,6 +62,32 @@ public class ReadableConfigTest {
                 new String[] {"aa", "bb;", "cc"},
                 config.get(ConfigOptions.key("aa").listType(COMMA_SPLIT_HANDLER).noDefaultValue())
                         .toArray(new String[] {}));
+    }
+
+    @Test
+    public void testAlias() {
+        final ReadableConfig config = new ReadableConfigBuilder().addConfig("aa", "bb").build();
+        final ConfigOption<String> ccOption =
+                ConfigOptions.key("cc", "aa").stringType().defaultValue(null);
+        Assert.assertEquals("bb", config.get(ccOption));
+        final ConfigOption<String> ccOption2 =
+                ConfigOptions.key("cc", "dd").stringType().defaultValue(null);
+        Assert.assertNull(config.get(ccOption2));
+
+        final ConfigOption<String> aaOption =
+                ConfigOptions.key("aa", "tt").stringType().defaultValue(null);
+        Assert.assertEquals("bb", config.get(aaOption));
+
+        final ConfigOption<String> aaOption2 =
+                ConfigOptions.key("aa", "cc").stringType().defaultValue(null);
+        Assert.assertEquals("bb", config.get(aaOption2));
+
+        final ReadableConfig config2 =
+                new ReadableConfigBuilder().addConfig("aa", "bb").addConfig("cc", "dd").build();
+        Assert.assertEquals("bb", config2.get(aaOption));
+        Assert.assertEquals("bb", config2.get(aaOption2));
+        Assert.assertEquals("dd", config2.get(ccOption));
+        Assert.assertEquals("dd", config2.get(ccOption2));
     }
 
     @Test

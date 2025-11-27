@@ -30,8 +30,8 @@ public class ConfigOptions {
     private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP =
             java.util.Collections.unmodifiableMap(initMap());
 
-    public static ConfigOptionTypeBuilder key(String key) {
-        return new ConfigOptionTypeBuilder(key);
+    public static ConfigOptionTypeBuilder key(String key, String... alias) {
+        return new ConfigOptionTypeBuilder(key, alias);
     }
 
     /** ConfigOptionTypeBuilder. */
@@ -39,41 +39,47 @@ public class ConfigOptions {
     public static class ConfigOptionTypeBuilder {
 
         private final String key;
+        private final String[] alias;
 
-        public ConfigOptionTypeBuilder(String key) {
+        public ConfigOptionTypeBuilder(String key, String... alias) {
             this.key = key;
+            this.alias = alias;
         }
 
         public final Builder<String> stringType() {
-            return new Builder<>(key, Object::toString);
+            return new Builder<>(key, alias, Object::toString);
         }
 
         public final Builder<Integer> integerType() {
-            return new Builder<>(key, s -> Integer.parseInt(s.toString()));
+            return new Builder<>(key, alias, s -> Integer.parseInt(s.toString()));
         }
 
         public final Builder<Long> longType() {
-            return new Builder<>(key, s -> Long.parseLong(s.toString()));
+            return new Builder<>(key, alias, s -> Long.parseLong(s.toString()));
         }
 
         public final Builder<Boolean> booleanType() {
-            return new Builder<>(key, s -> Boolean.parseBoolean(s.toString()));
+            return new Builder<>(key, alias, s -> Boolean.parseBoolean(s.toString()));
         }
 
         public final Builder<Duration> durationType() {
             return new Builder<>(
-                    key, s -> s instanceof Duration ? (Duration) s : parseDuration(s.toString()));
+                    key,
+                    alias,
+                    s -> s instanceof Duration ? (Duration) s : parseDuration(s.toString()));
         }
 
         public final Builder<MemorySize> memoryType() {
             return new Builder<>(
                     key,
+                    alias,
                     s -> s instanceof MemorySize ? (MemorySize) s : MemorySize.parse(s.toString()));
         }
 
         public final Builder<PercentSize> percentType() {
             return new Builder<>(
                     key,
+                    alias,
                     s ->
                             s instanceof PercentSize
                                     ? (PercentSize) s
@@ -81,15 +87,15 @@ public class ConfigOptions {
         }
 
         public final <T extends Enum<T>> Builder<T> enumType(Class<T> enumClass) {
-            return new Builder<>(key, s -> convertToEnum(s, enumClass));
+            return new Builder<>(key, alias, s -> convertToEnum(s, enumClass));
         }
 
         public final <T> Builder<List<T>> listType(SplitHandler<T> handler) {
-            return new Builder<>(key, handler::split);
+            return new Builder<>(key, alias, handler::split);
         }
 
         public final <T> Builder<T> objectType() {
-            return new Builder<>(key, o -> (T) o);
+            return new Builder<>(key, alias, o -> (T) o);
         }
     }
 
@@ -150,11 +156,13 @@ public class ConfigOptions {
     public static class Builder<T> {
 
         private final String key;
+        private final String[] alias;
         private final Function<Object, T> valueConvert;
         private String description;
 
-        public Builder(String key, Function<Object, T> valueConvert) {
+        public Builder(String key, String[] alias, Function<Object, T> valueConvert) {
             this.key = key;
+            this.alias = alias;
             this.valueConvert = valueConvert;
         }
 
@@ -170,7 +178,7 @@ public class ConfigOptions {
          * @return ConfigOption
          */
         public ConfigOption<T> defaultValue(T v) {
-            return new ConfigOption<>(key, valueConvert, v, description, true);
+            return new ConfigOption<>(key, alias, valueConvert, v, description, true);
         }
 
         /**
@@ -179,7 +187,7 @@ public class ConfigOptions {
          * @return ConfigOption
          */
         public ConfigOption<T> noDefaultValue() {
-            return new ConfigOption<>(key, valueConvert, null, description, false);
+            return new ConfigOption<>(key, alias, valueConvert, null, description, false);
         }
     }
 

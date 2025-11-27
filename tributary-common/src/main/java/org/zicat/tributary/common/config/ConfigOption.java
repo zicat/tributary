@@ -18,12 +18,14 @@
 
 package org.zicat.tributary.common.config;
 
+import java.util.Arrays;
 import java.util.function.Function;
 
 /** ConfigOption. */
 public class ConfigOption<T> {
 
     private final String key;
+    private final String[] alias;
     private final T defaultValue;
     private final String description;
     private final boolean hasDefaultValue;
@@ -31,27 +33,39 @@ public class ConfigOption<T> {
 
     ConfigOption(
             String key,
+            String[] alias,
             Function<Object, T> valueConvert,
             T defaultValue,
             String description,
             boolean hasDefaultValue) {
         this.key = key;
+        this.alias = alias;
         this.valueConvert = valueConvert;
         this.defaultValue = defaultValue;
         this.description = description;
         this.hasDefaultValue = hasDefaultValue;
     }
 
-    public ConfigOption<T> changeKey(String key) {
-        return new ConfigOption<>(key, valueConvert, defaultValue, description, hasDefaultValue);
-    }
-
     public ConfigOption<T> concatHead(String head) {
-        return changeKey(head + key);
+        final String newKey = head + key;
+        if (alias == null) {
+            return new ConfigOption<>(
+                    newKey, null, valueConvert, defaultValue, description, hasDefaultValue);
+        }
+        final String[] newAlias = new String[alias.length];
+        for (int i = 0; i < alias.length; i++) {
+            newAlias[i] = head + alias[i];
+        }
+        return new ConfigOption<>(
+                newKey, newAlias, valueConvert, defaultValue, description, hasDefaultValue);
     }
 
     public String key() {
         return key;
+    }
+
+    public String[] alias() {
+        return alias;
     }
 
     public T defaultValue() {
@@ -75,6 +89,10 @@ public class ConfigOption<T> {
         final StringBuilder sb = new StringBuilder();
         sb.append("[key:");
         sb.append(key);
+        if (alias != null) {
+            sb.append(", alias:");
+            sb.append(Arrays.toString(alias));
+        }
         if (description != null) {
             sb.append(", description:");
             sb.append(description);

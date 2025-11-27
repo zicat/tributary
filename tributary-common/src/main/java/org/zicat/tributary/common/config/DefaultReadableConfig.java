@@ -41,6 +41,12 @@ public class DefaultReadableConfig implements ReadableConfig {
         if (value != null) {
             return configOption.parseValue(value);
         }
+        for (String a : configOption.alias()) {
+            final Object v = configMap.get(a);
+            if (v != null) {
+                return configOption.parseValue(v);
+            }
+        }
         if (configOption.hasDefaultValue()) {
             return configOption.defaultValue();
         }
