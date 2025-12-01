@@ -19,8 +19,8 @@
 package org.zicat.tributary.sink.authentication.test;
 
 import org.apache.hadoop.minikdc.MiniKdc;
-import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zicat.tributary.common.test.util.FileUtils;
@@ -32,6 +32,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
+import static org.zicat.tributary.sink.authentication.KerberosAuthenticatorFactory.getOrCreateKerberosExecutor;
 
 /** DispatcherAuthenticatorTest. */
 public class TributaryAuthenticatorTest {
@@ -67,56 +68,35 @@ public class TributaryAuthenticatorTest {
         }
     }
 
-    @After
-    public void tearDown() {
-        // Clear the previous statically stored logged in credentials
-        TributaryAuthenticationUtil.clearCredentials();
-    }
-
     @Test
-    public void testZicatLogin() {
+    public void testZicatLogin() throws IOException {
         String principal = zicatPrincipal;
         String keytab = zicatKeytab.getAbsolutePath();
         String expResult = principal;
 
-        TributaryAuthenticator authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
-        assertTrue(authenticator.isAuthenticated());
+        PrivilegedExecutor authenticator = getOrCreateKerberosExecutor(principal, keytab);
 
-        String result = ((KerberosAuthenticator) authenticator).getUserName();
+        String result = ((UGIPrivilegedExecutor) authenticator).getUser();
         assertEquals("Initial login failed", expResult, result);
 
-        authenticator = TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
-        result = ((KerberosAuthenticator) authenticator).getUserName();
+        authenticator = getOrCreateKerberosExecutor(principal, keytab);
+        result = ((UGIPrivilegedExecutor) authenticator).getUser();
         assertEquals("Re-login failed", expResult, result);
 
         principal = alicePrincipal;
         keytab = aliceKeytab.getAbsolutePath();
-        try {
-            authenticator = TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
-            result = ((KerberosAuthenticator) authenticator).getUserName();
-            fail("Login should have failed with a new principal: " + result);
-        } catch (Exception ex) {
-            assertTrue(
-                    "Login with a new principal failed, but for an unexpected "
-                            + "reason: "
-                            + ex.getMessage(),
-                    ex.getMessage().contains("Cannot use multiple kerberos principals"));
-        }
+        authenticator = getOrCreateKerberosExecutor(principal, keytab);
+        result = ((UGIPrivilegedExecutor) authenticator).getUser();
+        Assert.assertNotNull(result);
     }
 
-    /**
-     * Test whether the exception raised in the <code>PrivilegedExceptionAction</code> gets
-     * propagated as-is from {@link KerberosAuthenticator#execute(PrivilegedExceptionAction)}.
-     */
     @Test(expected = IOException.class)
     public void testKerberosAuthenticatorExceptionInExecute() throws Exception {
         String principal = zicatPrincipal;
         String keytab = zicatKeytab.getAbsolutePath();
 
-        TributaryAuthenticator authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(principal, keytab);
-        assertTrue(authenticator instanceof KerberosAuthenticator);
+        PrivilegedExecutor authenticator = getOrCreateKerberosExecutor(principal, keytab);
+        assertTrue(authenticator instanceof UGIPrivilegedExecutor);
 
         authenticator.execute(
                 (PrivilegedExceptionAction<Object>)
@@ -126,47 +106,23 @@ public class TributaryAuthenticatorTest {
     }
 
     @Test
-    public void testNullLogin() {
-        TributaryAuthenticator authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(null, null);
-        assertFalse(authenticator.isAuthenticated());
+    public void testNullLogin() throws IOException {
+        getOrCreateKerberosExecutor(null, null);
     }
 
     /**
      * Test whether the exception raised in the <code>PrivilegedExceptionAction</code> gets
-     * propagated as-is from {@link SimpleAuthenticator#execute(PrivilegedExceptionAction)}.
+     * propagated as-is from {@link SimplePrivilegedExecutor#execute(PrivilegedExceptionAction)}.
      */
     @Test(expected = IOException.class)
     public void testSimpleAuthenticatorExceptionInExecute() throws Exception {
-        TributaryAuthenticator authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(null, null);
-        assertTrue(authenticator instanceof SimpleAuthenticator);
-
+        PrivilegedExecutor authenticator = getOrCreateKerberosExecutor(null, null);
+        assertTrue(authenticator instanceof SimplePrivilegedExecutor);
         authenticator.execute(
                 (PrivilegedExceptionAction<Object>)
                         () -> {
                             throw new IOException();
                         });
-    }
-
-    @Test
-    public void testProxyAs() {
-        String username = "alice";
-
-        TributaryAuthenticator authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(null, null);
-        String result = ((UGIExecutor) (authenticator.proxyAs(username))).getUserName();
-        assertEquals("Proxy as didn't generate the expected username", username, result);
-
-        authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(
-                        zicatPrincipal, zicatKeytab.getAbsolutePath());
-
-        String login = ((KerberosAuthenticator) authenticator).getUserName();
-        assertEquals("Login succeeded, but the principal doesn't match", zicatPrincipal, login);
-
-        result = ((UGIExecutor) (authenticator.proxyAs(username))).getUserName();
-        assertEquals("Proxy as didn't generate the expected username", username, result);
     }
 
     @Test
@@ -176,32 +132,23 @@ public class TributaryAuthenticatorTest {
         kdc.createPrincipal(keytab, principal);
         String expResult = principal + "@" + kdc.getRealm();
 
-        TributaryAuthenticator authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(principal, keytab.getAbsolutePath());
-        assertTrue(authenticator.isAuthenticated());
+        PrivilegedExecutor authenticator =
+                getOrCreateKerberosExecutor(principal, keytab.getAbsolutePath());
 
-        String result = ((KerberosAuthenticator) authenticator).getUserName();
+        String result = ((UGIPrivilegedExecutor) authenticator).getUser();
         assertEquals("Initial login failed", expResult, result);
 
-        authenticator =
-                TributaryAuthenticationUtil.getAuthenticator(principal, keytab.getAbsolutePath());
-        result = ((KerberosAuthenticator) authenticator).getUserName();
+        authenticator = getOrCreateKerberosExecutor(principal, keytab.getAbsolutePath());
+        result = ((UGIPrivilegedExecutor) authenticator).getUser();
         assertEquals("Re-login failed", expResult, result);
 
         principal = "alice";
         keytab = aliceKeytab;
-        try {
-            authenticator =
-                    TributaryAuthenticationUtil.getAuthenticator(
-                            principal, keytab.getAbsolutePath());
-            result = ((KerberosAuthenticator) authenticator).getUserName();
-            fail("Login should have failed with a new principal: " + result);
-        } catch (Exception ex) {
-            assertTrue(
-                    "Login with a new principal failed, but for an unexpected "
-                            + "reason: "
-                            + ex.getMessage(),
-                    ex.getMessage().contains("Cannot use multiple kerberos principals"));
-        }
+        authenticator = getOrCreateKerberosExecutor(principal, keytab.getAbsolutePath());
+        result = ((UGIPrivilegedExecutor) authenticator).getUser();
+        assertEquals(
+                "Login should have failed with a new principal: " + result,
+                principal + "@" + kdc.getRealm(),
+                result);
     }
 }

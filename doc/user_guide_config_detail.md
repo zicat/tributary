@@ -346,18 +346,19 @@ sink.group_1.writer.identity=parquet
 sink.group_1.writer.parquet.compression.codec=snappy
 ```
 
-| key                              | default     | type        | describe                                                                                                                                                                          |
-|----------------------------------|-------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| sink.path                        |             | string      | the root path to sink                                                                                                                                                             |
-| roll.size                        | 256mb       | bytes       | the max size of the file                                                                                                                                                          |
-| bucket.date.format               | yyyyMMdd_HH | string      | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                               |   
-| bucket.date.timezone             | UTC         | string      | the timezone of bucket date format                                                                                                                                                | 
-| max.retries                      | 3           | int(number) | the max retry times when operate hdfs fail                                                                                                                                        |
-| retry.interval                   | 200ms       | duration    | the interval between 2 retries                                                                                                                                                    |
-| keytab                           |             | string      | the keytab if hdfs use kerberos authenticator                                                                                                                                     |
-| principle                        |             | string      | the principle if hdfs use kerberos authenticator                                                                                                                                  |
-| writer.identity                  | parquet     | string      | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java) |
-| writer.parquet.compression.codec | snappy      | string      | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                   | 
+| key                              | default     | type        | describe                                                                                                                                                                              |
+|----------------------------------|-------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sink.path                        |             | string      | the root path to sink                                                                                                                                                                 |
+| roll.size                        | 256mb       | bytes       | the max size of the file                                                                                                                                                              |
+| bucket.date.format               | yyyyMMdd_HH | string      | the part of the bucket, the bucket is composed of ${sink.path}/${bucketDateFormat}/                                                                                                   |   
+| bucket.date.timezone             | UTC         | string      | the timezone of bucket date format                                                                                                                                                    | 
+| max.retries                      | 3           | int(number) | the max retry times when operate hdfs fail                                                                                                                                            |
+| retry.interval                   | 200ms       | duration    | the interval between 2 retries                                                                                                                                                        |
+| keytab                           |             | string      | the keytab if hdfs use kerberos authenticator                                                                                                                                         |
+| principle                        |             | string      | the principle if hdfs use kerberos authenticator                                                                                                                                      |
+| writer.identity                  | parquet     | string      | the spi implement id of the interface [HDFSRecordsWriterFactory](../tributary-sink/tributary-sink-hdfs/src/main/java/org/zicat/tributary/sink/hdfs/HDFSRecordsWriterFactory.java)     |
+| writer.parquet.compression.codec | snappy      | string      | the compression type in org.apache.parquet.hadoop.metadata.CompressionCodecName, default snappy                                                                                       | 
+| configuration.*                  |             | string      | the extra hadoop configuration items, the key is the hadoop configuration key, the value is the hadoop configuration value, like `configuration.dfs.client.retry.policy.enabled=true` |
 
 [more details](../tributary-sink/tributary-sink-hdfs/README.md)
 
@@ -365,6 +366,7 @@ Note:
 
 1. The default checkpoint implement of HDFS function is to check the bucket whether rolled over by time, if it should be
    rolled over, the current file will be closed and offset will be commited.
+2. The `configuration.fs.automatic.close` is always false in HDFS sink, the sink close the fs man.
 
 ### Sink Kafka
 

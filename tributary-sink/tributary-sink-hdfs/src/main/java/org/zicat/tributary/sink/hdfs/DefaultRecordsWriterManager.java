@@ -18,9 +18,15 @@
 
 package org.zicat.tributary.sink.hdfs;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
+import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zicat.tributary.sink.authentication.KerberosAuthenticatorFactory;
 import org.zicat.tributary.sink.config.Context;
+import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.OPTION_KEYTAB;
+import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.OPTION_PRINCIPLE;
 import org.zicat.tributary.sink.hdfs.bucket.BucketWriter;
 
 import java.io.IOException;
@@ -36,10 +42,12 @@ public class DefaultRecordsWriterManager implements RecordsWriterManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRecordsWriterManager.class);
 
+    private static final String HDFS_CONFIGURATION_PREFIX = "configuration.";
     protected transient String basePath;
     protected transient Map<String, BucketWriter> bucketWriters;
     protected transient String prefixFileName;
     protected transient Context context;
+    protected transient FileSystem fileSystem;
 
     @Override
     public void open(Context context) throws Exception {
@@ -48,6 +56,26 @@ public class DefaultRecordsWriterManager implements RecordsWriterManager {
         final String sinkPath = context.get(OPTION_SINK_PATH).trim();
         this.basePath = removeLastIfMatch(sinkPath, DIRECTORY_DELIMITER);
         this.prefixFileName = prefixFileNameInBucket();
+        this.fileSystem = createFileSystem(context);
+    }
+
+    /**
+     * create file system by content.
+     *
+     * @param context context.
+     * @return file system
+     * @throws Exception Exception
+     */
+    protected FileSystem createFileSystem(Context context) throws Exception {
+        final Configuration configuration = new Configuration();
+        context.filterAndRemovePrefixKey(HDFS_CONFIGURATION_PREFIX)
+                .forEach((k, v) -> configuration.set(k, v.toString()));
+        // set auto close as false, the close hook method will close file system cause SinkFunction
+        configuration.setBoolean(CommonConfigurationKeysPublic.FS_AUTOMATIC_CLOSE_KEY, false);
+        return KerberosAuthenticatorFactory.execute(
+                context.get(OPTION_PRINCIPLE),
+                context.get(OPTION_KEYTAB),
+                () -> FileSystem.get(configuration));
     }
 
     @Override
@@ -57,7 +85,7 @@ public class DefaultRecordsWriterManager implements RecordsWriterManager {
             return writer;
         }
         final String bucketPath = basePath + DIRECTORY_DELIMITER + bucket;
-        writer = new BucketWriter(context, bucketPath, prefixFileName);
+        writer = new BucketWriter(context, bucketPath, prefixFileName, fileSystem);
         bucketWriters.put(bucket, writer);
         return writer;
     }

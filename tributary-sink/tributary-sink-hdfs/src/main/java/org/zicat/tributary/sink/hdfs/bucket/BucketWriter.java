@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.sink.hdfs.bucket;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
@@ -28,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import org.zicat.tributary.common.util.Functions.Runnable;
 import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.sink.authentication.PrivilegedExecutor;
 import org.zicat.tributary.sink.config.Context;
 import org.zicat.tributary.sink.hdfs.HDFSRecordsWriter;
 import org.zicat.tributary.sink.hdfs.HDFSRecordsWriterFactory;
@@ -36,12 +33,10 @@ import org.zicat.tributary.sink.hdfs.RecordsWriter;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
-import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.zicat.tributary.common.util.Functions.runWithRetry;
-import static org.zicat.tributary.sink.authentication.TributaryAuthenticationUtil.getAuthenticator;
 import static org.zicat.tributary.sink.hdfs.HDFSSinkOptions.*;
 import static org.zicat.tributary.common.util.Exceptions.castAsIOException;
 
@@ -51,35 +46,31 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
     private static final Logger LOG = LoggerFactory.getLogger(BucketWriter.class);
 
     private final HDFSRecordsWriter writer;
-    private final PrivilegedExecutor proxyUser;
     private final String fileSuffixName;
     private final AtomicLong fileExtensionCounter;
-    private final Configuration config = new Configuration();
+    private final FileSystem fileSystem;
 
     private long processSize;
-    private FileSystem fileSystem;
     private String tmpWritePath;
     protected String fullFileName;
     protected String targetPath;
     private boolean open = false;
 
-    public BucketWriter(Context context, String bucketPath, String fileName) {
+    public BucketWriter(
+            Context context, String bucketPath, String fileName, FileSystem fileSystem) {
         super(
                 bucketPath,
                 fileName,
                 context.get(OPTION_ROLL_SIZE).getBytes(),
                 context.get(OPTION_MAX_RETRIES),
                 context.get(OPTION_RETRY_INTERVAL).toMillis());
+        this.fileSystem = fileSystem;
         final String writerId = context.get(OPTION_WRITER_IDENTITY);
         final HDFSRecordsWriterFactory factory =
                 SpiFactory.findFactory(writerId, HDFSRecordsWriterFactory.class);
         this.writer = factory.create(context);
         this.fileSuffixName = factory.fileExtension(context);
-        this.proxyUser =
-                getAuthenticator(context.get(OPTION_PRINCIPLE), context.get(OPTION_KEYTAB));
         this.fileExtensionCounter = new AtomicLong(0L);
-        // set auto close as false, the close hook method will close file system cause SinkFunction
-        config.setBoolean(CommonConfigurationKeysPublic.FS_AUTOMATIC_CLOSE_KEY, false);
     }
 
     /**
@@ -88,34 +79,18 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
     public void open() throws IOException {
         synchronized (BucketWriter.class) {
             try {
-                callWithPrivileged(
-                        () -> {
-                            fullFileName = createNewFullFileName();
-                            targetPath = bucketPath + "/" + fullFileName;
-                            tmpWritePath = targetPath + inUseSuffix();
-                            LOG.info("Creating {}", tmpWritePath);
-                            final Path path = new Path(tmpWritePath);
-                            fileSystem = getFileSystem(path, config);
-                            writer.open(fileSystem, path);
-                        });
+                fullFileName = createNewFullFileName();
+                targetPath = bucketPath + "/" + fullFileName;
+                tmpWritePath = targetPath + inUseSuffix();
+                LOG.info("Creating {}", tmpWritePath);
+                final Path path = new Path(tmpWritePath);
+                writer.open(fileSystem, path);
             } catch (Throwable ex) {
                 throw castAsIOException(ex);
             }
         }
         processSize = 0;
         open = true;
-    }
-
-    /**
-     * get file system by path and config.
-     *
-     * @param path path
-     * @param config config
-     * @return FileSystem
-     * @throws IOException IOException
-     */
-    protected FileSystem getFileSystem(Path path, Configuration config) throws IOException {
-        return path.getFileSystem(config);
     }
 
     /**
@@ -137,7 +112,6 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
             tmpWritePath = null;
             fullFileName = null;
             targetPath = null;
-            fileSystem = null;
         }
         open = false;
     }
@@ -152,55 +126,31 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
      */
     protected void renameBucket(String bucketPath, String targetPath, final FileSystem fs)
             throws IOException {
-
         if (bucketPath.equals(targetPath)) {
             return;
         }
-
         final Path srcPath = new Path(bucketPath);
         final Path dstPath = new Path(targetPath);
-        callWithPrivileged(
-                () -> {
-                    if (fs.exists(srcPath)) {
-                        LOG.info("Renaming {} to {}", srcPath, dstPath);
-                        fs.rename(srcPath, dstPath);
-                    }
-                });
+        if (fs.exists(srcPath)) {
+            LOG.info("Renaming {} to {}", srcPath, dstPath);
+            fs.rename(srcPath, dstPath);
+        }
     }
 
     /** close writer with recover lease. */
     private void closeWriter() throws IOException {
         try {
             LOG.info("Closing {}", tmpWritePath);
-            callWithPrivileged(writer::close);
+            writer.close();
         } catch (IOException e) {
             if (e instanceof ClosedChannelException) {
                 LOG.info("{} already closed", tmpWritePath);
                 return;
             }
-            LOG.warn("Closing file: " + tmpWritePath + " failed. Will retry recover lease", e);
+            LOG.warn("Closing file: {} failed. Will retry recover lease", tmpWritePath, e);
             if (fileSystem instanceof DistributedFileSystem && tmpWritePath != null) {
                 ((DistributedFileSystem) fileSystem).recoverLease(new Path(tmpWritePath));
             }
-        }
-    }
-
-    /**
-     * call with privileged.
-     *
-     * @param runnable runnable
-     * @throws IOException IOException
-     */
-    private void callWithPrivileged(final Runnable runnable) throws IOException {
-        try {
-            proxyUser.execute(
-                    (PrivilegedExceptionAction<Object>)
-                            () -> {
-                                runnable.run();
-                                return null;
-                            });
-        } catch (Throwable e) {
-            throw castAsIOException(e);
         }
     }
 
@@ -218,9 +168,7 @@ public class BucketWriter extends BucketMeta implements RecordsWriter {
         final AtomicInteger total = new AtomicInteger();
         final Throwable e =
                 runWithRetry(
-                        () -> callWithPrivileged(() -> total.set(writer.append(records))),
-                        maxRetries,
-                        retryIntervalMs());
+                        () -> total.set(writer.append(records)), maxRetries, retryIntervalMs());
         if (e != null) {
             throw castAsIOException(e);
         }

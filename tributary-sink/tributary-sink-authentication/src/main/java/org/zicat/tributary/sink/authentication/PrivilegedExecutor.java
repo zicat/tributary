@@ -18,7 +18,6 @@
 
 package org.zicat.tributary.sink.authentication;
 
-import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 
 /** PrivilegedExecutor. */
@@ -34,14 +33,4 @@ public interface PrivilegedExecutor {
      * @throws Exception Exception
      */
     <T> T execute(PrivilegedExceptionAction<T> action) throws Exception;
-
-    /**
-     * This method is used to execute a privileged action, the implementor can chose to execute the
-     * action using the appropriate privileges.
-     *
-     * @param action A PrivilegedAction to perform as the desired user
-     * @param <T> The return type of the action
-     * @return T the T value returned by action.run()
-     */
-    <T> T execute(PrivilegedAction<T> action);
 }

@@ -18,37 +18,13 @@
 
 package org.zicat.tributary.sink.authentication;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.hadoop.security.UserGroupInformation;
-
-import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 
-/** UGIExecutor. */
-public class UGIExecutor implements PrivilegedExecutor {
-
-    private final UserGroupInformation ugi;
-
-    public UGIExecutor(UserGroupInformation ugi) {
-        this.ugi = ugi;
-    }
-
-    @Override
-    public <T> T execute(PrivilegedAction<T> action) {
-        return action.run();
-    }
+/** SimpleAuthenticator. */
+public class SimplePrivilegedExecutor implements PrivilegedExecutor {
 
     @Override
     public <T> T execute(PrivilegedExceptionAction<T> action) throws Exception {
         return action.run();
-    }
-
-    @VisibleForTesting
-    public String getUserName() {
-        if (ugi != null) {
-            return ugi.getUserName();
-        } else {
-            return null;
-        }
     }
 }

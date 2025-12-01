@@ -304,12 +304,7 @@ public class BucketWriterTest {
                             .groupId("g1")
                             .topic("t1");
 
-            return new BucketWriter(builder.build(), bucketPath, fileName) {
-                @Override
-                protected FileSystem getFileSystem(Path path, Configuration config)
-                        throws IOException {
-                    return fileSystem == null ? super.getFileSystem(path, config) : fileSystem;
-                }
+            return new BucketWriter(builder.build(), bucketPath, fileName, fileSystem) {
 
                 @Override
                 protected void renameBucket(

@@ -27,6 +27,12 @@ public class KerberosUser {
     private final String keyTab;
 
     public KerberosUser(String principal, String keyTab) {
+        if (principal == null || principal.isEmpty()) {
+            throw new IllegalArgumentException("principal is null");
+        }
+        if (keyTab == null || keyTab.isEmpty()) {
+            throw new IllegalArgumentException("keyTab is null");
+        }
         this.principal = principal;
         this.keyTab = keyTab;
     }
