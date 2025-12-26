@@ -22,27 +22,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.common.records.Record0;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilter;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /** DefaultMessageFilter. */
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class DefaultMessageFilter implements MessageFilter<Object> {
 
     public static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
-    public Collection convert(String topic, Iterator iterator) throws Exception {
+    public Iterable<Records> convert(String topic, Iterator<Message<Object>> iterator)
+            throws Exception {
         List<Record0> records = new ArrayList<>();
         while (iterator.hasNext()) {
-            Map data = ((Message<Object>) iterator.next()).getData();
+            Message<Object> message = iterator.next();
+            Map<String, Object> data = message.getData();
             data.remove("aa");
             records.add(new DefaultRecord(MAPPER.writeValueAsBytes(data)));
         }

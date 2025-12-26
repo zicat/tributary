@@ -18,18 +18,35 @@
 
 package org.zicat.tributary.source.logstash.base.test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.zicat.tributary.common.records.DefaultRecord;
+import org.zicat.tributary.common.records.DefaultRecords;
+import org.zicat.tributary.common.records.Record0;
+import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.source.logstash.base.Message;
 import org.zicat.tributary.source.logstash.base.MessageFilter;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /** DefaultMessageFilter. */
-@SuppressWarnings("rawtypes")
 public class DefaultMessageFilter implements MessageFilter<Object> {
+
+    public static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Override
-    public boolean filter(Message<Object> message) {
-        final Map data = message.getData();
-        data.put("_test_key", "test_value");
-        return true;
+    public Iterable<Records> convert(String topic, Iterator<Message<Object>> iterator)
+            throws Exception {
+        List<Record0> records = new ArrayList<>();
+        while (iterator.hasNext()) {
+            Message message = (Message) iterator.next();
+            Map<String, Object> data = message.getData();
+            data.remove("aa");
+            records.add(new DefaultRecord(MAPPER.writeValueAsBytes(data)));
+        }
+        return Collections.singletonList(new DefaultRecords(topic, records));
     }
 }
