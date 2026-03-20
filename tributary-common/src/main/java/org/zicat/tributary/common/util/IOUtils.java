@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-/** IOUtils. */
+/** */
 public class IOUtils {
 
     private static final int DEFAULT_BUFFER_SIZE = 4096;
@@ -57,8 +57,7 @@ public class IOUtils {
      * @return length + compression data
      */
     public static ByteBuffer compressionNone(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
-        reusedByteBuffer =
-                IOUtils.reAllocate(reusedByteBuffer, byteBuffer.remaining() + INT_LENGTH);
+        reusedByteBuffer = reAllocate(reusedByteBuffer, byteBuffer.remaining() + INT_LENGTH);
         reusedByteBuffer.putInt(byteBuffer.remaining());
         reusedByteBuffer.put(byteBuffer);
         reusedByteBuffer.flip();
@@ -84,7 +83,7 @@ public class IOUtils {
      *     return new buffer
      */
     public static ByteBuffer decompressionNone(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
-        reusedBuffer = IOUtils.reAllocate(reusedBuffer, byteBuffer.remaining());
+        reusedBuffer = reAllocate(reusedBuffer, byteBuffer.remaining());
         reusedBuffer.put(byteBuffer);
         reusedBuffer.flip();
         return reusedBuffer;
@@ -108,12 +107,16 @@ public class IOUtils {
      * @return byteBuffer, length + compression data
      */
     public static ByteBuffer compressionZSTD(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
-        final ByteBuffer zstdBuffer = Zstd.compress(byteBuffer, 3);
-        reusedByteBuffer =
-                IOUtils.reAllocate(reusedByteBuffer, zstdBuffer.remaining() + INT_LENGTH);
-        reusedByteBuffer.putInt(zstdBuffer.remaining());
-        reusedByteBuffer.put(zstdBuffer);
-        reusedByteBuffer.flip();
+        final int srcSize = byteBuffer.remaining();
+        final int maxCompressedLength = (int) Zstd.compressBound(srcSize);
+        reusedByteBuffer = reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH);
+        reusedByteBuffer.position(INT_LENGTH);
+        Zstd.compress(reusedByteBuffer, byteBuffer);
+        final int compressedSize = reusedByteBuffer.position() - INT_LENGTH;
+        reusedByteBuffer.position(0);
+        reusedByteBuffer.putInt(compressedSize);
+        reusedByteBuffer.position(0);
+        reusedByteBuffer.limit(INT_LENGTH + compressedSize);
         return reusedByteBuffer;
     }
 
@@ -137,7 +140,7 @@ public class IOUtils {
      */
     public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
         final int size = (int) Zstd.decompressedSize(byteBuffer);
-        reusedBuffer = IOUtils.reAllocate(reusedBuffer, size * 2, size);
+        reusedBuffer = reAllocate(reusedBuffer, size * 2, size);
         Zstd.decompress(reusedBuffer, byteBuffer);
         reusedBuffer.flip();
         return reusedBuffer;
@@ -161,11 +164,12 @@ public class IOUtils {
      * @return byteBuffer, length + compression data
      * @throws IOException IOException
      */
+    @SuppressWarnings("VulnerableCodeUsages")
     public static ByteBuffer compressionSnappy(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer)
             throws IOException {
         final int size = byteBuffer.remaining();
         final int maxCompressedLength = Snappy.maxCompressedLength(size);
-        reusedByteBuffer = IOUtils.reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH);
+        reusedByteBuffer = reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH);
         reusedByteBuffer.position(INT_LENGTH);
         Snappy.compress(byteBuffer, reusedByteBuffer);
         final int length = reusedByteBuffer.remaining();
@@ -197,7 +201,7 @@ public class IOUtils {
     public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer, ByteBuffer reusedBuffer)
             throws IOException {
         final int uncompressedLength = Snappy.uncompressedLength(byteBuffer);
-        reusedBuffer = IOUtils.reAllocate(reusedBuffer, uncompressedLength);
+        reusedBuffer = reAllocate(reusedBuffer, uncompressedLength);
         Snappy.uncompress(byteBuffer, reusedBuffer);
         return reusedBuffer;
     }
@@ -227,8 +231,7 @@ public class IOUtils {
         final int originalSize = byteBuffer.remaining();
         final int vIntLen = VIntUtil.vIntLength(originalSize);
         final int maxCompressedLength = LZ4_COMPRESSOR.maxCompressedLength(originalSize);
-        reusedByteBuffer =
-                IOUtils.reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH + vIntLen);
+        reusedByteBuffer = reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH + vIntLen);
         // reserve space for outer INT header and vint(originalSize)
         reusedByteBuffer.position(INT_LENGTH + vIntLen);
         LZ4_COMPRESSOR.compress(byteBuffer, reusedByteBuffer);
@@ -252,7 +255,7 @@ public class IOUtils {
      */
     public static ByteBuffer decompressionLZ4(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
         final int originalSize = VIntUtil.readVInt(byteBuffer);
-        reusedBuffer = IOUtils.reAllocate(reusedBuffer, originalSize);
+        reusedBuffer = reAllocate(reusedBuffer, originalSize);
         LZ4_DECOMPRESSOR.decompress(byteBuffer, reusedBuffer);
         reusedBuffer.flip();
         return reusedBuffer;
@@ -481,12 +484,12 @@ public class IOUtils {
             return;
         }
         if (closeableList.size() == 1) {
-            IOUtils.closeQuietly(closeableList.iterator().next());
+            closeQuietly(closeableList.iterator().next());
             return;
         }
         final List<Thread> closeThreads = new ArrayList<>();
         for (Closeable closeable : closeableList) {
-            final Thread thread = new Thread(() -> IOUtils.closeQuietly(closeable));
+            final Thread thread = new Thread(() -> closeQuietly(closeable));
             closeThreads.add(thread);
             thread.start();
         }

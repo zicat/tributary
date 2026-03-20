@@ -63,6 +63,7 @@ public class CompressionTypeTest {
                         compressBuffer, ByteBuffer.allocateDirect(compressBuffer.remaining()));
         final byte[] finalArray = new byte[decompressionBuffer.remaining()];
         decompressionBuffer.get(finalArray);
+        Assert.assertNotEquals(0, finalArray.length);
         Assert.assertArrayEquals(expectedArray, finalArray);
     }
 
