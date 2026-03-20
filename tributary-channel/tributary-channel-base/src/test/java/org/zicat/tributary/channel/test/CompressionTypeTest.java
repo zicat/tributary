@@ -36,6 +36,7 @@ public class CompressionTypeTest {
         test(new CompressTypeEntity(CompressionType.NONE, (byte) 1, "none"));
         test(new CompressTypeEntity(CompressionType.ZSTD, (byte) 2, "zstd"));
         test(new CompressTypeEntity(CompressionType.SNAPPY, (byte) 3, "snappy"));
+        test(new CompressTypeEntity(CompressionType.LZ4, (byte) 4, "lz4"));
     }
 
     /**

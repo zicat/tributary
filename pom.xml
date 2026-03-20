@@ -28,6 +28,7 @@
         <netty-version>4.1.65.Final</netty-version>
         <snappy-java-version>1.1.8.4</snappy-java-version>
         <zstd-jni-version>1.5.2-5</zstd-jni-version>
+        <lz4-java-version>1.8.0</lz4-java-version>
         <jackson-version>2.13.0</jackson-version>
     </properties>
     <scm>

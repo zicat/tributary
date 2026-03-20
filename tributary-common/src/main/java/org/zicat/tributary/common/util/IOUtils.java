@@ -19,6 +19,9 @@
 package org.zicat.tributary.common.util;
 
 import com.github.luben.zstd.Zstd;
+import net.jpountz.lz4.LZ4Compressor;
+import net.jpountz.lz4.LZ4Factory;
+import net.jpountz.lz4.LZ4FastDecompressor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +45,9 @@ public class IOUtils {
     private static final int DEFAULT_BUFFER_SIZE = 4096;
     private static final Logger LOG = LoggerFactory.getLogger(IOUtils.class);
     private static final int INT_LENGTH = 4;
+    private static final LZ4Factory LZ4_FACTORY = LZ4Factory.fastestInstance();
+    private static final LZ4Compressor LZ4_COMPRESSOR = LZ4_FACTORY.fastCompressor();
+    private static final LZ4FastDecompressor LZ4_DECOMPRESSOR = LZ4_FACTORY.fastDecompressor();
 
     /**
      * compression none.
@@ -73,15 +79,15 @@ public class IOUtils {
      * decompression none.
      *
      * @param byteBuffer byteBuffer
-     * @param targetBuffer targetBuffer
-     * @return if decompression result buffer is smaller than targetBuffer, return targetBuffer else
+     * @param reusedBuffer reusedBuffer
+     * @return if decompression result buffer is smaller than reusedBuffer, return reusedBuffer else
      *     return new buffer
      */
-    public static ByteBuffer decompressionNone(ByteBuffer byteBuffer, ByteBuffer targetBuffer) {
-        targetBuffer = IOUtils.reAllocate(targetBuffer, byteBuffer.remaining());
-        targetBuffer.put(byteBuffer);
-        targetBuffer.flip();
-        return targetBuffer;
+    public static ByteBuffer decompressionNone(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
+        reusedBuffer = IOUtils.reAllocate(reusedBuffer, byteBuffer.remaining());
+        reusedBuffer.put(byteBuffer);
+        reusedBuffer.flip();
+        return reusedBuffer;
     }
 
     /**
@@ -125,16 +131,16 @@ public class IOUtils {
      * decompression zstd. only support DirectByteBuffer
      *
      * @param byteBuffer byteBuffer
-     * @param targetBuffer targetBuffer
-     * @return if decompression result buffer is smaller than targetBuffer, return targetBuffer else
+     * @param reusedBuffer reusedBuffer
+     * @return if decompression result buffer is smaller than reusedBuffer, return reusedBuffer else
      *     return new buffer
      */
-    public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer, ByteBuffer targetBuffer) {
+    public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
         final int size = (int) Zstd.decompressedSize(byteBuffer);
-        targetBuffer = IOUtils.reAllocate(targetBuffer, size * 2, size);
-        Zstd.decompress(targetBuffer, byteBuffer);
-        targetBuffer.flip();
-        return targetBuffer;
+        reusedBuffer = IOUtils.reAllocate(reusedBuffer, size * 2, size);
+        Zstd.decompress(reusedBuffer, byteBuffer);
+        reusedBuffer.flip();
+        return reusedBuffer;
     }
 
     /**
@@ -183,17 +189,17 @@ public class IOUtils {
      * decompression snappy. only support DirectByteBuffer
      *
      * @param byteBuffer byteBuffer
-     * @param targetBuffer targetBuffer
-     * @return if decompression result buffer is smaller than targetBuffer, return targetBuffer else
+     * @param reusedBuffer reusedBuffer
+     * @return if decompression result buffer is smaller than reusedBuffer, return reusedBuffer else
      *     return new buffer
      * @throws IOException IOException
      */
-    public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer, ByteBuffer targetBuffer)
+    public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer, ByteBuffer reusedBuffer)
             throws IOException {
         final int uncompressedLength = Snappy.uncompressedLength(byteBuffer);
-        targetBuffer = IOUtils.reAllocate(targetBuffer, uncompressedLength);
-        Snappy.uncompress(byteBuffer, targetBuffer);
-        return targetBuffer;
+        reusedBuffer = IOUtils.reAllocate(reusedBuffer, uncompressedLength);
+        Snappy.uncompress(byteBuffer, reusedBuffer);
+        return reusedBuffer;
     }
 
     /**
@@ -205,6 +211,51 @@ public class IOUtils {
      */
     public static ByteBuffer decompressionSnappy(ByteBuffer byteBuffer) throws IOException {
         return decompressionSnappy(byteBuffer, null);
+    }
+
+    /**
+     * compression lz4. only support DirectByteBuffer
+     *
+     * <p>layout: INT(vint(originalSize) + compressed data length) + vint(originalSize) + compressed
+     * data
+     *
+     * @param byteBuffer byteBuffer must direct bytebuffer
+     * @param reusedByteBuffer reusedByteBuffer
+     * @return byteBuffer, length + vint(originalSize) + compression data
+     */
+    public static ByteBuffer compressionLZ4(ByteBuffer byteBuffer, ByteBuffer reusedByteBuffer) {
+        final int originalSize = byteBuffer.remaining();
+        final int vIntLen = VIntUtil.vIntLength(originalSize);
+        final int maxCompressedLength = LZ4_COMPRESSOR.maxCompressedLength(originalSize);
+        reusedByteBuffer =
+                IOUtils.reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH + vIntLen);
+        // reserve space for outer INT header and vint(originalSize)
+        reusedByteBuffer.position(INT_LENGTH + vIntLen);
+        LZ4_COMPRESSOR.compress(byteBuffer, reusedByteBuffer);
+        final int compressedSize = reusedByteBuffer.position() - INT_LENGTH - vIntLen;
+        // write outer INT header = vint bytes + compressed bytes
+        reusedByteBuffer.position(0);
+        reusedByteBuffer.putInt(vIntLen + compressedSize);
+        VIntUtil.putVInt(reusedByteBuffer, originalSize);
+        // set readable range
+        reusedByteBuffer.position(0);
+        reusedByteBuffer.limit(INT_LENGTH + vIntLen + compressedSize);
+        return reusedByteBuffer;
+    }
+
+    /**
+     * decompression lz4. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer (contains vint(originalSize) + compressed data)
+     * @param reusedBuffer reusedBuffer
+     * @return decompressed buffer
+     */
+    public static ByteBuffer decompressionLZ4(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
+        final int originalSize = VIntUtil.readVInt(byteBuffer);
+        reusedBuffer = IOUtils.reAllocate(reusedBuffer, originalSize);
+        LZ4_DECOMPRESSOR.decompress(byteBuffer, reusedBuffer);
+        reusedBuffer.flip();
+        return reusedBuffer;
     }
 
     /**

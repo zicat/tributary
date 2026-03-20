@@ -25,9 +25,54 @@ import static org.zicat.tributary.common.util.IOUtils.*;
 
 /** CompressionType. */
 public enum CompressionType {
-    NONE((byte) 1, "none"),
-    ZSTD((byte) 2, "zstd"),
-    SNAPPY((byte) 3, "snappy");
+    NONE((byte) 1, "none") {
+        @Override
+        public ByteBuffer compression(ByteBuffer byteBuffer, ByteBuffer reusedBuf) {
+            return compressionNone(byteBuffer, reusedBuf);
+        }
+
+        @Override
+        public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
+            return decompressionNone(byteBuffer, reusedBuffer);
+        }
+    },
+    ZSTD((byte) 2, "zstd") {
+        @Override
+        public ByteBuffer compression(ByteBuffer byteBuffer, ByteBuffer reusedBuf) {
+            return compressionZSTD(byteBuffer, reusedBuf);
+        }
+
+        @Override
+        public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
+            return decompressionZSTD(byteBuffer, reusedBuffer);
+        }
+    },
+    SNAPPY((byte) 3, "snappy") {
+        @Override
+        public ByteBuffer compression(ByteBuffer byteBuffer, ByteBuffer reusedBuf)
+                throws IOException {
+            return compressionSnappy(byteBuffer, reusedBuf);
+        }
+
+        @Override
+        public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer reusedBuffer)
+                throws IOException {
+            return decompressionSnappy(byteBuffer, reusedBuffer);
+        }
+    },
+    LZ4((byte) 4, "lz4") {
+        @Override
+        public ByteBuffer compression(ByteBuffer uncompressed, ByteBuffer reusedBuf)
+                throws IOException {
+            return compressionLZ4(uncompressed, reusedBuf);
+        }
+
+        @Override
+        public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer reusedBuffer)
+                throws IOException {
+            return decompressionLZ4(byteBuffer, reusedBuffer);
+        }
+    };
 
     private final byte id;
     private final String name;
@@ -47,6 +92,26 @@ public enum CompressionType {
     }
 
     /**
+     * compression byte buffer. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer
+     * @param reusedBuffer reusedBuffer
+     * @return byteBuffer length + compression data
+     */
+    public abstract ByteBuffer compression(ByteBuffer byteBuffer, ByteBuffer reusedBuffer)
+            throws IOException;
+
+    /**
+     * decompression byte buffer. only support DirectByteBuffer
+     *
+     * @param byteBuffer byteBuffer
+     * @param reusedBuffer reusedBuffer
+     * @return byteBuffer
+     */
+    public abstract ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer reusedBuffer)
+            throws IOException;
+
+    /**
      * get type by name.
      *
      * @param name name
@@ -57,15 +122,12 @@ public enum CompressionType {
             return CompressionType.NONE;
         }
         name = name.trim().toLowerCase();
-        if (NONE.name.equals(name)) {
-            return NONE;
-        } else if (ZSTD.name.equals(name)) {
-            return ZSTD;
-        } else if (SNAPPY.name.equals(name)) {
-            return SNAPPY;
-        } else {
-            throw new IllegalArgumentException("compression name not found, name " + name);
+        for (CompressionType compressionType : CompressionType.values()) {
+            if (compressionType.name.equals(name)) {
+                return compressionType;
+            }
         }
+        throw new IllegalArgumentException("compression name not found, name " + name);
     }
 
     /**
@@ -75,53 +137,11 @@ public enum CompressionType {
      * @return CompressionType
      */
     public static CompressionType getById(byte b) {
-        if (b == 1) {
-            return NONE;
-        } else if (b == 2) {
-            return ZSTD;
-        } else if (b == 3) {
-            return SNAPPY;
-        } else {
-            throw new IllegalArgumentException("compression type not found, id " + b);
+        for (CompressionType compressionType : CompressionType.values()) {
+            if (compressionType.id == b) {
+                return compressionType;
+            }
         }
-    }
-
-    /**
-     * compression byte buffer. only support DirectByteBuffer
-     *
-     * @param uncompressed byteBuffer
-     * @param reusedBuf reusedBuf
-     * @return byteBuffer length + compression data
-     */
-    public ByteBuffer compression(ByteBuffer uncompressed, ByteBuffer reusedBuf)
-            throws IOException {
-        if (this == ZSTD) {
-            return compressionZSTD(uncompressed, reusedBuf);
-        } else if (this == NONE) {
-            return compressionNone(uncompressed, reusedBuf);
-        } else if (this == SNAPPY) {
-            return compressionSnappy(uncompressed, reusedBuf);
-        } else {
-            throw new IllegalArgumentException("compression type not found, id " + id());
-        }
-    }
-
-    /**
-     * decompression byte buffer. only support DirectByteBuffer
-     *
-     * @param byteBuffer byteBuffer
-     * @return byteBuffer
-     */
-    public ByteBuffer decompression(ByteBuffer byteBuffer, ByteBuffer targetBuffer)
-            throws IOException {
-        if (this == ZSTD) {
-            return decompressionZSTD(byteBuffer, targetBuffer);
-        } else if (this == NONE) {
-            return decompressionNone(byteBuffer, targetBuffer);
-        } else if (this == SNAPPY) {
-            return decompressionSnappy(byteBuffer, targetBuffer);
-        } else {
-            throw new IllegalArgumentException("compression type not found, id " + id());
-        }
+        throw new IllegalArgumentException("compression type not found, id " + b);
     }
 }

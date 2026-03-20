@@ -249,7 +249,7 @@ Tributary supports defining multiple channels in the application.properties
 channel.c1.type=file
 channel.c1.groups=group_1,group_2
 channel.c1.partitions=/tmp/tributary/p1,/tmp/tributary/p3
-channel.c1.compression=snappy
+channel.c1.compression=lz4
 channel.c1.block.size=32kb
 channel.c1.segment.size=4gb
 channel.c1.flush.period=1sec
@@ -257,7 +257,7 @@ channel.c1.block.cache.per.partition.size=1024
 channel.c2.type=memory
 channel.c2.groups=group_2
 channel.c2.partitions=2
-channel.c2.compression=snappy
+channel.c2.compression=lz4
 channel.c2.block.size=32kb
 channel.c2.segment.size=4gb
 channel.c2.flush.period=1sec
@@ -273,16 +273,16 @@ channel.c2.block.cache.per.partition.size=1024
 
 ### File Config
 
-| key                            | default | type                   | describe                                                                                                                                                                                                                                                                         |
-|--------------------------------|---------|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| partitions                     |         | string                 | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                                                                                                          |
-| block.size                     | 32kb    | bytes                  | the block size to store records in memory                                                                                                                                                                                                                                        |
-| compression                    | snappy  | enum[none,zstd,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                                                                                                                 |
-| segment.size                   | 4gb     | bytes                  | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                                                                                                             |
-| segment.expired.cleanup.period | 30s     | duration               | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                                                                                                                 |
-| flush.period                   | 500ms   | duration               | the period time to async flush page cache to disk                                                                                                                                                                                                                                |
-| block.cache.per.partition.size | 1024    | long(number)           | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                   | 
-| capacity.protected.percent     | 90%     | percent                | the max disk capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the disk usage percent over the param, those sink groups will skip offset to next segment to consume |
+| key                            | default | type                       | describe                                                                                                                                                                                                                                                                         |
+|--------------------------------|---------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| partitions                     |         | string                     | the directory list to store records, each directory represent one partition, the directory is allowed reading and writing, split by `,`                                                                                                                                          |
+| block.size                     | 32kb    | bytes                      | the block size to store records in memory                                                                                                                                                                                                                                        |
+| compression                    | lz4     | enum[none,zstd,lz4,snappy] | the type of compression to compress the block before writing block to page cache                                                                                                                                                                                                 |
+| segment.size                   | 4gb     | bytes                      | the size of a segment, in file and memory channel segment is the smallest unit of resource recycling                                                                                                                                                                             |
+| segment.expired.cleanup.period | 30s     | duration                   | the period time to check and cleanup expired segments, the expired segments are those segments which have consumed by all groups                                                                                                                                                 |
+| flush.period                   | 500ms   | duration                   | the period time to async flush page cache to disk                                                                                                                                                                                                                                |
+| block.cache.per.partition.size | 1024    | long(number)               | the block count in cache per partition, the newest blocks are cached in memory before compression for sinks read channel data directly without decompression if channel compression is turn on                                                                                   | 
+| capacity.protected.percent     | 90%     | percent                    | the max disk capacity protected percent, the default null means no limit, if set this value, the earliest segments that not consumed by some sink groups will be deleted if the disk usage percent over the param, those sink groups will skip offset to next segment to consume |
 
 ### Memory Config
 
