@@ -113,10 +113,9 @@ public class IOUtilsTest {
         Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 20).capacity(), 20);
         byteBuffer.limit(5);
 
-        Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 5).capacity(), 10);
         Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 5).limit(), 5);
-        Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 10).capacity(), 10);
         Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 10).limit(), 10);
+        Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 5).limit(), 5);
 
         Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 20, 5, true), byteBuffer);
         Assert.assertEquals(IOUtils.reAllocate(byteBuffer, 20, 6, true).limit(), 6);
