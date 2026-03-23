@@ -25,11 +25,6 @@ import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
-import org.apache.commons.pool2.BasePooledObjectFactory;
-import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;
@@ -56,70 +51,33 @@ public class IOUtils {
     private static final LZ4Compressor LZ4_COMPRESSOR = LZ4_FACTORY.fastCompressor();
     private static final LZ4FastDecompressor LZ4_DECOMPRESSOR = LZ4_FACTORY.fastDecompressor();
 
-    private static final GenericObjectPool<ZstdCompressCtx> ZSTD_COMPRESS_POOL =
-            createZstdCompressPool();
-    private static final GenericObjectPool<ZstdDecompressCtx> ZSTD_DECOMPRESS_POOL =
-            createZstdDecompressPool();
+    /** ZSTDCompressCtx. */
+    private static final class ZSTDCompressCtx implements Closeable {
 
-    private static GenericObjectPool<ZstdCompressCtx> createZstdCompressPool() {
-        final GenericObjectPoolConfig<ZstdCompressCtx> config = new GenericObjectPoolConfig<>();
-        config.setMaxTotal(-1);
-        config.setMinIdle(10);
-        config.setBlockWhenExhausted(false);
-        return new GenericObjectPool<>(
-                new BasePooledObjectFactory<ZstdCompressCtx>() {
-                    @SuppressWarnings("resource")
-                    @Override
-                    public ZstdCompressCtx create() {
-                        return new ZstdCompressCtx().setLevel(3);
-                    }
+        private final ZstdCompressCtx zstdCompressCtx;
+        private final ZstdDecompressCtx zstdDecompressCtx;
 
-                    @Override
-                    public PooledObject<ZstdCompressCtx> wrap(ZstdCompressCtx ctx) {
-                        return new DefaultPooledObject<>(ctx);
-                    }
+        private ZSTDCompressCtx(
+                ZstdCompressCtx zstdCompressCtx, ZstdDecompressCtx zstdDecompressCtx) {
+            this.zstdCompressCtx = zstdCompressCtx;
+            this.zstdDecompressCtx = zstdDecompressCtx;
+        }
 
-                    @Override
-                    public void passivateObject(PooledObject<ZstdCompressCtx> p) {
-                        p.getObject().reset();
-                    }
-
-                    @Override
-                    public void destroyObject(PooledObject<ZstdCompressCtx> p) {
-                        p.getObject().close();
-                    }
-                },
-                config);
+        @Override
+        public void close() {
+            IOUtils.closeQuietly(zstdCompressCtx, zstdDecompressCtx);
+        }
     }
 
-    private static GenericObjectPool<ZstdDecompressCtx> createZstdDecompressPool() {
-        final GenericObjectPoolConfig<ZstdDecompressCtx> config = new GenericObjectPoolConfig<>();
-        config.setMaxTotal(-1);
-        config.setMinIdle(10);
-        config.setBlockWhenExhausted(false);
-        return new GenericObjectPool<>(
-                new BasePooledObjectFactory<ZstdDecompressCtx>() {
-                    @Override
-                    public ZstdDecompressCtx create() {
-                        return new ZstdDecompressCtx();
-                    }
+    private static final CloseableThreadLocal<ZSTDCompressCtx> ZSTD_COMPRESS_CTX_THREAD_LOCAL =
+            new CloseableThreadLocal<>(
+                    () -> {
+                        final ZstdCompressCtx compressCtx = new ZstdCompressCtx().setLevel(3);
+                        return new ZSTDCompressCtx(compressCtx, new ZstdDecompressCtx());
+                    });
 
-                    @Override
-                    public PooledObject<ZstdDecompressCtx> wrap(ZstdDecompressCtx ctx) {
-                        return new DefaultPooledObject<>(ctx);
-                    }
-
-                    @Override
-                    public void passivateObject(PooledObject<ZstdDecompressCtx> p) {
-                        p.getObject().reset();
-                    }
-
-                    @Override
-                    public void destroyObject(PooledObject<ZstdDecompressCtx> p) {
-                        p.getObject().close();
-                    }
-                },
-                config);
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(ZSTD_COMPRESS_CTX_THREAD_LOCAL::close));
     }
 
     /**
@@ -184,17 +142,9 @@ public class IOUtils {
         final int maxCompressedLength = (int) Zstd.compressBound(srcSize);
         reusedByteBuffer = reAllocate(reusedByteBuffer, maxCompressedLength + INT_LENGTH);
         reusedByteBuffer.position(INT_LENGTH);
-        ZstdCompressCtx ctx = null;
-        try {
-            ctx = ZSTD_COMPRESS_POOL.borrowObject();
-            ctx.compress(reusedByteBuffer, byteBuffer);
-        } catch (Exception e) {
-            throw new RuntimeException("zstd compression failed", e);
-        } finally {
-            if (ctx != null) {
-                ZSTD_COMPRESS_POOL.returnObject(ctx);
-            }
-        }
+        ZstdCompressCtx compressCtx = ZSTD_COMPRESS_CTX_THREAD_LOCAL.get().zstdCompressCtx;
+        compressCtx.reset();
+        compressCtx.compress(reusedByteBuffer, byteBuffer);
         final int compressedSize = reusedByteBuffer.position() - INT_LENGTH;
         reusedByteBuffer.position(0);
         reusedByteBuffer.putInt(compressedSize);
@@ -224,17 +174,9 @@ public class IOUtils {
     public static ByteBuffer decompressionZSTD(ByteBuffer byteBuffer, ByteBuffer reusedBuffer) {
         final int size = (int) Zstd.decompressedSize(byteBuffer);
         reusedBuffer = reAllocate(reusedBuffer, size * 2, size);
-        ZstdDecompressCtx ctx = null;
-        try {
-            ctx = ZSTD_DECOMPRESS_POOL.borrowObject();
-            ctx.decompress(reusedBuffer, byteBuffer);
-        } catch (Exception e) {
-            throw new RuntimeException("zstd decompression failed", e);
-        } finally {
-            if (ctx != null) {
-                ZSTD_DECOMPRESS_POOL.returnObject(ctx);
-            }
-        }
+        ZstdDecompressCtx ctx = ZSTD_COMPRESS_CTX_THREAD_LOCAL.get().zstdDecompressCtx;
+        ctx.reset();
+        ctx.decompress(reusedBuffer, byteBuffer);
         reusedBuffer.flip();
         return reusedBuffer;
     }
