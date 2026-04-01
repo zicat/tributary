@@ -213,7 +213,17 @@ public class RecordsUtils {
      * @param map map
      */
     public static void appendRecTs(Clock clock, Map<String, byte[]> map) {
+        appendTimestamp(clock, map, HEADER_KEY_REC_TS);
+    }
+
+    /**
+     * append record timestamp to headers. like: 1760162349000,1760162349001
+     *
+     * @param clock clock
+     * @param map map
+     */
+    public static void appendTimestamp(Clock clock, Map<String, byte[]> map, String key) {
         final byte[] recTs = String.valueOf(clock.currentTimeMillis()).getBytes();
-        map.compute(HEADER_KEY_REC_TS, (k, v) -> concatBytesArray(v, recTs));
+        map.compute(key, (k, v) -> concatBytesArray(v, recTs));
     }
 }

@@ -22,15 +22,23 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Segment.AppendResult;
+import static org.zicat.tributary.channel.Segment.HAS_IN_STORAGE;
 import org.zicat.tributary.channel.test.ChannelAdapter;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.records.DefaultRecord;
+import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.common.records.SingleRecords;
 import org.zicat.tributary.source.base.AbstractSource;
+import org.zicat.tributary.source.base.interceptor.SourceInterceptor;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** AbstractSourceTest. */
 public class AbstractSourceTest {
@@ -64,6 +72,110 @@ public class AbstractSourceTest {
                 Assert.assertEquals(
                         0, source.gaugeFamily().get(source.sourceLivenessGauge()).intValue());
             }
+        }
+    }
+
+    @Test
+    public void testDefaultRecTsInterceptor() throws Exception {
+        final ReadableConfig config = new ReadableConfigBuilder().build();
+        try (final Channel channel =
+                new ChannelAdapter() {
+                    @Override
+                    public AppendResult append(int partition, ByteBuffer byteBuffer) {
+                        return HAS_IN_STORAGE;
+                    }
+                }) {
+            final AbstractSource source =
+                    new AbstractSource("s1", config, channel) {
+                        @Override
+                        public void _open() {}
+
+                        @Override
+                        public void close() {}
+                    };
+            source.open();
+            final SingleRecords records =
+                    new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
+            Assert.assertNull(records.headers().get(RecordsUtils.HEADER_KEY_REC_TS));
+            source.append(records);
+            Assert.assertNotNull(records.headers().get(RecordsUtils.HEADER_KEY_REC_TS));
+        }
+    }
+
+    @Test
+    public void testInterceptorDiscard() throws Exception {
+        // configure empty interceptors to skip default RecTsInterceptor
+        final ReadableConfig config =
+                new ReadableConfigBuilder()
+                        .addConfig(AbstractSource.OPTION_INTERCEPTORS, Collections.emptyList())
+                        .build();
+        final AtomicInteger appendCount = new AtomicInteger();
+        try (final Channel channel =
+                new ChannelAdapter() {
+                    @Override
+                    public AppendResult append(int partition, ByteBuffer byteBuffer) {
+                        appendCount.incrementAndGet();
+                        return HAS_IN_STORAGE;
+                    }
+                }) {
+            // create source with a discard interceptor
+            final SourceInterceptor discardInterceptor = records -> null;
+            final AbstractSource source =
+                    new AbstractSource("s1", config, channel) {
+                        @Override
+                        public void _open() {}
+
+                        @Override
+                        public void close() {}
+
+                        @Override
+                        protected List<SourceInterceptor> createInterceptors() {
+                            return Collections.singletonList(discardInterceptor);
+                        }
+                    };
+            source.open();
+            source.append(new SingleRecords("t1", new DefaultRecord("v1".getBytes())));
+            Assert.assertEquals(0, appendCount.get());
+        }
+    }
+
+    @Test
+    public void testInterceptorChainOrder() throws Exception {
+        final ReadableConfig config =
+                new ReadableConfigBuilder()
+                        .addConfig(AbstractSource.OPTION_INTERCEPTORS, Collections.emptyList())
+                        .build();
+        try (final Channel channel =
+                new ChannelAdapter() {
+                    @Override
+                    public AppendResult append(int partition, ByteBuffer byteBuffer) {
+                        return HAS_IN_STORAGE;
+                    }
+                }) {
+            final AtomicBoolean checker = new AtomicBoolean();
+            final SourceInterceptor first =
+                    records -> {
+                        checker.set(true);
+                        return records;
+                    };
+            final AbstractSource source =
+                    new AbstractSource("s1", config, channel) {
+                        @Override
+                        public void _open() {}
+
+                        @Override
+                        public void close() {}
+
+                        @Override
+                        protected List<SourceInterceptor> createInterceptors() {
+                            final List<SourceInterceptor> list = new ArrayList<>();
+                            list.add(first);
+                            return list;
+                        }
+                    };
+            source.open();
+            source.append(new SingleRecords("t1", new DefaultRecord("v1".getBytes())));
+            Assert.assertTrue(checker.get());
         }
     }
 }

@@ -20,18 +20,23 @@ package org.zicat.tributary.source.base;
 
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Segment.AppendResult;
-import org.zicat.tributary.common.Clock;
+import org.zicat.tributary.common.SpiFactory;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
+import static org.zicat.tributary.common.config.ConfigOptions.COMMA_SPLIT_HANDLER;
 import org.zicat.tributary.common.util.IOUtils;
 import org.zicat.tributary.common.metric.MetricKey;
 import org.zicat.tributary.common.config.ReadableConfig;
-import org.zicat.tributary.common.SystemClock;
 import org.zicat.tributary.common.records.Records;
-import static org.zicat.tributary.common.records.RecordsUtils.appendRecTs;
+import org.zicat.tributary.source.base.interceptor.TimestampInterceptorFactory;
+import org.zicat.tributary.source.base.interceptor.SourceInterceptor;
+import org.zicat.tributary.source.base.interceptor.SourceInterceptorFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,9 +44,6 @@ import java.util.function.BiFunction;
 
 /** AbstractSource. */
 public abstract class AbstractSource implements Source {
-
-    public static final ConfigOption<Clock> OPTION_SOURCE_CLOCK =
-            ConfigOptions.key("_source_clock").<Clock>objectType().defaultValue(new SystemClock());
 
     public static final MetricKey APPEND_CHANNEL_RECORD_COUNTER =
             new MetricKey("tributary_source_append_channel_record_counter");
@@ -54,23 +56,48 @@ public abstract class AbstractSource implements Source {
                     .enumType(AppendResultType.class)
                     .defaultValue(AppendResultType.BLOCK);
 
+    public static final ConfigOption<List<String>> OPTION_INTERCEPTORS =
+            ConfigOptions.key("interceptors")
+                    .listType(COMMA_SPLIT_HANDLER)
+                    .description("source interceptor identities, split by comma")
+                    .defaultValue(Collections.singletonList(TimestampInterceptorFactory.IDENTITY));
+
     protected final AtomicInteger count = new AtomicInteger();
     protected final ReadableConfig config;
     protected final Channel channel;
     protected final String sourceId;
     protected final Map<MetricKey, Double> gaugeFamily = new ConcurrentHashMap<>();
     protected final Map<MetricKey, Double> counterFamily = new ConcurrentHashMap<>();
-    protected final Clock clock;
     protected final AppendResultType appendResultType;
     protected final MetricKey sourceLivenessGauge;
+    protected final List<SourceInterceptor> interceptors;
 
     public AbstractSource(String sourceId, ReadableConfig config, Channel channel) {
         this.sourceId = sourceId;
         this.config = config;
         this.channel = channel;
-        this.clock = config.get(OPTION_SOURCE_CLOCK);
         this.appendResultType = config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE);
-        this.sourceLivenessGauge = SOURCE_LIVENESS_GAUGE.copyWithLabel("source_id", sourceId);
+        this.sourceLivenessGauge = SOURCE_LIVENESS_GAUGE.copyWithLabel("sourceId", sourceId);
+        this.interceptors = createInterceptors();
+    }
+
+    /**
+     * create interceptors from config, subclass can override for testing or customization.
+     *
+     * @return interceptor list
+     */
+    protected List<SourceInterceptor> createInterceptors() {
+        final List<String> identities = config.get(OPTION_INTERCEPTORS);
+        if (identities == null || identities.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<SourceInterceptor> result = new ArrayList<>();
+        for (String identity : identities) {
+            final SourceInterceptorFactory factory =
+                    SpiFactory.findFactory(identity, SourceInterceptorFactory.class);
+            result.add(factory.createInterceptor(config));
+        }
+        return Collections.unmodifiableList(result);
     }
 
     /**
@@ -92,8 +119,11 @@ public abstract class AbstractSource implements Source {
         if (records == null || records.count() == 0) {
             return;
         }
+        records = applyInterceptors(records);
+        if (records == null || records.count() == 0) {
+            return;
+        }
         mergeCounter(APPEND_CHANNEL_RECORD_COUNTER, records.count(), Double::sum);
-        appendRecTs(clock, records.headers());
         final ByteBuffer byteBuffer = records.toByteBuffer();
         final int realPartition = partition == null ? defaultPartition() : partition;
         AppendResult appendResult;
@@ -173,5 +203,21 @@ public abstract class AbstractSource implements Source {
      */
     public MetricKey sourceLivenessGauge() {
         return sourceLivenessGauge;
+    }
+
+    /**
+     * apply interceptors to records.
+     *
+     * @param records records
+     * @return intercepted records, null if discarded
+     */
+    private Records applyInterceptors(Records records) {
+        for (SourceInterceptor interceptor : interceptors) {
+            records = interceptor.intercept(records);
+            if (records == null) {
+                return null;
+            }
+        }
+        return records;
     }
 }
