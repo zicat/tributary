@@ -60,7 +60,7 @@ public class MuteInsertErrorBulkResponseActionListener extends AbstractActionLis
         for (Entry<String, AtomicLong> entry : indexErrorMapCounters.entrySet()) {
             final String index = entry.getKey();
             final double value = entry.getValue().doubleValue();
-            base.merge(ERROR_COUNTER.addLabel(LABEL_INDEX, index), value, Double::sum);
+            base.merge(ERROR_COUNTER.copyWithLabel(LABEL_INDEX, index), value, Double::sum);
         }
         return base;
     }

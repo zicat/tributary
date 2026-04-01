@@ -18,8 +18,6 @@
 
 package org.zicat.tributary.source.base;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.zicat.tributary.channel.Channel;
 import org.zicat.tributary.channel.Segment.AppendResult;
 import org.zicat.tributary.common.Clock;
@@ -48,12 +46,13 @@ public abstract class AbstractSource implements Source {
     public static final MetricKey APPEND_CHANNEL_RECORD_COUNTER =
             new MetricKey("tributary_source_append_channel_record_counter");
 
+    public static final MetricKey SOURCE_LIVENESS_GAUGE =
+            new MetricKey("tributary_source_liveness", "tributary source liveness");
+
     public static final ConfigOption<AppendResultType> OPTION_CHANNEL_APPEND_RESULT_TYPE =
             ConfigOptions.key("channel.append-result-type")
                     .enumType(AppendResultType.class)
                     .defaultValue(AppendResultType.BLOCK);
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractSource.class);
 
     protected final AtomicInteger count = new AtomicInteger();
     protected final ReadableConfig config;
@@ -63,6 +62,7 @@ public abstract class AbstractSource implements Source {
     protected final Map<MetricKey, Double> counterFamily = new ConcurrentHashMap<>();
     protected final Clock clock;
     protected final AppendResultType appendResultType;
+    protected final MetricKey sourceLivenessGauge;
 
     public AbstractSource(String sourceId, ReadableConfig config, Channel channel) {
         this.sourceId = sourceId;
@@ -70,6 +70,20 @@ public abstract class AbstractSource implements Source {
         this.channel = channel;
         this.clock = config.get(OPTION_SOURCE_CLOCK);
         this.appendResultType = config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE);
+        this.sourceLivenessGauge = SOURCE_LIVENESS_GAUGE.copyWithLabel("source_id", sourceId);
+    }
+
+    /**
+     * open method is used for open successful callback, this child class should ovrride _open.
+     *
+     * @throws Exception Exception
+     */
+    public abstract void _open() throws Exception;
+
+    @Override
+    public final void open() throws Exception {
+        _open();
+        mergeGauge(sourceLivenessGauge, 1, (oldValue, newValue) -> newValue);
     }
 
     @Override
@@ -86,9 +100,9 @@ public abstract class AbstractSource implements Source {
         try {
             appendResult = channel.append(realPartition, byteBuffer);
         } catch (IOException e) {
-            LOG.error("append data error, close source", e);
             IOUtils.closeQuietly(this);
-            throw e;
+            mergeGauge(sourceLivenessGauge, 0, (oldValue, newValue) -> newValue);
+            throw new IOException("append data error, close source " + sourceId, e);
         }
         appendResultType.dealAppendResult(appendResult);
     }
@@ -150,5 +164,14 @@ public abstract class AbstractSource implements Source {
      */
     public ReadableConfig config() {
         return config;
+    }
+
+    /**
+     * source liveness key.
+     *
+     * @return MetricKey
+     */
+    public MetricKey sourceLivenessGauge() {
+        return sourceLivenessGauge;
     }
 }

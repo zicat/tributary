@@ -80,9 +80,15 @@ public class SourceComponentFactory implements SafeFactory<SourceComponent> {
                 final SourceFactory sourceFactory = findFactory(implementId, SourceFactory.class);
                 final ReadableConfig config = sourceConfig.filterAndRemovePrefixKey(head);
                 final Source source = sourceFactory.createSource(sourceId, channel, config);
+                try {
+                    source.open();
+                } catch (Exception e) {
+                    IOUtils.closeQuietly(source);
+                    throw e;
+                }
+                LOG.info("create source success, source {}", sourceId);
                 sources.put(sourceId, source);
             }
-            LOG.info("create source success, sources {}", sources.keySet());
             return new SourceComponent(sources, registry);
         } catch (Exception e) {
             sources.forEach((k, v) -> IOUtils.closeQuietly(v));

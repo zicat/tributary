@@ -58,13 +58,14 @@ public abstract class NettySource extends AbstractSource {
     private static final String CHILD_OPTION_PREFIX = "netty.child-option.";
 
     protected final AtomicBoolean closed = new AtomicBoolean(false);
+    protected final String hostPattern;
     protected final int port;
     protected final int eventThreads;
-    protected final EventLoopGroup bossGroup;
-    protected final EventLoopGroup workGroup;
-    protected final ServerBootstrap serverBootstrap;
-    protected final PipelineInitialization pipelineInitialization;
-    protected final List<Channel> channelList;
+    protected transient EventLoopGroup bossGroup;
+    protected transient EventLoopGroup workGroup;
+    protected transient ServerBootstrap serverBootstrap;
+    protected transient PipelineInitialization pipelineInitialization;
+    protected transient List<Channel> channelList;
 
     public NettySource(
             String sourceId,
@@ -75,31 +76,30 @@ public abstract class NettySource extends AbstractSource {
             int eventThreads)
             throws Exception {
         super(sourceId, config, channel);
+        this.hostPattern = hostPattern;
         this.port = port;
         this.eventThreads = eventThreads;
-        try {
-            this.bossGroup = createEventLoopGroup(Math.max(1, eventThreads / 4));
-            this.workGroup = createEventLoopGroup(eventThreads);
-            this.serverBootstrap =
-                    createServerBootstrap(
-                            bossGroup,
-                            workGroup,
-                            config.filterAndRemovePrefixKey(OPTION_PREFIX).toProperties(),
-                            config.filterAndRemovePrefixKey(CHILD_OPTION_PREFIX).toProperties());
-            this.pipelineInitialization = createPipelineInitialization();
-            this.serverBootstrap.childHandler(
-                    new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            pipelineInitialization.init(ch);
-                        }
-                    });
-            this.channelList =
-                    createChannelList(serverBootstrap, getHostAddresses(hostPattern), port);
-        } catch (Exception e) {
-            IOUtils.closeQuietly(this);
-            throw e;
-        }
+    }
+
+    @Override
+    public void _open() throws Exception {
+        this.bossGroup = createEventLoopGroup(Math.max(1, eventThreads / 4));
+        this.workGroup = createEventLoopGroup(eventThreads);
+        this.serverBootstrap =
+                createServerBootstrap(
+                        bossGroup,
+                        workGroup,
+                        config.filterAndRemovePrefixKey(OPTION_PREFIX).toProperties(),
+                        config.filterAndRemovePrefixKey(CHILD_OPTION_PREFIX).toProperties());
+        this.pipelineInitialization = createPipelineInitialization();
+        this.serverBootstrap.childHandler(
+                new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        pipelineInitialization.init(ch);
+                    }
+                });
+        this.channelList = createChannelList(serverBootstrap, getHostAddresses(hostPattern), port);
     }
 
     /**

@@ -90,7 +90,7 @@ public abstract class PartitionHandler extends Thread
         this.startOffset = committedOffset();
         this.fetchOffset = startOffset;
         this.partitionSinkSnapShortCountKey =
-                SINK_SNAPSHOT_COAST.addLabel("partitionId", partitionId);
+                SINK_SNAPSHOT_COAST.copyWithLabel("partitionId", partitionId);
         setName(threadName());
     }
 

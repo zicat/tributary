@@ -87,7 +87,7 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
         for (int i = 0; i < channels.length; i++) {
             final Channel c = channels[i];
             for (Map.Entry<MetricKey, Double> entry : c.gaugeFamily().entrySet()) {
-                final MetricKey newKey = entry.getKey().addLabel(LABEL_PARTITION, i);
+                final MetricKey newKey = entry.getKey().copyWithLabel(LABEL_PARTITION, i);
                 result.merge(newKey, entry.getValue(), Double::sum);
             }
         }
@@ -100,7 +100,7 @@ public class DefaultChannel<C extends AbstractSingleChannel<?>> implements Chann
         for (int i = 0; i < channels.length; i++) {
             final Channel c = channels[i];
             for (Map.Entry<MetricKey, Double> entry : c.counterFamily().entrySet()) {
-                final MetricKey newKey = entry.getKey().addLabel(LABEL_PARTITION, i);
+                final MetricKey newKey = entry.getKey().copyWithLabel(LABEL_PARTITION, i);
                 result.merge(newKey, entry.getValue(), Double::sum);
             }
         }

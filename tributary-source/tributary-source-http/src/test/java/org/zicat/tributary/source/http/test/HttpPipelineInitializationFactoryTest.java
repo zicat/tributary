@@ -84,6 +84,7 @@ public class HttpPipelineInitializationFactoryTest {
                         MemoryChannelTestUtils.memoryChannelFactory(GROUP_ID)
                                 .createChannel(TOPIC, null);
                 NettySource source = new NettySourceMock(config, channel)) {
+            source.open();
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             assertNotPostRequest(pipelineInitialization);
@@ -98,6 +99,7 @@ public class HttpPipelineInitializationFactoryTest {
                         MemoryChannelTestUtils.memoryChannelFactory(GROUP_ID)
                                 .createChannel(TOPIC, null);
                 NettySource source = new NettySourceMock(config, channel)) {
+            source.open();
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             assertContentEncodingRequest(

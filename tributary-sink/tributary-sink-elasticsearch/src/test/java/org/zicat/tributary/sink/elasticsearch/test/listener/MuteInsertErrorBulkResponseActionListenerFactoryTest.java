@@ -89,7 +89,7 @@ public class MuteInsertErrorBulkResponseActionListenerFactoryTest {
         Assert.assertNull(listener3.exception());
         Assert.assertEquals(
                 1d,
-                listener3.counterFamily().get(ERROR_COUNTER.addLabel(LABEL_INDEX, "index_1")),
+                listener3.counterFamily().get(ERROR_COUNTER.copyWithLabel(LABEL_INDEX, "index_1")),
                 0.001d);
     }
 }

@@ -49,7 +49,7 @@ public class MetricKey {
         this.labelValue = labelValue == null ? new ArrayList<>() : labelValue;
     }
 
-    public MetricKey addLabels(List<String> labelNames, List<String> labelValue) {
+    public MetricKey copyWithLabels(List<String> labelNames, List<String> labelValue) {
         return new MetricKey(
                 name,
                 description,
@@ -57,8 +57,8 @@ public class MetricKey {
                 Collections.concat(this.labelValue, labelValue));
     }
 
-    public MetricKey addLabel(String name, Object value) {
-        return addLabels(singletonList(name), singletonList(String.valueOf(value)));
+    public MetricKey copyWithLabel(String name, Object value) {
+        return copyWithLabels(singletonList(name), singletonList(String.valueOf(value)));
     }
 
     public final String getName() {

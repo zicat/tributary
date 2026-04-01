@@ -91,6 +91,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)
                                 .createChannel(topic, null);
                 NettySource source = new NettySourceMock(config, channel)) {
+            source.open();
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -175,6 +176,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)
                                 .createChannel(topic, null);
                 NettySource source = new NettySourceMock(config, channel)) {
+            source.open();
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -235,6 +237,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)
                                 .createChannel(topic, null);
                 NettySource source = new NettySourceMock(config, channel)) {
+            source.open();
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -301,6 +304,7 @@ public class LogstashHttpPipelineInitializationFactoryTest {
                         MemoryChannelTestUtils.memoryChannelFactory(groupId)
                                 .createChannel(topic, null);
                 NettySource source = new NettySourceMock(config, channel)) {
+            source.open();
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();

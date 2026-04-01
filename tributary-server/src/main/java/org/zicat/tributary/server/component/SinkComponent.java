@@ -74,7 +74,7 @@ public class SinkComponent extends AbstractComponent<String, SinkGroupManagerLis
                         sinkGroupManager.gaugeFamily().entrySet()) {
                     final MetricKey metricKey = gaugeEntry.getKey();
                     final double value = gaugeEntry.getValue();
-                    result.merge(metricKey.addLabels(LABELS, labelValues), value, Double::sum);
+                    result.merge(metricKey.copyWithLabels(LABELS, labelValues), value, Double::sum);
                 }
             }
             return result;
@@ -89,7 +89,7 @@ public class SinkComponent extends AbstractComponent<String, SinkGroupManagerLis
                         sinkGroupManager.counterFamily().entrySet()) {
                     final MetricKey metricKey = counterEntry.getKey();
                     final double value = counterEntry.getValue();
-                    result.merge(metricKey.addLabels(LABELS, labelValues), value, Double::sum);
+                    result.merge(metricKey.copyWithLabels(LABELS, labelValues), value, Double::sum);
                 }
             }
             return result;

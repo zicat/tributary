@@ -56,6 +56,7 @@ public class LinePipelineInitializationFactoryTest {
                 new ReadableConfigBuilder().addConfig(OPTION_LINE_WORKER_THREADS, -1).build();
         try (Channel channel = memoryChannelFactory(groupId).createChannel("t1", null);
                 NettySource source = new NettySourceMock(config, channel)) {
+            source.open();
             final PipelineInitialization pipelineInitialization =
                     factory.createPipelineInitialization(source);
             pipelineInitialization.init(embeddedChannel);

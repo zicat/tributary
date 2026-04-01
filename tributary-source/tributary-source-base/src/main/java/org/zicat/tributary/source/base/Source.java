@@ -28,6 +28,13 @@ import java.util.function.BiFunction;
 public interface Source extends Closeable, SourceChannel, MetricCollector {
 
     /**
+     * open source.
+     *
+     * @throws Exception Exception
+     */
+    void open() throws Exception;
+
+    /**
      * merge counter.
      *
      * @param key key
@@ -60,16 +67,6 @@ public interface Source extends Closeable, SourceChannel, MetricCollector {
             MetricKey key,
             double value,
             BiFunction<? super Double, ? super Double, ? extends Double> remappingFunction);
-
-    /**
-     * merge gauge.
-     *
-     * @param key key
-     * @param value value
-     */
-    default void incrementGauge(MetricKey key, double value) {
-        mergeGauge(key, value, Double::sum);
-    }
 
     /**
      * get id.

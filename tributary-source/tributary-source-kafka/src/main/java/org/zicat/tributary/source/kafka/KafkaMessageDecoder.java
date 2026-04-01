@@ -116,7 +116,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
         final AbstractRequest request =
                 AbstractRequest.parseRequest(header.apiKey(), header.apiVersion(), struct);
         source.incrementCounter(
-                KAFKA_REQUEST_COUNTER.addLabel(LABEL_REQUEST_NAME, header.apiKey().name), 1d);
+                KAFKA_REQUEST_COUNTER.copyWithLabel(LABEL_REQUEST_NAME, header.apiKey().name), 1d);
         if (request instanceof ApiVersionsRequest) {
             ctx.writeAndFlush(toByteBuf(DEFAULT_API_VERSIONS_RESPONSE, header));
             return;

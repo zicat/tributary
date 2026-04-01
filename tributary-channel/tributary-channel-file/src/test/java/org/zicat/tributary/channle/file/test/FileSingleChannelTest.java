@@ -168,7 +168,7 @@ public class FileSingleChannelTest {
             Assert.assertEquals(
                     2,
                     channel.gaugeFamily()
-                            .get(KEY_ACTIVE_SEGMENT.addLabel(DefaultChannel.LABEL_PARTITION, 0))
+                            .get(KEY_ACTIVE_SEGMENT.copyWithLabel(DefaultChannel.LABEL_PARTITION, 0))
                             .intValue());
             RecordsResultSet recordsResultSet =
                     channel.poll(0, channel.committedOffset(groupId, 0), 1, TimeUnit.MILLISECONDS);
@@ -186,14 +186,14 @@ public class FileSingleChannelTest {
             Assert.assertEquals(
                     1,
                     channel.gaugeFamily()
-                            .get(KEY_ACTIVE_SEGMENT.addLabel(DefaultChannel.LABEL_PARTITION, 0))
+                            .get(KEY_ACTIVE_SEGMENT.copyWithLabel(DefaultChannel.LABEL_PARTITION, 0))
                             .intValue());
 
             channel.commit(0, groupId, recordsResultSet.nexOffset().skipNextSegmentHead());
             Assert.assertEquals(
                     1,
                     channel.gaugeFamily()
-                            .get(KEY_ACTIVE_SEGMENT.addLabel(DefaultChannel.LABEL_PARTITION, 0))
+                            .get(KEY_ACTIVE_SEGMENT.copyWithLabel(DefaultChannel.LABEL_PARTITION, 0))
                             .intValue());
         }
     }
@@ -238,14 +238,14 @@ public class FileSingleChannelTest {
                     4d,
                     channel.gaugeFamily()
                             .get(
-                                    KEY_BLOCK_CACHE_QUERY_HIT_COUNT.addLabel(
+                                    KEY_BLOCK_CACHE_QUERY_HIT_COUNT.copyWithLabel(
                                             DefaultChannel.LABEL_PARTITION, 0)),
                     0.01);
             Assert.assertEquals(
                     4d,
                     channel.gaugeFamily()
                             .get(
-                                    KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT.addLabel(
+                                    KEY_BLOCK_CACHE_QUERY_TOTAL_COUNT.copyWithLabel(
                                             DefaultChannel.LABEL_PARTITION, 0)),
                     0.01);
         }
