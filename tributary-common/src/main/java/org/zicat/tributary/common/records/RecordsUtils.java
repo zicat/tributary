@@ -21,12 +21,11 @@ package org.zicat.tributary.common.records;
 import org.zicat.tributary.common.Clock;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /** RecordsUtils. */
@@ -34,9 +33,7 @@ public class RecordsUtils {
 
     public static final String HEAD_KEY_SENT_TS = "_sent_ts";
     public static final String HEADER_KEY_REC_TS = "_rec_ts";
-
-    public static final Set<String> CONCAT_HEADER_KEYS =
-            new HashSet<>(Arrays.asList(HEADER_KEY_REC_TS, HEAD_KEY_SENT_TS));
+    public static final String HEADER_KEY_UUID = "_uuid";
     public static final byte[] CONCAT_SPLIT = " ".getBytes(StandardCharsets.UTF_8);
 
     /**
@@ -148,11 +145,7 @@ public class RecordsUtils {
         for (Map.Entry<String, byte[]> entry : source.entrySet()) {
             final String key = entry.getKey();
             final byte[] value = entry.getValue();
-            if (CONCAT_HEADER_KEYS.contains(key)) {
-                target.compute(key, (k, vInCache) -> concatBytesArray(vInCache, value));
-            } else {
-                target.put(key, value);
-            }
+            target.compute(key, (k, vInCache) -> concatBytesArray(vInCache, value));
         }
     }
 
@@ -225,5 +218,16 @@ public class RecordsUtils {
     public static void appendTimestamp(Clock clock, Map<String, byte[]> map, String key) {
         final byte[] recTs = String.valueOf(clock.currentTimeMillis()).getBytes();
         map.compute(key, (k, v) -> concatBytesArray(v, recTs));
+    }
+
+    /**
+     * append uuid to headers. if key exists, concat with space split.
+     *
+     * @param map map
+     * @param key key
+     */
+    public static void appendUUID(Map<String, byte[]> map, String key) {
+        final byte[] uuid = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
+        map.compute(key, (k, v) -> concatBytesArray(v, uuid));
     }
 }

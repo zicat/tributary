@@ -18,31 +18,25 @@
 
 package org.zicat.tributary.source.base.interceptor;
 
-import org.zicat.tributary.common.Clock;
-import org.zicat.tributary.common.SystemClock;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.ReadableConfig;
-import org.zicat.tributary.common.records.RecordsUtils;
-import static org.zicat.tributary.common.records.RecordsUtils.appendTimestamp;
 
-/** RecTsInterceptorFactory. */
-public class TimestampInterceptorFactory implements SourceInterceptorFactory {
+import static org.zicat.tributary.common.records.RecordsUtils.HEADER_KEY_UUID;
+import static org.zicat.tributary.common.records.RecordsUtils.appendUUID;
 
-    public static final String IDENTITY = "timestamp";
-    public static final ConfigOption<Clock> OPTION_SOURCE_CLOCK =
-            ConfigOptions.key("_source_clock").<Clock>objectType().defaultValue(new SystemClock());
-    public static final ConfigOption<String> OPTION_TIMESTAMP_KEY =
-            ConfigOptions.key("interceptor.timestamp.key")
-                    .stringType()
-                    .defaultValue(RecordsUtils.HEADER_KEY_REC_TS);
+/** UUIDInterceptorFactory. */
+public class UUIDInterceptorFactory implements SourceInterceptorFactory {
+
+    public static final String IDENTITY = "uuid";
+    public static final ConfigOption<String> OPTION_UUID_KEY =
+            ConfigOptions.key("interceptor.uuid.key").stringType().defaultValue(HEADER_KEY_UUID);
 
     @Override
     public SourceInterceptor createInterceptor(ReadableConfig config) {
-        final Clock clock = config.get(OPTION_SOURCE_CLOCK);
-        final String key = config.get(OPTION_TIMESTAMP_KEY);
+        final String key = config.get(OPTION_UUID_KEY);
         return records -> {
-            appendTimestamp(clock, records.headers(), key);
+            appendUUID(records.headers(), key);
             return records;
         };
     }
