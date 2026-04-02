@@ -25,11 +25,11 @@ import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.Records;
-import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.common.records.SingleRecords;
 import org.zicat.tributary.source.base.interceptor.SourceInterceptor;
 import org.zicat.tributary.source.base.interceptor.SourceInterceptorFactory;
 import org.zicat.tributary.source.base.interceptor.TimestampInterceptorFactory;
+import static org.zicat.tributary.source.base.interceptor.TimestampInterceptorFactory.HEADER_KEY_REC_TS;
 
 import java.nio.charset.StandardCharsets;
 
@@ -45,22 +45,22 @@ public class TimestampInterceptorFactoryTest {
     }
 
     @Test
-    public void testDefaultKey() {
+    public void testDefaultKey() throws Exception {
         final ReadableConfig config = new ReadableConfigBuilder().build();
         final SourceInterceptor interceptor =
                 new TimestampInterceptorFactory().createInterceptor(config);
         final SingleRecords records = new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
-        Assert.assertNull(records.headers().get(RecordsUtils.HEADER_KEY_REC_TS));
+        Assert.assertNull(records.headers().get(HEADER_KEY_REC_TS));
         final Records result = interceptor.intercept(records);
         Assert.assertNotNull(result);
-        final byte[] ts = result.headers().get(RecordsUtils.HEADER_KEY_REC_TS);
+        final byte[] ts = result.headers().get(HEADER_KEY_REC_TS);
         Assert.assertNotNull(ts);
         // should be a valid timestamp
         Assert.assertNotNull(Long.valueOf(new String(ts, StandardCharsets.UTF_8)));
     }
 
     @Test
-    public void testCustomKey() {
+    public void testCustomKey() throws Exception {
         final ReadableConfig config =
                 new ReadableConfigBuilder()
                         .addConfig(TimestampInterceptorFactory.OPTION_TIMESTAMP_KEY, "custom_ts")
@@ -70,11 +70,11 @@ public class TimestampInterceptorFactoryTest {
         final SingleRecords records = new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
         interceptor.intercept(records);
         Assert.assertNotNull(records.headers().get("custom_ts"));
-        Assert.assertNull(records.headers().get(RecordsUtils.HEADER_KEY_REC_TS));
+        Assert.assertNull(records.headers().get(HEADER_KEY_REC_TS));
     }
 
     @Test
-    public void testConcatOnMultipleIntercept() {
+    public void testConcatOnMultipleIntercept() throws Exception {
         final ReadableConfig config = new ReadableConfigBuilder().build();
         final SourceInterceptor interceptor =
                 new TimestampInterceptorFactory().createInterceptor(config);
@@ -82,9 +82,7 @@ public class TimestampInterceptorFactoryTest {
         interceptor.intercept(records);
         interceptor.intercept(records);
         final String value =
-                new String(
-                        records.headers().get(RecordsUtils.HEADER_KEY_REC_TS),
-                        StandardCharsets.UTF_8);
+                new String(records.headers().get(HEADER_KEY_REC_TS), StandardCharsets.UTF_8);
         // two timestamps concatenated with space
         final String[] parts = value.split(" ");
         Assert.assertEquals(2, parts.length);

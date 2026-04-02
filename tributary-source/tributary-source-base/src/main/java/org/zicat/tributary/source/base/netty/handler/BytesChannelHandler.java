@@ -28,7 +28,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import org.zicat.tributary.source.base.Source;
 
-import java.io.IOException;
 import java.util.Collections;
 
 /** ChannelHandler. */
@@ -42,8 +41,7 @@ public abstract class BytesChannelHandler extends SimpleChannelInboundHandler<by
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, byte[] packet)
-            throws IOException, InterruptedException {
+    protected void channelRead0(ChannelHandlerContext ctx, byte[] packet) throws Exception {
         source.append(createBytesRecords(source.sourceId(), Collections.singletonList(packet)));
         ackSuccess(packet, ctx);
     }

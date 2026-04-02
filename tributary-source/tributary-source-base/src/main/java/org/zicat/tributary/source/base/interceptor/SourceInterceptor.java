@@ -29,5 +29,5 @@ public interface SourceInterceptor {
      * @param records records
      * @return intercepted records, null to discard
      */
-    Records intercept(Records records);
+    Records intercept(Records records) throws Exception;
 }

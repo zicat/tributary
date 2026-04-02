@@ -97,6 +97,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
 
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 NettySource source = new NettySourceMock(config, topic, channel)) {
+            source.open();
             final LogstashBeatsPipelineInitialization pipelineInitialization =
                     beatsPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -185,6 +186,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
         final AtomicBoolean clientReceivedAck = new AtomicBoolean();
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 NettySource source = new NettySourceMock(config, topic, channel)) {
+            source.open();
             final LogstashBeatsPipelineInitialization pipelineInitialization =
                     beatsPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();
@@ -239,6 +241,7 @@ public class LogstashBeatsPipelineInitializationFactoryTest {
 
         try (final Channel channel = memoryChannelFactory("g1").createChannel(topic, config);
                 NettySource source = new NettySourceMock(config, topic, channel)) {
+            source.open();
             final LogstashBeatsPipelineInitialization pipelineInitialization =
                     beatsPipelineInitialization(source);
             final EmbeddedChannel serverChannel = new EmbeddedChannel();

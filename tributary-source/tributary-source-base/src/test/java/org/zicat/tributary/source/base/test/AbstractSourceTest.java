@@ -27,10 +27,10 @@ import org.zicat.tributary.channel.test.ChannelAdapter;
 import org.zicat.tributary.common.config.ReadableConfig;
 import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.records.DefaultRecord;
-import org.zicat.tributary.common.records.RecordsUtils;
 import org.zicat.tributary.common.records.SingleRecords;
 import org.zicat.tributary.source.base.AbstractSource;
 import org.zicat.tributary.source.base.interceptor.SourceInterceptor;
+import static org.zicat.tributary.source.base.interceptor.TimestampInterceptorFactory.HEADER_KEY_REC_TS;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -96,9 +96,9 @@ public class AbstractSourceTest {
             source.open();
             final SingleRecords records =
                     new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
-            Assert.assertNull(records.headers().get(RecordsUtils.HEADER_KEY_REC_TS));
+            Assert.assertNull(records.headers().get(HEADER_KEY_REC_TS));
             source.append(records);
-            Assert.assertNotNull(records.headers().get(RecordsUtils.HEADER_KEY_REC_TS));
+            Assert.assertNotNull(records.headers().get(HEADER_KEY_REC_TS));
         }
     }
 

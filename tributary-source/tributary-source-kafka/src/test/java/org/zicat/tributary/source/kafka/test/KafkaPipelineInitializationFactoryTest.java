@@ -95,6 +95,7 @@ public class KafkaPipelineInitializationFactoryTest {
 
     private void test(Channel channel, ReadableConfig config) throws Exception {
         try (NettySource source = createSource(config, channel, port1)) {
+            source.open();
             final EmbeddedChannel nettyChannel1 = new EmbeddedChannel();
             initChannel(source, nettyChannel1);
             assertApiVersionResponse(nettyChannel1);
@@ -153,6 +154,7 @@ public class KafkaPipelineInitializationFactoryTest {
             Assert.assertEquals("hv1", new String(record.headers().get("h1")));
 
             try (NettySource source2 = createSource(config, channel, port2)) {
+                source2.open();
                 final EmbeddedChannel nettyChannel3 = new EmbeddedChannel();
                 initChannel(source2, nettyChannel3);
                 login(nettyChannel3);

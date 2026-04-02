@@ -21,26 +21,27 @@ package org.zicat.tributary.source.base.interceptor;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.ReadableConfig;
+import org.zicat.tributary.common.records.RecordsUtils;
 
-import static org.zicat.tributary.common.records.RecordsUtils.appendHeadKeyValue;
-
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
-/** UUIDInterceptorFactory. */
-public class UUIDInterceptorFactory implements SourceInterceptorFactory {
+/** HostInterceptorFactory. */
+public class HostInterceptorFactory implements SourceInterceptorFactory {
 
-    public static final String HEADER_KEY_UUID = "_uuid";
-    public static final String IDENTITY = "uuid";
-    public static final ConfigOption<String> OPTION_UUID_KEY =
-            ConfigOptions.key("interceptor.uuid.key").stringType().defaultValue(HEADER_KEY_UUID);
+    public static final String HEADER_KEY_HOST = "_host";
+    public static final String IDENTITY = "host";
+    public static final ConfigOption<String> OPTION_HOST_KEY =
+            ConfigOptions.key("interceptor.host.key").stringType().defaultValue(HEADER_KEY_HOST);
 
     @Override
-    public SourceInterceptor createInterceptor(ReadableConfig config) {
-        final String key = config.get(OPTION_UUID_KEY);
+    public SourceInterceptor createInterceptor(ReadableConfig config) throws UnknownHostException {
+        final String hostKey = config.get(OPTION_HOST_KEY);
+        final byte[] host =
+                InetAddress.getLocalHost().getHostName().getBytes(StandardCharsets.UTF_8);
         return records -> {
-            final byte[] uuid = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
-            appendHeadKeyValue(records.headers(), key, uuid);
+            RecordsUtils.appendHeadKeyValue(records.headers(), hostKey, host);
             return records;
         };
     }

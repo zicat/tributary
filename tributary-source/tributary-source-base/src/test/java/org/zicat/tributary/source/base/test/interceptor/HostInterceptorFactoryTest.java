@@ -26,69 +26,73 @@ import org.zicat.tributary.common.config.ReadableConfigBuilder;
 import org.zicat.tributary.common.records.DefaultRecord;
 import org.zicat.tributary.common.records.Records;
 import org.zicat.tributary.common.records.SingleRecords;
+import org.zicat.tributary.source.base.interceptor.HostInterceptorFactory;
 import org.zicat.tributary.source.base.interceptor.SourceInterceptor;
 import org.zicat.tributary.source.base.interceptor.SourceInterceptorFactory;
-import org.zicat.tributary.source.base.interceptor.UUIDInterceptorFactory;
-import static org.zicat.tributary.source.base.interceptor.UUIDInterceptorFactory.HEADER_KEY_UUID;
 
+import static org.zicat.tributary.source.base.interceptor.HostInterceptorFactory.HEADER_KEY_HOST;
+
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
-/** UUIDInterceptorFactoryTest. */
-public class UUIDInterceptorFactoryTest {
+/** HostInterceptorFactoryTest. */
+public class HostInterceptorFactoryTest {
 
     @Test
     public void testSpiIdentity() {
         final SourceInterceptorFactory factory =
                 SpiFactory.findFactory(
-                        UUIDInterceptorFactory.IDENTITY, SourceInterceptorFactory.class);
-        Assert.assertTrue(factory instanceof UUIDInterceptorFactory);
+                        HostInterceptorFactory.IDENTITY, SourceInterceptorFactory.class);
+        Assert.assertTrue(factory instanceof HostInterceptorFactory);
     }
 
     @Test
     public void testDefaultKey() throws Exception {
         final ReadableConfig config = new ReadableConfigBuilder().build();
         final SourceInterceptor interceptor =
-                new UUIDInterceptorFactory().createInterceptor(config);
-        final SingleRecords records = new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
-        Assert.assertNull(records.headers().get(HEADER_KEY_UUID));
+                new HostInterceptorFactory().createInterceptor(config);
+        final SingleRecords records =
+                new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
+        Assert.assertNull(records.headers().get(HEADER_KEY_HOST));
         final Records result = interceptor.intercept(records);
         Assert.assertNotNull(result);
-        final byte[] uuidBytes = result.headers().get(HEADER_KEY_UUID);
-        Assert.assertNotNull(uuidBytes);
-        // should be a valid UUID
-        Assert.assertNotNull(UUID.fromString(new String(uuidBytes, StandardCharsets.UTF_8)));
+        final byte[] hostBytes = result.headers().get(HEADER_KEY_HOST);
+        Assert.assertNotNull(hostBytes);
+        final String expected = InetAddress.getLocalHost().getHostName();
+        Assert.assertEquals(expected, new String(hostBytes, StandardCharsets.UTF_8));
     }
 
     @Test
     public void testCustomKey() throws Exception {
         final ReadableConfig config =
                 new ReadableConfigBuilder()
-                        .addConfig(UUIDInterceptorFactory.OPTION_UUID_KEY, "custom_uuid")
+                        .addConfig(HostInterceptorFactory.OPTION_HOST_KEY, "custom_host")
                         .build();
         final SourceInterceptor interceptor =
-                new UUIDInterceptorFactory().createInterceptor(config);
-        final SingleRecords records = new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
+                new HostInterceptorFactory().createInterceptor(config);
+        final SingleRecords records =
+                new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
         interceptor.intercept(records);
-        Assert.assertNotNull(records.headers().get("custom_uuid"));
-        Assert.assertNull(records.headers().get(HEADER_KEY_UUID));
+        Assert.assertNotNull(records.headers().get("custom_host"));
+        Assert.assertNull(records.headers().get(HEADER_KEY_HOST));
     }
 
     @Test
     public void testConcatOnMultipleIntercept() throws Exception {
         final ReadableConfig config = new ReadableConfigBuilder().build();
         final SourceInterceptor interceptor =
-                new UUIDInterceptorFactory().createInterceptor(config);
-        final SingleRecords records = new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
+                new HostInterceptorFactory().createInterceptor(config);
+        final SingleRecords records =
+                new SingleRecords("t1", new DefaultRecord("v1".getBytes()));
         interceptor.intercept(records);
         interceptor.intercept(records);
         final String value =
-                new String(records.headers().get(HEADER_KEY_UUID), StandardCharsets.UTF_8);
-        // two UUIDs concatenated with space
+                new String(records.headers().get(HEADER_KEY_HOST), StandardCharsets.UTF_8);
+        final String expectedHost = InetAddress.getLocalHost().getHostName();
+        // two identical hosts concatenated with space
         final String[] parts = value.split(" ");
         Assert.assertEquals(2, parts.length);
-        Assert.assertNotNull(UUID.fromString(parts[0]));
-        Assert.assertNotNull(UUID.fromString(parts[1]));
-        Assert.assertNotEquals(parts[0], parts[1]);
+        Assert.assertEquals(expectedHost, parts[0]);
+        Assert.assertEquals(expectedHost, parts[1]);
     }
 }

@@ -35,9 +35,9 @@ public interface SourceChannel {
      * <p>invoke {@link Channel#flush()} will flush logs from memory block and page cache to disk.
      *
      * @param partition partition
-     * @throws IOException IOException
+     * @throws Exception Exception
      */
-    void append(Integer partition, Records records) throws IOException, InterruptedException;
+    void append(Integer partition, Records records) throws Exception;
 
     /**
      * append records to one partition decided by source channel.
@@ -46,7 +46,7 @@ public interface SourceChannel {
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
-    default void append(Records records) throws IOException, InterruptedException {
+    default void append(Records records) throws Exception {
         append(null, records);
     }
 

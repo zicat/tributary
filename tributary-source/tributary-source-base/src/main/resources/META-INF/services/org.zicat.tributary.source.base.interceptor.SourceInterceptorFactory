@@ -1,2 +1,3 @@
 org.zicat.tributary.source.base.interceptor.TimestampInterceptorFactory
 org.zicat.tributary.source.base.interceptor.UUIDInterceptorFactory
+org.zicat.tributary.source.base.interceptor.HostInterceptorFactory

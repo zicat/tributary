@@ -23,26 +23,27 @@ import org.zicat.tributary.common.SystemClock;
 import org.zicat.tributary.common.config.ConfigOption;
 import org.zicat.tributary.common.config.ConfigOptions;
 import org.zicat.tributary.common.config.ReadableConfig;
-import org.zicat.tributary.common.records.RecordsUtils;
-import static org.zicat.tributary.common.records.RecordsUtils.appendTimestamp;
+import static org.zicat.tributary.common.records.RecordsUtils.appendHeadKeyValue;
 
 /** RecTsInterceptorFactory. */
 public class TimestampInterceptorFactory implements SourceInterceptorFactory {
 
+    public static final String HEADER_KEY_REC_TS = "_rec_ts";
     public static final String IDENTITY = "timestamp";
     public static final ConfigOption<Clock> OPTION_SOURCE_CLOCK =
             ConfigOptions.key("_source_clock").<Clock>objectType().defaultValue(new SystemClock());
     public static final ConfigOption<String> OPTION_TIMESTAMP_KEY =
             ConfigOptions.key("interceptor.timestamp.key")
                     .stringType()
-                    .defaultValue(RecordsUtils.HEADER_KEY_REC_TS);
+                    .defaultValue(HEADER_KEY_REC_TS);
 
     @Override
     public SourceInterceptor createInterceptor(ReadableConfig config) {
         final Clock clock = config.get(OPTION_SOURCE_CLOCK);
         final String key = config.get(OPTION_TIMESTAMP_KEY);
         return records -> {
-            appendTimestamp(clock, records.headers(), key);
+            final byte[] recTs = String.valueOf(clock.currentTimeMillis()).getBytes();
+            appendHeadKeyValue(records.headers(), key, recTs);
             return records;
         };
     }

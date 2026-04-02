@@ -30,5 +30,5 @@ public interface SourceInterceptorFactory extends SpiFactory {
      * @param config config
      * @return SourceInterceptor
      */
-    SourceInterceptor createInterceptor(ReadableConfig config);
+    SourceInterceptor createInterceptor(ReadableConfig config) throws Exception;
 }

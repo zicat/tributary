@@ -21,7 +21,6 @@ package org.zicat.tributary.common.records;
 import org.zicat.tributary.common.Clock;
 
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,8 +31,6 @@ import java.util.stream.Collectors;
 public class RecordsUtils {
 
     public static final String HEAD_KEY_SENT_TS = "_sent_ts";
-    public static final String HEADER_KEY_REC_TS = "_rec_ts";
-    public static final String HEADER_KEY_UUID = "_uuid";
     public static final byte[] CONCAT_SPLIT = " ".getBytes(StandardCharsets.UTF_8);
 
     /**
@@ -157,16 +154,27 @@ public class RecordsUtils {
      * @return new bytes
      */
     private static byte[] concatBytesArray(byte[] bytes1, byte[] bytes2) {
+        return concatBytesArray(bytes1, bytes2, CONCAT_SPLIT);
+    }
+
+    /**
+     * concat two bytes array.
+     *
+     * @param bytes1 bytes1
+     * @param bytes2 bytes1
+     * @return new bytes
+     */
+    private static byte[] concatBytesArray(byte[] bytes1, byte[] bytes2, byte[] concatSplit) {
         if (bytes1 == null) {
             return bytes2;
         }
         if (bytes2 == null) {
             return bytes1;
         }
-        final byte[] concatTs = new byte[bytes1.length + CONCAT_SPLIT.length + bytes2.length];
+        final byte[] concatTs = new byte[bytes1.length + concatSplit.length + bytes2.length];
         System.arraycopy(bytes1, 0, concatTs, 0, bytes1.length);
-        System.arraycopy(CONCAT_SPLIT, 0, concatTs, bytes1.length, CONCAT_SPLIT.length);
-        System.arraycopy(bytes2, 0, concatTs, bytes1.length + CONCAT_SPLIT.length, bytes2.length);
+        System.arraycopy(concatSplit, 0, concatTs, bytes1.length, concatSplit.length);
+        System.arraycopy(bytes2, 0, concatTs, bytes1.length + concatSplit.length, bytes2.length);
         return concatTs;
     }
 
@@ -200,34 +208,26 @@ public class RecordsUtils {
     }
 
     /**
-     * append record timestamp to headers. like: 1760162349000,1760162349001
-     *
-     * @param clock clock
-     * @param map map
-     */
-    public static void appendRecTs(Clock clock, Map<String, byte[]> map) {
-        appendTimestamp(clock, map, HEADER_KEY_REC_TS);
-    }
-
-    /**
-     * append record timestamp to headers. like: 1760162349000,1760162349001
-     *
-     * @param clock clock
-     * @param map map
-     */
-    public static void appendTimestamp(Clock clock, Map<String, byte[]> map, String key) {
-        final byte[] recTs = String.valueOf(clock.currentTimeMillis()).getBytes();
-        map.compute(key, (k, v) -> concatBytesArray(v, recTs));
-    }
-
-    /**
-     * append uuid to headers. if key exists, concat with space split.
+     * append key value.
      *
      * @param map map
      * @param key key
+     * @param value value
      */
-    public static void appendUUID(Map<String, byte[]> map, String key) {
-        final byte[] uuid = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
-        map.compute(key, (k, v) -> concatBytesArray(v, uuid));
+    public static void appendHeadKeyValue(Map<String, byte[]> map, String key, byte[] value) {
+        map.compute(key, (k, v) -> concatBytesArray(v, value));
+    }
+
+    /**
+     * append key value.
+     *
+     * @param map map
+     * @param key key
+     * @param concatSplit concatSplit
+     * @param value value
+     */
+    public static void appendHeadKeyValue(
+            Map<String, byte[]> map, String key, byte[] value, byte[] concatSplit) {
+        map.compute(key, (k, v) -> concatBytesArray(v, value, concatSplit));
     }
 }

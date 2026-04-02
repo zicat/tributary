@@ -68,17 +68,14 @@ public abstract class AbstractSource implements Source {
     protected final String sourceId;
     protected final Map<MetricKey, Double> gaugeFamily = new ConcurrentHashMap<>();
     protected final Map<MetricKey, Double> counterFamily = new ConcurrentHashMap<>();
-    protected final AppendResultType appendResultType;
-    protected final MetricKey sourceLivenessGauge;
-    protected final List<SourceInterceptor> interceptors;
+    protected transient AppendResultType appendResultType;
+    protected transient MetricKey sourceLivenessGauge;
+    protected transient List<SourceInterceptor> interceptors;
 
     public AbstractSource(String sourceId, ReadableConfig config, Channel channel) {
         this.sourceId = sourceId;
         this.config = config;
         this.channel = channel;
-        this.appendResultType = config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE);
-        this.sourceLivenessGauge = SOURCE_LIVENESS_GAUGE.copyWithLabel("sourceId", sourceId);
-        this.interceptors = createInterceptors();
     }
 
     /**
@@ -86,7 +83,7 @@ public abstract class AbstractSource implements Source {
      *
      * @return interceptor list
      */
-    protected List<SourceInterceptor> createInterceptors() {
+    protected List<SourceInterceptor> createInterceptors() throws Exception {
         final List<String> identities = config.get(OPTION_INTERCEPTORS);
         if (identities == null || identities.isEmpty()) {
             return Collections.emptyList();
@@ -109,13 +106,15 @@ public abstract class AbstractSource implements Source {
 
     @Override
     public final void open() throws Exception {
+        appendResultType = config.get(OPTION_CHANNEL_APPEND_RESULT_TYPE);
+        interceptors = createInterceptors();
         _open();
+        sourceLivenessGauge = SOURCE_LIVENESS_GAUGE.copyWithLabel("sourceId", sourceId);
         mergeGauge(sourceLivenessGauge, 1, (oldValue, newValue) -> newValue);
     }
 
     @Override
-    public void append(Integer partition, Records records)
-            throws IOException, InterruptedException {
+    public void append(Integer partition, Records records) throws Exception {
         if (records == null || records.count() == 0) {
             return;
         }
@@ -211,7 +210,7 @@ public abstract class AbstractSource implements Source {
      * @param records records
      * @return intercepted records, null if discarded
      */
-    private Records applyInterceptors(Records records) {
+    private Records applyInterceptors(Records records) throws Exception {
         for (SourceInterceptor interceptor : interceptors) {
             records = interceptor.intercept(records);
             if (records == null) {

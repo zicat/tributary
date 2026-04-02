@@ -50,7 +50,6 @@ import org.zicat.tributary.common.records.DefaultRecords;
 import org.zicat.tributary.source.base.Source;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -244,7 +243,7 @@ public abstract class KafkaMessageDecoder extends SimpleChannelInboundHandler<by
      */
     private void handleProduceRequest(
             ProduceRequest request, ChannelHandlerContext ctx, RequestHeader header)
-            throws IOException, InterruptedException {
+            throws Exception {
         final Map<TopicPartition, PartitionResponse> partitionRes = new HashMap<>();
         final Map<TopicPartition, MemoryRecords> allRecords = request.partitionRecordsOrFail();
         final List<Node> nodes = this.nodes;
